@@ -1,1 +1,1 @@
-Empty repo for Galadriel project
+# spire-bridge
