@@ -1,0 +1,253 @@
+openapi: 3.0.0
+
+info:
+  title: SPIRE Bridge
+  description: SPIRE Bridge API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:32208/
+
+components:
+  schemas:
+    # The goal of SPIRE Bridge is to store and move trust bundles around 
+    # There is no way to update trust bundles, they are only created or deleted
+    # Deletion is normally automatic (not through API) when the trust bundle contents
+    # indicate that it has expired
+    TrustBundle:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        sourceUser:
+          # Record the user that created the bundle for auditing
+          type: string
+          format: string
+        trustDomain:
+          type: string
+          format: string
+        bundle:
+          type: string
+          format: bytes
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - to_delete
+
+    FederationGroup:
+      # A Federation Group is a group of SpireServers
+      # It has no properties on its own other than a name and an ID number.
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          format: string
+    
+    FederationGroupMembership:
+      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a 
+      # FederationGroup
+      type: object
+      properties:
+        spireServerId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - invited
+            - active
+            - inactive
+        
+    SpireServer:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        trustDomain:
+          type: string
+          format: string
+        status:
+          type: string
+          enum:
+            - invited
+            - active
+            - inactive
+            - disabled
+            - to_delete
+        createdAt:
+          type: string
+          format: date-time
+        orgid:
+          type: string
+          format: int64
+      required:
+        - id
+        - trustdomain
+        - status
+        - orgid
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+paths:
+  /spireServers:
+    post:
+      description: Create a new SpireServer
+      operationId: createSpireServer
+      requestBody:
+        description: Elements of SPIRE server to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpireServer'
+      responses:
+        '201': 
+          description: SpireServer creation response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpireServer'
+        default:
+          description: unexpected error 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      description: Returns all the SpireServers 
+      operationId: getSpireServers
+      parameters:
+        - name: org
+          in: query
+          description: filter SpireServers by org
+          schema:
+            type: string
+            format: int64
+        - name: status
+          in: query
+          description: filter SpireServers by status
+          schema:
+            type: string
+            enum:
+              - invited
+              - inactive
+              - active
+              - disabled
+      responses:
+        '200':
+          description: get SpireServers's response 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpireServer'
+        default:
+          description: unexpected Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /spireServers/{spireServerId}:
+    put:
+      description: Updates the status of a SpireServer
+      operationId: updateSpireServer
+      parameters:
+        - name: spireServerId
+          in: path 
+          description: Id of the SPIRE server to update 
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: contents of the SPIRE server to update
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SpireServer'
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SpireServer'
+          default:
+            description: unexpected error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+    delete:
+      description: delete a SpireServer
+      operationId: deleteSpireServer
+      parameters:
+        - name: spireServerId
+          in: path
+          description: Id of the SPIRE server to delete
+          required: true
+          schema: 
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+ 
+  /trustBundles/{trustBundleId}:
+    put:
+      description: Upload a TrustBundle
+      operationId: updateTrustBundle
+      parameters:
+        - name: trustBundleId
+          in: path 
+          description: Id of the trust bundle to update 
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: contents of the trust bundle to update
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrustBundle'
+        responses:
+          '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TrustBundle'
+          default:
+            description: unexpected error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+
