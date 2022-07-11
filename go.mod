@@ -6,6 +6,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.11.0
 	github.com/getkin/kin-openapi v0.97.0
 	github.com/labstack/echo/v4 v4.7.2
+	github.com/n-th/galadriel v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -31,6 +32,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace (
-    github.com/n-th/galadriel => ../galadriel
-)
+replace github.com/n-th/galadriel => ../galadriel

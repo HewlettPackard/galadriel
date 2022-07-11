@@ -37,8 +37,9 @@ func main() {
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
-	// Create an instance of our handler which satisfies the generated interface
-	store := api.NewPetStore()
+	myDumbServer := api.MyDumbServer{}
+
+	// store := api.ServerInterfaceWrapper{Handler: myDumbServer}
 
 	// This is how you set up a basic Echo router
 	router := echo.New()
@@ -51,7 +52,7 @@ func main() {
 	router.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our store above as the handler for the interface
-	api.RegisterHandlers(router, store)
+	api.RegisterHandlers(router, myDumbServer)
 
 	// And we serve HTTP until the world ends.
 	router.Logger.Fatal(router.Start(fmt.Sprintf("0.0.0.0:%d", *port)))
