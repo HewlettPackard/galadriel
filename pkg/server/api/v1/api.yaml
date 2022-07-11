@@ -1,4 +1,3 @@
-package: api
 openapi: 3.0.0
 
 info:
@@ -8,8 +7,6 @@ info:
 
 servers:
   - url: http://localhost:32208/
-
-
 
 components:
   schemas:

@@ -306,14 +306,18 @@ func GetSwagger() (swagger *openapi3.T, err error) {
 		}
 		return getSpec()
 	}
+
 	var specData []byte
+
 	specData, err = rawSpec()
 	if err != nil {
 		return
 	}
+
 	swagger, err = loader.LoadFromData(specData)
 	if err != nil {
 		return
 	}
+	
 	return
 }
