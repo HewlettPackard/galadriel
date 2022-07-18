@@ -17,10 +17,10 @@ import (
 	"fmt"
 	"os"
 
+	api "github.com/HewlettPackard/Galadriel/pkg/server/api/v1"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
-	api "github.com/n-th/galadriel/pkg/server/api/v1"
 )
 
 func main() {
