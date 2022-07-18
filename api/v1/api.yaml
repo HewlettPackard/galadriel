@@ -70,8 +70,6 @@ components:
             - invited
             - active
             - inactive
-            - disabled
-            - to_delete
       required:
         - id
         - trustdomain
@@ -82,7 +80,7 @@ components:
       # FederationGroup
       type: object
       properties:
-        Id:
+        id:
           type: integer
           format: int64
         spireServerId:
@@ -105,7 +103,7 @@ components:
         # FederationGroup (bridge)
       type: object
       properties:
-        Id:
+        id:
           type: integer
           format: int64
         federationGroupId:
@@ -465,7 +463,6 @@ paths:
               - invited
               - inactive
               - active
-              - disabled
       responses:
         '200':
           description: get SpireServers's response 
