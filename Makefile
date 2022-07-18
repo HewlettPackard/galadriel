@@ -157,12 +157,12 @@ $(eval $(call binary_rule,bin/spire-bridge-server,./cmd/jwtglue))
 # #		$<
 
 api-doc-build:
-	docker build -f dev/api/Dockerfile -t galadriel-dev-api:latest .
+	docker build -f dev/api/Dockerfile -t galadriel-api-doc:latest .
 
 api-doc: api-doc-build
 	docker run --rm \
-		--name galadriel-dev-api \
+		--name galadriel-api-doc \
 		-p 8000:8000 \
 		--mount type=bind,source="${DIR}"/api/,target=/app/api,readonly \
-		galadriel-dev-api:latest
+		galadriel-api-doc:latest
 
