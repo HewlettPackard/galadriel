@@ -156,4 +156,13 @@ $(eval $(call binary_rule,bin/spire-bridge-server,./cmd/jwtglue))
 # #		--go-spire_opt=mode=plugin \
 # #		$<
 
+dev-api-build:
+	docker build -f dev/api/Dockerfile -t galadriel-dev-api:latest .
+
+dev-api: dev-api-build
+	docker run --rm \
+		--name galadriel-dev-api \
+		-p 8000:8000 \
+		--mount type=bind,source="${DIR}"/api/,target=/app/api,readonly \
+		galadriel-dev-api:latest
 
