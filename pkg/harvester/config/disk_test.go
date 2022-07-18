@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"testing"
 
@@ -10,11 +10,10 @@ import (
 
 func TestLoadFromDisk(t *testing.T) {
 	tests := []struct {
-		name      string
-		path      string
-		expected  *HarvesterConfig
-		errPrefix string
-		err       string
+		name     string
+		path     string
+		expected *HarvesterConfig
+		err      string
 	}{
 		{
 			name: "ok",
@@ -32,11 +31,10 @@ func TestLoadFromDisk(t *testing.T) {
 			expected: &HarvesterConfig{},
 		},
 		{
-			name:      "cannot_open_file",
-			path:      "invalid_path",
-			expected:  nil,
-			errPrefix: "unable to open configuration file",
-			err:       "open invalid_path: no such file or directory",
+			name:     "cannot_open_file",
+			path:     "invalid_path",
+			expected: nil,
+			err:      "unable to open configuration file: open invalid_path: no such file or directory",
 		},
 		{
 			name:     "new_error",
@@ -51,7 +49,7 @@ func TestLoadFromDisk(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			newFn = func(config io.Reader) (*HarvesterConfig, error) {
 				if tt.err != "" {
-					return nil, fmt.Errorf("%s: %s", tt.errPrefix, tt.err)
+					return nil, errors.New(tt.err)
 				}
 				return tt.expected, nil
 			}
@@ -59,7 +57,7 @@ func TestLoadFromDisk(t *testing.T) {
 			got, err := LoadFromDisk(tt.path)
 
 			if tt.err != "" {
-				assert.EqualError(t, err, fmt.Sprintf(tt.errPrefix+": %s", tt.err))
+				assert.EqualError(t, err, tt.err)
 				assert.Nil(t, got)
 				return
 			}
