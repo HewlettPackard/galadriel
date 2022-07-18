@@ -6,8 +6,6 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
-*.exe
-*.exe~
 *.dll
 *.so
 *.dylib
@@ -21,18 +19,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# Go workspace file
-go.work
-
-### Go Patch ###
-/vendor/
-/Godeps/
-
 ### Linux ###
 *~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
-.fuse_hidden*
 
 # KDE directory preferences
 .directory
@@ -40,8 +28,6 @@ go.work
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
 
-# .nfs files are created when an open file is removed but is still being accessed
-.nfs*
 
 ### macOS ###
 # General
@@ -49,32 +35,8 @@ go.work
 .AppleDouble
 .LSOverride
 
-# Icon must end with two \r
-Icon
-
-
 # Thumbnails
 ._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-### macOS Patch ###
-# iCloud generated files
-*.icloud
 
 ### VisualStudioCode ###
 .vscode/*
@@ -86,9 +48,6 @@ Temporary Items
 
 # Local History for Visual Studio Code
 .history/
-
-# Built Visual Studio Code Extensions
-*.vsix
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
