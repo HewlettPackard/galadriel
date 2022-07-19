@@ -373,7 +373,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroup by ID
+      description: update a federationGroup by ID
       operationId: updatefederationGroup
       parameters:
         - name: federationGroupID
@@ -399,7 +399,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: delete an federationGroup
+      description: delete a federationGroup
       operationId: deletefederationGroup
       parameters:
         - name: federationGroupID
@@ -624,7 +624,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroupMembership by ID
+      description: update a federationGroupMembership by ID
       operationId: updatefederationGroupMembership
       parameters:
         - name: membershipID
@@ -650,7 +650,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: delete an federationGroup membership
+      description: delete a federationGroup membership
       operationId: deletefederationGroupMembership
       parameters:
         - name: membershipID
@@ -765,7 +765,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroupMembership by ID
+      description: update a federationGroupMembership by ID
       operationId: updateFederationRelationshipship
       parameters:
         - name: relationshipID

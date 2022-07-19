@@ -64,7 +64,6 @@ components:
         description:
           type: string
           format: string
-<<<<<<< HEAD:api/v1/api.yaml
         status:
           type: string
           enum:
@@ -76,9 +75,7 @@ components:
         - trustdomain
         - description
         - status
-=======
 
->>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
     FederationGroupMembership:
       # A FederationGroupMembership reperesents a particular SPIRE server's presence in a
       # FederationGroup
@@ -98,7 +95,6 @@ components:
           enum:
             - active
             - inactive
-<<<<<<< HEAD:api/v1/api.yaml
       required:
         - spireServerId
         - federationGroupId
@@ -106,10 +102,8 @@ components:
     FederationRelationship:
         # It is a representation of two SPIRE server's consent to exchange trust bundles in a particular 
         # FederationGroup (bridge)
-=======
 
     SpireServer:
->>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
       type: object
       properties:
         id:
@@ -508,7 +502,6 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-<<<<<<< HEAD:api/v1/api.yaml
               $ref: '#/components/schemas/SpireServer'
       responses:
         '200':
@@ -523,7 +516,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-=======
               $ref: "#/components/schemas/SpireServer"
         responses:
           "200":
@@ -539,7 +531,6 @@ paths:
                   $ref: "#/components/schemas/Error"
       tags:
         - SPIRE Servers
->>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
     delete:
       description: delete a SpireServer
       operationId: deleteSpireServer
@@ -559,7 +550,6 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< HEAD:api/v1/api.yaml
                 $ref: '#/components/schemas/Error'
   /federationGroupMemberships:
     post:
@@ -823,11 +813,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-=======
-                $ref: "#/components/schemas/Error"
-      tags:
-        - SPIRE Servers
->>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
   /trustBundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
@@ -845,16 +830,10 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-<<<<<<< HEAD:api/v1/api.yaml
               $ref: '#/components/schemas/TrustBundle'
       responses:
           '200':
             description: get trust bundle's response 
-=======
-              $ref: "#/components/schemas/TrustBundle"
-        responses:
-          "200":
->>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
             content:
               application/json:
                 schema:
