@@ -10,7 +10,7 @@ servers:
 
 components:
   schemas:
-    # The goal of SPIRE Bridge is to store and move trust bundles around 
+    # The goal of SPIRE Bridge is to store and move trust bundles around
     # There is no way to update trust bundles, they are only created or deleted
     # Deletion is normally automatic (not through API) when the trust bundle contents
     # indicate that it has expired
@@ -64,6 +64,7 @@ components:
         description:
           type: string
           format: string
+<<<<<<< HEAD:api/v1/api.yaml
         status:
           type: string
           enum:
@@ -75,8 +76,11 @@ components:
         - trustdomain
         - description
         - status
+=======
+
+>>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
     FederationGroupMembership:
-      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a 
+      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a
       # FederationGroup
       type: object
       properties:
@@ -94,6 +98,7 @@ components:
           enum:
             - active
             - inactive
+<<<<<<< HEAD:api/v1/api.yaml
       required:
         - spireServerId
         - federationGroupId
@@ -101,6 +106,10 @@ components:
     FederationRelationship:
         # It is a representation of two SPIRE server's consent to exchange trust bundles in a particular 
         # FederationGroup (bridge)
+=======
+
+    SpireServer:
+>>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
       type: object
       properties:
         id:
@@ -430,22 +439,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SpireServer'
+              $ref: "#/components/schemas/SpireServer"
       responses:
-        '201': 
+        "201":
           description: SpireServer creation response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpireServer'
+                $ref: "#/components/schemas/SpireServer"
         default:
-          description: unexpected error 
+          description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
+      tags:
+        - SPIRE Servers
     get:
-      description: Returns all the SpireServers 
+      description: Returns all the SpireServers
       operationId: getSpireServers
       parameters:
         - name: trustDomain
@@ -464,29 +475,30 @@ paths:
               - inactive
               - active
       responses:
-        '200':
-          description: get SpireServers's response 
+        "200":
+          description: get SpireServers's response
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SpireServer'
+                  $ref: "#/components/schemas/SpireServer"
         default:
           description: unexpected Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-
+                $ref: "#/components/schemas/Error"
+      tags:
+        - SPIRE Servers
   /spireServers/{spireServerId}:
     put:
       description: Updates the status of a SpireServer
       operationId: updateSpireServer
       parameters:
         - name: spireServerId
-          in: path 
-          description: Id of the SPIRE server to update 
+          in: path
+          description: Id of the SPIRE server to update
           required: true
           schema:
             type: integer
@@ -496,6 +508,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
+<<<<<<< HEAD:api/v1/api.yaml
               $ref: '#/components/schemas/SpireServer'
       responses:
         '200':
@@ -510,6 +523,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+=======
+              $ref: "#/components/schemas/SpireServer"
+        responses:
+          "200":
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SpireServer"
+          default:
+            description: unexpected error
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+      tags:
+        - SPIRE Servers
+>>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
     delete:
       description: delete a SpireServer
       operationId: deleteSpireServer
@@ -518,17 +548,18 @@ paths:
           in: path
           description: Id of the SPIRE server to delete
           required: true
-          schema: 
+          schema:
             type: integer
             format: int64
       responses:
-        '204':
+        "204":
           description: no content
         default:
           description: unexpected error
           content:
             application/json:
               schema:
+<<<<<<< HEAD:api/v1/api.yaml
                 $ref: '#/components/schemas/Error'
   /federationGroupMemberships:
     post:
@@ -792,14 +823,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+=======
+                $ref: "#/components/schemas/Error"
+      tags:
+        - SPIRE Servers
+>>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
   /trustBundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
       operationId: updateTrustBundle
       parameters:
         - name: trustBundleId
-          in: path 
-          description: Id of the trust bundle to update 
+          in: path
+          description: Id of the trust bundle to update
           required: true
           schema:
             type: integer
@@ -809,18 +845,25 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
+<<<<<<< HEAD:api/v1/api.yaml
               $ref: '#/components/schemas/TrustBundle'
       responses:
           '200':
             description: get trust bundle's response 
+=======
+              $ref: "#/components/schemas/TrustBundle"
+        responses:
+          "200":
+>>>>>>> fe53ae40bed28c7e9e8a59b9807a4bd691c32316:pkg/server/api/v1/api.yaml
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/TrustBundle'
+                  $ref: "#/components/schemas/TrustBundle"
           default:
             description: unexpected error
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/Error'
-
+                  $ref: "#/components/schemas/Error"
+      tags:
+        - Trust Bundles
