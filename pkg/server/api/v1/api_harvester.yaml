@@ -43,7 +43,7 @@ components:
         - spireServer
         - spireServerFederatedWith
     TrustBundle:
-         # Represents the trust bundle of a SPIRE Server that is a member of the bridge
+      # Represents the trust bundle of a SPIRE Server that is a member of the bridge
       type: object
       properties:
         id:
