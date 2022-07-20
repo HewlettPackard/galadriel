@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: SPIRE Bridge - Harverster API
+  title: SPIRE Bridge - Galadriel Harverster API
   description: API to be used for interacting with Harvesters. 
   version: 1.0.0
 
@@ -9,12 +9,8 @@ servers:
 
 components:
   schemas:
-    # The goal of SPIRE Bridge is to store and move trust bundles around 
-    # There is no way to update trust bundles, they are only created or deleted
-    # Deletion is normally automatic (not through API) when the trust bundle contents
-    # indicate that it has expired
     FederationRelationship:
-        # It is a representation of the federated relationships of a SPIRE server
+      # Represents a federated relationship between SPIRE server
       type: object
       properties:
         id:
@@ -44,8 +40,10 @@ components:
       required:
         - id
         - federationGroupId
+        - spireServer
+        - spireServerFederatedWith
     TrustBundle:
-        # A trustbundle belongs uniquely to the SPIRESERVER, not to the bridge
+         # Represents the trust bundle of a SPIRE Server that is a member of the bridge
       type: object
       properties:
         id:

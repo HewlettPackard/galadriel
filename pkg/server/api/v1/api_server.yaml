@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: SPIRE Bridge - Server API
+  title: SPIRE Bridge - Galadriel Server API
   description: Set of APIs to be used by Galadriel administrations to define and configure the bridge, members, and relationships
   version: 1.0.0
 
@@ -9,7 +9,7 @@ servers:
 
 components:
   schemas:
-    # The goal of SPIRE Bridge is to store and move trust bundles around 
+    # The goal of SPIRE Bridge - Galadriel is to store and move trust bundles around 
     # There is no way to update trust bundles, they are only created or deleted
     # Deletion is normally automatic (not through API) when the trust bundle contents
     # indicate that it has expired
@@ -50,8 +50,8 @@ components:
         - id
         - orgid
         - name
-    #SpireServer is a representation of a trust-domain/SpireServer 
     SpireServer:
+      # SpireServer is a representation of a trust-domain/SpireServer 
       type: object
       properties:
         id:
