@@ -45,7 +45,7 @@ components:
         - id
         - federationGroupId
     TrustBundle:
-        # A trustbundle belongs uniquely to the SPIRESERVER, not to the bridge
+        # Represents the trust bundle of a SPIRE Server that is a member of the bridge
       type: object
       properties:
         id:
