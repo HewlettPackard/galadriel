@@ -1,0 +1,200 @@
+openapi: 3.0.0
+info:
+  title: SPIRE Bridge - Galadriel Harverster API
+  description: API to be used for interacting with Harvesters. 
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:32308/
+
+components:
+  schemas:
+    FederationRelationship:
+      # Represents a federated relationship between SPIRE server
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        federationGroupId:
+          type: integer
+          format: int64
+        spireServer:
+          type: string
+          format: string
+        spireServerFederatedWith:
+          type: string
+          format: string
+        spireServerFederatedWithConsent:
+          type: string
+          format: string
+        spireServerConsent:
+          type: string
+          format: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - invited
+      required:
+        - id
+        - federationGroupId
+        - spireServer
+        - spireServerFederatedWith
+    TrustBundle:
+      # Represents the trust bundle of a SPIRE Server that is a member of the bridge
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        trustDomain:
+          type: string
+          format: string
+        bundle:
+          type: string
+          format: bytes
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - to_delete
+      required:
+        - id
+        - trustdomain
+        - bundle
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
+paths:
+  /FederationRelationship:
+    get:
+      description: Returns all federated relationships of a SPIRE server in the Galadriel server
+      operationId: getFederationRelationships
+      parameters:
+        - name: spireServer
+          in: query
+          description: filter relationships by spireServer
+          schema:
+            type: string
+            format: string
+        - name: status
+          in: query
+          description: filter relationships by status
+          schema:
+            type: string
+            format: string
+        - name: federationGroupId
+          in: query
+          description: filter relationships by status
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: get relationships's response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FederationRelationship'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /FederationRelationship/{relationshipID}:
+    get: 
+      description: get data for one organization
+      operationId: getRelationshipbyID
+      parameters:
+        - name: relationshipID
+          in: path
+          description: Id of the relationship to be retrieved
+          required: true 
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: get relationship's response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederationRelationship'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+    put:
+      description: update an the status of a relationship by ID
+      operationId: updateFederatedRelationshipStatus
+      parameters:
+        - name: relationshipID
+          in: path
+          description: Id of the relationship to update
+          required: true
+          schema: 
+            type: integer
+            format: int64
+      requestBody:
+        description: contents of the org to be updated
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FederationRelationship'
+      responses:
+        '204':
+          description: no content
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /trustBundles/{trustBundleId}:
+    put:
+      description: Upload a TrustBundle
+      operationId: updateTrustBundle
+      parameters:
+        - name: trustBundleId
+          in: path 
+          description: Id of the trust bundle to update 
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: contents of the trust bundle to update
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrustBundle'
+      responses:
+          '200':
+            description: get trust bundle's response 
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TrustBundle'
+          default:
+            description: unexpected error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+

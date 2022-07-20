@@ -1,8 +1,7 @@
 openapi: 3.0.0
-
 info:
-  title: SPIRE Bridge
-  description: SPIRE Bridge API
+  title: SPIRE Bridge - Galadriel Server API
+  description: Set of APIs to be used by Galadriel administrations to define and configure the bridge, members, and relationships
   version: 1.0.0
 
 servers:
@@ -10,7 +9,7 @@ servers:
 
 components:
   schemas:
-    # The goal of SPIRE Bridge is to store and move trust bundles around
+    # The goal of SPIRE Bridge - Galadriel is to store and move trust bundles around 
     # There is no way to update trust bundles, they are only created or deleted
     # Deletion is normally automatic (not through API) when the trust bundle contents
     # indicate that it has expired
@@ -51,8 +50,8 @@ components:
         - id
         - orgid
         - name
-    #SpireServer is a representation of a trust-domain/SpireServer 
     SpireServer:
+      # SpireServer is a representation of a trust-domain/SpireServer 
       type: object
       properties:
         id:
@@ -75,9 +74,8 @@ components:
         - trustdomain
         - description
         - status
-
     FederationGroupMembership:
-      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a
+      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a 
       # FederationGroup
       type: object
       properties:
@@ -102,8 +100,6 @@ components:
     FederationRelationship:
         # It is a representation of two SPIRE server's consent to exchange trust bundles in a particular 
         # FederationGroup (bridge)
-
-    SpireServer:
       type: object
       properties:
         id:
@@ -203,7 +199,7 @@ paths:
           description: filter organizations by name
           schema:
             type: string
-            format: int64
+            format: string
       responses:
         '200':
           description: get organization's response
@@ -377,7 +373,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroup by ID
+      description: update a federationGroup by ID
       operationId: updatefederationGroup
       parameters:
         - name: federationGroupID
@@ -403,7 +399,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: delete an federationGroup
+      description: delete a federationGroup
       operationId: deletefederationGroup
       parameters:
         - name: federationGroupID
@@ -433,24 +429,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SpireServer"
+              $ref: '#/components/schemas/SpireServer'
       responses:
-        "201":
+        '201': 
           description: SpireServer creation response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpireServer"
+                $ref: '#/components/schemas/SpireServer'
         default:
-          description: unexpected error
+          description: unexpected error 
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      tags:
-        - SPIRE Servers
+                $ref: '#/components/schemas/Error'
     get:
-      description: Returns all the SpireServers
+      description: Returns all the SpireServers 
       operationId: getSpireServers
       parameters:
         - name: trustDomain
@@ -469,30 +463,29 @@ paths:
               - inactive
               - active
       responses:
-        "200":
-          description: get SpireServers's response
+        '200':
+          description: get SpireServers's response 
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SpireServer"
+                  $ref: '#/components/schemas/SpireServer'
         default:
           description: unexpected Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-      tags:
-        - SPIRE Servers
+                $ref: '#/components/schemas/Error'
+
   /spireServers/{spireServerId}:
     put:
       description: Updates the status of a SpireServer
       operationId: updateSpireServer
       parameters:
         - name: spireServerId
-          in: path
-          description: Id of the SPIRE server to update
+          in: path 
+          description: Id of the SPIRE server to update 
           required: true
           schema:
             type: integer
@@ -516,21 +509,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              $ref: "#/components/schemas/SpireServer"
-        responses:
-          "200":
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/SpireServer"
-          default:
-            description: unexpected error
-            content:
-              application/json:
-                schema:
-                  $ref: "#/components/schemas/Error"
-      tags:
-        - SPIRE Servers
     delete:
       description: delete a SpireServer
       operationId: deleteSpireServer
@@ -539,11 +517,11 @@ paths:
           in: path
           description: Id of the SPIRE server to delete
           required: true
-          schema:
+          schema: 
             type: integer
             format: int64
       responses:
-        "204":
+        '204':
           description: no content
         default:
           description: unexpected error
@@ -646,7 +624,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroupMembership by ID
+      description: update a federationGroupMembership by ID
       operationId: updatefederationGroupMembership
       parameters:
         - name: membershipID
@@ -672,7 +650,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: delete an federationGroup membership
+      description: delete a federationGroup membership
       operationId: deletefederationGroupMembership
       parameters:
         - name: membershipID
@@ -787,7 +765,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'  
     put:
-      description: update an federationGroupMembership by ID
+      description: update a federationGroupMembership by ID
       operationId: updateFederationRelationshipship
       parameters:
         - name: relationshipID
@@ -819,8 +797,8 @@ paths:
       operationId: updateTrustBundle
       parameters:
         - name: trustBundleId
-          in: path
-          description: Id of the trust bundle to update
+          in: path 
+          description: Id of the trust bundle to update 
           required: true
           schema:
             type: integer
@@ -837,12 +815,11 @@ paths:
             content:
               application/json:
                 schema:
-                  $ref: "#/components/schemas/TrustBundle"
+                  $ref: '#/components/schemas/TrustBundle'
           default:
             description: unexpected error
             content:
               application/json:
                 schema:
-                  $ref: "#/components/schemas/Error"
-      tags:
-        - Trust Bundles
+                  $ref: '#/components/schemas/Error'
+
