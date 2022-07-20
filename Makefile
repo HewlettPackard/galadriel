@@ -166,3 +166,11 @@ api-doc: api-doc-build
 		--mount type=bind,source="${DIR}"/api/,target=/app/api,readonly \
 		galadriel-api-doc:latest
 
+test: test-unit
+
+test-unit:
+	go test -cover ./...
+
+coverage:
+	go test -v -coverprofile ./out/coverage/coverage.out ./... && \
+	go tool cover -html=./out/coverage/coverage.out -o ./out/coverage/index.html
