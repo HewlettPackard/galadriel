@@ -1,0 +1,70 @@
+
+components:
+  schemas:
+    FederationRelationship:
+      # Represents a federated relationship between SPIRE server
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        federationGroupId:
+          type: integer
+          format: int64
+        spireServer:
+          type: string
+          format: string
+        spireServerFederatedWith:
+          type: string
+          format: string
+        spireServerFederatedWithConsent:
+          type: string
+          format: string
+        spireServerConsent:
+          type: string
+          format: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - invited
+      required:
+        - id
+        - federationGroupId
+        - spireServer
+        - spireServerFederatedWith
+    TrustBundle:
+      # Represents the trust bundle of a SPIRE Server that is a member of the bridge
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        trustDomain:
+          type: string
+          format: string
+        bundle:
+          type: string
+          format: bytes
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - to_delete
+      required:
+        - id
+        - trustdomain
+        - bundle
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      required:
+        - code
+        - message
