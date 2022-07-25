@@ -30,6 +30,7 @@ jobs:
 
       - name: Build an image from Dockerfile
         run: |
+          cd ./dev/api
           docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
