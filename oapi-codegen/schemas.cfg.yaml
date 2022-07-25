@@ -1,9 +1,9 @@
-package: harvester
+package: common
 generate:
-  echo-server: true
+  echo-server: false
   client: false
   models: true
   embedded-spec: true
-output: harvester.gen.go
+output: pkg/common/schemas.gen.go
 output-options:
   skip-prune: true

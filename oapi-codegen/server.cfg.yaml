@@ -1,9 +1,9 @@
-package: common
+package: server
 generate:
-  echo-server: false
+  echo-server: true
   client: false
   models: true
   embedded-spec: true
-output: schemas.gen.go
+output: pkg/server/api/server/server.gen.go
 output-options:
   skip-prune: true

@@ -39,13 +39,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '../../../common/schemas.yaml'
+                  $ref: './schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../common/schemas.yaml'
+                $ref: './schemas.yaml'
   /FederationRelationship/{relationshipID}:
     get: 
       description: get data for one organization
@@ -64,13 +64,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../common/schemas.yaml'
+                $ref: './schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../common/schemas.yaml'
+                $ref: './schemas.yaml'
     put:
       description: update an the status of a relationship by ID
       operationId: updateFederatedRelationshipStatus
@@ -87,7 +87,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '../../../common/schemas.yaml'
+              $ref: './schemas.yaml'
       responses:
         '204':
           description: no content
@@ -96,7 +96,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../common/schemas.yaml'
+                $ref: './schemas.yaml'
   /trustBundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
@@ -114,18 +114,18 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '../../../common/schemas.yaml'
+              $ref: './schemas.yaml'
       responses:
           '200':
             description: get trust bundle's response 
             content:
               application/json:
                 schema:
-                  $ref: '../../../common/schemas.yaml'
+                  $ref: './schemas.yaml'
           default:
             description: unexpected error
             content:
               application/json:
                 schema:
-                  $ref: '../../../common/schemas.yaml'
+                  $ref: './schemas.yaml'
 
