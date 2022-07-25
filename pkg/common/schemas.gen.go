@@ -13,49 +13,62 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
 )
 
-// ServerInterface represents all server handlers.
-type ServerInterface interface {
+// Defines values for FederationRelationshipStatus.
+const (
+	FederationRelationshipStatusActive   FederationRelationshipStatus = "active"
+	FederationRelationshipStatusInactive FederationRelationshipStatus = "inactive"
+	FederationRelationshipStatusInvited  FederationRelationshipStatus = "invited"
+)
+
+// Defines values for TrustBundleStatus.
+const (
+	TrustBundleStatusActive   TrustBundleStatus = "active"
+	TrustBundleStatusInactive TrustBundleStatus = "inactive"
+	TrustBundleStatusToDelete TrustBundleStatus = "to_delete"
+)
+
+// Error defines model for Error.
+type Error struct {
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
 }
 
-// ServerInterfaceWrapper converts echo contexts to parameters.
-type ServerInterfaceWrapper struct {
-	Handler ServerInterface
+// FederationRelationship defines model for FederationRelationship.
+type FederationRelationship struct {
+	FederationGroupId               int64                         `json:"federationGroupId"`
+	Id                              int64                         `json:"id"`
+	SpireServer                     string                        `json:"spireServer"`
+	SpireServerConsent              *string                       `json:"spireServerConsent,omitempty"`
+	SpireServerFederatedWith        string                        `json:"spireServerFederatedWith"`
+	SpireServerFederatedWithConsent *string                       `json:"spireServerFederatedWithConsent,omitempty"`
+	Status                          *FederationRelationshipStatus `json:"status,omitempty"`
 }
 
-// This is a simple interface which specifies echo.Route addition functions which
-// are present on both echo.Echo and echo.Group, since we want to allow using
-// either of them for path registration
-type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+// FederationRelationshipStatus defines model for FederationRelationship.Status.
+type FederationRelationshipStatus string
+
+// TrustBundle defines model for TrustBundle.
+type TrustBundle struct {
+	Bundle      string             `json:"bundle"`
+	Id          int64              `json:"id"`
+	Status      *TrustBundleStatus `json:"status,omitempty"`
+	TrustDomain *string            `json:"trustDomain,omitempty"`
 }
 
-// RegisterHandlers adds each server route to the EchoRouter.
-func RegisterHandlers(router EchoRouter, si ServerInterface) {
-	RegisterHandlersWithBaseURL(router, si, "")
-}
-
-// Registers handlers, and prepends BaseURL to the paths, so that the paths
-// can be served under a prefix.
-func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
-
-}
+// TrustBundleStatus defines model for TrustBundle.Status.
+type TrustBundleStatus string
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6pWSs7PLcjPS80rKVayqq7VUcrMS8tXssorzcnRUcovSM1LLMhUslJS0lEqSCzJKIbI",
-	"1AICAAD//90sQDE3AAAA",
+	"H4sIAAAAAAAC/6RSy07rMBD9l1l7de/VXWTJU2wBiQVCyI1Pm0GJbcaTSlWVf0dOSugjoFSsPLZnjs5j",
+	"tlSGJgYPr4mKLaWyQmP78lokSC6ihAhRRv9cBod8LoM0Vqkg9vr3DxnSTcRwxQpCnaEGKdlV3737TCrs",
+	"V9R1hgTvLQscFc8D5lf/ywgWFm8oNWPdwEGscvD3qPszVRxP6S3HvlsJbbxzx1z//5vkynMbU2TBA2QN",
+	"OZjYSTPHUg8mLoNP8Hr+4E4+3BNr9cvxM0mo1ba3Fr5tclq2VF7nvNjvlWtWuL3ovomaHZmJkA59/UH6",
+	"1G48Spv0ovWuxulCLMb3Uexio0hTWucvwSxTNLw61FBM2GJIM+ur0Fj2s6KYMrLHcAOG+ZR6alGeZb8M",
+	"VPi2rg2FCG8jU0FkKFqt0vDTfQQAAP//WwXWvg8EAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -122,7 +122,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     get:
       description: Returns all Organizations
       operationId: getOrganizations
@@ -147,7 +147,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /organizations/{orgID}:
     get: 
       description: get data for one organization
@@ -172,7 +172,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'  
+                $ref: '../../../common/schemas.yaml'  
     put:
       description: update an organizaion by ID
       operationId: updateOrganizaion
@@ -198,7 +198,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     delete:
       description: delete an organization
       operationId: deleteOrganization
@@ -218,7 +218,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationGroups:
     post:
       description: Create a new federation group
@@ -242,7 +242,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     get:
       description: Returns all federation groups
       operationId: getFederationGroups
@@ -279,7 +279,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationGroups/{federationGroupID}:
     get: 
       description: get data for one FederationGroup
@@ -304,7 +304,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'  
+                $ref: '../../../common/schemas.yaml'  
     put:
       description: update a federationGroup by ID
       operationId: updatefederationGroup
@@ -330,7 +330,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     delete:
       description: delete a federationGroup
       operationId: deletefederationGroup
@@ -350,7 +350,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
 
   /spireServers:
     post:
@@ -375,7 +375,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     get:
       description: Returns all the SpireServers 
       operationId: getSpireServers
@@ -409,7 +409,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
 
   /spireServers/{spireServerId}:
     put:
@@ -441,7 +441,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     delete:
       description: delete a SpireServer
       operationId: deleteSpireServer
@@ -461,7 +461,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationGroupMemberships:
     post:
       description: Associate a SpireServer to a Federation Group
@@ -485,7 +485,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     get:
       description: Returns all federation groups memberships
       operationId: getFederationGroupMemberships
@@ -530,7 +530,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationGroupMemberships/{membershipID}:
     get: 
       description: get data for one FederationGroup
@@ -555,7 +555,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'  
+                $ref: '../../../common/schemas.yaml'  
     put:
       description: update a federationGroupMembership by ID
       operationId: updatefederationGroupMembership
@@ -581,7 +581,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     delete:
       description: delete a federationGroup membership
       operationId: deletefederationGroupMembership
@@ -601,7 +601,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationRelationships:
     post:
       description: Creates inital request for trustbundle exchange between two SpireServers active in the same federation group
@@ -612,20 +612,20 @@ paths:
         content:
           application/jason:
             schema:
-              $ref: '../../../../common/schemas.yaml'
+              $ref: '../../../common/schemas.yaml'
       responses:
         '201': 
           description: Federation relationship creation response
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
         default:
           description: unexpected error 
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
     get:
       description: Returns all federation relationships
       operationId: getFederationRelationships
@@ -665,13 +665,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '../../../../common/schemas.yaml'
+                  $ref: '../../../common/schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
   /federationRelationships/{relationshipID}:
     get: 
       description: get data for one FederationGroup
@@ -690,13 +690,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'  
+                $ref: '../../../common/schemas.yaml'  
     put:
       description: update a federationGroupMembership by ID
       operationId: updateFederationRelationshipship
@@ -713,7 +713,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '../../../../common/schemas.yaml'
+              $ref: '../../../common/schemas.yaml'
       responses:
         '204':
           description: no content
@@ -722,7 +722,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../../../common/schemas.yaml'
+                $ref: '../../../common/schemas.yaml'
 
   /trustBundles/{trustBundleId}:
     put:
@@ -741,18 +741,18 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '../../../../common/schemas.yaml'
+              $ref: '../../../common/schemas.yaml'
       responses:
           '200':
             description: get trust bundle's response 
             content:
               application/json:
                 schema:
-                  $ref: '../../../../common/schemas.yaml'
+                  $ref: '../../../common/schemas.yaml'
           default:
             description: unexpected error
             content:
               application/json:
                 schema:
-                  $ref: '../../../../common/schemas.yaml'
+                  $ref: '../../../common/schemas.yaml'
 
