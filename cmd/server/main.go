@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"os"
 
-	api "github.com/HewlettPackard/Galadriel/pkg/server/api/v1"
+	serverapi "github.com/HewlettPackard/Galadriel/pkg/server/api/server"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
@@ -27,7 +27,7 @@ func main() {
 	var port = flag.Int("port", 8080, "Port for HTTP Galadriel server")
 	flag.Parse()
 
-	swagger, err := api.GetSwagger()
+	swagger, err := serverapi.GetSwagger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
 		os.Exit(1)
@@ -37,7 +37,7 @@ func main() {
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
-	server := api.MyDumbServer{}
+	galadriel_server := serverapi.MyDumbServer{}
 
 	// This is how you set up a basic Echo router
 	router := echo.New()
@@ -50,7 +50,7 @@ func main() {
 	router.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our store above as the handler for the interface
-	api.RegisterHandlers(router, server)
+	serverapi.RegisterHandlers(router, galadriel_server)
 
 	// And we serve HTTP until the world ends.
 	router.Logger.Fatal(router.Start(fmt.Sprintf("0.0.0.0:%d", *port)))

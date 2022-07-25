@@ -1,10 +1,9 @@
-package api
+package server
 
 import (
 	"errors"
 
 	"github.com/labstack/echo/v4"
-	""
 )
 
 type MyDumbServer struct {
