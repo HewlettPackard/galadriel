@@ -1,0 +1,9 @@
+package: harvester
+generate:
+  echo-server: true
+  client: false
+  models: true
+  embedded-spec: true
+output: pkg/server/api/harvester/harvester.gen.go
+output-options:
+  skip-prune: true

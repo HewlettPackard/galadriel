@@ -6,10 +6,12 @@
 
 Server and Client Go code is generated from the OpenAPI definition by [oapi-codegen](https://github.com/deepmap/oapi-codegen).
 
-Run the following command to generate the code:
+Run the following command to generate the code, from the root folder:
 
 ```bash
-oapi-codegen --package api api.yaml > api.gen.go
+oapi-codegen --config=oapi-codegen/schemas.cfg.yaml oapi-codegen/schemas.yaml
+oapi-codegen --config=oapi-codegen/harvester.cfg.yaml oapi-codegen/harvester.yaml
+oapi-codegen --config=oapi-codegen/server.cfg.yaml oapi-codegen/server.yaml
 ```
 
 Run the following command to have a live view of the API documentation:
