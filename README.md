@@ -11,7 +11,7 @@ Run the following command to generate the code, from the root folder:
 ```bash
 oapi-codegen --config=oapi-codegen/schemas.cfg.yaml oapi-codegen/schemas.yaml
 oapi-codegen --config=oapi-codegen/harvester.cfg.yaml oapi-codegen/harvester.yaml
-oapi-codegen --config=oapi-codegen/server.cfg.yaml oapi-codegen/server.yaml
+oapi-codegen --config=oapi-codegen/management.cfg.yaml oapi-codegen/management.yaml
 ```
 
 Run the following command to have a live view of the API documentation:
