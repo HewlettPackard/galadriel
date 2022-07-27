@@ -1,4 +1,6 @@
 name: PR Build
+env:
+  GO_VERSION: 1.18.1
 
 on:
   pull_request: {}
@@ -14,7 +16,9 @@ jobs:
    
     - name: "Setup Go"
       uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v3.2.0
-    
+      with:
+        version: v1.29
+
     - name: "Lint"
       uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
       with:
