@@ -1,4 +1,9 @@
-# spire-bridge
+# Galadriel
+
+[![CodeQL](https://github.com/HewlettPackard/Galadriel/actions/workflows/codeql.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/codeql.yml)
+[![PR Build](https://github.com/HewlettPackard/Galadriel/actions/workflows/linter.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/linter.yml)
+[![Scorecards supply-chain security](https://github.com/HewlettPackard/Galadriel/actions/workflows/scorecards.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/scorecards.yml)
+[![trivy](https://github.com/HewlettPackard/Galadriel/actions/workflows/trivy.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/trivy.yml)
 
 ## Development
 
