@@ -2,18 +2,18 @@ name: PR Build
 
 on:
   pull_request: {}
-env:
-  GO_VERSION: 1.18.1
 
 jobs:
-  lint:
+  analysis:
+    name: lint
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
-    - uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v3.2.0
-      with:
-        go-version: ${{ env.GO_VERSION }}
-    - name: Lint
+    - name: "Checkout code"
+      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+   
+    - name: "Setup Go"
+      uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v3.2.0
+    
+    - name: "Lint"
       uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
-      with:
-        go-version: ${{ env.GO_VERSION }}
