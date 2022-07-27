@@ -3,7 +3,7 @@ generate:
   echo-server: true
   client: false
   models: true
-  embedded-spec: true
+  embedded-spec: false
 output: pkg/server/api/harvester/harvester.gen.go
 output-options:
   skip-prune: true
