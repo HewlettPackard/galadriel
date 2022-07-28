@@ -8,8 +8,16 @@ import (
 
 type Member struct {
 	gorm.Model
-	BridgeID uint
-	SpiffeID string `gorm:"unique_index"`
+	BridgeID        uint
+	SpiffeID        string `gorm:"unique_index"`
+	Description     string
+	Active          bool
+	DiscoverableDir bool
+	AllowDiscovery  bool
+	Contact         string
+	EndpointURL     string            //Type string for now. Maybe changed later on
+	SPIREServerInfo map[string]string //Type string for now. Maybe changed later on
+	PermissiveMode  bool
 }
 
 type Bridge struct {
