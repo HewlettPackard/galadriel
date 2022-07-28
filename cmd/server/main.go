@@ -21,7 +21,8 @@ import (
 )
 
 func main() {
-	var port = flag.Int("port", 8080, "Port for HTTP Galadriel server")
+
+	var port = flag.Int("port", 33208, "Port for HTTP Galadriel server")
 	flag.Parse()
 
 	// Clear out the servers array in the swagger spec, that skips validating
