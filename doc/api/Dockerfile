@@ -5,7 +5,7 @@ EXPOSE 8000
 
 WORKDIR /app
 
-ADD doc/api/index.html /app/
+ADD spec/api/ doc/api/ /app/
 
 ENTRYPOINT [ "python" ]
 

@@ -156,14 +156,18 @@ $(eval $(call binary_rule,bin/spire-bridge-server,./cmd/jwtglue))
 # #		--go-spire_opt=mode=plugin \
 # #		$<
 
+CONTAINER_OPTIONS = docker podman
+CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
+     $(if $(shell which $(exec)),$(exec)))
+
 api-doc-build:
-	docker build -f dev/api/Dockerfile -t galadriel-api-doc:latest .
+	$(CONTAINER_EXEC) build -f doc/api/Dockerfile -t galadriel-api-doc:latest .
 
 api-doc: api-doc-build
-	docker run --rm \
+	$(CONTAINER_EXEC) run --rm \
 		--name galadriel-api-doc \
 		-p 8000:8000 \
-		--mount type=bind,source="${DIR}"/api/,target=/app/api,readonly \
+		--mount type=bind,source=${DIR}/spec/api,target=/app/api,readonly \
 		galadriel-api-doc:latest
 
 test: test-unit
