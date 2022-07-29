@@ -4,8 +4,6 @@ on:
   branch_protection_rule:
   schedule:
     - cron: '41 20 * * 5'
-  push:
-    branches: [ "master" ]
 
 # Declare default permissions as read only.
 permissions: read-all
