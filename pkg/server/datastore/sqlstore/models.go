@@ -1,10 +1,16 @@
-package datastore
+package sqlstore
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
-//TODO - Remember that the DeletedAt is removed in Spire
+type Model struct {
+	ID        uint `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
 
 type Member struct {
 	gorm.Model
@@ -15,8 +21,8 @@ type Member struct {
 	DiscoverableDir bool
 	AllowDiscovery  bool
 	Contact         string
-	EndpointURL     string            //Type string for now. Maybe changed later on
-	SPIREServerInfo map[string]string //Type string for now. Maybe changed later on
+	EndpointURL     string //Type string for now. Maybe changed later on
+	SPIREServerInfo string //Type string for now. Maybe changed later on
 	PermissiveMode  bool
 }
 
@@ -29,7 +35,7 @@ type Bridge struct {
 }
 
 type Organization struct {
-	gorm.Model
+	Model
 	Name    string `json:"name" gorm:"unique_index"`
 	Bridges []Bridge
 }
