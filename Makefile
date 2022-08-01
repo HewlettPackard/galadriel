@@ -82,7 +82,7 @@ ifeq (go$(go_version), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '
 	$(E)curl -sSfL $(go_url) | tar xz -C $(go_dir) --strip-components=1
 endif
 
-## Checks instsalled go version and prints the path it is installed.
+## Checks installed go version and prints the path it is installed.
 go-bin-path: go-check
 	@echo "$(go_bin_dir):${PATH}"
 
@@ -171,7 +171,7 @@ api-doc: api-doc-build
 		--mount type=bind,source=${DIR}/spec/api,target=/app/api,readonly \
 		galadriel-api-doc:latest
 
-## Perform go unit tests.
+## Runs the go unit tests.
 test: test-unit
 
 test-unit:
