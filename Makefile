@@ -1,5 +1,6 @@
 DIR := ${CURDIR}
 
+.DEFAULT_GOAL = help
 
 E:=@
 ifeq ($(V),1)
@@ -10,14 +11,11 @@ cyan := $(shell which tput > /dev/null && tput setaf 6 2>/dev/null || echo "")
 reset := $(shell which tput > /dev/null && tput sgr0 2>/dev/null || echo "")
 bold  := $(shell which tput > /dev/null && tput bold 2>/dev/null || echo "")
 
-
 .PHONY: default 
 
 default: build
 
 all: build 
-
-
 
 ############################################################################
 # OS/ARCH detection
@@ -73,7 +71,6 @@ oapi_codegen_version = 1.11.0
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
 
-
 go-check:
 ifeq (go$(go_version), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '))
 	@echo "Installing go$(go_version)..."
@@ -82,10 +79,11 @@ ifeq (go$(go_version), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '
 	$(E)curl -sSfL $(go_url) | tar xz -C $(go_dir) --strip-components=1
 endif
 
+## Checks installed go version and prints the path it is installed.
 go-bin-path: go-check
 	@echo "$(go_bin_dir):${PATH}"
 
-install-toolchain: install-protoc install-protoc-gen-go | go-check
+# install-toolchain: install-protoc install-protoc-gen-go | go-check
 
 # install-protoc: $(protoc_bin)
 
@@ -105,9 +103,6 @@ install-toolchain: install-protoc install-protoc-gen-go | go-check
 # 	$(E)curl -sSfL $(protoc_url) -o $(build_dir)/tmp.zip; unzip -q -d $(protoc_dir) $(build_dir)/tmp.zip; rm $(build_dir)/tmp.zip
 
 
-
-
-
 # protos := \
 # 	proto/jwtglue/jwtglue.proto
 
@@ -117,6 +112,8 @@ null  :=
 space := $(null) 
 
 .PHONY: build
+
+## Compile Go binaries for the Galadriel.
 build: bin/spire-bridge-server
 
 # This is the master template for compiling Go binaries
@@ -163,6 +160,7 @@ CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
 api-doc-build:
 	$(CONTAINER_EXEC) build -f doc/api/Dockerfile -t galadriel-api-doc:latest .
 
+## Build the API documentation for the Galadriel.
 api-doc: api-doc-build
 	$(CONTAINER_EXEC) run --rm \
 		--name galadriel-api-doc \
@@ -170,11 +168,49 @@ api-doc: api-doc-build
 		--mount type=bind,source=${DIR}/spec/api,target=/app/api,readonly \
 		galadriel-api-doc:latest
 
+## Runs the go unit tests.
 test: test-unit
 
 test-unit:
 	go test -cover ./...
 
+## Generate the test coverage for the code with the Go tool.
 coverage:
 	go test -v -coverprofile ./out/coverage/coverage.out ./... && \
 	go tool cover -html=./out/coverage/coverage.out -o ./out/coverage/index.html
+
+#------------------------------------------------------------------------
+# Document file
+#------------------------------------------------------------------------
+
+# VARIABLES
+NAME = Galadriel
+VERSION = 0.0.1
+AUTHOR=HPE
+
+# COLORS
+GREEN := $(shell tput -Txterm setaf 2)
+RESET := $(shell tput -Txterm sgr0)
+
+TARGET_MAX_CHAR_NUM=20
+
+## Shows help.
+help:
+	@echo "--------------------------------------------------------------------------------"
+	@echo "Author  : ${GREEN}$(AUTHOR)${RESET}"
+	@echo "Project : ${GREEN}$(NAME)${RESET}"
+	@echo "Version : ${GREEN}$(VERSION)${RESET}"
+	@echo "--------------------------------------------------------------------------------"
+	@echo ""
+	@echo "Usage:"
+	@echo "  ${GREEN}make${RESET} <target>"
+	@echo "Targets:"
+	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+		helpMessage = match(lastLine, /^## (.*)/); \
+		if (helpMessage) { \
+			helpCommand = substr($$1, 0, index($$1, ":")); \
+			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
+			printf "  ${GREEN}%-$(TARGET_MAX_CHAR_NUM)s${RESET} %s\n", helpCommand, helpMessage; \
+		} \
+	} \
+{ lastLine = $$0 }' $(MAKEFILE_LIST)
