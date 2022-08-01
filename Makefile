@@ -11,13 +11,11 @@ cyan := $(shell which tput > /dev/null && tput setaf 6 2>/dev/null || echo "")
 reset := $(shell which tput > /dev/null && tput sgr0 2>/dev/null || echo "")
 bold  := $(shell which tput > /dev/null && tput bold 2>/dev/null || echo "")
 
-
 .PHONY: default 
 
 default: build
 
 all: build 
-
 
 ############################################################################
 # OS/ARCH detection
@@ -71,7 +69,6 @@ go_path := PATH="$(go_bin_dir):$(PATH)"
 
 oapi_codegen_version = 1.11.0
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
-
 
 
 go-check:
