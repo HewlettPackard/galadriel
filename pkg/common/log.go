@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var (
+const (
 	debugLevel = "DEBUG"
 	infoLevel  = "INFO"
 	warnLevel  = "WARN"

@@ -8,6 +8,8 @@ import (
 	"github.com/HewlettPackard/Galadriel/pkg/harvester/config"
 )
 
+const defaultConfPath = "conf/harvester/harvester.conf"
+
 type HarvesterCLI struct {
 	logger *common.Logger
 }
@@ -24,7 +26,7 @@ func (c *HarvesterCLI) Run(args []string) int {
 		return 1
 	}
 
-	cfg, err := config.LoadFromDisk("conf/harvester/harvester.conf")
+	cfg, err := config.LoadFromDisk(defaultConfPath)
 
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
