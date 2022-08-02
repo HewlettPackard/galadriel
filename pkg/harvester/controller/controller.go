@@ -41,7 +41,7 @@ func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID 
 }
 
 func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, spiffeID string) error {
-	return "", errors.New("not implemented")
+	return errors.New("not implemented")
 }
 
 func (c *LocalHarvesterController) run(ctx context.Context) {

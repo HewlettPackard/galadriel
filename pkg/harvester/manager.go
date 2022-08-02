@@ -6,13 +6,14 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/server"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
+	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/api"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/config"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/server"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/spire"
 )
 
 type HarvesterManager struct {
@@ -20,7 +21,7 @@ type HarvesterManager struct {
 	controller controller.HarvesterController
 	api        api.API
 	logger     common.Logger
-	// telemetry
+	telemetry  telemetry.MetricServer
 }
 
 func NewHarvesterManager() *HarvesterManager {
@@ -46,16 +47,17 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 	cat := catalog.Catalog{
 		Spire:  spire.NewLocalSpireServer(config.HarvesterConfigSection.SpireSocketPath),
 		Server: server.NewRemoteGaladrielServer(config.HarvesterConfigSection.ServerAddress),
-		// Metric: server.NewLocalMetricServer(config.HarvesterConfigSection.MetricAddress),
 	}
+
 	controller := controller.NewLocalHarvesterController(cat)
 	api := api.NewHTTPApi(controller)
-	// telemetry := telemetry.NewTelemetry(cat)
+	// telemetry := telemetry.NewLocalMetricServer(config.HarvesterConfigSection.MetricAddress)
+	telemetry := telemetry.NewLocalMetricServer()
 
 	m.catalog = cat
 	m.controller = controller
 	m.api = api
-	// m.telemetry = telemetry
+	m.telemetry = telemetry
 
 	return nil
 }
@@ -74,6 +76,7 @@ func (m *HarvesterManager) run(ctx context.Context) {
 	plugins := []common.RunnablePlugin{
 		m.controller,
 		m.api,
+		m.telemetry,
 	}
 	wg.Add(len(plugins))
 

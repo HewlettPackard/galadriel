@@ -15,9 +15,7 @@ const (
 
 // component
 const (
-	SpireServer     = "spire_server"
-	Harvester       = "harvester"
-	GaladrielServer = "galadriel_server"
+	HarvesterController = "harvester_controller"
+	GaladrielServer     = "galadriel_server"
+	HTTPApi             = "http_api"
 )
-
-// telemetry.StartCall(m, telemetry.Datastore, telemetry.Bundle, telemetry.Create)
