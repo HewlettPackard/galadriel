@@ -28,7 +28,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.0.0
-	github.com/spiffe/spire-api-sdk v1.1.0 // indirect
+	github.com/spiffe/spire-api-sdk v1.1.0
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/zeebo/errs v1.2.2 // indirect
