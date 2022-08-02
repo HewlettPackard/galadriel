@@ -1,4 +1,9 @@
-# spire-bridge
+# Galadriel
+
+[![CodeQL](https://github.com/HewlettPackard/Galadriel/actions/workflows/codeql.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/codeql.yml)
+[![PR Build](https://github.com/HewlettPackard/Galadriel/actions/workflows/linter.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/linter.yml)
+[![Scorecards supply-chain security](https://github.com/HewlettPackard/Galadriel/actions/workflows/scorecards.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/scorecards.yml)
+[![trivy](https://github.com/HewlettPackard/Galadriel/actions/workflows/trivy.yml/badge.svg)](https://github.com/HewlettPackard/Galadriel/actions/workflows/trivy.yml)
 
 ## Development
 
@@ -6,10 +11,12 @@
 
 Server and Client Go code is generated from the OpenAPI definition by [oapi-codegen](https://github.com/deepmap/oapi-codegen).
 
-Run the following command to generate the code:
+Run the following command to generate the code, from the root folder:
 
 ```bash
-oapi-codegen --package api api.yaml > api.gen.go
+oapi-codegen --config=spec/api/schemas.cfg.yaml spec/api/schemas.yaml
+oapi-codegen --config=spec/api/harvester.cfg.yaml spec/api/harvester.yaml
+oapi-codegen --config=spec/api/management.cfg.yaml spec/api/management.yaml
 ```
 
 Run the following command to have a live view of the API documentation:

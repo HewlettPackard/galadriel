@@ -7,75 +7,6 @@ info:
 servers:
   - url: http://localhost:32308/
 
-components:
-  schemas:
-    FederationRelationship:
-      # Represents a federated relationship between SPIRE server
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        federationGroupId:
-          type: integer
-          format: int64
-        spireServer:
-          type: string
-          format: string
-        spireServerFederatedWith:
-          type: string
-          format: string
-        spireServerFederatedWithConsent:
-          type: string
-          format: string
-        spireServerConsent:
-          type: string
-          format: string
-        status:
-          type: string
-          enum:
-            - active
-            - inactive
-            - invited
-      required:
-        - id
-        - federationGroupId
-        - spireServer
-        - spireServerFederatedWith
-    TrustBundle:
-      # Represents the trust bundle of a SPIRE Server that is a member of the bridge
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        trustDomain:
-          type: string
-          format: string
-        bundle:
-          type: string
-          format: bytes
-        status:
-          type: string
-          enum:
-            - active
-            - inactive
-            - to_delete
-      required:
-        - id
-        - trustdomain
-        - bundle
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-      required:
-        - code
-        - message
 paths:
   /FederationRelationship:
     get:
@@ -108,13 +39,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FederationRelationship'
+                  $ref: './schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: './schemas.yaml'
   /FederationRelationship/{relationshipID}:
     get: 
       description: get data for one organization
@@ -133,13 +64,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FederationRelationship'
+                $ref: './schemas.yaml'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'  
+                $ref: './schemas.yaml'
     put:
       description: update an the status of a relationship by ID
       operationId: updateFederatedRelationshipStatus
@@ -156,7 +87,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/FederationRelationship'
+              $ref: './schemas.yaml'
       responses:
         '204':
           description: no content
@@ -165,7 +96,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: './schemas.yaml'
   /trustBundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
@@ -183,18 +114,18 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TrustBundle'
+              $ref: './schemas.yaml'
       responses:
           '200':
             description: get trust bundle's response 
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/TrustBundle'
+                  $ref: './schemas.yaml'
           default:
             description: unexpected error
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/Error'
+                  $ref: './schemas.yaml'
 

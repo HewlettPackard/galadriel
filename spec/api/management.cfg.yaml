@@ -1,0 +1,9 @@
+package: management
+generate:
+  echo-server: true
+  client: false
+  models: true
+  embedded-spec: false
+output: pkg/server/api/management/management.gen.go
+output-options:
+  skip-prune: true
