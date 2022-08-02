@@ -29,9 +29,9 @@ func OpenDB(connectionString, dbtype string) (*gorm.DB, error) {
 	default:
 		return nil, fmt.Errorf("unsupported database_type: %s", dbtype)
 	}
-	db, err = dialectvar.connect(ConnectionString)
+	db, err = dialectvar.connect(connectionString)
 	if err != nil {
-		return nil, errors.New("Error connecting to: %s" + ConnectionString)
+		return nil, errors.New("Error connecting to: %s" + connectionString)
 	}
 	return db, nil
 }
