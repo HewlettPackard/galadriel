@@ -29,7 +29,7 @@ func OpenDB(connectionString, dbtype string) (*gorm.DB, error) {
 	default:
 		return nil, fmt.Errorf("unsupported database_type: %s", dbtype)
 	}
-	db, err = dialectvar.connect(connectionString)
+	db, err := dialectvar.connect(connectionString)
 	if err != nil {
 		return nil, errors.New("Error connecting to: %s" + connectionString)
 	}
@@ -50,7 +50,6 @@ func InsertOrg(db *gorm.DB, org Organization) error {
 	if err := db.Where(&org).FirstOrCreate(&org).Error; err != nil {
 		return fmt.Errorf("sqlstorage error: %v", err)
 	}
-	return nil
 	return nil
 }
 
