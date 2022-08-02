@@ -14,7 +14,6 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.31.0
 	go.opentelemetry.io/otel/metric v0.31.0
 	go.opentelemetry.io/otel/sdk/metric v0.31.0
-	google.golang.org/grpc v1.48.0
 )
 
 require google.golang.org/grpc v1.48.0 // indirect
@@ -30,10 +29,9 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	go.opentelemetry.io/otel v1.8.0 // indirect
-	go.opentelemetry.io/otel/internal/metric v0.27.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.8.0 // indirect
-	go.opentelemetry.io/otel/sdk/export/metric v0.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.8.0 // indirect
+	google.golang.org/grpc v1.48.0 // indirect
 )
 
 require (
