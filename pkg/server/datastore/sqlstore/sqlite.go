@@ -7,7 +7,7 @@ import (
 
 type sqliteDB struct{}
 
-func (mydb sqliteDB) connect(ConnectionString string) (db *gorm.DB, err error) {
+func (sqliteDB) connect(connectionString string) (db *gorm.DB, err error) {
 	db, err = gorm.Open(sqlite.Open(ConnectionString), &gorm.Config{})
 	if err != nil {
 
