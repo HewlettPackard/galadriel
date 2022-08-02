@@ -16,7 +16,7 @@ const (
 	SQLite = "sqlite3"
 )
 
-func OpenDB(ConnectionString string, dbtype string) (db *gorm.DB, err error) {
+func OpenDB(connectionString, type string) (*gorm.DB, error) {
 	var dialectvar dialect
 
 	switch dbtype {
