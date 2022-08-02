@@ -11,4 +11,4 @@ scrape_configs:
 
   - job_name: 'galadriel-server'
     static_configs:
-      - targets: ['metrics:8088']
+      - targets: ['localhost:8088']
