@@ -47,11 +47,10 @@ func CreateOrganizationTableInDB(db *gorm.DB) error {
 
 func InsertOrg(db *gorm.DB, org Organization) error {
 	// Insert new ORG into the DB
-	err := db.Where(&org).FirstOrCreate(&org).Error
-	if err != nil {
-		fmt.Println("storage err: ", err)
-		return err
+	if err := db.Where(&org).FirstOrCreate(&org).Error; err != nil {
+		return fmt.Errorf("sqlstorage error: %v", err)
 	}
+	return nil
 	return nil
 }
 
