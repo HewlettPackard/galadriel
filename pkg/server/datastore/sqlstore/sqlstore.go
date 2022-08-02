@@ -27,7 +27,7 @@ func OpenDB(connectionString, type string) (*gorm.DB, error) {
 	case MySQL:
 		dialectvar = mysqlDB{}
 	default:
-		return nil, errors.New("unsupported database_type: %s" + dbtype)
+		return nil, fmt.Errorf("unsupported database_type: %s", dbtype)
 	}
 	db, err = dialectvar.connect(ConnectionString)
 	if err != nil {
