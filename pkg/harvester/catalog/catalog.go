@@ -8,4 +8,5 @@ import (
 type Catalog struct {
 	Spire  spire.SpireServer
 	Server server.GaladrielServer
+	// Metric telemetry.MetricServer
 }

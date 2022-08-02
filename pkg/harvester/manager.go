@@ -20,6 +20,7 @@ type HarvesterManager struct {
 	controller controller.HarvesterController
 	api        api.API
 	logger     common.Logger
+	// telemetry
 }
 
 func NewHarvesterManager() *HarvesterManager {
@@ -45,13 +46,16 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 	cat := catalog.Catalog{
 		Spire:  spire.NewLocalSpireServer(config.HarvesterConfigSection.SpireSocketPath),
 		Server: server.NewRemoteGaladrielServer(config.HarvesterConfigSection.ServerAddress),
+		// Metric: server.NewLocalMetricServer(config.HarvesterConfigSection.MetricAddress),
 	}
 	controller := controller.NewLocalHarvesterController(cat)
 	api := api.NewHTTPApi(controller)
+	// telemetry := telemetry.NewTelemetry(cat)
 
 	m.catalog = cat
 	m.controller = controller
 	m.api = api
+	// m.telemetry = telemetry
 
 	return nil
 }

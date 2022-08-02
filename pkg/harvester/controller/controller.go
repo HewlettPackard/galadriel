@@ -12,6 +12,7 @@ import (
 type HarvesterController interface {
 	common.RunnablePlugin
 	GetTrustBundle(context.Context, string) (string, error)
+	AddTrustBundle(context.Context, string) error
 }
 
 type LocalHarvesterController struct {
@@ -36,6 +37,10 @@ func (c *LocalHarvesterController) Run(ctx context.Context) error {
 }
 
 func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
+	return "", errors.New("not implemented")
+}
+
+func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, spiffeID string) error {
 	return "", errors.New("not implemented")
 }
 

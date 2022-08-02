@@ -11,6 +11,7 @@ import (
 type API interface {
 	common.RunnablePlugin
 	GetTrustBundle(context.Context, string) (string, error)
+	AddTrustBundle(context.Context, string) error
 }
 
 type HTTPApi struct {
@@ -36,4 +37,8 @@ func (a *HTTPApi) Run(ctx context.Context) error {
 
 func (a *HTTPApi) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
 	return "", errors.New("not implemented")
+}
+
+func (a *HTTPApi) AddTrustBundle(ctx context.Context, spiffeID string) error {
+	return errors.New("not implemented")
 }
