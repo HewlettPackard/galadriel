@@ -7,7 +7,7 @@ import (
 
 type mysqlDB struct{}
 
-func (my mysqlDB) connect(ConnectionString string) (db *gorm.DB, err error) {
+func (mysqlDB) connect(connectionString string) (db *gorm.DB, err error) {
 	db, err = gorm.Open(mysql.Open(ConnectionString), &gorm.Config{})
 	if err != nil {
 
