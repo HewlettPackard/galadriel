@@ -40,8 +40,7 @@ func CreateOrganizationTableInDB(db *gorm.DB) error {
 	// Creates the Model for the Bridge
 	result := db.AutoMigrate(&Organization{})
 	if result != nil {
-		fmt.Println("storage err: ", result)
-		return result
+		return fmt.Errorf("sqlstore error: %v", result)
 	}
 	return nil
 }
