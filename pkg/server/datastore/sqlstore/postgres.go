@@ -8,7 +8,7 @@ import (
 type postgresDB struct{}
 
 func (postgresDB) connect(connectionString string) (db *gorm.DB, err error) {
-	db, err = gorm.Open(postgres.Open(ConnectionString), &gorm.Config{})
+	db, err = gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
 
 		return nil, err
