@@ -2,18 +2,11 @@ package telemetry
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type fakeReader int
-
-func (fakeReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("error from fake reader")
-}
 
 func TestNew(t *testing.T) {
 	tests := []struct {
@@ -24,50 +17,20 @@ func TestNew(t *testing.T) {
 	}{
 		{
 			name:   "ok",
-			config: bytes.NewBuffer([]byte(`telemetry { spire_socket_path = "spire_socket_path" server_address = "server_address" }`)),
+			config: bytes.NewBuffer([]byte(`telemetry { Prometheus { host = "localhost" port = "9090"} }`)),
 			expected: &TelemetryConfig{
 				TelemetryConfigSection: &TelemetryConfigSection{
-					SpireSocketPath: "spire_socket_path",
-					ServerAddress:   "server_address",
-					LogLevel:        "INFO",
+					&PrometheusConfig{
+						Host: "localhost",
+						Port: 9090,
+					},
 				},
 			},
-		},
-		{
-			name:   "defaults",
-			config: bytes.NewBuffer([]byte(`harvester { server_address = "server_address" }`)),
-			expected: &TelemetryConfig{
-				TelemetryConfigSection: &TelemetryConfigSection{
-					SpireSocketPath: "/tmp/spire-server/private/api.sock",
-					ServerAddress:   "server_address",
-					LogLevel:        "INFO",
-				},
-			},
-		},
-		{
-			name:   "empty_config_file",
-			config: bytes.NewBufferString(``),
-			err:    "invalid configuration: harvester.server_address is required",
-		},
-		{
-			name:   "requires_server_address",
-			config: bytes.NewBufferString(`harvester { spire_socket_path = "test" }`),
-			err:    "invalid configuration: harvester.server_address is required",
 		},
 		{
 			name:   "invalid_hcl",
 			config: bytes.NewBufferString(`not a valid hcl`),
 			err:    "unable to decode configuration: At 1:17: key 'not a valid hcl' expected start of object ('{') or assignment ('=')",
-		},
-		{
-			name:   "invalid_config_reader",
-			config: nil,
-			err:    "configuration is required",
-		},
-		{
-			name:   "invalid_config_reader_error",
-			config: fakeReader(0),
-			err:    "failed to read configuration: error from fake reader",
 		},
 	}
 

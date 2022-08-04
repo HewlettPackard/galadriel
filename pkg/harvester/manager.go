@@ -27,7 +27,6 @@ type HarvesterManager struct {
 func NewHarvesterManager() *HarvesterManager {
 	return &HarvesterManager{
 		logger: *common.NewLogger(telemetry.Harvester),
-		// telemetry: *common.NewLogger("harvester_manager"),
 	}
 }
 
