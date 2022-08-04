@@ -52,9 +52,8 @@ func InsertOrg(db *gorm.DB, org Organization) error {
 	}
 	return nil
 }
-
+// RetrieveOrg retrieves an Organization from the Database. returns an error if something goes wrong.
 func RetrieveOrg(db *gorm.DB, org *Organization) error {
-	// Insert new ORG into the DB
 	result := db.Where("Name = ?", (*org).Name).First(org)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) { // If does not, throw an error
 		fmt.Println("storage err: ", gorm.ErrRecordNotFound)
