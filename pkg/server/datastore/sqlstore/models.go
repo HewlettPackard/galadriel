@@ -2,8 +2,6 @@ package sqlstore
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Model struct {
@@ -19,14 +17,14 @@ type Organization struct {
 }
 
 type Bridge struct {
-	gorm.Model
+	Model
 	OrganizationID uint   //Implicit Foreign Key
 	Description    string `gorm:"unique_index"`
 	Active         bool
 	Members        []Member
 }
 type Member struct {
-	gorm.Model
+	Model
 	BridgeID          uint //Implicit Foreign Key
 	SpiffeID          string
 	Description       string `gorm:"unique_index"`
@@ -42,7 +40,7 @@ type Member struct {
 	TrustBundles      []TrustBundle
 }
 type Membership struct {
-	gorm.Model
+	Model
 	MemberID      uint   //Implicit Foreign Key
 	JoinToken     string `gorm:"unique_index"`
 	MemberConsent bool
@@ -52,7 +50,7 @@ type Membership struct {
 
 type Relationship struct {
 	// Defines the Relationship between two Members
-	gorm.Model
+	Model
 	MemberID            uint // Implicit Foreign Key and also the SourceID for the relationship
 	TargetMemberID      uint
 	SourceMemberConsent string
@@ -63,8 +61,7 @@ type Relationship struct {
 }
 
 type TrustBundle struct {
-	gorm.Model
+	Model
 	MemberID    uint //Implicit Foreign Key
 	TrustBundle string
-	//BridgeID is implicit, as there is a 1:n relationship between Member and Bridge
 }
