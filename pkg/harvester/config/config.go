@@ -16,7 +16,6 @@ type HarvesterConfigSection struct {
 	SpireSocketPath string `hcl:"spire_socket_path"`
 	ServerAddress   string `hcl:"server_address"`
 	LogLevel        string `hcl:"log_level"`
-	// Telemetry        string `hcl:"telemetry"`
 }
 
 // New creates a new HarvesterConfig from the given input reader.
@@ -70,8 +69,4 @@ func (c *HarvesterConfig) setDefaults() {
 	if c.HarvesterConfigSection.SpireSocketPath == "" {
 		c.HarvesterConfigSection.SpireSocketPath = "/tmp/spire-server/private/api.sock"
 	}
-
-	// if c.HarvesterConfigSection.MetricServer == "" {
-	// 	c.HarvesterConfigSection.MetricServer = "/tmp/spire-server/private/api.sock"
-	// }
 }

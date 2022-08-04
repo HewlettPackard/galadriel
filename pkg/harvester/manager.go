@@ -26,7 +26,8 @@ type HarvesterManager struct {
 
 func NewHarvesterManager() *HarvesterManager {
 	return &HarvesterManager{
-		logger: *common.NewLogger("harvester_manager"),
+		logger: *common.NewLogger(telemetry.Harvester),
+		// telemetry: *common.NewLogger("harvester_manager"),
 	}
 }
 
@@ -34,6 +35,8 @@ func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterCon
 	if m.load(config) != nil {
 		panic("unable to load configuration")
 	}
+
+	ctx = context.WithValue(ctx, "serviceName", telemetry.Harvester)
 
 	defer m.Stop()
 	m.run(ctx)
@@ -51,12 +54,12 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 
 	controller := controller.NewLocalHarvesterController(cat)
 	api := api.NewHTTPApi(controller)
-	// telemetry := telemetry.NewLocalMetricServer(config.HarvesterConfigSection.MetricAddress)
-	telemetry := telemetry.NewLocalMetricServer()
 
 	m.catalog = cat
 	m.controller = controller
 	m.api = api
+
+	telemetry := telemetry.NewLocalMetricServer()
 	m.telemetry = telemetry
 
 	return nil

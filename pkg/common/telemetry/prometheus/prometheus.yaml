@@ -1,6 +1,5 @@
-# global:
-  # scrape_interval: 1m # Default 
-  # evaluation_interval: 1m # Default
+global:
+  scrape_interval: 30s # Default 
 
 # metrics_path defaults to '/metrics'
 # scheme defaults to 'http'.
@@ -11,4 +10,4 @@ scrape_configs:
 
   - job_name: 'galadriel-server'
     static_configs:
-      - targets: ['localhost:8088']
+      - targets: ['localhost:8888']

@@ -37,9 +37,11 @@ func (a *HTTPApi) Run(ctx context.Context) error {
 }
 
 func (a *HTTPApi) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
+	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Get)
 	return "", errors.New("not implemented")
 }
 
 func (a *HTTPApi) AddTrustBundle(ctx context.Context, spiffeID string) error {
+	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Add)
 	return errors.New("not implemented")
 }

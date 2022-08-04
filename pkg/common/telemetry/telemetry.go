@@ -2,15 +2,14 @@ package telemetry
 
 import (
 	"context"
-	"math/rand"
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/HewlettPackard/Galadriel/pkg/common"
 	runtimemetrics "go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/global"
-	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/histogram"
 	controller "go.opentelemetry.io/otel/sdk/metric/controller/basic"
 	"go.opentelemetry.io/otel/sdk/metric/export/aggregation"
@@ -23,18 +22,7 @@ type MetricServer interface {
 }
 
 type LocalMetricServer struct {
-	logger      common.Logger
-	FileConfig  FileConfig
-	ServiceName string
-}
-
-type FileConfig struct {
-	Prometheus *PrometheusConfig `hcl:"Prometheus"`
-}
-
-type PrometheusConfig struct {
-	Host string `hcl:"host"`
-	Port int    `hcl:"port"`
+	logger common.Logger
 }
 
 func NewLocalMetricServer() MetricServer {
@@ -54,11 +42,12 @@ func (c *LocalMetricServer) Run(ctx context.Context) error {
 	http.HandleFunc("/metrics", exporter.ServeHTTP)
 
 	go func() {
-		c.logger.Info("listenening on http://localhost:8088/metrics")
-		_ = http.ListenAndServe(":8088", nil)
-	}()
+		port := "8888"
+		c.logger.Info("Listenening on http://localhost:8888/metrics")
 
-	sampleMetric(ctx)
+		address := fmt.Sprintf(":%s", port)
+		_ = http.ListenAndServe(address, nil)
+	}()
 
 	<-ctx.Done()
 	return nil
@@ -87,20 +76,11 @@ func configureMetrics() *prometheus.Exporter {
 	return exporter
 }
 
-func sampleMetric(ctx context.Context) {
-	meter := global.MeterProvider().Meter("example")
-	counter, err := meter.SyncInt64().Counter(
-		"test.my_counter",
-		instrument.WithDescription("Just a test counter"),
-	)
-	if err != nil {
-		panic(err)
-	}
+func FormatLabel(component, entity, action string) string {
+	return fmt.Sprintf("%s.%s.%s", component, entity, action)
+}
 
-	for {
-		n := rand.Intn(100)
-		time.Sleep(time.Duration(n) * time.Millisecond)
-
-		counter.Add(ctx, 1)
-	}
+func InitiateMeterProvider(ctx context.Context) metric.Meter {
+	serviceName := fmt.Sprintf("%v", ctx.Value("serviceName"))
+	return global.MeterProvider().Meter(serviceName)
 }

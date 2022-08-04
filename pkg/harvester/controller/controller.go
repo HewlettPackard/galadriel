@@ -38,10 +38,12 @@ func (c *LocalHarvesterController) Run(ctx context.Context) error {
 }
 
 func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
+	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Get)
 	return "", errors.New("not implemented")
 }
 
 func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, spiffeID string) error {
+	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
 	return errors.New("not implemented")
 }
 
@@ -52,6 +54,7 @@ func (c *LocalHarvesterController) run(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			c.logger.Debug("Doing something")
+			telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
 		case <-ctx.Done():
 			c.logger.Debug("Done")
 			return

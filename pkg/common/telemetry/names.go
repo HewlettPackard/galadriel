@@ -8,6 +8,7 @@ const (
 // action
 const (
 	Add    = "add"
+	Get    = "get"
 	Remove = "remove"
 	List   = "list"
 	Create = "create"
@@ -17,6 +18,7 @@ const (
 const (
 	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
+	Harvester           = "harvester"
 	GaladrielServer     = "galadriel_server"
 	HTTPApi             = "http_api"
 )
