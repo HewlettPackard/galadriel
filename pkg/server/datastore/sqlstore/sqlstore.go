@@ -38,9 +38,9 @@ func OpenDB(connectionString, dbtype string) (*gorm.DB, error) {
 
 func CreateOrganizationTableInDB(db *gorm.DB) error {
 	// Creates the Model for the Bridge
-	result := db.AutoMigrate(&Organization{})
-	if result != nil {
-		return fmt.Errorf("sqlstore error: %v", result)
+	err := db.AutoMigrate(&Organization{})
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	return nil
 }
