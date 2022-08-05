@@ -39,8 +39,8 @@ func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterCon
 
 	defer m.Stop()
 
-	ctx_key := key(telemetry.PackageName)
-	ctx = context.WithValue(ctx, ctx_key, telemetry.Harvester)
+	ctxKey := key(telemetry.PackageName)
+	ctx = context.WithValue(ctx, ctxKey, telemetry.Harvester)
 
 	m.run(ctx)
 }

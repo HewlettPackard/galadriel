@@ -83,8 +83,8 @@ func FormatLabel(component, entity, action string) string {
 
 func InitiateMeterProvider(ctx context.Context) metric.Meter {
 	type key string
-	ctx_key := key(PackageName)
-	packageName := fmt.Sprintf("%v", ctx.Value(ctx_key))
+	ctxKey := key(PackageName)
+	packageName := fmt.Sprintf("%v", ctx.Value(ctxKey))
 
 	return global.MeterProvider().Meter(packageName)
 }
