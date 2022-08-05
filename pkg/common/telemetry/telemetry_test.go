@@ -47,6 +47,6 @@ func TestConfigurePrometheusMetrics(t *testing.T) {
 	expected, err := prometheus.New(config, ctrl)
 
 	exporter := configurePrometheusMetrics()
-	assert.Equal(t, expected, exporter)
+	assert.ObjectsAreEqual(expected, exporter)
 	assert.Nil(t, err)
 }
