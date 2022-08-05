@@ -13,10 +13,6 @@ import (
 	selector "go.opentelemetry.io/otel/sdk/metric/selector/simple"
 )
 
-type ctxValue struct {
-	key string
-}
-
 func TestNewLocalMetricServer(t *testing.T) {
 	expected := &LocalMetricServer{
 		logger: *common.NewLogger(MetricsServer),
