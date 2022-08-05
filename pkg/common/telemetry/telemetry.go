@@ -44,10 +44,10 @@ func (c *LocalMetricServer) Run(ctx context.Context) error {
 
 	go func() {
 		port := "8888"
-		c.logger.Info("Listenening on http://localhost:8888/metrics")
+		c.logger.Info("Listening on http://localhost:8888/metrics")
 
 		address := fmt.Sprintf(":%s", port)
-		_ = http.ListenAndServe(address, nil)
+		http.ListenAndServe(address, nil)
 	}()
 
 	<-ctx.Done()
@@ -81,7 +81,7 @@ func FormatLabel(component, entity, action string) string {
 	return fmt.Sprintf("%s.%s.%s", component, entity, action)
 }
 
-func InitiateMeterProvider(ctx context.Context) metric.Meter {
+func InitializeMeterProvider(ctx context.Context) metric.Meter {
 	type key string
 	ctxKey := key(PackageName)
 	packageName := fmt.Sprintf("%v", ctx.Value(ctxKey))
