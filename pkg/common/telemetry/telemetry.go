@@ -47,7 +47,10 @@ func (c *LocalMetricServer) Run(ctx context.Context) error {
 		c.logger.Info("Listening on http://localhost:8888/metrics")
 
 		address := fmt.Sprintf(":%s", port)
-		http.ListenAndServe(address, nil)
+		err := http.ListenAndServe(address, nil)
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	<-ctx.Done()
