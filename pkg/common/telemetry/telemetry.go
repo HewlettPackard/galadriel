@@ -38,7 +38,8 @@ func (c *LocalMetricServer) Run(ctx context.Context) error {
 		panic(err)
 	}
 
-	exporter := configureMetrics()
+	// TODO: verify telemetry plugin config to run specified plugin
+	exporter := configurePrometheusMetrics()
 	http.HandleFunc("/metrics", exporter.ServeHTTP)
 
 	go func() {
@@ -53,7 +54,7 @@ func (c *LocalMetricServer) Run(ctx context.Context) error {
 	return nil
 }
 
-func configureMetrics() *prometheus.Exporter {
+func configurePrometheusMetrics() *prometheus.Exporter {
 	config := prometheus.Config{}
 
 	ctrl := controller.New(
@@ -81,6 +82,9 @@ func FormatLabel(component, entity, action string) string {
 }
 
 func InitiateMeterProvider(ctx context.Context) metric.Meter {
-	serviceName := fmt.Sprintf("%v", ctx.Value("serviceName"))
-	return global.MeterProvider().Meter(serviceName)
+	type key string
+	ctx_key := key(PackageName)
+	packageName := fmt.Sprintf("%v", ctx.Value(ctx_key))
+
+	return global.MeterProvider().Meter(packageName)
 }

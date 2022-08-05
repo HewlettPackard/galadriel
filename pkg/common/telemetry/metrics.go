@@ -10,9 +10,9 @@ func Count(ctx context.Context, component, entity, action string) {
 
 	meter := InitiateMeterProvider(ctx)
 
-	metric_name := FormatLabel(component, entity, action)
+	label := FormatLabel(component, entity, action)
 	updown_counter, err := meter.SyncInt64().UpDownCounter(
-		metric_name,
+		label,
 	)
 	if err != nil {
 		panic(err)

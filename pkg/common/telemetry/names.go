@@ -1,8 +1,15 @@
 package telemetry
 
+// package name
+const (
+	Harvester = "harvester"
+	Galadriel = "harvester"
+)
+
 // entity
 const (
 	TrustBundle = "trust_bundle"
+	PackageName = "package_name"
 )
 
 // action
@@ -18,7 +25,7 @@ const (
 const (
 	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
-	Harvester           = "harvester"
-	GaladrielServer     = "galadriel_server"
-	HTTPApi             = "http_api"
+
+	GaladrielServer = "galadriel_server"
+	HTTPApi         = "http_api"
 )
