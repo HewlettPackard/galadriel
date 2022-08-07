@@ -18,12 +18,12 @@ type SpireServer interface {
 	// CreateFederationRelationship(context.Context, *spiffebundle.Bundle) (*spireapi.Status, error)
 }
 
-type LocalSpireServer struct {
-	client Client
+type localSpireServer struct {
+	client client
 	logger common.Logger
 }
 
-type Client interface {
+type client interface {
 	TrustDomainClient
 	BundleClient
 }
@@ -33,13 +33,13 @@ func NewLocalSpireServer(socketPath string) SpireServer {
 	if err != nil {
 		panic(err)
 	}
-	return &LocalSpireServer{
+	return &localSpireServer{
 		client: client,
 		logger: *common.NewLogger("local_spire_server"),
 	}
 }
 
-func (s *LocalSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle, error) {
+func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle, error) {
 	bundle, err := s.client.GetBundle(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bundle: %w", err)
@@ -47,7 +47,7 @@ func (s *LocalSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle,
 	return bundle, nil
 }
 
-func (s *LocalSpireServer) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
+func (s *localSpireServer) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
 	feds, err := s.client.ListFederationRelationships(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list federation relationships: %w", err)
@@ -86,7 +86,7 @@ func (s *LocalSpireServer) ListFederationRelationships(ctx context.Context) ([]*
 // 	return nil, nil
 // }
 
-func dialSocket(ctx context.Context, path string) (Client, error) {
+func dialSocket(ctx context.Context, path string) (client, error) {
 	var target string
 
 	if filepath.IsAbs(path) {
