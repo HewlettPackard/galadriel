@@ -13,17 +13,17 @@ import (
 func protoToBundle(in *apitypes.Bundle) (*spiffebundle.Bundle, error) {
 	td, err := spiffeid.TrustDomainFromString(in.TrustDomain)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse trust domain: %v", err)
 	}
 
 	x509authorities, err := protoToX509Certificates(in.X509Authorities)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse x509 authorities: %v", err)
 	}
 
 	jwtAuthorities, err := protoToJWTAuthorities(in.JwtAuthorities)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse jwt authorities: %v", err)
 	}
 
 	out := spiffebundle.New(td)
@@ -54,7 +54,7 @@ func protoToJWTAuthorities(in []*apitypes.JWTKey) (map[string]crypto.PublicKey, 
 	for _, sjwt := range in {
 		pub, err := x509.ParsePKIXPublicKey(sjwt.PublicKey)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse public key id %s: %v", sjwt.KeyId, err)
 		}
 		out[sjwt.KeyId] = pub
 	}
@@ -62,13 +62,13 @@ func protoToJWTAuthorities(in []*apitypes.JWTKey) (map[string]crypto.PublicKey, 
 	return out, nil
 }
 
-func federationRelationshipsToProto(in []FederationRelationship) []*apitypes.FederationRelationship {
+func federationRelationshipsToProto(in []FederationRelationship) ([]*apitypes.FederationRelationship, error) {
 	out := make([]*apitypes.FederationRelationship, len(in))
 
 	for _, inRel := range in {
 		tdBundle, err := bundleToProto(inRel.TrustDomainBundle)
 		if err != nil {
-			return nil //,fmt.Errof("failed to convert trust domain bundle to proto: %v", err)
+			return nil, fmt.Errorf("failed to convert trust domain bundle to proto: %v", err)
 		}
 
 		outRel := &apitypes.FederationRelationship{
@@ -90,11 +90,13 @@ func federationRelationshipsToProto(in []FederationRelationship) []*apitypes.Fed
 					EndpointSpiffeId: inRel.BundleEndpointProfile.(HTTPSSpiffeBundleEndpointProfile).SpiffeID.String(),
 				},
 			}
+		default:
+			return nil, fmt.Errorf("unsupported bundle endpoint profile: %T", inRel.BundleEndpointProfile)
 		}
 
 	}
 
-	return out
+	return out, nil
 }
 
 func bundleToProto(in *spiffebundle.Bundle) (*apitypes.Bundle, error) {
@@ -103,13 +105,13 @@ func bundleToProto(in *spiffebundle.Bundle) (*apitypes.Bundle, error) {
 	}
 	x509Auths, err := x509AuthoritiesToProto(in.X509Authorities())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert x509 authorities to proto: %v", err)
 	}
 	out.X509Authorities = x509Auths
 
 	jwtAuths, err := jwtAuthoritiesToProto(in.JWTAuthorities())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert jwt authorities to proto: %v", err)
 	}
 	out.JwtAuthorities = jwtAuths
 

@@ -67,7 +67,7 @@ func (c trustDomainClient) ListFederationRelationships(ctx context.Context) ([]*
 		}
 		page, err := protoToFederationsRelationships(res)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse federation relationships: %v", err)
 		}
 
 		rels = append(rels, page...)
@@ -83,15 +83,19 @@ func (c trustDomainClient) ListFederationRelationships(ctx context.Context) ([]*
 }
 
 func (c trustDomainClient) CreateFederationReslationships(ctx context.Context, federationRelationships []FederationRelationship) ([]*FederationRelationshipResult, error) {
-	res, err := c.client.BatchCreateFederationRelationship(ctx, &trustdomainv1.BatchCreateFederationRelationshipRequest{
-		FederationRelationships: federationRelationshipsToProto(federationRelationships),
-	})
+	protoFedRels, err := federationRelationshipsToProto(federationRelationships)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert federation relationships to proto: %v", err)
 	}
+
+	res, err := c.client.BatchCreateFederationRelationship(ctx, &trustdomainv1.BatchCreateFederationRelationshipRequest{FederationRelationships: protoFedRels})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create federation relationships: %v", err)
+	}
+
 	rels, err := protoToFederationRelatioshipResult(res)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse federation relationship results: %v", err)
 	}
 
 	return rels, nil
@@ -123,7 +127,7 @@ func protoToFederationsRelationships(in *trustdomainv1.ListFederationRelationshi
 	for _, inRel := range in.FederationRelationships {
 		outRel, err := protoToFederationsRelationship(inRel)
 		if err != nil {
-			return nil, fmt.Errorf("failed parsing federated relationship: %v", err)
+			return nil, fmt.Errorf("failed to parse federated relationship: %v", err)
 		}
 		out = append(out, outRel)
 	}
@@ -134,15 +138,15 @@ func protoToFederationsRelationships(in *trustdomainv1.ListFederationRelationshi
 func protoToFederationsRelationship(in *apitypes.FederationRelationship) (*FederationRelationship, error) {
 	td, err := spiffeid.TrustDomainFromString(in.TrustDomain)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing federated trust domain: %v", err)
+		return nil, fmt.Errorf("failed to parse federated trust domain: %v", err)
 	}
 	bundle, err := protoToBundle(in.TrustDomainBundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing federated trust bundle: %v", err)
+		return nil, fmt.Errorf("failed to parse federated trust bundle: %v", err)
 	}
 	profile, err := protoToBundleProfile(in)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing federated profile: %v", err)
+		return nil, fmt.Errorf("failed to parse federated profile: %v", err)
 	}
 
 	out := &FederationRelationship{
