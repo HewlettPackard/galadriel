@@ -53,13 +53,30 @@ func NewTrustDomainClient(cc grpc.ClientConnInterface) TrustDomainClient {
 }
 
 func (c trustDomainClient) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
-	res, err := c.client.ListFederationRelationships(ctx, &trustdomainv1.ListFederationRelationshipsRequest{})
-	if err != nil {
-		return nil, err
-	}
-	rels, err := protoToFederationsRelationships(res)
-	if err != nil {
-		return nil, err
+	var rels []*FederationRelationship
+	var pageToken string
+	pageSize := 100
+
+	for {
+		res, err := c.client.ListFederationRelationships(ctx, &trustdomainv1.ListFederationRelationshipsRequest{
+			PageToken: pageToken,
+			PageSize:  int32(pageSize),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to list federation relationships: %v", err)
+		}
+		page, err := protoToFederationsRelationships(res)
+		if err != nil {
+			return nil, err
+		}
+
+		rels = append(rels, page...)
+
+		pageToken = res.NextPageToken
+		if res.NextPageToken == "" {
+			break
+		}
+
 	}
 
 	return rels, nil
@@ -72,7 +89,7 @@ func (c trustDomainClient) CreateFederationReslationships(ctx context.Context, f
 	if err != nil {
 		return nil, err
 	}
-	rels, err := parseResults(res)
+	rels, err := protoToFederationRelatioshipResult(res)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +97,7 @@ func (c trustDomainClient) CreateFederationReslationships(ctx context.Context, f
 	return rels, nil
 }
 
-func parseResults(in *trustdomainv1.BatchCreateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
+func protoToFederationRelatioshipResult(in *trustdomainv1.BatchCreateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
 	out := make([]*FederationRelationshipResult, len(in.Results))
 
 	for _, r := range in.Results {
