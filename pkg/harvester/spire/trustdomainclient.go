@@ -116,15 +116,3 @@ func (c trustDomainClient) DeleteFederationRelationships(ctx context.Context, tr
 
 	return rels, nil
 }
-
-func trustDomainsToStrings(in []*spiffeid.TrustDomain) ([]string, error) {
-	var out []string
-	for _, td := range in {
-		if td == nil || td.IsZero() {
-			return nil, fmt.Errorf("invalid trust domain: %v", td)
-		}
-		out = append(out, td.String())
-	}
-
-	return out, nil
-}
