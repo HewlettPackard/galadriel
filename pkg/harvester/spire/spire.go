@@ -15,7 +15,7 @@ import (
 type SpireServer interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
 	ListFederationRelationships(context.Context) ([]*FederationRelationship, error)
-	// CreateFederationRelationship(context.Context, *spiffebundle.Bundle) (*spireapi.Status, error)
+	CreateFederationRelationships(context.Context, []*FederationRelationship) ([]*FederationRelationshipResult, error)
 }
 
 type localSpireServer struct {
@@ -42,7 +42,7 @@ func NewLocalSpireServer(socketPath string) SpireServer {
 func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle, error) {
 	bundle, err := s.client.GetBundle(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get bundle: %w", err)
+		return nil, fmt.Errorf("failed to get bundle: %v", err)
 	}
 	return bundle, nil
 }
@@ -50,41 +50,24 @@ func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle,
 func (s *localSpireServer) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
 	feds, err := s.client.ListFederationRelationships(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list federation relationships: %w", err)
+		return nil, fmt.Errorf("failed to list federation relationships: %v", err)
 	}
 	return feds, nil
 }
 
-// func (s *LocalSpireServer) CreateFederationRelationship(ctx context.Context, bundle *spiffebundle.Bundle) (*spireapi.Status, error) {
-// 	x509bundle := bundle.X509Bundle()
+func (s *localSpireServer) CreateFederationRelationships(ctx context.Context, rels []*FederationRelationship) ([]*FederationRelationshipResult, error) {
+	res, err := s.client.CreateFederationRelationships(ctx, rels)
 
-// 	s.logger.Debug("Creating federation relationship with", bundle.TrustDomain().ID())
-// 	spireSpiffeId, _ := bundle.TrustDomain().ID().AppendPath("/spire/server")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create federation relationship: %v", err)
+	}
 
-// 	status, err := s.client.CreateFederationRelationships(ctx, []spireapi.FederationRelationship{
-// 		{
-// 			TrustDomain:       x509bundle.TrustDomain(),
-// 			TrustDomainBundle: bundle,
-// 			// TODO: pass this in as a parameter
-// 			BundleEndpointURL: "https://localhost:8442",
-// 			// TODO: pass this in as a parameter
-// 			BundleEndpointProfile: spireapi.HTTPSSPIFFEProfile{
-// 				EndpointSPIFFEID: spireSpiffeId,
-// 			},
-// 		},
-// 	})
+	if len(res) > len(rels) {
+		s.logger.Warn("Creating a %d federation relationship returned %d responses", len(rels), len(res))
+	}
 
-// 	if err != nil || len(status) == 0 {
-// 		return nil, fmt.Errorf("failed to create federation relationship: %w", err)
-// 	}
-
-// 	if len(status) > 1 {
-// 		s.logger.Warn("Creating a single federation relationship returned multiple responses", status)
-// 	}
-
-// 	return &status[0], nil
-// 	return nil, nil
-// }
+	return res, nil
+}
 
 func dialSocket(ctx context.Context, path string) (client, error) {
 	var target string
@@ -96,7 +79,7 @@ func dialSocket(ctx context.Context, path string) (client, error) {
 	}
 	grpcClient, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial API socket: %w", err)
+		return nil, fmt.Errorf("failed to dial API socket: %v", err)
 	}
 
 	return struct {

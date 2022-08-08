@@ -24,12 +24,12 @@ type bundleClient struct {
 func (c bundleClient) GetBundle(ctx context.Context) (*spiffebundle.Bundle, error) {
 	bundle, err := c.client.GetBundle(ctx, &bundlev1.GetBundleRequest{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get bundle: %w", err)
+		return nil, fmt.Errorf("failed to get bundle: %v", err)
 	}
 
 	spiffeBundle, err := protoToBundle(bundle)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse spire server bundle response: %w", err)
+		return nil, fmt.Errorf("failed to parse spire server bundle response: %v", err)
 	}
 
 	return spiffeBundle, nil
