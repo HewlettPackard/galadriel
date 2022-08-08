@@ -8,7 +8,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/pkg/errors v0.9.1
-	github.com/spiffe/spire-controller-manager v0.2.1
 	github.com/stretchr/testify v1.7.1
 	google.golang.org/grpc v1.48.0
 )

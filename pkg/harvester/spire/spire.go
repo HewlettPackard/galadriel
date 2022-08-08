@@ -8,6 +8,7 @@ import (
 
 	"github.com/HewlettPackard/Galadriel/pkg/common"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -16,6 +17,8 @@ type SpireServer interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
 	ListFederationRelationships(context.Context) ([]*FederationRelationship, error)
 	CreateFederationRelationships(context.Context, []*FederationRelationship) ([]*FederationRelationshipResult, error)
+	UpdateFederationRelationships(context.Context, []*FederationRelationship) ([]*FederationRelationshipResult, error)
+	DeleteFederationRelationships(context.Context, []*spiffeid.TrustDomain) ([]*FederationRelationshipResult, error)
 }
 
 type localSpireServer struct {
@@ -59,14 +62,46 @@ func (s *localSpireServer) CreateFederationRelationships(ctx context.Context, re
 	res, err := s.client.CreateFederationRelationships(ctx, rels)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create federation relationship: %v", err)
+		return nil, fmt.Errorf("failed to create federation relationships: %v", err)
 	}
 
 	if len(res) > len(rels) {
-		s.logger.Warn("Creating a %d federation relationship returned %d responses", len(rels), len(res))
+		s.logger.Warn("Creating %d federation relationships returned %d responses", len(rels), len(res))
 	}
 
 	return res, nil
+}
+
+func (s *localSpireServer) UpdateFederationRelationships(ctx context.Context, rels []*FederationRelationship) ([]*FederationRelationshipResult, error) {
+	res, err := s.client.UpdateFederationRelationships(ctx, rels)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update federation relationships: %v", err)
+	}
+
+	if len(res) > len(rels) {
+		s.logger.Warn("Updating %d federation relationships returned %d responses", len(rels), len(res))
+	}
+
+	return res, nil
+}
+
+func (s *localSpireServer) DeleteFederationRelationships(ctx context.Context, trustDomains []*spiffeid.TrustDomain) ([]*FederationRelationshipResult, error) {
+	res, err := s.client.DeleteFederationRelationships(ctx, trustDomains)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete federarion relationships: %v", err)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete federation relationships: %v", err)
+	}
+
+	if len(res) > len(trustDomains) {
+		s.logger.Warn("Deleting %d federation relationships returned %d responses", len(trustDomains), len(res))
+	}
+
+	return res, nil
+
 }
 
 func dialSocket(ctx context.Context, path string) (client, error) {

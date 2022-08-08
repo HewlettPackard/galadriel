@@ -31,12 +31,13 @@ func (HTTPSSpiffeBundleEndpointProfile) Name() string {
 }
 
 type FederationRelationshipResult struct {
-	status                 *Status
+	status                 *FederationRelationshipResultStatus
 	federationRelationship *FederationRelationship
 }
 
-type Status struct {
+type FederationRelationshipResultStatus struct {
 	// A status code, which should be an enum value of google.rpc.Code.
-	code    int32
-	message string
+	code        int32
+	message     string
+	trustDomain string
 }
