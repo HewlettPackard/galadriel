@@ -3,7 +3,6 @@ package spire
 import (
 	"context"
 	"fmt"
-	"io"
 	"path/filepath"
 
 	"github.com/HewlettPackard/Galadriel/pkg/common"
@@ -36,6 +35,7 @@ func NewLocalSpireServer(socketPath string) SpireServer {
 	if err != nil {
 		panic(err)
 	}
+
 	return &localSpireServer{
 		client: client,
 		logger: *common.NewLogger("local_spire_server"),
@@ -47,6 +47,7 @@ func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bundle: %v", err)
 	}
+
 	return bundle, nil
 }
 
@@ -55,12 +56,12 @@ func (s *localSpireServer) ListFederationRelationships(ctx context.Context) ([]*
 	if err != nil {
 		return nil, fmt.Errorf("failed to list federation relationships: %v", err)
 	}
+
 	return feds, nil
 }
 
 func (s *localSpireServer) CreateFederationRelationships(ctx context.Context, rels []*FederationRelationship) ([]*FederationRelationshipResult, error) {
 	res, err := s.client.CreateFederationRelationships(ctx, rels)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create federation relationships: %v", err)
 	}
@@ -74,7 +75,6 @@ func (s *localSpireServer) CreateFederationRelationships(ctx context.Context, re
 
 func (s *localSpireServer) UpdateFederationRelationships(ctx context.Context, rels []*FederationRelationship) ([]*FederationRelationshipResult, error) {
 	res, err := s.client.UpdateFederationRelationships(ctx, rels)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to update federation relationships: %v", err)
 	}
@@ -90,10 +90,6 @@ func (s *localSpireServer) DeleteFederationRelationships(ctx context.Context, tr
 	res, err := s.client.DeleteFederationRelationships(ctx, trustDomains)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete federarion relationships: %v", err)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete federation relationships: %v", err)
 	}
 
 	if len(res) > len(trustDomains) {
@@ -120,10 +116,8 @@ func dialSocket(ctx context.Context, path string) (client, error) {
 	return struct {
 		TrustDomainClient
 		BundleClient
-		io.Closer
 	}{
 		TrustDomainClient: NewTrustDomainClient(grpcClient),
 		BundleClient:      NewBundleClient(grpcClient),
-		Closer:            grpcClient,
 	}, nil
 }
