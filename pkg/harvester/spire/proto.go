@@ -138,7 +138,7 @@ func jwtAuthoritiesToProto(in map[string]crypto.PublicKey) ([]*apitypes.JWTKey, 
 
 	for k, v := range in {
 		if k == "" {
-			return nil, fmt.Errorf("JWT key is missing kid")
+			return nil, fmt.Errorf("JWT key is missing key id")
 		}
 		pk, err := x509.MarshalPKIXPublicKey(v)
 		if err != nil {
