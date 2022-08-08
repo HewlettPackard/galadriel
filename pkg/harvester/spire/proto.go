@@ -36,7 +36,7 @@ func protoToBundle(in *apitypes.Bundle) (*spiffebundle.Bundle, error) {
 }
 
 func protoToX509Certificates(in []*apitypes.X509Certificate) ([]*x509.Certificate, error) {
-	out := make([]*x509.Certificate, len(in))
+	var out []*x509.Certificate
 
 	for _, sc := range in {
 		cert, err := x509.ParseCertificate(sc.Asn1)
@@ -64,7 +64,7 @@ func protoToJWTAuthorities(in []*apitypes.JWTKey) (map[string]crypto.PublicKey, 
 }
 
 func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.FederationRelationship, error) {
-	out := make([]*apitypes.FederationRelationship, len(in))
+	var out []*apitypes.FederationRelationship
 
 	for _, inRel := range in {
 		tdBundle, err := bundleToProto(inRel.TrustDomainBundle)
@@ -120,7 +120,7 @@ func bundleToProto(in *spiffebundle.Bundle) (*apitypes.Bundle, error) {
 }
 
 func x509AuthoritiesToProto(in []*x509.Certificate) ([]*apitypes.X509Certificate, error) {
-	out := make([]*apitypes.X509Certificate, len(in))
+	var out []*apitypes.X509Certificate
 
 	for _, c := range out {
 		if c.Asn1 == nil || len(c.Asn1) == 0 {
@@ -134,7 +134,7 @@ func x509AuthoritiesToProto(in []*x509.Certificate) ([]*apitypes.X509Certificate
 }
 
 func jwtAuthoritiesToProto(in map[string]crypto.PublicKey) ([]*apitypes.JWTKey, error) {
-	out := make([]*apitypes.JWTKey, len(in))
+	var out []*apitypes.JWTKey
 
 	for k, v := range in {
 		if k == "" {
@@ -159,7 +159,7 @@ func jwtAuthoritiesToProto(in map[string]crypto.PublicKey) ([]*apitypes.JWTKey, 
 // TODO: the next two functions (create and update) are the same but take a different argument.
 // The third function (delete) has minor differences. Refactor to reuse code, probably with interfaces or generics.
 func protoCreateToFederationRelatioshipResult(in *trustdomainv1.BatchCreateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
-	out := make([]*FederationRelationshipResult, len(in.GetResults()))
+	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
 		frel, err := protoToFederationsRelationship(r.GetFederationRelationship())
@@ -180,7 +180,7 @@ func protoCreateToFederationRelatioshipResult(in *trustdomainv1.BatchCreateFeder
 }
 
 func protoUpdateToFederationRelatioshipResult(in *trustdomainv1.BatchUpdateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
-	out := make([]*FederationRelationshipResult, len(in.GetResults()))
+	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
 		frel, err := protoToFederationsRelationship(r.GetFederationRelationship())
@@ -201,7 +201,7 @@ func protoUpdateToFederationRelatioshipResult(in *trustdomainv1.BatchUpdateFeder
 }
 
 func protoDeleteToFederationRelatioshipResult(in *trustdomainv1.BatchDeleteFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
-	out := make([]*FederationRelationshipResult, len(in.GetResults()))
+	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
 		rOut := &FederationRelationshipResult{
@@ -219,6 +219,7 @@ func protoDeleteToFederationRelatioshipResult(in *trustdomainv1.BatchDeleteFeder
 
 func protoToFederationsRelationships(in *trustdomainv1.ListFederationRelationshipsResponse) ([]*FederationRelationship, error) {
 	var out []*FederationRelationship
+
 	for _, inRel := range in.FederationRelationships {
 		outRel, err := protoToFederationsRelationship(inRel)
 		if err != nil {
@@ -256,6 +257,7 @@ func protoToFederationsRelationship(in *apitypes.FederationRelationship) (*Feder
 
 func protoToBundleProfile(in *apitypes.FederationRelationship) (BundleEndpointProfile, error) {
 	var out BundleEndpointProfile
+
 	switch in.BundleEndpointProfile.(type) {
 	case *apitypes.FederationRelationship_HttpsWeb:
 		out = HTTPSWebBundleEndpointProfile{}
@@ -267,6 +269,8 @@ func protoToBundleProfile(in *apitypes.FederationRelationship) (BundleEndpointPr
 		out = HTTPSSpiffeBundleEndpointProfile{
 			SpiffeID: spiffeId,
 		}
+	default:
+		return nil, fmt.Errorf("unknown bundle endpoint profile type: %T", in.BundleEndpointProfile)
 	}
 
 	return out, nil
@@ -274,6 +278,7 @@ func protoToBundleProfile(in *apitypes.FederationRelationship) (BundleEndpointPr
 
 func trustDomainsToStrings(in []*spiffeid.TrustDomain) ([]string, error) {
 	var out []string
+
 	for _, td := range in {
 		if td == nil || td.IsZero() {
 			return nil, fmt.Errorf("invalid trust domain: %v", td)
