@@ -158,7 +158,7 @@ func jwtAuthoritiesToProto(in map[string]crypto.PublicKey) ([]*apitypes.JWTKey, 
 
 // TODO: the next two functions (create and update) are the same but take a different argument.
 // The third function (delete) has minor differences. Refactor to reuse code, probably with interfaces or generics.
-func protoCreateToFederationRelatioshipResult(in *trustdomainv1.BatchCreateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
+func protoCreateToFederationRelationshipResult(in *trustdomainv1.BatchCreateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
@@ -179,7 +179,7 @@ func protoCreateToFederationRelatioshipResult(in *trustdomainv1.BatchCreateFeder
 	return out, nil
 }
 
-func protoUpdateToFederationRelatioshipResult(in *trustdomainv1.BatchUpdateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
+func protoUpdateToFederationRelationshipResult(in *trustdomainv1.BatchUpdateFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
@@ -200,7 +200,7 @@ func protoUpdateToFederationRelatioshipResult(in *trustdomainv1.BatchUpdateFeder
 	return out, nil
 }
 
-func protoDeleteToFederationRelatioshipResult(in *trustdomainv1.BatchDeleteFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
+func protoDeleteToFederationRelationshipResult(in *trustdomainv1.BatchDeleteFederationRelationshipResponse) ([]*FederationRelationshipResult, error) {
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {

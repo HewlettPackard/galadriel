@@ -67,7 +67,7 @@ func (c trustDomainClient) CreateFederationRelationships(ctx context.Context, fe
 		return nil, fmt.Errorf("failed to create federation relationships: %v", err)
 	}
 
-	rels, err := protoCreateToFederationRelatioshipResult(res)
+	rels, err := protoCreateToFederationRelationshipResult(res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse federation relationship results: %v", err)
 	}
@@ -88,7 +88,7 @@ func (c trustDomainClient) UpdateFederationRelationships(ctx context.Context, fe
 		return nil, fmt.Errorf("failed to update federation relationships: %v", err)
 	}
 
-	rels, err := protoUpdateToFederationRelatioshipResult(res)
+	rels, err := protoUpdateToFederationRelationshipResult(res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse federation relationship results: %v", err)
 	}
@@ -109,7 +109,7 @@ func (c trustDomainClient) DeleteFederationRelationships(ctx context.Context, tr
 		return nil, fmt.Errorf("failed to delete federation relationships: %v", err)
 	}
 
-	rels, err := protoDeleteToFederationRelatioshipResult(res)
+	rels, err := protoDeleteToFederationRelationshipResult(res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse federation relationship results: %v", err)
 	}
