@@ -124,23 +124,21 @@ func CreateTrustbundleTableInDB(db *gorm.DB) error {
 }
 
 func CreateOrganization(db *gorm.DB, org Organization) error {
-	// Insert a new Organization into the DB
+	// Insert a new Organization into the DB.
+	// Ignores and returns nil if entry already exists. Returns an error if creation fails
 	err := db.Where(&org).FirstOrCreate(&org).Error
 	if err != nil {
-		return fmt.Errorf("sqlstore error: automigrate: %v", err)
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	return nil
 }
 
 func CreateBridge(db *gorm.DB, br Bridge, orgname string) error {
 	// Creates a new Bridge or ATB  from an Organization Name
-	var org Organization
-	err := db.Where("Name = ?", orgname).First(&org).Error //Search if the org exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {            // If does not, throw an error
-		return fmt.Errorf("sqlstore error: organization " + orgname + " does not exist in db")
-	}
+	// Ignores and returns nil if it already exists. Returns an error if creation fails
+	org, err := RetrieveOrganizationbyName(db, orgname)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	br.OrganizationID = org.ID // Fill in the OrgID for the bridge
 	err = db.Where(&br).FirstOrCreate(&br).Error
@@ -152,13 +150,10 @@ func CreateBridge(db *gorm.DB, br Bridge, orgname string) error {
 
 func CreateMember(db *gorm.DB, mem Member, description string) error {
 	// Creates a new Member from a Bridge unique description field
-	var br Bridge
-	err := db.Where("Description = ?", description).First(&br).Error //Search if the bridge exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {                      // If does not, throw an error
-		return fmt.Errorf("sqlstore error: bridge description=" + description + " does not exist in db")
-	}
+	// Ignores and returns nil if entry already exists. Returns an error if creation fails
+	br, err := RetrieveBridgebyDescription(db, description)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	mem.BridgeID = br.ID // Fill in the BridgeID for the bridge
 	err = db.Where(&mem).FirstOrCreate(&mem).Error
@@ -168,15 +163,12 @@ func CreateMember(db *gorm.DB, mem Member, description string) error {
 	return nil
 }
 
-func CreateMembership(db *gorm.DB, memb Membership, spiffeid string) error {
+func CreateMembership(db *gorm.DB, memb Membership, description string) error {
 	// Creates a new Membership from a Member
-	var mem Member
-	err := db.Where("Spiffe_ID = ?", spiffeid).First(&mem).Error //Search if the bridge exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {                  // If does not, throw an error
-		return fmt.Errorf("sqlstore error: member spiffeid=" + mem.SpiffeID + " does not exist in db")
-	}
+	// Ignores and returns nil if entry already exists. Returns an error if creation fails
+	mem, err := RetrieveMemberbyDescription(db, description)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	memb.MemberID = mem.ID // Fill in the BridgeID for the bridge
 	err = db.Where(&memb).FirstOrCreate(&memb).Error
@@ -186,14 +178,12 @@ func CreateMembership(db *gorm.DB, memb Membership, spiffeid string) error {
 	return nil
 }
 
-func CreateTrustBundle(db *gorm.DB, trust TrustBundle, mem Member) error {
+func CreateTrustBundle(db *gorm.DB, trust TrustBundle, description string) error {
 	// Create a new Trustbundle from a Member
-	err := db.Where("SpiffeID = ?", mem.SpiffeID).First(&mem).Error //Search if the bridge exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {                     // If does not, throw an error
-		return fmt.Errorf("sqlstore error: member spiffeid=" + mem.SpiffeID + " does not exist in db")
-	}
+	// Ignores and returns nil if entry already exists. Returns an error if creation fails
+	mem, err := RetrieveMemberbyDescription(db, description)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	trust.MemberID = mem.ID // Fill in the BridgeID for the bridge
 	err = db.Where(&trust).FirstOrCreate(&trust).Error
@@ -203,21 +193,17 @@ func CreateTrustBundle(db *gorm.DB, trust TrustBundle, mem Member) error {
 	return nil
 }
 
-func CreateRelationship(db *gorm.DB, newrelation Relationship, sourcemember Member, targetmember Member) error {
-	// Adds a new Relation between Two SPIRE Servers in DB
-	err := db.Where("SpiffeID = ?", sourcemember.SpiffeID).First(&sourcemember).Error //Search if the Member exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {                                       // If does not, throw an error
-		return fmt.Errorf("member spiffeid=" + sourcemember.SpiffeID + " does not exist in db")
-	}
+func CreateRelationship(db *gorm.DB, newrelation Relationship, sourcememberdescription string, targetmemberdescription string) error {
+	// Adds a new Relation between Two SPIRE Servers in DB using description as reference for the IDs
+	// Ignores and returns nil if entry already exists. Returns an error if creation fails
+	sourcemember, err := RetrieveMemberbyDescription(db, sourcememberdescription)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
-	err = db.Where("SpiffeID = ?", targetmember.SpiffeID).First(&targetmember).Error //Search if the Member exists
-	if errors.Is(err, gorm.ErrRecordNotFound) {                                      // If does not, throw an error
-		return fmt.Errorf("sqlstore error: member spiffeid=" + targetmember.SpiffeID + " does not exist in db")
-	}
+	var targetmember *Member
+	targetmember, err = RetrieveMemberbyDescription(db, targetmemberdescription)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	newrelation.MemberID = sourcemember.ID       // Fill in the Source MemberID (Foreign Key)
 	newrelation.TargetMemberID = targetmember.ID // Fill in the Target MemberID
@@ -229,7 +215,7 @@ func CreateRelationship(db *gorm.DB, newrelation Relationship, sourcemember Memb
 }
 
 func RetrieveOrganizationbyName(db *gorm.DB, name string) (*Organization, error) {
-	// retrieves an Organization from the Database by Name. returns an error if something goes wrong.
+	// retrieves an Organization from the Database by Name. returns an error if query fails
 	var org *Organization = &Organization{}
 	err := db.Where("Name = ?", name).First(org).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) { // If does not, throw an error
@@ -242,7 +228,7 @@ func RetrieveOrganizationbyName(db *gorm.DB, name string) (*Organization, error)
 }
 
 func RetrieveBridgebyDescription(db *gorm.DB, description string) (*Bridge, error) {
-	// RetrieveBridgebyDescription retrieves a Bridge from the Database by description. returns an error if something goes wrong.
+	// RetrieveBridgebyDescription retrieves a Bridge from the Database by description. returns an error if query fails
 	var br *Bridge = &Bridge{}
 	err := db.Where("Description = ?", description).First(br).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
