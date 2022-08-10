@@ -440,7 +440,7 @@ func DeleteOrganizationbyName(db *gorm.DB, name string) error {
 			return err
 		}
 		for _, br := range *brs {
-			DeleteBridgebyDescription(db, br.Description)
+			err = DeleteBridgebyDescription(db, br.Description)
 			if err != nil {
 				return err
 			}
@@ -464,10 +464,10 @@ func DeleteBridgebyDescription(db *gorm.DB, name string) error {
 		// might prevent DELETE CASCADE on go-sqlite3 driver from working
 		members, err := RetrieveAllMembersbyBridgeID(db, br.ID)
 		if err != nil {
-			return fmt.Errorf("sqlstore error: %v", err)
+			return err
 		}
 		for _, member := range *members {
-			DeleteMemberbyDescription(db, member.Description)
+			err = DeleteMemberbyDescription(db, member.Description)
 			if err != nil {
 				return err
 			}
