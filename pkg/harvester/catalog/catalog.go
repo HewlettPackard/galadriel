@@ -1,8 +1,8 @@
 package catalog
 
 import (
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/server"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/spire"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/server"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 )
 
 type Catalog struct {
