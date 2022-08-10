@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -151,26 +152,27 @@ func CreateBridge(db *gorm.DB, br Bridge, orgname string) error {
 func CreateMember(db *gorm.DB, mem Member, description string) error {
 	// Creates a new Member from a Bridge unique description field
 	// Ignores and returns nil if entry already exists. Returns an error if creation fails
-	br, err := RetrieveBridgebyDescription(db, description)
-	if err != nil {
-		return err
-	}
-	mem.BridgeID = br.ID // Fill in the BridgeID for the bridge
-	err = db.Where(&mem).FirstOrCreate(&mem).Error
+	err := db.Where(&mem).FirstOrCreate(&mem).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	return nil
 }
 
-func CreateMembership(db *gorm.DB, memb Membership, description string) error {
+func CreateMembership(db *gorm.DB, memb Membership, memberdescription string, bridgedescription string) error {
 	// Creates a new Membership from a Member
 	// Ignores and returns nil if entry already exists. Returns an error if creation fails
-	mem, err := RetrieveMemberbyDescription(db, description)
+	mem, err := RetrieveMemberbyDescription(db, memberdescription)
+	if err != nil {
+		return err
+	}
+	var br *Bridge
+	br, err = RetrieveBridgebyDescription(db, bridgedescription)
 	if err != nil {
 		return err
 	}
 	memb.MemberID = mem.ID // Fill in the BridgeID for the bridge
+	memb.BridgeID = br.ID  // Fill in the BridgeID for the bridge
 	err = db.Where(&memb).FirstOrCreate(&memb).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
@@ -253,17 +255,49 @@ func RetrieveAllBridgesbyOrgID(db *gorm.DB, orgID uint) (*[]Bridge, error) {
 	return &org.Bridges, nil
 }
 
-func RetrieveAllMembersbyBridgeID(db *gorm.DB, bridgeID uint) (*[]Member, error) {
+func RetrieveAllMembershipsbyBridgeID(db *gorm.DB, bridgeID uint) (*[]Membership, error) {
 	// Retrieves all Members from the Database using bridge ID as reference. returns an error if the query fails
 	var br *Bridge = &Bridge{}
-	err := db.Preload("Members").Where("ID = ?", bridgeID).Find(br).Error
+	err := db.Preload("Memberships").Where("ID = ?", bridgeID).Find(br).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("sqlstore error: Members %d does not exist in db", bridgeID)
+		return nil, fmt.Errorf("sqlstore error: bridge %d does not exist in db", bridgeID)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("sqlstore error: %v. Members query failed with bridge ID %d", err, bridgeID)
+		return nil, fmt.Errorf("sqlstore error: %v. bridge query failed with bridge ID %d", err, bridgeID)
 	}
-	return &br.Members, nil
+	return &br.Memberships, nil
+}
+
+func RetrieveAllMembersbyBridgeID(db *gorm.DB, bridgeID uint) (mem *[]Member, err error) {
+	// Retrieves all Members from the Database using bridge ID as reference. returns an error if the query fails
+	var br *Bridge = &Bridge{}
+	err = db.Preload("Memberships.member").Where("ID = ?", bridgeID).Find(br).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("sqlstore error: bridge %d does not exist in db", bridgeID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("sqlstore error: %v. bridge query failed with bridge ID %d", err, bridgeID)
+	}
+	for _, membership := range br.Memberships {
+		*mem = append(*mem, membership.member)
+	}
+	return mem, nil
+}
+
+func RetrieveAllBridgesbyMemberID(db *gorm.DB, memberID uint) (mem *[]Bridge, err error) {
+	// Retrieves all Members from the Database using bridge ID as reference. returns an error if the query fails
+	var member *Member = &Member{}
+	err = db.Preload("Memberships.bridge").Where("ID = ?", memberID).Find(member).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("sqlstore error: bridge %d does not exist in db", memberID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("sqlstore error: %v. bridge query failed with bridge ID %d", err, memberID)
+	}
+	for _, membership := range member.Memberships {
+		*mem = append(*mem, membership.bridge)
+	}
+	return mem, nil
 }
 
 func RetrieveAllMembershipsbyMemberID(db *gorm.DB, memberID uint) (*[]Membership, error) {
@@ -309,10 +343,23 @@ func RetrieveMemberbyDescription(db *gorm.DB, description string) (*Member, erro
 	return member, nil
 }
 
+func RetrieveMembershipbyCreationDate(db *gorm.DB, date time.Time) (*Membership, error) {
+	// RetrieveMembershipbyToken retrieves a Membership from the Database bigger than an specific date. returns an error if something goes wrong.
+	var membership *Membership = &Membership{}
+	err := db.Where("created_at >= ?", date).First(membership).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) { // If does not, throw an error
+		return nil, fmt.Errorf("sqlstore error: member created_at=%v does not exist in DB", date)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("sqlstore error: %v", err)
+	}
+	return membership, nil
+}
+
 func RetrieveMembershipbyToken(db *gorm.DB, token string) (*Membership, error) {
 	// RetrieveMembershipbyToken retrieves a Membership from the Database by Token. returns an error if something goes wrong.
 	var membership *Membership = &Membership{}
-	err := db.Where("JoinToken = ?", token).First(membership).Error
+	err := db.Where("join_token = ?", token).First(membership).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) { // If does not, throw an error
 		return nil, fmt.Errorf("sqlstore error: Member with Token=%v does not exist in DB", token)
 	}
@@ -443,17 +490,17 @@ func DeleteBridgebyDescription(db *gorm.DB, name string) error {
 	// Delete Organization by Description from the DB with cascading
 	br, err := RetrieveBridgebyDescription(db, name)
 	if err != nil {
-		return fmt.Errorf("sqlstore error: %v", err)
+		return err
 	}
 	if db.Name() == "sqlite" {
 		// Workaround for https://github.com/mattn/go-sqlite3/pull/802 that
 		// might prevent DELETE CASCADE on go-sqlite3 driver from working
-		members, err := RetrieveAllMembersbyBridgeID(db, br.ID)
+		memberships, err := RetrieveAllMembershipsbyBridgeID(db, br.ID)
 		if err != nil {
 			return err
 		}
-		for _, member := range *members {
-			err = DeleteMemberbyDescription(db, member.Description)
+		for _, membership := range *memberships {
+			err = DeleteMembershipbyToken(db, membership.JoinToken)
 			if err != nil {
 				return err
 			}
@@ -508,6 +555,21 @@ func DeleteAllMembershipsbyMemberID(db *gorm.DB, memberid uint) error {
 		err = db.Model(&membership).Delete(&membership).Error
 		if err != nil {
 			return fmt.Errorf("sqlstore error: %v. Error deleting Relationships from member with id %d", err, memberid)
+		}
+	}
+	return nil
+}
+
+func DeleteAllMembershipsbyBridgeID(db *gorm.DB, bridgeid uint) error {
+	// Deletes all Memberships using memberid as FK
+	memberships, err := RetrieveAllMembershipsbyBridgeID(db, bridgeid)
+	if err != nil {
+		return err
+	}
+	for _, membership := range *memberships {
+		err = db.Model(&membership).Delete(&membership).Error
+		if err != nil {
+			return fmt.Errorf("sqlstore error: %v. Error deleting Relationships from bridge with id %d", err, bridgeid)
 		}
 	}
 	return nil

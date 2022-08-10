@@ -12,22 +12,23 @@ type Model struct {
 
 type Organization struct {
 	Model
-	Name    string   `json:"name" gorm:"unique_index"`
+	Name    string `json:"name" gorm:"uniqueIndex"`
+	Contact string
 	Bridges []Bridge `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type Bridge struct {
 	Model
-	OrganizationID uint
-	Description    string `gorm:"unique_index"`
-	Active         bool
-	Members        []Member `gorm:"constraint:OnDelete:CASCADE;"`
+	OrganizationID     uint
+	Description        string `gorm:"uniqueIndex"`
+	Status             bool
+	NestedFedIndicator bool
+	Memberships        []Membership `gorm:"constraint:OnDelete:CASCADE;"`
 }
 type Member struct {
 	Model
-	BridgeID          uint //Implicit Foreign Key
 	SpiffeID          string
-	Description       string `gorm:"unique_index"`
+	Description       string `gorm:"uniqueIndex"`
 	Active            bool
 	DiscoverableinDir bool
 	AllowDiscovery    bool
@@ -35,14 +36,17 @@ type Member struct {
 	EndpointURL       string //Type string for now. Maybe changed later on
 	SPIREServerInfo   string //Type string for now. Maybe changed later on
 	PermissiveMode    bool
-	Memberships       []Membership   `gorm:"constraint:OnDelete:CASCADE;"`
+	Memberships       []Membership
 	Relationships     []Relationship `gorm:"constraint:OnDelete:CASCADE;"`
 	TrustBundles      []TrustBundle  `gorm:"constraint:OnDelete:CASCADE;"`
 }
 type Membership struct {
 	Model
-	MemberID      uint   //Implicit Foreign Key
-	JoinToken     string `gorm:"unique_index"`
+	JoinToken     string `gorm:"uniqueIndex"`
+	MemberID      uint
+	member        Member `gorm:"foreignKey:MemberID;references:ID"`
+	BridgeID      uint
+	bridge        Bridge `gorm:"foreignKey:BridgeID;references:ID"`
 	MemberConsent bool
 	TTL           uint
 }
