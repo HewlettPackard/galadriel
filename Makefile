@@ -40,6 +40,8 @@ ifeq ($(arch1),x86_64)
 arch2=amd64
 else ifeq ($(arch1),aarch64)
 arch2=arm64
+else ifeq ($(arch1),arm64)
+arch2=arm64
 else
 $(error unsupported ARCH: $(arch1))
 endif
@@ -114,7 +116,7 @@ space := $(null)
 .PHONY: build
 
 ## Compile Go binaries for the Galadriel.
-build: bin/spire-bridge-server
+build: bin/galadriel-harvester bin/galadriel-server
 
 # This is the master template for compiling Go binaries
 define binary_rule
@@ -126,7 +128,8 @@ endef
 
 # This dynamically generates targets for each binary using
 # the binary_rule template above
-$(eval $(call binary_rule,bin/spire-bridge-server,./cmd/jwtglue))
+$(eval $(call binary_rule,bin/galadriel-harvester,cmd/harvester/main.go))
+$(eval $(call binary_rule,bin/galadriel-server,cmd/server/main.go))
 
 
 # #
