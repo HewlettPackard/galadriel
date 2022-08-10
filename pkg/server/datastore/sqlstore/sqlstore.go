@@ -135,15 +135,15 @@ func CreateOrganization(db *gorm.DB, org Organization) error {
 func CreateBridge(db *gorm.DB, br Bridge, orgname string) error {
 	// Creates a new Bridge or ATB  from an Organization Name
 	var org Organization
-	result := db.Where("Name = ?", orgname).First(&org)  //Search if the org exists
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) { // If does not, throw an error
+	err := db.Where("Name = ?", orgname).First(&org).Error //Search if the org exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {            // If does not, throw an error
 		return fmt.Errorf("sqlstore error: organization " + orgname + " does not exist in db")
 	}
-	if result.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", result.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	br.OrganizationID = org.ID // Fill in the OrgID for the bridge
-	err := db.Where(&br).FirstOrCreate(&br).Error
+	err = db.Where(&br).FirstOrCreate(&br).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
@@ -153,15 +153,15 @@ func CreateBridge(db *gorm.DB, br Bridge, orgname string) error {
 func CreateMember(db *gorm.DB, mem Member, description string) error {
 	// Creates a new Member from a Bridge unique description field
 	var br Bridge
-	result := db.Where("Description = ?", description).First(&br) //Search if the bridge exists
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {          // If does not, throw an error
+	err := db.Where("Description = ?", description).First(&br).Error //Search if the bridge exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {                      // If does not, throw an error
 		return fmt.Errorf("sqlstore error: bridge description=" + description + " does not exist in db")
 	}
-	if result.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", result.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	mem.BridgeID = br.ID // Fill in the BridgeID for the bridge
-	err := db.Where(&mem).FirstOrCreate(&mem).Error
+	err = db.Where(&mem).FirstOrCreate(&mem).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
@@ -171,15 +171,15 @@ func CreateMember(db *gorm.DB, mem Member, description string) error {
 func CreateMembership(db *gorm.DB, memb Membership, spiffeid string) error {
 	// Creates a new Membership from a Member
 	var mem Member
-	result := db.Where("Spiffe_ID = ?", spiffeid).First(&mem) //Search if the bridge exists
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {      // If does not, throw an error
+	err := db.Where("Spiffe_ID = ?", spiffeid).First(&mem).Error //Search if the bridge exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {                  // If does not, throw an error
 		return fmt.Errorf("sqlstore error: member spiffeid=" + mem.SpiffeID + " does not exist in db")
 	}
-	if result.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", result.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	memb.MemberID = mem.ID // Fill in the BridgeID for the bridge
-	err := db.Where(&memb).FirstOrCreate(&memb).Error
+	err = db.Where(&memb).FirstOrCreate(&memb).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
@@ -188,15 +188,15 @@ func CreateMembership(db *gorm.DB, memb Membership, spiffeid string) error {
 
 func CreateTrustBundle(db *gorm.DB, trust TrustBundle, mem Member) error {
 	// Create a new Trustbundle from a Member
-	result := db.Where("SpiffeID = ?", mem.SpiffeID).First(&mem) //Search if the bridge exists
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {         // If does not, throw an error
+	err := db.Where("SpiffeID = ?", mem.SpiffeID).First(&mem).Error //Search if the bridge exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {                     // If does not, throw an error
 		return fmt.Errorf("sqlstore error: member spiffeid=" + mem.SpiffeID + " does not exist in db")
 	}
-	if result.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", result.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	trust.MemberID = mem.ID // Fill in the BridgeID for the bridge
-	err := db.Where(&trust).FirstOrCreate(&trust).Error
+	err = db.Where(&trust).FirstOrCreate(&trust).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
@@ -205,23 +205,23 @@ func CreateTrustBundle(db *gorm.DB, trust TrustBundle, mem Member) error {
 
 func CreateRelationship(db *gorm.DB, newrelation Relationship, sourcemember Member, targetmember Member) error {
 	// Adds a new Relation between Two SPIRE Servers in DB
-	firstmember := db.Where("SpiffeID = ?", sourcemember.SpiffeID).First(&sourcemember) //Search if the Member exists
-	if errors.Is(firstmember.Error, gorm.ErrRecordNotFound) {                           // If does not, throw an error
+	err := db.Where("SpiffeID = ?", sourcemember.SpiffeID).First(&sourcemember).Error //Search if the Member exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {                                       // If does not, throw an error
 		return fmt.Errorf("member spiffeid=" + sourcemember.SpiffeID + " does not exist in db")
 	}
-	if firstmember.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", firstmember.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
-	secondmember := db.Where("SpiffeID = ?", targetmember.SpiffeID).First(&targetmember) //Search if the Member exists
-	if errors.Is(secondmember.Error, gorm.ErrRecordNotFound) {                           // If does not, throw an error
+	err = db.Where("SpiffeID = ?", targetmember.SpiffeID).First(&targetmember).Error //Search if the Member exists
+	if errors.Is(err, gorm.ErrRecordNotFound) {                                      // If does not, throw an error
 		return fmt.Errorf("sqlstore error: member spiffeid=" + targetmember.SpiffeID + " does not exist in db")
 	}
-	if secondmember.Error != nil {
-		return fmt.Errorf("sqlstore error: %v", secondmember.Error)
+	if err != nil {
+		return fmt.Errorf("sqlstore error: %v", err)
 	}
 	newrelation.MemberID = sourcemember.ID       // Fill in the Source MemberID (Foreign Key)
 	newrelation.TargetMemberID = targetmember.ID // Fill in the Target MemberID
-	err := db.Where(&newrelation).FirstOrCreate(&newrelation).Error
+	err = db.Where(&newrelation).FirstOrCreate(&newrelation).Error
 	if err != nil {
 		return fmt.Errorf("sqlstore error: %v", err)
 	}
