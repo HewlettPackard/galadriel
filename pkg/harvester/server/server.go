@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common"
 )
 
 type GaladrielServer interface {

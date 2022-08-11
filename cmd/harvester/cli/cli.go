@@ -3,9 +3,9 @@ package cli
 import (
 	"context"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/config"
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
 )
 
 const defaultConfPath = "conf/harvester/harvester.conf"
