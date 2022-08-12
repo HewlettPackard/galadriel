@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/spire-controller-manager/pkg/spireapi"
 )

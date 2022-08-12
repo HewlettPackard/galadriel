@@ -6,13 +6,13 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/api"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/catalog"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/config"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/controller"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/server"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/spire"
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/server"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 )
 
 type HarvesterManager struct {

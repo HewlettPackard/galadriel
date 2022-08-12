@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/HewlettPackard/Galadriel/cmd/harvester/cli"
+	"github.com/HewlettPackard/galadriel/cmd/harvester/cli"
 )
 
 func main() {
