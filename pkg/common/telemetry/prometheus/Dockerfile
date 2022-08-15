@@ -1,0 +1,3 @@
+FROM prom/prometheus@sha256:56e7f18e05dd567f96c05046519760b356f52450c33f6e0055a110a493a41dc4
+
+ADD prometheus.yaml /etc/prometheus/

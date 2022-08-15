@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/hashicorp/hcl"
 	"github.com/pkg/errors"
 )
 
 type HarvesterConfig struct {
-	HarvesterConfigSection *HarvesterConfigSection `hcl:"harvester"`
+	HarvesterConfigSection *HarvesterConfigSection           `hcl:"harvester"`
+	TelemetryConfigSection *telemetry.TelemetryConfigSection `hcl:"telemetry"`
 }
 
 type HarvesterConfigSection struct {
@@ -42,6 +44,7 @@ func new(configBytes []byte) (*HarvesterConfig, error) {
 
 	if config.HarvesterConfigSection == nil {
 		config.HarvesterConfigSection = &HarvesterConfigSection{}
+		config.TelemetryConfigSection = &telemetry.TelemetryConfigSection{}
 	}
 
 	config.setDefaults()

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
@@ -20,20 +21,27 @@ type HarvesterManager struct {
 	controller controller.HarvesterController
 	api        api.API
 	logger     common.Logger
+	telemetry  telemetry.MetricServer
 }
 
 func NewHarvesterManager() *HarvesterManager {
 	return &HarvesterManager{
-		logger: *common.NewLogger("harvester_manager"),
+		logger: *common.NewLogger(telemetry.Harvester),
 	}
 }
 
 func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterConfig) {
+	type key string
+
 	if m.load(config) != nil {
 		panic("unable to load configuration")
 	}
 
 	defer m.Stop()
+
+	ctxKey := key(telemetry.PackageName)
+	ctx = context.WithValue(ctx, ctxKey, telemetry.Harvester)
+
 	m.run(ctx)
 }
 
@@ -46,12 +54,16 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 		Spire:  spire.NewLocalSpireServer(config.HarvesterConfigSection.SpireSocketPath),
 		Server: server.NewRemoteGaladrielServer(config.HarvesterConfigSection.ServerAddress),
 	}
+
 	controller := controller.NewLocalHarvesterController(cat)
 	api := api.NewHTTPApi(controller)
 
 	m.catalog = cat
 	m.controller = controller
 	m.api = api
+
+	telemetry := telemetry.NewLocalMetricServer()
+	m.telemetry = telemetry
 
 	return nil
 }
@@ -70,6 +82,7 @@ func (m *HarvesterManager) run(ctx context.Context) {
 	plugins := []common.RunnablePlugin{
 		m.controller,
 		m.api,
+		m.telemetry,
 	}
 	wg.Add(len(plugins))
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
 )
@@ -16,7 +17,7 @@ type HarvesterCLI struct {
 
 func NewHarvesterCLI() *HarvesterCLI {
 	return &HarvesterCLI{
-		logger: common.NewLogger("harvester"),
+		logger: common.NewLogger(telemetry.Harvester),
 	}
 }
 
@@ -27,7 +28,6 @@ func (c *HarvesterCLI) Run(args []string) int {
 	}
 
 	cfg, err := config.LoadFromDisk(defaultConfPath)
-
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
 		return 1
