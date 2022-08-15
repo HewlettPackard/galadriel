@@ -44,6 +44,7 @@ func new(configBytes []byte) (*HarvesterConfig, error) {
 
 	if config.HarvesterConfigSection == nil {
 		config.HarvesterConfigSection = &HarvesterConfigSection{}
+		config.TelemetryConfigSection = &telemetry.TelemetryConfigSection{}
 	}
 
 	config.setDefaults()
