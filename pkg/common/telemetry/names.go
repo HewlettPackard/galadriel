@@ -3,7 +3,7 @@ package telemetry
 // package name
 const (
 	Harvester = "harvester"
-	Galadriel = "harvester"
+	Server    = "server"
 )
 
 // entity

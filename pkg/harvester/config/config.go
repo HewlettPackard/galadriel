@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
 	"github.com/hashicorp/hcl"
 	"github.com/pkg/errors"
 )
 
 type HarvesterConfig struct {
-	HarvesterConfigSection *HarvesterConfigSection `hcl:"harvester"`
+	HarvesterConfigSection *HarvesterConfigSection           `hcl:"harvester"`
+	TelemetryConfigSection *telemetry.TelemetryConfigSection `hcl:"telemetry"`
 }
 
 type HarvesterConfigSection struct {
