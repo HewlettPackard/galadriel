@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/controller"
 )
 
 type API interface {
@@ -23,7 +24,7 @@ func NewHTTPApi(controller controller.HarvesterController) API {
 	// TODO: Add listen address and port
 	return &HTTPApi{
 		controller: controller,
-		logger:     *common.NewLogger("http_api"),
+		logger:     *common.NewLogger(telemetry.HTTPApi),
 	}
 }
 

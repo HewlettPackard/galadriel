@@ -15,6 +15,7 @@ const (
 
 // component
 const (
+	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
 	GaladrielServer     = "galadriel_server"
 	HTTPApi             = "http_api"

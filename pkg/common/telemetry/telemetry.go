@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -24,28 +23,38 @@ type MetricServer interface {
 }
 
 type LocalMetricServer struct {
-	logger common.Logger
+	logger      common.Logger
+	FileConfig  FileConfig
+	ServiceName string
+}
+
+type FileConfig struct {
+	Prometheus *PrometheusConfig `hcl:"Prometheus"`
+}
+
+type PrometheusConfig struct {
+	Host string `hcl:"host"`
+	Port int    `hcl:"port"`
 }
 
 func NewLocalMetricServer() MetricServer {
 	return &LocalMetricServer{
-		logger: *common.NewLogger("metric_server"),
+		logger: *common.NewLogger(MetricsServer),
 	}
 }
 
 func (c *LocalMetricServer) Run(ctx context.Context) error {
 	c.logger.Info("Starting metric server")
 
-	exporter := configureMetrics()
-
 	if err := runtimemetrics.Start(); err != nil {
 		panic(err)
 	}
 
+	exporter := configureMetrics()
 	http.HandleFunc("/metrics", exporter.ServeHTTP)
-	fmt.Println("listenening on http://localhost:8088/metrics")
 
 	go func() {
+		c.logger.Info("listenening on http://localhost:8088/metrics")
 		_ = http.ListenAndServe(":8088", nil)
 	}()
 

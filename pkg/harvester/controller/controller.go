@@ -5,8 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/Galadriel/pkg/harvester/catalog"
 )
 
 type HarvesterController interface {
@@ -22,7 +23,7 @@ type LocalHarvesterController struct {
 
 func NewLocalHarvesterController(catalog catalog.Catalog) HarvesterController {
 	return &LocalHarvesterController{
-		logger:  *common.NewLogger("harvester_controller"),
+		logger:  *common.NewLogger(telemetry.HarvesterController),
 		catalog: catalog,
 	}
 }
