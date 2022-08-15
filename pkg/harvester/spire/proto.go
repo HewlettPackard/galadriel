@@ -9,6 +9,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	trustdomainv1 "github.com/spiffe/spire-api-sdk/proto/spire/api/server/trustdomain/v1"
 	apitypes "github.com/spiffe/spire-api-sdk/proto/spire/api/types"
+	"google.golang.org/grpc/codes"
 )
 
 func protoToBundle(in *apitypes.Bundle) (*spiffebundle.Bundle, error) {
@@ -72,13 +73,19 @@ func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.F
 			return nil, fmt.Errorf("failed to convert trust domain bundle to proto: %v", err)
 		}
 
+		if inRel.BundleEndpointURL == "" {
+			return nil, fmt.Errorf("bundle endpoint url must be set")
+		}
+
 		outRel := &apitypes.FederationRelationship{
 			TrustDomain:       inRel.TrustDomain.String(),
 			BundleEndpointUrl: inRel.BundleEndpointURL,
 			TrustDomainBundle: tdBundle,
 		}
 
-		outRel.TrustDomainBundle = &apitypes.Bundle{}
+		if inRel.BundleEndpointProfile == nil {
+			return nil, fmt.Errorf("bundle endpoint profile must be set")
+		}
 
 		switch inRel.BundleEndpointProfile.(type) {
 		case HTTPSWebBundleEndpointProfile:
@@ -95,12 +102,22 @@ func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.F
 			return nil, fmt.Errorf("unsupported bundle endpoint profile for trust domain %s: %T", tdBundle.GetTrustDomain(), inRel.BundleEndpointProfile)
 		}
 
+		out = append(out, outRel)
+
 	}
 
 	return out, nil
 }
 
 func bundleToProto(in *spiffebundle.Bundle) (*apitypes.Bundle, error) {
+	if in == nil {
+		return nil, fmt.Errorf("trust domain bundle must be set")
+	}
+
+	if in.TrustDomain().IsZero() {
+		return nil, fmt.Errorf("trust domain must be set")
+	}
+
 	out := &apitypes.Bundle{
 		TrustDomain: in.TrustDomain().String(),
 	}
@@ -162,16 +179,22 @@ func protoCreateToFederationRelationshipResult(in *trustdomainv1.BatchCreateFede
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
-		frel, err := protoToFederationsRelationship(r.GetFederationRelationship())
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert federation relationship to proto: %v", err)
+		var frel *FederationRelationship
+		var err error
+
+		if r.Status.Code == int32(codes.OK) {
+			frel, err = protoToFederationsRelationship(r.FederationRelationship)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert federation relationship to proto: %v", err)
+			}
 		}
+
 		rOut := &FederationRelationshipResult{
-			status: &FederationRelationshipResultStatus{
-				code:    r.GetStatus().Code,
-				message: r.GetStatus().Message,
+			Status: &FederationRelationshipResultStatus{
+				Code:    codes.Code(r.Status.Code),
+				Message: r.Status.Message,
 			},
-			federationRelationship: frel,
+			FederationRelationship: frel,
 		}
 		out = append(out, rOut)
 	}
@@ -183,16 +206,22 @@ func protoUpdateToFederationRelationshipResult(in *trustdomainv1.BatchUpdateFede
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
-		frel, err := protoToFederationsRelationship(r.GetFederationRelationship())
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert federation relationship to proto: %v", err)
+		var frel *FederationRelationship
+		var err error
+
+		if r.Status.Code == int32(codes.OK) {
+			frel, err = protoToFederationsRelationship(r.GetFederationRelationship())
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert federation relationship to proto: %v", err)
+			}
 		}
+
 		rOut := &FederationRelationshipResult{
-			status: &FederationRelationshipResultStatus{
-				code:    r.GetStatus().Code,
-				message: r.GetStatus().Message,
+			Status: &FederationRelationshipResultStatus{
+				Code:    codes.Code(r.Status.Code),
+				Message: r.Status.Message,
 			},
-			federationRelationship: frel,
+			FederationRelationship: frel,
 		}
 		out = append(out, rOut)
 	}
@@ -205,10 +234,10 @@ func protoDeleteToFederationRelationshipResult(in *trustdomainv1.BatchDeleteFede
 
 	for _, r := range in.GetResults() {
 		rOut := &FederationRelationshipResult{
-			status: &FederationRelationshipResultStatus{
-				code:        r.GetStatus().Code,
-				message:     r.GetStatus().Message,
-				trustDomain: r.GetTrustDomain(),
+			Status: &FederationRelationshipResultStatus{
+				Code:        codes.Code(r.Status.Code),
+				Message:     r.Status.Message,
+				TrustDomain: r.GetTrustDomain(),
 			},
 		}
 		out = append(out, rOut)

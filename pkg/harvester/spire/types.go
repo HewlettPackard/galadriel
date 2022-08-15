@@ -3,6 +3,7 @@ package spire
 import (
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"google.golang.org/grpc/codes"
 )
 
 type FederationRelationship struct {
@@ -31,13 +32,12 @@ func (HTTPSSpiffeBundleEndpointProfile) Name() string {
 }
 
 type FederationRelationshipResult struct {
-	status                 *FederationRelationshipResultStatus
-	federationRelationship *FederationRelationship
+	Status                 *FederationRelationshipResultStatus
+	FederationRelationship *FederationRelationship
 }
 
 type FederationRelationshipResultStatus struct {
-	// A status code, which should be an enum value of google.rpc.Code.
-	code        int32
-	message     string
-	trustDomain string
+	Code        codes.Code
+	Message     string
+	TrustDomain string
 }
