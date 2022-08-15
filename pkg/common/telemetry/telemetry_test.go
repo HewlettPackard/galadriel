@@ -3,7 +3,7 @@ package telemetry
 import (
 	"testing"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/histogram"

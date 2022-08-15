@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
-	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
 )
 
 type HarvesterController interface {

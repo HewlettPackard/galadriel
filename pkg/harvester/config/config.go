@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/hashicorp/hcl"
 	"github.com/pkg/errors"
 )

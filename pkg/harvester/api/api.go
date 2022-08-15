@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
-	"github.com/HewlettPackard/Galadriel/pkg/common/telemetry"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 )
 
 type API interface {
