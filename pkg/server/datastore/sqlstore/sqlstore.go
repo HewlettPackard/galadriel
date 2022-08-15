@@ -37,29 +37,23 @@ func OpenDB(connectionString, dbtype string) (db *gorm.DB, err error) {
 	return db, nil
 }
 
-func CreateAllTablesinDB(db *gorm.DB) (err error) {
-	err = CreateOrganizationTableInDB(db)
-	if err != nil {
+func CreateAllTablesinDB(db *gorm.DB) error {
+	if err := CreateOrganizationTableInDB(db); err != nil {
 		return err
 	}
-	err = CreateBridgeTableInDB(db)
-	if err != nil {
+	if err := CreateBridgeTableInDB(db); err != nil {
 		return err
 	}
-	err = CreateMemberTableInDB(db)
-	if err != nil {
+	if err := CreateMemberTableInDB(db); err != nil {
 		return err
 	}
-	err = CreateMembershipTableInDB(db)
-	if err != nil {
+	if err := CreateMembershipTableInDB(db); err != nil {
 		return err
 	}
-	err = CreateRelationshipTableInDB(db)
-	if err != nil {
+	if err := CreateRelationshipTableInDB(db); err != nil {
 		return err
 	}
-	err = CreateTrustbundleTableInDB(db)
-	if err != nil {
+	if err := CreateTrustbundleTableInDB(db); err != nil {
 		return err
 	}
 	return nil
