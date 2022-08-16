@@ -131,6 +131,8 @@ endef
 $(eval $(call binary_rule,bin/galadriel-harvester,cmd/harvester/main.go))
 $(eval $(call binary_rule,bin/galadriel-server,cmd/server/main.go))
 
+bin/:
+	@mkdir -p $@
 
 # #
 # # code generation
