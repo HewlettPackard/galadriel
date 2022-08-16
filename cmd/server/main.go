@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/HewlettPackard/Galadriel/cmd/server/cli"
+	"github.com/HewlettPackard/galadriel/cmd/server/cli"
 )
 
 func main() {

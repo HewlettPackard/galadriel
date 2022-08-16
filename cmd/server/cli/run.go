@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/HewlettPackard/Galadriel/cmd/server/api"
+	"github.com/HewlettPackard/galadriel/cmd/server/api"
 	"github.com/spf13/cobra"
 )
 
