@@ -10,8 +10,8 @@ var runServerFn = api.Run
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
-		Short: "Start HTTP Galadriel server",
-		Long:  "Run this command to start HTTP Galadriel server",
+		Short: "Runs the Galadriel server",
+		Long:  "Run this command to start the Galadriel server",
 		Run: func(cmd *cobra.Command, args []string) {
 			runServerFn()
 		},
