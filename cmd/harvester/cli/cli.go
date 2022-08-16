@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/HewlettPackard/Galadriel/pkg/common"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/config"
-	"github.com/HewlettPackard/Galadriel/pkg/harvester/spire"
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"google.golang.org/grpc/codes"
@@ -21,7 +22,7 @@ type HarvesterCLI struct {
 
 func NewHarvesterCLI() *HarvesterCLI {
 	return &HarvesterCLI{
-		logger: common.NewLogger("harvester"),
+		logger: common.NewLogger(telemetry.Harvester),
 	}
 }
 
@@ -32,7 +33,6 @@ func (c *HarvesterCLI) Run(args []string) int {
 	}
 
 	cfg, err := config.LoadFromDisk(defaultConfPath)
-
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
 		return 1

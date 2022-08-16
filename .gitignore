@@ -61,3 +61,6 @@
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,go,linux,macos
+
+
+pkg/common/telemetry/prometheus/data
