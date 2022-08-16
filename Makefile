@@ -85,29 +85,6 @@ endif
 go-bin-path: go-check
 	@echo "$(go_bin_dir):${PATH}"
 
-# install-toolchain: install-protoc install-protoc-gen-go | go-check
-
-# install-protoc: $(protoc_bin)
-
-# install-protoc-gen-go: $(protoc_gen_go_bin)
-
-# $(protoc_gen_go_bin): | go-check
-# 	@echo "Installing protoc-gen-go $(protoc_gen_go_version)..."
-# 	$(E)rm -rf $(protoc_gen_go_base_dir)
-# 	$(E)mkdir -p $(protoc_gen_go_dir)
-# 	$(E)GOBIN=$(protoc_gen_go_dir) $(go_path) go install google.golang.org/protobuf/cmd/protoc-gen-go@$(protoc_gen_go_version)
-
-
-# $(protoc_bin):
-# 	@echo "Installing protoc $(protoc_version)..."
-# 	$(E)rm -rf $(dir $(protoc_dir))
-# 	$(E)mkdir -p $(protoc_dir)
-# 	$(E)curl -sSfL $(protoc_url) -o $(build_dir)/tmp.zip; unzip -q -d $(protoc_dir) $(build_dir)/tmp.zip; rm $(build_dir)/tmp.zip
-
-
-# protos := \
-# 	proto/jwtglue/jwtglue.proto
-
 # The following vars are used in rule construction
 comma := ,
 null  :=
@@ -134,30 +111,6 @@ $(eval $(call binary_rule,bin/galadriel-server,cmd/server/main.go))
 bin/:
 	@mkdir -p $@
 
-# #
-# # code generation
-# # 
-# #
-
-# .PHONY: generate
-
-# generate: $(protos:.proto=.pb.go)
-
-# #proto/jwtglue/jwtglue.pb.go: proto/jwtglue/jwtglue.proto
-# #	@echo "got to $@"
-
-# %.pb.go: %.proto $(protoc_bin) $(protoc_gen_go_bin)
-# 	@echo "got to $@"
-
-# #%_.pb.go: %.proto $(protoc_bin) $(protoc_gen_go_bin) FORCE | bin/protoc-gen-go-spire
-# #	@echo "generating $@..."
-# #	$(E) PATH="$(protoc_gen_go_dir):$(PATH)" $(protoc_bin) \
-# #		-I proto \
-# #		--go-spire_out=. \
-# #		--go-spire_opt=module=github.com/dfeldman/jwtglue \
-# #		--go-spire_opt=mode=plugin \
-# #		$<
-
 CONTAINER_OPTIONS = docker podman
 CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
      $(if $(shell which $(exec)),$(exec)))
@@ -181,6 +134,7 @@ test-unit:
 
 ## Generate the test coverage for the code with the Go tool.
 coverage:
+	$(E)mkdir -p out/coverage
 	go test -v -coverprofile ./out/coverage/coverage.out ./... && \
 	go tool cover -html=./out/coverage/coverage.out -o ./out/coverage/index.html
 
@@ -190,7 +144,7 @@ coverage:
 
 # VARIABLES
 NAME = Galadriel
-VERSION = 0.0.1
+VERSION = 0.1.0
 AUTHOR=HPE
 
 # COLORS
