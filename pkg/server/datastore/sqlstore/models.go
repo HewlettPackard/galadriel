@@ -19,47 +19,35 @@ type Organization struct {
 
 type Bridge struct {
 	Model
-	OrganizationID     uint
-	Description        string `gorm:"uniqueIndex"`
-	Status             bool
-	NestedFedIndicator bool
-	Memberships        []Membership `gorm:"constraint:OnDelete:CASCADE;"`
+	OrganizationID uint
+	Description    string       `gorm:"uniqueIndex"`
+	Memberships    []Membership `gorm:"constraint:OnDelete:CASCADE;"`
 }
 type Member struct {
 	Model
-	SpiffeID          string
-	Description       string `gorm:"uniqueIndex"`
-	Active            bool
-	DiscoverableinDir bool
-	AllowDiscovery    bool
-	Contact           string
-	EndpointURL       string //Type string for now. Maybe changed later on
-	SPIREServerInfo   string //Type string for now. Maybe changed later on
-	PermissiveMode    bool
-	Memberships       []Membership
-	Relationships     []Relationship `gorm:"constraint:OnDelete:CASCADE;"`
-	TrustBundles      []TrustBundle  `gorm:"constraint:OnDelete:CASCADE;"`
+	SpiffeID      string
+	Description   string `gorm:"uniqueIndex"`
+	Memberships   []Membership
+	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;"`
+	TrustBundles  []TrustBundle  `gorm:"constraint:OnDelete:CASCADE;"`
 }
 type Membership struct {
 	Model
-	JoinToken     string `gorm:"uniqueIndex"`
-	MemberID      uint
-	member        Member `gorm:"foreignKey:MemberID;references:ID"`
-	BridgeID      uint
-	bridge        Bridge `gorm:"foreignKey:BridgeID;references:ID"`
-	MemberConsent bool
-	TTL           uint
+	JoinToken string `gorm:"uniqueIndex"`
+	MemberID  uint
+	member    Member `gorm:"foreignKey:MemberID;references:ID"`
+	BridgeID  uint
+	bridge    Bridge `gorm:"foreignKey:BridgeID;references:ID"`
+	TTL       uint
 }
 
 type Relationship struct {
 	Model
-	MemberID            uint // Implicit Foreign Key and also the SourceID for the relationship
-	TargetMemberID      uint
-	SourceMemberConsent bool
-	TargetMemberConsent bool
-	Status              string
-	RelationshipType    string
-	TTL                 uint
+	MemberID         uint // Implicit Foreign Key and also the SourceID for the relationship
+	TargetMemberID   uint
+	Status           string
+	RelationshipType string
+	TTL              uint
 }
 
 type TrustBundle struct {
