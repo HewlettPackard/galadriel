@@ -1,69 +1,38 @@
-# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,go,linux,macos
-# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,go,linux,macos
-
-### Go ###
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.dll
-*.so
-*.dylib
+/bin
+/vendor
+/test_results
+/artifacts
+/releases
+/out
+.build*
+.tmp
+*.swp
+*.log
+*.out
 
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# Ignore binaries built using go build either from the root of the repo or
+# within the respective main packages.
+/harvester
+/server
+cmd/harvester/harvester
+cmd/server/server
 
-# Binaries
-bin/
-
-### Linux ###
-*~
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
+# Editor specific configuration
+.idea
+.vscode
 
 ### macOS ###
 # General
 .DS_Store
 .AppleDouble
 .LSOverride
-
 # Thumbnails
 ._*
 
-### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# IntelliJ
-.idea/
-
-# Local History for Visual Studio Code
-.history/
-
-### VisualStudioCode Patch ###
-# Ignore all local history of files
-.history
-.ionide
-
-# Support for Project snippet scope
-.vscode/*.code-snippets
-
-# Ignore code-workspaces
-*.code-workspace
-
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,go,linux,macos
-
-
-pkg/common/telemetry/prometheus/data
+### Linux ###
+*~
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
