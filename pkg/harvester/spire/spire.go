@@ -2,6 +2,7 @@ package spire
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -30,8 +31,11 @@ type client interface {
 	BundleClient
 }
 
+var dialFn = dialSocket
+var grpcDialContext = grpc.DialContext
+
 func NewLocalSpireServer(socketPath string) SpireServer {
-	client, err := dialSocket(context.Background(), socketPath)
+	client, err := dialFn(context.Background(), socketPath, makeSpireClient)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +104,9 @@ func (s *localSpireServer) DeleteFederationRelationships(ctx context.Context, tr
 
 }
 
-func dialSocket(ctx context.Context, path string) (client, error) {
+type clientMaker func(*grpc.ClientConn) (client, error)
+
+func dialSocket(ctx context.Context, path string, makeClient clientMaker) (client, error) {
 	var target string
 
 	if filepath.IsAbs(path) {
@@ -108,16 +114,29 @@ func dialSocket(ctx context.Context, path string) (client, error) {
 	} else {
 		target = "unix:" + path
 	}
-	grpcClient, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	clientConn, err := grpcDialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial API socket: %v", err)
+	}
+
+	client, err := makeClient(clientConn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make client: %v", err)
+	}
+
+	return client, nil
+}
+
+func makeSpireClient(clientConn *grpc.ClientConn) (client, error) {
+	if clientConn == nil {
+		return nil, errors.New("grpc client connection is invalid")
 	}
 
 	return struct {
 		TrustDomainClient
 		BundleClient
 	}{
-		TrustDomainClient: NewTrustDomainClient(grpcClient),
-		BundleClient:      NewBundleClient(grpcClient),
+		TrustDomainClient: NewTrustDomainClient(clientConn),
+		BundleClient:      NewBundleClient(clientConn),
 	}, nil
 }
