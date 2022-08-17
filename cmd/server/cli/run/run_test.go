@@ -1,7 +1,6 @@
-package cli
+package run
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,9 +16,6 @@ func TestRunCommand(t *testing.T) {
 	cmd := NewRunCmd()
 	err := cmd.Execute()
 
-	if err != nil {
-		fmt.Printf("%s", err)
-	}
-
+	assert.Equal(t, err, nil)
 	assert.Equal(t, called, true)
 }

@@ -1,7 +1,8 @@
-package cli
+package run
 
 import (
 	"github.com/HewlettPackard/galadriel/cmd/server/api"
+	"github.com/HewlettPackard/galadriel/cmd/server/cli/server"
 	"github.com/spf13/cobra"
 )
 
@@ -19,5 +20,5 @@ func NewRunCmd() *cobra.Command {
 }
 
 func init() {
-	serverCmd.AddCommand(NewRunCmd())
+	server.ServerCmd.AddCommand(NewRunCmd())
 }

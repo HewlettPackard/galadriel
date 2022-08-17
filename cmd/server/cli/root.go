@@ -5,9 +5,9 @@ import (
 )
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{}
+var RootCmd = &cobra.Command{}
 
-var cmdExecute = rootCmd.Execute
+var cmdExecute = RootCmd.Execute
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
