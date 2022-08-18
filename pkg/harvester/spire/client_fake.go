@@ -38,7 +38,7 @@ func (c fakeClient) CreateFederationRelationships(context.Context, []*Federation
 		return nil, c.createFederationRelationshipsErr
 	}
 
-	// TODO: convert []*FederationRelationship to []*FederationRelationshipResult (introduce errors in the middle somehow)
+	// TODO: add create logic and convert []*FederationRelationship to []*FederationRelationshipResult
 	return []*FederationRelationshipResult{}, nil
 }
 
@@ -47,7 +47,7 @@ func (c fakeClient) UpdateFederationRelationships(context.Context, []*Federation
 		return nil, c.updateFederationRelationshipsErr
 	}
 
-	// TODO: update logic
+	// TODO: add update logic
 	return []*FederationRelationshipResult{}, nil
 }
 
@@ -56,5 +56,6 @@ func (c fakeClient) DeleteFederationRelationships(context.Context, []*spiffeid.T
 		return nil, c.deleteFederationRelationshipsErr
 	}
 
+	// TODO: add delete logic
 	return []*FederationRelationshipResult{}, nil
 }
