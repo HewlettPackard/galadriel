@@ -16,11 +16,11 @@ import (
 func TestNewLocalSpireServerSuccess(t *testing.T) {
 	// originalDialFn := &dialFn
 	dialFn = func(ctx context.Context, path string, makeClient clientMaker) (client, error) {
-		return fakeClient{}, nil
+		return fakeInternalClient{}, nil
 	}
 	got := NewLocalSpireServer("")
 	expected := &localSpireServer{
-		client: fakeClient{},
+		client: fakeInternalClient{},
 		logger: *common.NewLogger("local_spire_server"),
 	}
 
@@ -64,12 +64,12 @@ func TestDialSocket(t *testing.T) {
 		{
 			name:     "ok_abs_path",
 			path:     "/absolute/path",
-			expected: &fakeClient{},
+			expected: &fakeInternalClient{},
 			target:   "unix:///absolute/path",
 		}, {
 			name:     "ok_rel_path",
 			path:     "relative/path",
-			expected: &fakeClient{},
+			expected: &fakeInternalClient{},
 			target:   "unix:relative/path",
 		}, {
 			name:           "dial_context_error",
@@ -117,7 +117,7 @@ func TestDialSocket(t *testing.T) {
 
 }
 
-func TestGetBundle(t *testing.T) {
+func TestLocalSpireGetBundle(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected *spiffebundle.Bundle
@@ -135,7 +135,7 @@ func TestGetBundle(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			client := &fakeClient{bundle: tt.expected}
+			client := &fakeInternalClient{bundle: tt.expected}
 			if tt.err != "" {
 				client.getBundleErr = errors.New(tt.err)
 			}
