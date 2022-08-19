@@ -7,6 +7,5 @@ import (
 )
 
 func main() {
-	HarvesterCli := cli.NewHarvesterCli()
-	os.Exit(HarvesterCli.Run())
+	os.Exit(cli.Run())
 }
