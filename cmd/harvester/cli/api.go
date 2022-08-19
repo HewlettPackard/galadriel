@@ -1,28 +1,21 @@
 package cli
 
-// func getJokeData(baseAPI string) []byte {
-// 	request, err := http.NewRequest(
-// 		http.MethodGet, //method
-// 		baseAPI,        //url
-// 		nil,            //body
-// 	)
+import (
+	"context"
+	"fmt"
 
-// 	if err != nil {
-// 		log.Printf("Could not request a dadjoke. %v", err)
-// 	}
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
+)
 
-// 	request.Header.Add("Accept", "application/json")
-// 	request.Header.Add("User-Agent", "Dadjoke CLI (https://github.com/example/dadjoke)")
+const defaultConfPath = "conf/harvester/harvester.conf"
 
-// 	response, err := http.DefaultClient.Do(request)
-// 	if err != nil {
-// 		log.Printf("Could not make a request. %v", err)
-// 	}
+func RunHarvesterAPI() {
+	cfg, err := config.LoadFromDisk(defaultConfPath)
+	if err != nil {
+		fmt.Print("Error loading config:", err)
+	}
 
-// 	responseBytes, err := ioutil.ReadAll(response.Body)
-// 	if err != nil {
-// 		log.Printf("Could not read response body. %v", err)
-// 	}
-
-// 	return responseBytes
-// }
+	ctx := context.Background()
+	harvester.NewHarvesterManager().Start(ctx, *cfg)
+}
