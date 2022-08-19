@@ -1,16 +1,15 @@
-package server
+package cli
 
 import (
-	"github.com/HewlettPackard/galadriel/cmd/server/cli"
 	"github.com/spf13/cobra"
 )
 
-var ServerCmd = &cobra.Command{
+var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Commands to manage Galadriel server",
 	Long:  "Commands to manage Galadriel server",
 }
 
 func init() {
-	cli.RootCmd.AddCommand(ServerCmd)
+	rootCmd.AddCommand(serverCmd)
 }
