@@ -1,29 +1,24 @@
 package cli
 
-// import (
-// 	"context"
-// 	"fmt"
+import (
+	"fmt"
 
-// 	"github.com/HewlettPackard/galadriel/pkg/harvester"
-// 	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
-// 	"github.com/spf13/cobra"
-// )
+	"github.com/spf13/cobra"
+)
 
-// func NewRunCmd() *cobra.Command {
-// 	return &cobra.Command{
-// 		Use:   "run",
-// 		Short: "Runs the Galadriel server",
-// 		Long:  "Run this command to start the Galadriel server",
-// 	}
-// }
+func NewRunCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "run",
+		Short: "Runs the Galadriel server",
+		Long:  "Run this command to start the Galadriel server",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Print("sou o run")
+			// runHarvesterAPI()
+		},
+	}
+}
 
-// func init() {
-// 	fmt.Printf("API")
-// 	HarvesterCmd.AddCommand(NewRunCmd())
-// }
-
-// func runHarvesterAPI() {
-// 	var cfg *config.HarvesterConfig
-// 	ctx := context.Background()
-// 	harvester.NewHarvesterManager().Start(ctx, *cfg)
-// }
+func init() {
+	fmt.Printf("API")
+	HarvesterCmd.AddCommand(NewRunCmd())
+}

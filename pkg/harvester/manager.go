@@ -31,6 +31,8 @@ func NewHarvesterManager() *HarvesterManager {
 }
 
 func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterConfig) {
+	// func (m *HarvesterManager) Start(ctx context.Context) {
+	m.logger.Info("Starting Harvester Manager")
 	type key string
 
 	if m.load(config) != nil {
@@ -70,9 +72,8 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 
 func (m *HarvesterManager) run(ctx context.Context) {
 	// TODO: figure out how to trap signals
-	m.logger.Info("Starting harvester manager")
-
 	var wg sync.WaitGroup
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		wg.Wait()

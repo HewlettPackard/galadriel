@@ -11,22 +11,23 @@ import (
 
 var HarvesterCmd = &cobra.Command{
 	Use:   "run",
-	Short: "Commands to run Galadriel Harvester",
-	Long:  "Commands to manage Galadriel Harvester",
+	Short: "Run Galadriel Harvester",
+	Long:  "Command to run the Galadriel Harvester API",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print("sou o run")
-		runHarvesterAPI()
+		RunHarvesterAPI()
 	},
 }
 
 func init() {
-	fmt.Print("server")
 	harvesterCli := NewHarvesterCli()
 	harvesterCli.AddCommand(HarvesterCmd)
 }
 
-func runHarvesterAPI() {
+func RunHarvesterAPI() {
 	var cfg *config.HarvesterConfig
+	// cfg =
 	ctx := context.Background()
 	harvester.NewHarvesterManager().Start(ctx, *cfg)
+	// harvester.NewHarvesterManager().Start(ctx)
 }
