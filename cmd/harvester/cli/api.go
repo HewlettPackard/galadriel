@@ -2,14 +2,15 @@ package cli
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
 	"github.com/spf13/cobra"
 )
 
-const defaultConfPath = "conf/harvester/harvester.conf"
+const defaultConfigPath = "conf/harvester/harvester.conf"
+
+var configPath string
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
@@ -17,16 +18,17 @@ func NewRunCmd() *cobra.Command {
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
 		Run: func(cmd *cobra.Command, args []string) {
-			HarvesterCLI.runHarvesterAPI()
+			configPath, _ := cmd.Flags().GetString("config")
+			HarvesterCLI.runHarvesterAPI(configPath)
 		},
 	}
 }
 
-func (c *HarvesterCli) runHarvesterAPI() {
+func (c *HarvesterCli) runHarvesterAPI(configPath string) {
 	c.logger.Info("Confinguring Harvester Cli")
-	cfg, err := config.LoadFromDisk(defaultConfPath)
+	cfg, err := config.LoadFromDisk(configPath)
 	if err != nil {
-		fmt.Print("Error loading config:", err)
+		c.logger.Error("Error loading config:", err)
 	}
 
 	ctx := context.Background()
@@ -35,5 +37,6 @@ func (c *HarvesterCli) runHarvesterAPI() {
 
 func init() {
 	runCmd := NewRunCmd()
+	runCmd.PersistentFlags().StringVar(&configPath, "config", defaultConfigPath, "config file (default is conf/harvester/harvester.conf)")
 	RootCmd.AddCommand(runCmd)
 }
