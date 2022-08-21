@@ -32,6 +32,6 @@ const (
 	GaladrielServer = "galadriel_server"
 	HTTPApi         = "http_api"
 
-	ID       = "id"
-	spiffeID = "spiffeID"
+	ID = "id"
+	// spiffeID = "spiffeID"
 )
