@@ -57,8 +57,6 @@ func (c *LocalHarvesterController) ApproveFederationRelationship(ctx context.Con
 	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Approve)
 
 	var fr common.FederationRelationship
-	// response.Status = common.FederationRelationshipStatusActive
-
 	// if spireServerConsent and spireServerFederatedWithConsent == true => response.Status = common.FederationRelationshipStatusActive
 	// fr.spireServerConsent = True
 	return fr, errors.New("not implemented")
