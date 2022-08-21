@@ -9,18 +9,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewRunCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "run",
-		Short: "Runs the Galadriel server",
-		Long:  "Run this command to start the Galadriel server",
-		Run: func(cmd *cobra.Command, args []string) {
-			runHarvesterAPI()
-		},
-	}
+const defaultConfPath = "conf/harvester/harvester.conf"
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Runs the Galadriel server",
+	Long:  "Run this command to start the Galadriel server",
+	Run: func(cmd *cobra.Command, args []string) {
+		HarvesterCLI.runHarvesterAPI()
+	},
 }
 
-func runHarvesterAPI() {
+func (c *HarvesterCli) runHarvesterAPI() {
+	c.logger.Info("Confinguring Harvester Cli")
 	cfg, err := config.LoadFromDisk(defaultConfPath)
 	if err != nil {
 		fmt.Print("Error loading config:", err)
@@ -31,5 +32,5 @@ func runHarvesterAPI() {
 }
 
 func init() {
-	RootCmd.AddCommand(NewRunCmd())
+	RootCmd.AddCommand(runCmd)
 }
