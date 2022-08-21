@@ -8,14 +8,14 @@ servers:
   - url: http://localhost:32308/
 
 paths:
-  /FederationRelationship:
+  /federation-relationship:
     get:
       description: Returns all federated relationships of a SPIRE server in the Galadriel server
       operationId: getFederationRelationships
       parameters:
-        - name: spireServer
+        - name: spireServerId
           in: query
-          description: filter relationships by spireServer
+          description: filter relationships by spireServerId
           schema:
             type: string
             format: string
@@ -27,7 +27,7 @@ paths:
             format: string
         - name: federationGroupId
           in: query
-          description: filter relationships by status
+          description: filter relationships by federationGroupId
           schema:
             type: integer
             format: int64
@@ -46,12 +46,13 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /FederationRelationship/{relationshipID}:
+
+  /federation-relationship/{relationshipId}:
     get: 
       description: get data for one organization
-      operationId: getRelationshipbyID
+      operationId: getRelationshipbyId
       parameters:
-        - name: relationshipID
+        - name: relationshipId
           in: path
           description: Id of the relationship to be retrieved
           required: true 
@@ -72,10 +73,10 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     put:
-      description: update an the status of a relationship by ID
+      description: update an the status of a relationship by Id
       operationId: updateFederatedRelationshipStatus
       parameters:
-        - name: relationshipID
+        - name: relationshipId
           in: path
           description: Id of the relationship to update
           required: true
@@ -97,7 +98,8 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /trustBundles/{trustBundleId}:
+
+  /trust-bundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
       operationId: updateTrustBundle
@@ -128,4 +130,3 @@ paths:
               application/json:
                 schema:
                   $ref: './schemas.yaml'
-

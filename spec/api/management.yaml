@@ -28,7 +28,7 @@ components:
         - id
         - name
     FederationGroup:
-      # A Federation Group is a group of SpireServers (representation of the bridge)
+      # A federation group is a group of SpireServers (representation of the bridge)
       type: object
       properties:
         id:
@@ -71,11 +71,11 @@ components:
             - inactive
       required:
         - id
-        - trustdomain
+        - trustDomain
         - description
         - status
     FederationGroupMembership:
-      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a 
+      # A FederationGroupMembership represents a particular SPIRE server's presence in a 
       # FederationGroup
       type: object
       properties:
@@ -148,12 +148,13 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /organizations/{orgID}:
+
+  /organizations/{orgId}:
     get: 
       description: get data for one organization
-      operationId: getOrgbyID
+      operationId: getOrgById
       parameters:
-        - name: orgID
+        - name: orgId
           in: path
           description: Id of the organization to be retrieved
           required: true 
@@ -174,8 +175,8 @@ paths:
               schema:
                 $ref: './schemas.yaml'  
     put:
-      description: update an organizaion by ID
-      operationId: updateOrganizaion
+      description: update an organization by ID
+      operationId: updateOrganization
       parameters:
         - name: orgID
           in: path
@@ -219,7 +220,8 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroups:
+
+  /federation-groups:
     post:
       description: Create a new federation group
       operationId: createFederationGroup
@@ -253,9 +255,9 @@ paths:
           schema:
             type: string
             format: int64
-        - name: orgname
+        - name: orgName
           in: query
-          description: filter federation groups by orgname
+          description: filter federation groups by orgName
           schema:
             type: string
             format: string
@@ -280,12 +282,13 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroups/{federationGroupID}:
+
+  /federation-groups/{federationGroupId}:
     get: 
       description: get data for one FederationGroup
-      operationId: getFederationGroupbyID
+      operationId: getFederationGroupById
       parameters:
-        - name: federationGroupID
+        - name: federationGroupId
           in: path
           description: Id of the federationGroup to be retrieved
           required: true 
@@ -307,7 +310,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update a federationGroup by ID
-      operationId: updatefederationGroup
+      operationId: updateFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -333,7 +336,7 @@ paths:
                 $ref: './schemas.yaml'
     delete:
       description: delete a federationGroup
-      operationId: deletefederationGroup
+      operationId: deleteFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -352,7 +355,7 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /spireServers:
+  /spire-servers:
     post:
       description: Create a new SpireServer
       operationId: createSpireServer
@@ -411,7 +414,7 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /spireServers/{spireServerId}:
+  /spire-servers/{spireServerId}:
     put:
       description: Updates the status of a SpireServer
       operationId: updateSpireServer
@@ -462,7 +465,8 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroupMemberships:
+
+  /federation-group-memberships:
     post:
       description: Associate a SpireServer to a Federation Group
       operationId: createFederationGroupMembership
@@ -490,15 +494,15 @@ paths:
       description: Returns all federation groups memberships
       operationId: getFederationGroupMemberships
       parameters:
-        - name: orgId
+        - name: orgID
           in: query
-          description: filter federation groups memberships by orgId
+          description: filter federation groups memberships by orgID
           schema:
             type: string
             format: int64
-        - name: orgname
+        - name: orgName
           in: query
-          description: filter federation groups memberships by orgname
+          description: filter federation groups memberships by orgName
           schema:
             type: string
             format: string
@@ -531,12 +535,13 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroupMemberships/{membershipID}:
+
+  /federation-group-memberships/{membershipId}:
     get: 
       description: get data for one FederationGroup
-      operationId: getFederationGroupMembershipbyID
+      operationId: getFederationGroupMembershipById
       parameters:
-        - name: membershipID
+        - name: membershipId
           in: path
           description: Id of the federationGroup to be retrieved
           required: true 
@@ -557,10 +562,10 @@ paths:
               schema:
                 $ref: './schemas.yaml'  
     put:
-      description: update a federationGroupMembership by ID
-      operationId: updatefederationGroupMembership
+      description: update a FederationGroupMembership by ID
+      operationId: updateFederationGroupMembership
       parameters:
-        - name: membershipID
+        - name: membershipId
           in: path
           description: Id of the federationGroup membership to update
           required: true
@@ -586,7 +591,7 @@ paths:
       description: delete a federationGroup membership
       operationId: deletefederationGroupMembership
       parameters:
-        - name: membershipID
+        - name: membershipId
           in: path
           description: Id of the federationGroup membership to delete
           required: true
@@ -602,7 +607,8 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationRelationships:
+
+  /federation-relationships:
     post:
       description: Creates inital request for trustbundle exchange between two SpireServers active in the same federation group
       operationId: createFederationRelationship
@@ -630,15 +636,15 @@ paths:
       description: Returns all federation relationships
       operationId: getFederationRelationships
       parameters:
-        - name: orgId
+        - name: orgID
           in: query
-          description: filter federation groups memberships by orgId
+          description: filter federation groups memberships by orgID
           schema:
             type: string
             format: int64
-        - name: orgname
+        - name: orgName
           in: query
-          description: filter federation groups memberships by orgname
+          description: filter federation groups memberships by orgName
           schema:
             type: string
             format: string
@@ -672,10 +678,11 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationRelationships/{relationshipID}:
+
+  /federation-relationships/{relationshipID}:
     get: 
       description: get data for one FederationGroup
-      operationId: getFederationRelationshipbyID
+      operationId: getFederationRelationshipByID
       parameters:
         - name: relationshipID
           in: path
@@ -699,7 +706,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update a federationGroupMembership by ID
-      operationId: updateFederationRelationshipship
+      operationId: updateFederationRelationship
       parameters:
         - name: relationshipID
           in: path
@@ -724,7 +731,7 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /trustBundles/{trustBundleId}:
+  /trust-bundles/{trustBundleId}:
     put:
       description: Upload a TrustBundle
       operationId: updateTrustBundle
@@ -755,4 +762,3 @@ paths:
               application/json:
                 schema:
                   $ref: './schemas.yaml'
-

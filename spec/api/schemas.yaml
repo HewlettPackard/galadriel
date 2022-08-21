@@ -1,4 +1,3 @@
-
 components:
   schemas:
     FederationRelationship:
@@ -11,7 +10,7 @@ components:
         federationGroupId:
           type: integer
           format: int64
-        spireServer:
+        spireServerId:
           type: string
           format: string
         spireServerFederatedWith:
@@ -32,7 +31,7 @@ components:
       required:
         - id
         - federationGroupId
-        - spireServer
+        - spireServerId
         - spireServerFederatedWith
     TrustBundle:
       # Represents the trust bundle of a SPIRE Server that is a member of the bridge

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
@@ -11,8 +10,10 @@ import (
 
 type API interface {
 	common.RunnablePlugin
-	GetTrustBundle(context.Context, string) (string, error)
-	AddTrustBundle(context.Context, string) error
+	GetTrustBundle(context.Context, string) (common.TrustBundle, error)
+	AddTrustBundle(context.Context, common.TrustBundle) (common.TrustBundle, error)
+	ManageFederationRelationship(context.Context, string) (common.FederationRelationship, error)
+	GetFederationRelationshipsByStatus(context.Context, string) ([]common.FederationRelationship, error)
 }
 
 type HTTPApi struct {
@@ -36,12 +37,67 @@ func (a *HTTPApi) Run(ctx context.Context) error {
 	return nil
 }
 
-func (a *HTTPApi) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
+func (a *HTTPApi) GetTrustBundle(ctx context.Context, spiffeID string) (common.TrustBundle, error) {
 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Get)
-	return "", errors.New("not implemented")
+
+	var tb common.TrustBundle
+
+	tb, err := a.controller.GetTrustBundle(ctx, spiffeID)
+	if err != nil {
+		a.logger.Error(err)
+		return tb, err
+	}
+
+	return tb, nil
 }
 
-func (a *HTTPApi) AddTrustBundle(ctx context.Context, spiffeID string) error {
+func (a *HTTPApi) AddTrustBundle(ctx context.Context, trustBundle common.TrustBundle) (common.TrustBundle, error) {
 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Add)
-	return errors.New("not implemented")
+
+	tb, err := a.controller.AddTrustBundle(ctx, trustBundle)
+	if err != nil {
+		a.logger.Error(err)
+		return tb, err
+	}
+
+	return tb, nil
+}
+
+// POST: federation-relationship/{relationshipId} {action: approve/deny}
+func (a *HTTPApi) ManageFederationRelationship(ctx context.Context, id string) (common.FederationRelationship, error) {
+	var fr common.FederationRelationship
+
+	// if body.action == telemetry.Approve {
+	// 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Approve)
+	// 	fr, err := a.controller.ApproveFederationRelationship(ctx, id)
+	//  if err != nil {
+	//    a.logger.Error(err)
+	//    return fr, err
+	//   }
+	// }
+
+	// if body.action == telemetry.Deny {
+	// 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Approve)
+	//  fr, err := a.controller.DenyFederationRelationship(ctx, id)
+	//  if err != nil {
+	//    a.logger.Error(err)
+	//    return fr, err
+	//  }
+	// }
+
+	return fr, nil
+}
+
+func (a *HTTPApi) GetFederationRelationshipsByStatus(ctx context.Context, status string) ([]common.FederationRelationship, error) {
+	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
+
+	var fr []common.FederationRelationship
+
+	fr, err := a.controller.GetFederationRelationshipsByStatus(ctx, status)
+	if err != nil {
+		a.logger.Error(err)
+		return fr, err
+	}
+
+	return fr, nil
 }
