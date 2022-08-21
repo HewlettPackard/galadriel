@@ -4,10 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var RootCmd = &cobra.Command{
-	Use:  "harvester",
-	Long: "This is Galadriel Harvester CLI",
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:  "harvester",
+		Long: "This is Galadriel Harvester CLI",
+	}
 }
+
+var RootCmd = NewRootCmd()
 
 var cmdExecute = RootCmd.Execute
 

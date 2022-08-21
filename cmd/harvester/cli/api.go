@@ -11,13 +11,15 @@ import (
 
 const defaultConfPath = "conf/harvester/harvester.conf"
 
-var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "Runs the Galadriel server",
-	Long:  "Run this command to start the Galadriel server",
-	Run: func(cmd *cobra.Command, args []string) {
-		HarvesterCLI.runHarvesterAPI()
-	},
+func NewRunCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "run",
+		Short: "Runs the Galadriel server",
+		Long:  "Run this command to start the Galadriel server",
+		Run: func(cmd *cobra.Command, args []string) {
+			HarvesterCLI.runHarvesterAPI()
+		},
+	}
 }
 
 func (c *HarvesterCli) runHarvesterAPI() {
@@ -32,5 +34,6 @@ func (c *HarvesterCli) runHarvesterAPI() {
 }
 
 func init() {
+	runCmd := NewRunCmd()
 	RootCmd.AddCommand(runCmd)
 }
