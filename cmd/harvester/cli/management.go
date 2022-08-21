@@ -41,17 +41,17 @@ func (c *HarvesterCli) runManagementAPI(managementObject, action, id string) {
 
 func (c *HarvesterCli) runFederationAction(action, id string) error {
 	if action == telemetry.List {
-		c.logger.Info(managementObject, action, id)
+		c.logger.Info(telemetry.Federation, action, id)
 		return nil
 	}
 
 	if action == telemetry.Approve {
-		c.logger.Info(managementObject, action, id)
+		c.logger.Info(telemetry.Federation, action, id)
 		return nil
 	}
 
 	if action == telemetry.Deny {
-		c.logger.Info(managementObject, action, id)
+		c.logger.Info(telemetry.Federation, action, id)
 		return nil
 	}
 
