@@ -17,19 +17,26 @@ func NewRunCmd() *cobra.Command {
 		Use:   "run",
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
-		Run: func(cmd *cobra.Command, args []string) {
-			configPath, _ := cmd.Flags().GetString("config")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configPath, err := cmd.Flags().GetString("config")
+			if err != nil {
+				return err
+			}
+
 			HarvesterCLI.runHarvesterAPI(configPath)
+
+			return nil
 		},
 	}
 }
 
 func (c *HarvesterCli) runHarvesterAPI(configPath string) {
-	c.logger.Info("Confinguring Harvester Cli")
+	c.logger.Info("Configuring Harvester Cli")
 
 	cfg, err := config.LoadFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
+		panic(err)
 	}
 
 	ctx := context.Background()
