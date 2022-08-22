@@ -4,17 +4,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{}
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:  "server",
+		Long: "This is Galadriel Server CLI",
+	}
+}
 
-var cmdExecute = rootCmd.Execute
+var RootCmd = &cobra.Command{}
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+var cmdExecute = RootCmd.Execute
+
 func Execute() int {
 	err := cmdExecute()
 	if err != nil {
 		return 1
 	}
+
 	return 0
 }

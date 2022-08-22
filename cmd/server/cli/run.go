@@ -2,8 +2,13 @@ package cli
 
 import (
 	"github.com/HewlettPackard/galadriel/cmd/server/api"
+	"github.com/HewlettPackard/galadriel/pkg/server/config"
 	"github.com/spf13/cobra"
 )
+
+const defaultConfigPath = "conf/server/server.conf"
+
+var configPath string
 
 var runServerFn = api.Run
 
@@ -13,11 +18,30 @@ func NewRunCmd() *cobra.Command {
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
 		Run: func(cmd *cobra.Command, args []string) {
-			runServerFn()
+			configPath, _ := cmd.Flags().GetString("config")
+			ServerCLI.runServerAPI(configPath)
 		},
 	}
 }
 
+func (c *serverCLI) runServerAPI(configPath string) {
+	c.logger.Info("Configuring Harvester CLI")
+
+	cfg, err := config.LoadFromDisk(configPath)
+	if err != nil {
+		c.logger.Error("Error loading config:", err)
+	}
+
+	c.logger.Info("spire_socket_path", cfg.ServerConfigSection.SpireSocketPath)
+	c.logger.Info("server_address", cfg.ServerConfigSection.ServerAddress)
+	c.logger.Info("log_level", cfg.ServerConfigSection.LogLevel)
+
+	runServerFn()
+}
+
 func init() {
-	serverCmd.AddCommand(NewRunCmd())
+	runCmd := NewRunCmd()
+	runCmd.Flags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file path")
+
+	RootCmd.AddCommand(runCmd)
 }
