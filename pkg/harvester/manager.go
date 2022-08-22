@@ -31,7 +31,6 @@ func NewHarvesterManager() *HarvesterManager {
 }
 
 func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterConfig) {
-	// func (m *HarvesterManager) Start(ctx context.Context) {
 	m.logger.Info("Starting Harvester Manager")
 	type key string
 
