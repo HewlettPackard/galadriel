@@ -73,7 +73,7 @@ func (c *HarvesterCli) runFederationAction(action, id string) error {
 
 func init() {
 	runCmd := NewManagementCmd()
-	runCmd.PersistentFlags().StringVar(&managementEntity, "object", defaultManagementEntity, "choose what object to manage between federation and member")
+	runCmd.PersistentFlags().StringVar(&managementEntity, "entity", defaultManagementEntity, "choose what object to manage between federation and member")
 	runCmd.PersistentFlags().StringVar(&action, "action", defaultAction, "choose what action to do with the object selected")
 	runCmd.PersistentFlags().StringVar(&id, "id", "", "choose what id will be acted on")
 
