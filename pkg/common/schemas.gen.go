@@ -27,10 +27,10 @@ type Error struct {
 type FederationRelationship struct {
 	FederationGroupId               int64                         `json:"federationGroupId"`
 	Id                              int64                         `json:"id"`
-	SpireServer                     string                        `json:"spireServer"`
 	SpireServerConsent              *string                       `json:"spireServerConsent,omitempty"`
 	SpireServerFederatedWith        string                        `json:"spireServerFederatedWith"`
 	SpireServerFederatedWithConsent *string                       `json:"spireServerFederatedWithConsent,omitempty"`
+	SpireServerId                   string                        `json:"spireServerId"`
 	Status                          *FederationRelationshipStatus `json:"status,omitempty"`
 }
 

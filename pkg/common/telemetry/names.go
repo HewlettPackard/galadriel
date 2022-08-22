@@ -22,6 +22,7 @@ const (
 	Create  = "create"
 	Approve = "approve"
 	Deny    = "deny"
+	Update  = "update"
 )
 
 // component

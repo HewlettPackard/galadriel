@@ -1,47 +1,28 @@
 package api
 
 import (
-	"context"
-
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
+	"github.com/labstack/echo/v4"
 )
 
-// POST: federation-relationship/{relationshipId} {action: approve/deny}
-func (a *HTTPApi) ManageFederationRelationship(ctx context.Context, id string) (common.FederationRelationship, error) {
-	var fr common.FederationRelationship
+func (a *HTTPApi) GetFederationRelationships(ctx echo.Context, params harvester.GetFederationRelationshipsParams) error {
+	a.logger.Info(telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.List)
+	telemetry.Count(ctx.Request().Context(), telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
 
-	// if body.action == telemetry.Approve {
-	// 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Approve)
-	// 	fr, err := a.controller.ApproveFederationRelationship(ctx, id)
-	//  if err != nil {
-	//    a.logger.Error(err)
-	//    return fr, err
-	//   }
-	// }
-
-	// if body.action == telemetry.Deny {
-	// 	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.TrustBundle, telemetry.Approve)
-	//  fr, err := a.controller.DenyFederationRelationship(ctx, id)
-	//  if err != nil {
-	//    a.logger.Error(err)
-	//    return fr, err
-	//  }
-	// }
-
-	return fr, nil
+	return nil
 }
 
-func (a *HTTPApi) GetFederationRelationshipsByStatus(ctx context.Context, status string) ([]common.FederationRelationship, error) {
-	telemetry.Count(ctx, telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
+func (a *HTTPApi) GetFederationRelationshipbyId(ctx echo.Context, relationshipID int64) error {
+	a.logger.Info(telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
+	telemetry.Count(ctx.Request().Context(), telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
 
-	var fr []common.FederationRelationship
+	return nil
+}
 
-	fr, err := a.controller.GetFederationRelationshipsByStatus(ctx, status)
-	if err != nil {
-		a.logger.Error(err)
-		return fr, err
-	}
+func (a *HTTPApi) UpdateFederatedRelationshipConsent(ctx echo.Context, relationshipID int64) error {
+	a.logger.Info(telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Update)
+	telemetry.Count(ctx.Request().Context(), telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Update)
 
-	return fr, nil
+	return nil
 }
