@@ -10,17 +10,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/spire-api-sdk/proto/spire/api/types"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 )
-
-type fakeClientConn struct{}
-
-func (fakeClientConn) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
-	return nil
-}
-func (fakeClientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	return nil, nil
-}
 
 func TestNewBundleClientSuccess(t *testing.T) {
 	got := NewBundleClient(fakeClientConn{})
@@ -39,12 +29,9 @@ func TestClientGetBundle(t *testing.T) {
 		protoParseErr string
 	}{
 		{
-			name:     "ok",
-			expected: spiffebundle.New(spiffeid.RequireTrustDomainFromString("example.org")),
-			clientBundle: &types.Bundle{
-				TrustDomain:     "example.org",
-				X509Authorities: []*types.X509Certificate{},
-			},
+			name:         "ok",
+			expected:     spiffebundle.New(spiffeid.RequireTrustDomainFromString("example.org")),
+			clientBundle: &types.Bundle{TrustDomain: "example.org"},
 		},
 		{
 			name:      "error_calling_client",
