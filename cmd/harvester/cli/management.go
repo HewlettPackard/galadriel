@@ -12,12 +12,13 @@ func NewManagementCmd() *cobra.Command {
 		Short: "Manages member and federation relationships",
 		Long:  "Run this command to approve and deny relationships between members or federations",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			HarvesterCLI.runManagementAPI()
 			return errors.New("not implemented")
 		},
 	}
 }
 
-func (c *HarvesterCli) runManagementAPI(managementObject, action, id string) {
+func (c *HarvesterCli) runManagementAPI() {
 	c.logger.Info("Starting Management API")
 }
 
