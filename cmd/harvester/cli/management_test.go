@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -12,11 +13,8 @@ func TestNewManagementCmd(t *testing.T) {
 		Use:   "manage",
 		Short: "Manage member and federation relationships",
 		Long:  "Run this command to approve and deny relationships between members or federations",
-		Run: func(cmd *cobra.Command, args []string) {
-			managementObject, _ := cmd.Flags().GetString("object")
-			action, _ := cmd.Flags().GetString("action")
-			id, _ := cmd.Flags().GetString("id")
-			HarvesterCLI.runManagementAPI(managementObject, action, id)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return errors.New("not implemented")
 		},
 	}
 	assert.ObjectsAreEqual(expected, NewManagementCmd())
