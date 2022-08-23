@@ -71,8 +71,10 @@ func (c fakeSpireBundleClient) BatchDeleteFederatedBundle(ctx context.Context, i
 }
 
 type fakeSpireTrustDomainClient struct {
-	batchCreateFederationRelationshipResponse *trustdomainv1.BatchCreateFederationRelationshipResponse
-	batchCreateFederationRelationshipError    error
+	batchCreateFederationRelationshipsReponse *trustdomainv1.BatchCreateFederationRelationshipResponse
+	batchCreateFederationRelationshipsError   error
+	batchUpdateFederationRelationshipsReponse *trustdomainv1.BatchUpdateFederationRelationshipResponse
+	batchUpdateFederationRelationshipsError   error
 }
 
 func (c fakeSpireTrustDomainClient) ListFederationRelationships(ctx context.Context, in *trustdomainv1.ListFederationRelationshipsRequest, opts ...grpc.CallOption) (*trustdomainv1.ListFederationRelationshipsResponse, error) {
@@ -84,14 +86,17 @@ func (c fakeSpireTrustDomainClient) GetFederationRelationship(ctx context.Contex
 }
 
 func (c fakeSpireTrustDomainClient) BatchCreateFederationRelationship(ctx context.Context, in *trustdomainv1.BatchCreateFederationRelationshipRequest, opts ...grpc.CallOption) (*trustdomainv1.BatchCreateFederationRelationshipResponse, error) {
-	if c.batchCreateFederationRelationshipError != nil {
-		return nil, c.batchCreateFederationRelationshipError
+	if c.batchCreateFederationRelationshipsError != nil {
+		return nil, c.batchCreateFederationRelationshipsError
 	}
-	return c.batchCreateFederationRelationshipResponse, nil
+	return c.batchCreateFederationRelationshipsReponse, nil
 }
 
 func (c fakeSpireTrustDomainClient) BatchUpdateFederationRelationship(ctx context.Context, in *trustdomainv1.BatchUpdateFederationRelationshipRequest, opts ...grpc.CallOption) (*trustdomainv1.BatchUpdateFederationRelationshipResponse, error) {
-	return nil, nil
+	if c.batchUpdateFederationRelationshipsError != nil {
+		return nil, c.batchUpdateFederationRelationshipsError
+	}
+	return c.batchUpdateFederationRelationshipsReponse, nil
 }
 
 func (c fakeSpireTrustDomainClient) BatchDeleteFederationRelationship(ctx context.Context, in *trustdomainv1.BatchDeleteFederationRelationshipRequest, opts ...grpc.CallOption) (*trustdomainv1.BatchDeleteFederationRelationshipResponse, error) {
