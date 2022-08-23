@@ -1,9 +1,10 @@
 package api
 
 import (
+	"github.com/labstack/echo/v4"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/labstack/echo/v4"
 )
 
 func (a *HTTPApi) GetFederationRelationships(ctx echo.Context, params harvester.GetFederationRelationshipsParams) error {

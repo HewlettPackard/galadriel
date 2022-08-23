@@ -5,11 +5,12 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/labstack/echo/v4"
 )
 
 type API interface {
@@ -35,20 +36,27 @@ func NewHTTPApi(controller controller.HarvesterController) API {
 func (a *HTTPApi) Run(ctx context.Context) error {
 	a.logger.Info("Starting HTTP API")
 
-	var port = flag.Int("port", 8000, "Port for HTTP Galadriel server")
-	flag.Parse()
-
 	var controller controller.HarvesterController
 
 	harvester_api := NewHTTPApi(controller)
-	router := echo.New()
-	harvester.RegisterHandlers(router, harvester_api)
 
-	err := router.Start(fmt.Sprintf("0.0.0.0:%d", *port))
+	err := a.run(ctx, harvester_api)
 	if err != nil {
 		a.logger.Error("HTTP API has failed", err)
-		return err
+		panic(err)
 	}
 
 	return nil
+}
+
+func (a *HTTPApi) run(ctx context.Context, api API) error {
+	a.logger.Info("Starting HTTP API")
+
+	var port = flag.Int("port", 8000, "Port for HTTP Galadriel server")
+	flag.Parse()
+
+	router := echo.New()
+	harvester.RegisterHandlers(router, api)
+
+	return router.Start(fmt.Sprintf("0.0.0.0:%d", *port))
 }

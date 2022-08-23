@@ -194,6 +194,8 @@ paths:
       responses:
         '204':
           description: no content
+          
+
         default:
           description: unexpected error
           content:
