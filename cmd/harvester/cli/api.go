@@ -23,24 +23,29 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			HarvesterCLI.runHarvesterAPI(configPath)
+			err = HarvesterCLI.runHarvesterAPI(configPath)
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
 	}
 }
 
-func (c *HarvesterCli) runHarvesterAPI(configPath string) {
+func (c *HarvesterCli) runHarvesterAPI(configPath string) error {
 	c.logger.Info("Configuring Harvester Cli")
 
 	cfg, err := config.LoadFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
-		panic(err)
+		return err
 	}
 
 	ctx := context.Background()
 	harvester.NewHarvesterManager().Start(ctx, *cfg)
+
+	return nil
 }
 
 func init() {
