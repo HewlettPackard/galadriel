@@ -55,35 +55,34 @@ func TestNew(t *testing.T) {
 			err:    "invalid configuration: server.server_address is required",
 		},
 		{
-			name:   "invalid_hcl",
+			name:   "err_hcl",
 			config: bytes.NewBufferString(`not a valid hcl`),
 			err:    "unable to decode configuration: At 1:17: key 'not a valid hcl' expected start of object ('{') or assignment ('=')",
 		},
 		{
-			name:   "invalid_config_reader",
+			name:   "err_config_reader",
 			config: nil,
 			err:    "configuration is required",
 		},
 		{
-			name:   "invalid_config_reader_error",
+			name:   "err_config_reader_error",
 			config: fakeReader(0),
 			err:    "failed to read configuration: error from fake reader",
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := New(tt.config)
+			serverConfig, err := New(tt.config)
 
 			if tt.err != "" {
+				assert.Nil(t, serverConfig)
 				assert.EqualError(t, err, tt.err)
-				assert.Nil(t, got)
 				return
 			}
 
+			assert.Equal(t, tt.expected, serverConfig)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, got)
 		})
 	}
 

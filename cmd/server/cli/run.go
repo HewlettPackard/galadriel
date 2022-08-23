@@ -27,14 +27,11 @@ func NewRunCmd() *cobra.Command {
 func (c *serverCLI) runServerAPI(configPath string) {
 	c.logger.Info("Configuring Harvester CLI")
 
-	cfg, err := config.LoadFromDisk(configPath)
+	// TODO: pass config variables to runServerFn()
+	_, err := config.LoadFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
 	}
-
-	c.logger.Info("spire_socket_path", cfg.ServerConfigSection.SpireSocketPath)
-	c.logger.Info("server_address", cfg.ServerConfigSection.ServerAddress)
-	c.logger.Info("log_level", cfg.ServerConfigSection.LogLevel)
 
 	runServerFn()
 }
