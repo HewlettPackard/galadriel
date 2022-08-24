@@ -38,7 +38,6 @@ func (c *HarvesterCli) runHarvesterAPI(configPath string) error {
 
 	cfg, err := config.LoadFromDisk(configPath)
 	if err != nil {
-		c.logger.Error("Error loading config:", err)
 		return err
 	}
 

@@ -43,7 +43,7 @@ func (c *HarvesterCli) Run() error {
 func (c *HarvesterCli) Execute() error {
 	err := cmdExecute()
 	if err != nil {
-		c.logger.Error("Error when executing the Harvester CLI", err)
+		c.logger.Error("Error when executing the Harvester CLI:", err)
 		return err
 	}
 
