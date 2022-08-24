@@ -75,6 +75,8 @@ type fakeSpireTrustDomainClient struct {
 	batchCreateFederationRelationshipsError   error
 	batchUpdateFederationRelationshipsReponse *trustdomainv1.BatchUpdateFederationRelationshipResponse
 	batchUpdateFederationRelationshipsError   error
+	batchDeleteFederationRelationshipsReponse *trustdomainv1.BatchDeleteFederationRelationshipResponse
+	batchDeleteFederationRelationshipsError   error
 }
 
 func (c fakeSpireTrustDomainClient) ListFederationRelationships(ctx context.Context, in *trustdomainv1.ListFederationRelationshipsRequest, opts ...grpc.CallOption) (*trustdomainv1.ListFederationRelationshipsResponse, error) {
@@ -100,7 +102,10 @@ func (c fakeSpireTrustDomainClient) BatchUpdateFederationRelationship(ctx contex
 }
 
 func (c fakeSpireTrustDomainClient) BatchDeleteFederationRelationship(ctx context.Context, in *trustdomainv1.BatchDeleteFederationRelationshipRequest, opts ...grpc.CallOption) (*trustdomainv1.BatchDeleteFederationRelationshipResponse, error) {
-	return nil, nil
+	if c.batchDeleteFederationRelationshipsError != nil {
+		return nil, c.batchDeleteFederationRelationshipsError
+	}
+	return c.batchDeleteFederationRelationshipsReponse, nil
 }
 
 func (c fakeSpireTrustDomainClient) RefreshBundle(ctx context.Context, in *trustdomainv1.RefreshBundleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {

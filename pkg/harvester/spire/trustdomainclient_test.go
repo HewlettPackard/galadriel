@@ -44,6 +44,12 @@ var (
 		},
 		Status: &FederationRelationshipResultStatus{Code: codes.OK},
 	}
+	outDeleteStatusExample = &FederationRelationshipResult{
+		Status: &FederationRelationshipResultStatus{
+			Code:        codes.OK,
+			TrustDomain: "example.org",
+		},
+	}
 )
 
 func makeFederationRelationship(td string, profile BundleEndpointProfile) *types.FederationRelationship {
@@ -84,10 +90,10 @@ func TestNewTrustDomainClientSuccess(t *testing.T) {
 func TestClientCreateFederationRelationships(t *testing.T) {
 	tests := []struct {
 		name                    string
-		expected                []*FederationRelationshipResult
 		input                   []*FederationRelationship
-		federationRelationships []*FederationRelationship
+		expected                []*FederationRelationshipResult
 		err                     string
+		federationRelationships []*FederationRelationship
 		clientResponse          *trustdomainv1.BatchCreateFederationRelationshipResponse
 		clientErr               string
 	}{
@@ -175,13 +181,12 @@ func TestClientCreateFederationRelationships(t *testing.T) {
 
 func TestClientUpdateFederationRelationships(t *testing.T) {
 	tests := []struct {
-		name                    string
-		expected                []*FederationRelationshipResult
-		input                   []*FederationRelationship
-		federationRelationships []*FederationRelationship
-		err                     string
-		clientResponse          *trustdomainv1.BatchUpdateFederationRelationshipResponse
-		clientErr               string
+		name           string
+		input          []*FederationRelationship
+		expected       []*FederationRelationshipResult
+		err            string
+		clientResponse *trustdomainv1.BatchUpdateFederationRelationshipResponse
+		clientErr      string
 	}{
 		{
 			name:     "ok_spiffe",
@@ -253,6 +258,73 @@ func TestClientUpdateFederationRelationships(t *testing.T) {
 			client := &trustDomainClient{client: spireTrustDomainClient}
 
 			got, err := client.UpdateFederationRelationships(context.Background(), tt.input)
+
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+				assert.Nil(t, got)
+				return
+			}
+
+			assert.Equal(t, tt.expected, got)
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestClientDeleteFederationRelationships(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          []string
+		expected       []*FederationRelationshipResult
+		err            string
+		clientResponse *trustdomainv1.BatchDeleteFederationRelationshipResponse
+		clientErr      string
+	}{
+		{
+			name:     "ok",
+			input:    []string{"example.org"},
+			expected: []*FederationRelationshipResult{outDeleteStatusExample},
+			clientResponse: &trustdomainv1.BatchDeleteFederationRelationshipResponse{
+				Results: []*trustdomainv1.BatchDeleteFederationRelationshipResponse_Result{
+					{
+						Status:      &types.Status{Code: int32(codes.OK)},
+						TrustDomain: "example.org",
+					},
+				},
+			},
+		},
+		{
+			name:      "client_error",
+			input:     []string{"example.org"},
+			clientErr: "error_from_client",
+			err:       "failed to delete federation relationships: error_from_client",
+		},
+		{
+			name:  "invalid_client_response",
+			input: []string{"example.org"},
+			clientResponse: &trustdomainv1.BatchDeleteFederationRelationshipResponse{
+				Results: []*trustdomainv1.BatchDeleteFederationRelationshipResponse_Result{{}},
+			},
+			err: "failed to parse federation relationship results: invalid proto response: ",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			spireTrustDomainClient := &fakeSpireTrustDomainClient{}
+			spireTrustDomainClient.batchDeleteFederationRelationshipsReponse = tt.clientResponse
+
+			if tt.clientErr != "" {
+				spireTrustDomainClient.batchDeleteFederationRelationshipsError = errors.New(tt.clientErr)
+			}
+
+			client := &trustDomainClient{client: spireTrustDomainClient}
+
+			tds, err := stringsToTrustDomains(tt.input)
+			assert.NoError(t, err)
+
+			got, err := client.DeleteFederationRelationships(context.Background(), tds)
 
 			if tt.err != "" {
 				assert.EqualError(t, err, tt.err)

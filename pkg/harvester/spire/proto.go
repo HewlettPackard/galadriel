@@ -233,6 +233,10 @@ func protoDeleteToFederationRelationshipResult(in *trustdomainv1.BatchDeleteFede
 	var out []*FederationRelationshipResult
 
 	for _, r := range in.GetResults() {
+		if r == nil || r.Status == nil {
+			return nil, fmt.Errorf("invalid proto response: %v", r)
+
+		}
 		rOut := &FederationRelationshipResult{
 			Status: &FederationRelationshipResultStatus{
 				Code:        codes.Code(r.Status.Code),
@@ -313,6 +317,20 @@ func trustDomainsToStrings(in []*spiffeid.TrustDomain) ([]string, error) {
 			return nil, fmt.Errorf("invalid trust domain: %v", td)
 		}
 		out = append(out, td.String())
+	}
+
+	return out, nil
+}
+
+func stringsToTrustDomains(in []string) ([]*spiffeid.TrustDomain, error) {
+	var out []*spiffeid.TrustDomain
+
+	for _, v := range in {
+		td, err := spiffeid.TrustDomainFromString(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", v)
+		}
+		out = append(out, &td)
 	}
 
 	return out, nil
