@@ -34,7 +34,7 @@ components:
         id:
           type: integer
           format: int64
-        orgid:
+        orgId:
           type: integer
           format: int64
         name:
@@ -48,8 +48,9 @@ components:
             - active
       required:
         - id
-        - orgid
+        - orgId
         - name
+
     SpireServer:
       # SpireServer is a representation of a trust-domain/SpireServer 
       type: object
@@ -74,6 +75,7 @@ components:
         - trustDomain
         - description
         - status
+
     FederationGroupMembership:
       # A FederationGroupMembership represents a particular SPIRE server's presence in a 
       # FederationGroup
@@ -111,8 +113,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Organization'
       responses:
-        '201': 
-          description: Organization creation response
+        '201':
+          description: organization response
           content:
             application/json:
               schema:
@@ -149,12 +151,12 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /organizations/{orgId}:
+  /organizations/{orgID}:
     get: 
       description: get data for one organization
       operationId: getOrgById
       parameters:
-        - name: orgId
+        - name: orgID
           in: path
           description: Id of the organization to be retrieved
           required: true 
@@ -192,10 +194,14 @@ paths:
             schema:
               $ref: '#/components/schemas/Organization'
       responses:
-        '204':
+        '200':
           description: no content
-          
-
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
         default:
           description: unexpected error
           content:
@@ -270,7 +276,7 @@ paths:
             type: string
             format: string
       responses:
-        '200':
+        '201':
           description: get FederationGroup's response
           content:
             application/json:
@@ -285,12 +291,12 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /federation-groups/{federationGroupId}:
+  /federation-groups/{federationGroupID}:
     get: 
       description: get data for one FederationGroup
       operationId: getFederationGroupById
       parameters:
-        - name: federationGroupId
+        - name: federationGroupID
           in: path
           description: Id of the federationGroup to be retrieved
           required: true 

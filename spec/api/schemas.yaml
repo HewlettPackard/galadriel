@@ -33,6 +33,7 @@ components:
         - federationGroupId
         - spireServerId
         - spireServerFederatedWith
+        
     TrustBundle:
       # Represents the trust bundle of a SPIRE Server that is a member of the bridge
       type: object
@@ -56,6 +57,7 @@ components:
         - id
         - trustdomain
         - bundle
+
     Error:
       type: object
       properties:

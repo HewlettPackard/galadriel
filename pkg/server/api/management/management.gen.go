@@ -34,7 +34,7 @@ const (
 type FederationGroup struct {
 	Id     int64                  `json:"id"`
 	Name   string                 `json:"name"`
-	Orgid  int64                  `json:"orgid"`
+	OrgId  int64                  `json:"orgId"`
 	Status *FederationGroupStatus `json:"status,omitempty"`
 }
 
@@ -63,7 +63,7 @@ type SpireServer struct {
 	Description string            `json:"description"`
 	Id          int64             `json:"id"`
 	Status      SpireServerStatus `json:"status"`
-	TrustDomain *string           `json:"trustDomain,omitempty"`
+	TrustDomain string            `json:"trustDomain"`
 }
 
 // SpireServerStatus defines model for SpireServer.Status.
@@ -71,11 +71,11 @@ type SpireServerStatus string
 
 // GetFederationGroupMembershipsParams defines parameters for GetFederationGroupMemberships.
 type GetFederationGroupMembershipsParams struct {
-	// filter federation groups memberships by orgId
-	OrgId *string `form:"orgId,omitempty" json:"orgId,omitempty"`
+	// filter federation groups memberships by orgID
+	OrgID *string `form:"orgID,omitempty" json:"orgID,omitempty"`
 
-	// filter federation groups memberships by orgname
-	Orgname *string `form:"orgname,omitempty" json:"orgname,omitempty"`
+	// filter federation groups memberships by orgName
+	OrgName *string `form:"orgName,omitempty" json:"orgName,omitempty"`
 
 	// filter memberships by trust domain (SpireSever)
 	TrustDomain *string `form:"trustDomain,omitempty" json:"trustDomain,omitempty"`
@@ -92,8 +92,8 @@ type GetFederationGroupsParams struct {
 	// filter federation groups by orgId
 	OrgId *string `form:"orgId,omitempty" json:"orgId,omitempty"`
 
-	// filter federation groups by orgname
-	Orgname *string `form:"orgname,omitempty" json:"orgname,omitempty"`
+	// filter federation groups by orgName
+	OrgName *string `form:"orgName,omitempty" json:"orgName,omitempty"`
 
 	// filter organizations by federation group name
 	Name *string `form:"name,omitempty" json:"name,omitempty"`
@@ -101,11 +101,11 @@ type GetFederationGroupsParams struct {
 
 // GetFederationRelationshipsParams defines parameters for GetFederationRelationships.
 type GetFederationRelationshipsParams struct {
-	// filter federation groups memberships by orgId
-	OrgId *string `form:"orgId,omitempty" json:"orgId,omitempty"`
+	// filter federation groups memberships by orgID
+	OrgID *string `form:"orgID,omitempty" json:"orgID,omitempty"`
 
-	// filter federation groups memberships by orgname
-	Orgname *string `form:"orgname,omitempty" json:"orgname,omitempty"`
+	// filter federation groups memberships by orgName
+	OrgName *string `form:"orgName,omitempty" json:"orgName,omitempty"`
 
 	// filter memberships by trust domain (SpireSever)
 	TrustDomain *string `form:"trustDomain,omitempty" json:"trustDomain,omitempty"`
@@ -144,47 +144,47 @@ type CreateSpireServerJSONRequestBody = CreateSpireServerJSONBody
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /federationGroupMemberships)
+	// (GET /federation-group-memberships)
 	GetFederationGroupMemberships(ctx echo.Context, params GetFederationGroupMembershipsParams) error
 
-	// (POST /federationGroupMemberships)
+	// (POST /federation-group-memberships)
 	CreateFederationGroupMembership(ctx echo.Context) error
 
-	// (DELETE /federationGroupMemberships/{membershipID})
-	DeletefederationGroupMembership(ctx echo.Context, membershipID int64) error
+	// (DELETE /federation-group-memberships/{membershipId})
+	DeletefederationGroupMembership(ctx echo.Context, membershipId int64) error
 
-	// (GET /federationGroupMemberships/{membershipID})
-	GetFederationGroupMembershipbyID(ctx echo.Context, membershipID int64) error
+	// (GET /federation-group-memberships/{membershipId})
+	GetFederationGroupMembershipById(ctx echo.Context, membershipId int64) error
 
-	// (PUT /federationGroupMemberships/{membershipID})
-	UpdatefederationGroupMembership(ctx echo.Context, membershipID int64) error
+	// (PUT /federation-group-memberships/{membershipId})
+	UpdateFederationGroupMembership(ctx echo.Context, membershipId int64) error
 
-	// (GET /federationGroups)
+	// (GET /federation-groups)
 	GetFederationGroups(ctx echo.Context, params GetFederationGroupsParams) error
 
-	// (POST /federationGroups)
+	// (POST /federation-groups)
 	CreateFederationGroup(ctx echo.Context) error
 
-	// (DELETE /federationGroups/{federationGroupID})
-	DeletefederationGroup(ctx echo.Context, federationGroupID int64) error
+	// (DELETE /federation-groups/{federationGroupID})
+	DeleteFederationGroup(ctx echo.Context, federationGroupID int64) error
 
-	// (GET /federationGroups/{federationGroupID})
-	GetFederationGroupbyID(ctx echo.Context, federationGroupID int64) error
+	// (GET /federation-groups/{federationGroupID})
+	GetFederationGroupById(ctx echo.Context, federationGroupID int64) error
 
-	// (PUT /federationGroups/{federationGroupID})
-	UpdatefederationGroup(ctx echo.Context, federationGroupID int64) error
+	// (PUT /federation-groups/{federationGroupID})
+	UpdateFederationGroup(ctx echo.Context, federationGroupID int64) error
 
-	// (GET /federationRelationships)
+	// (GET /federation-relationships)
 	GetFederationRelationships(ctx echo.Context, params GetFederationRelationshipsParams) error
 
-	// (POST /federationRelationships)
+	// (POST /federation-relationships)
 	CreateFederationRelationship(ctx echo.Context) error
 
-	// (GET /federationRelationships/{relationshipID})
-	GetFederationRelationshipbyID(ctx echo.Context, relationshipID int64) error
+	// (GET /federation-relationships/{relationshipID})
+	GetFederationRelationshipByID(ctx echo.Context, relationshipID int64) error
 
-	// (PUT /federationRelationships/{relationshipID})
-	UpdateFederationRelationshipship(ctx echo.Context, relationshipID int64) error
+	// (PUT /federation-relationships/{relationshipID})
+	UpdateFederationRelationship(ctx echo.Context, relationshipID int64) error
 
 	// (GET /organizations)
 	GetOrganizations(ctx echo.Context, params GetOrganizationsParams) error
@@ -196,24 +196,24 @@ type ServerInterface interface {
 	DeleteOrganization(ctx echo.Context, orgID int64) error
 
 	// (GET /organizations/{orgID})
-	GetOrgbyID(ctx echo.Context, orgID int64) error
+	GetOrgById(ctx echo.Context, orgID int64) error
 
 	// (PUT /organizations/{orgID})
-	UpdateOrganizaion(ctx echo.Context, orgID int64) error
+	UpdateOrganization(ctx echo.Context, orgID int64) error
 
-	// (GET /spireServers)
+	// (GET /spire-servers)
 	GetSpireServers(ctx echo.Context, params GetSpireServersParams) error
 
-	// (POST /spireServers)
+	// (POST /spire-servers)
 	CreateSpireServer(ctx echo.Context) error
 
-	// (DELETE /spireServers/{spireServerId})
+	// (DELETE /spire-servers/{spireServerId})
 	DeleteSpireServer(ctx echo.Context, spireServerId int64) error
 
-	// (PUT /spireServers/{spireServerId})
+	// (PUT /spire-servers/{spireServerId})
 	UpdateSpireServer(ctx echo.Context, spireServerId int64) error
 
-	// (PUT /trustBundles/{trustBundleId})
+	// (PUT /trust-bundles/{trustBundleId})
 	UpdateTrustBundle(ctx echo.Context, trustBundleId int64) error
 }
 
@@ -228,18 +228,18 @@ func (w *ServerInterfaceWrapper) GetFederationGroupMemberships(ctx echo.Context)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetFederationGroupMembershipsParams
-	// ------------- Optional query parameter "orgId" -------------
+	// ------------- Optional query parameter "orgID" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "orgId", ctx.QueryParams(), &params.OrgId)
+	err = runtime.BindQueryParameter("form", true, false, "orgID", ctx.QueryParams(), &params.OrgID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgId: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgID: %s", err))
 	}
 
-	// ------------- Optional query parameter "orgname" -------------
+	// ------------- Optional query parameter "orgName" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "orgname", ctx.QueryParams(), &params.Orgname)
+	err = runtime.BindQueryParameter("form", true, false, "orgName", ctx.QueryParams(), &params.OrgName)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgname: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgName: %s", err))
 	}
 
 	// ------------- Optional query parameter "trustDomain" -------------
@@ -273,48 +273,48 @@ func (w *ServerInterfaceWrapper) CreateFederationGroupMembership(ctx echo.Contex
 // DeletefederationGroupMembership converts echo context to params.
 func (w *ServerInterfaceWrapper) DeletefederationGroupMembership(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "membershipID" -------------
-	var membershipID int64
+	// ------------- Path parameter "membershipId" -------------
+	var membershipId int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipID", runtime.ParamLocationPath, ctx.Param("membershipID"), &membershipID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipId", runtime.ParamLocationPath, ctx.Param("membershipId"), &membershipId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletefederationGroupMembership(ctx, membershipID)
+	err = w.Handler.DeletefederationGroupMembership(ctx, membershipId)
 	return err
 }
 
-// GetFederationGroupMembershipbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFederationGroupMembershipbyID(ctx echo.Context) error {
+// GetFederationGroupMembershipById converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFederationGroupMembershipById(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "membershipID" -------------
-	var membershipID int64
+	// ------------- Path parameter "membershipId" -------------
+	var membershipId int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipID", runtime.ParamLocationPath, ctx.Param("membershipID"), &membershipID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipId", runtime.ParamLocationPath, ctx.Param("membershipId"), &membershipId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFederationGroupMembershipbyID(ctx, membershipID)
+	err = w.Handler.GetFederationGroupMembershipById(ctx, membershipId)
 	return err
 }
 
-// UpdatefederationGroupMembership converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdatefederationGroupMembership(ctx echo.Context) error {
+// UpdateFederationGroupMembership converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateFederationGroupMembership(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "membershipID" -------------
-	var membershipID int64
+	// ------------- Path parameter "membershipId" -------------
+	var membershipId int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipID", runtime.ParamLocationPath, ctx.Param("membershipID"), &membershipID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "membershipId", runtime.ParamLocationPath, ctx.Param("membershipId"), &membershipId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter membershipId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdatefederationGroupMembership(ctx, membershipID)
+	err = w.Handler.UpdateFederationGroupMembership(ctx, membershipId)
 	return err
 }
 
@@ -331,11 +331,11 @@ func (w *ServerInterfaceWrapper) GetFederationGroups(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgId: %s", err))
 	}
 
-	// ------------- Optional query parameter "orgname" -------------
+	// ------------- Optional query parameter "orgName" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "orgname", ctx.QueryParams(), &params.Orgname)
+	err = runtime.BindQueryParameter("form", true, false, "orgName", ctx.QueryParams(), &params.OrgName)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgname: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgName: %s", err))
 	}
 
 	// ------------- Optional query parameter "name" -------------
@@ -359,8 +359,8 @@ func (w *ServerInterfaceWrapper) CreateFederationGroup(ctx echo.Context) error {
 	return err
 }
 
-// DeletefederationGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) DeletefederationGroup(ctx echo.Context) error {
+// DeleteFederationGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFederationGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "federationGroupID" -------------
 	var federationGroupID int64
@@ -371,12 +371,12 @@ func (w *ServerInterfaceWrapper) DeletefederationGroup(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeletefederationGroup(ctx, federationGroupID)
+	err = w.Handler.DeleteFederationGroup(ctx, federationGroupID)
 	return err
 }
 
-// GetFederationGroupbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFederationGroupbyID(ctx echo.Context) error {
+// GetFederationGroupById converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFederationGroupById(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "federationGroupID" -------------
 	var federationGroupID int64
@@ -387,12 +387,12 @@ func (w *ServerInterfaceWrapper) GetFederationGroupbyID(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFederationGroupbyID(ctx, federationGroupID)
+	err = w.Handler.GetFederationGroupById(ctx, federationGroupID)
 	return err
 }
 
-// UpdatefederationGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdatefederationGroup(ctx echo.Context) error {
+// UpdateFederationGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateFederationGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "federationGroupID" -------------
 	var federationGroupID int64
@@ -403,7 +403,7 @@ func (w *ServerInterfaceWrapper) UpdatefederationGroup(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdatefederationGroup(ctx, federationGroupID)
+	err = w.Handler.UpdateFederationGroup(ctx, federationGroupID)
 	return err
 }
 
@@ -413,18 +413,18 @@ func (w *ServerInterfaceWrapper) GetFederationRelationships(ctx echo.Context) er
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetFederationRelationshipsParams
-	// ------------- Optional query parameter "orgId" -------------
+	// ------------- Optional query parameter "orgID" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "orgId", ctx.QueryParams(), &params.OrgId)
+	err = runtime.BindQueryParameter("form", true, false, "orgID", ctx.QueryParams(), &params.OrgID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgId: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgID: %s", err))
 	}
 
-	// ------------- Optional query parameter "orgname" -------------
+	// ------------- Optional query parameter "orgName" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "orgname", ctx.QueryParams(), &params.Orgname)
+	err = runtime.BindQueryParameter("form", true, false, "orgName", ctx.QueryParams(), &params.OrgName)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgname: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orgName: %s", err))
 	}
 
 	// ------------- Optional query parameter "trustDomain" -------------
@@ -455,8 +455,8 @@ func (w *ServerInterfaceWrapper) CreateFederationRelationship(ctx echo.Context) 
 	return err
 }
 
-// GetFederationRelationshipbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFederationRelationshipbyID(ctx echo.Context) error {
+// GetFederationRelationshipByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFederationRelationshipByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID int64
@@ -467,12 +467,12 @@ func (w *ServerInterfaceWrapper) GetFederationRelationshipbyID(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFederationRelationshipbyID(ctx, relationshipID)
+	err = w.Handler.GetFederationRelationshipByID(ctx, relationshipID)
 	return err
 }
 
-// UpdateFederationRelationshipship converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateFederationRelationshipship(ctx echo.Context) error {
+// UpdateFederationRelationship converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateFederationRelationship(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID int64
@@ -483,7 +483,7 @@ func (w *ServerInterfaceWrapper) UpdateFederationRelationshipship(ctx echo.Conte
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdateFederationRelationshipship(ctx, relationshipID)
+	err = w.Handler.UpdateFederationRelationship(ctx, relationshipID)
 	return err
 }
 
@@ -530,8 +530,8 @@ func (w *ServerInterfaceWrapper) DeleteOrganization(ctx echo.Context) error {
 	return err
 }
 
-// GetOrgbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetOrgbyID(ctx echo.Context) error {
+// GetOrgById converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOrgById(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "orgID" -------------
 	var orgID int64
@@ -542,12 +542,12 @@ func (w *ServerInterfaceWrapper) GetOrgbyID(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetOrgbyID(ctx, orgID)
+	err = w.Handler.GetOrgById(ctx, orgID)
 	return err
 }
 
-// UpdateOrganizaion converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateOrganizaion(ctx echo.Context) error {
+// UpdateOrganization converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateOrganization(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "orgID" -------------
 	var orgID int64
@@ -558,7 +558,7 @@ func (w *ServerInterfaceWrapper) UpdateOrganizaion(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdateOrganizaion(ctx, orgID)
+	err = w.Handler.UpdateOrganization(ctx, orgID)
 	return err
 }
 
@@ -672,29 +672,29 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/federationGroupMemberships", wrapper.GetFederationGroupMemberships)
-	router.POST(baseURL+"/federationGroupMemberships", wrapper.CreateFederationGroupMembership)
-	router.DELETE(baseURL+"/federationGroupMemberships/:membershipID", wrapper.DeletefederationGroupMembership)
-	router.GET(baseURL+"/federationGroupMemberships/:membershipID", wrapper.GetFederationGroupMembershipbyID)
-	router.PUT(baseURL+"/federationGroupMemberships/:membershipID", wrapper.UpdatefederationGroupMembership)
-	router.GET(baseURL+"/federationGroups", wrapper.GetFederationGroups)
-	router.POST(baseURL+"/federationGroups", wrapper.CreateFederationGroup)
-	router.DELETE(baseURL+"/federationGroups/:federationGroupID", wrapper.DeletefederationGroup)
-	router.GET(baseURL+"/federationGroups/:federationGroupID", wrapper.GetFederationGroupbyID)
-	router.PUT(baseURL+"/federationGroups/:federationGroupID", wrapper.UpdatefederationGroup)
-	router.GET(baseURL+"/federationRelationships", wrapper.GetFederationRelationships)
-	router.POST(baseURL+"/federationRelationships", wrapper.CreateFederationRelationship)
-	router.GET(baseURL+"/federationRelationships/:relationshipID", wrapper.GetFederationRelationshipbyID)
-	router.PUT(baseURL+"/federationRelationships/:relationshipID", wrapper.UpdateFederationRelationshipship)
+	router.GET(baseURL+"/federation-group-memberships", wrapper.GetFederationGroupMemberships)
+	router.POST(baseURL+"/federation-group-memberships", wrapper.CreateFederationGroupMembership)
+	router.DELETE(baseURL+"/federation-group-memberships/:membershipId", wrapper.DeletefederationGroupMembership)
+	router.GET(baseURL+"/federation-group-memberships/:membershipId", wrapper.GetFederationGroupMembershipById)
+	router.PUT(baseURL+"/federation-group-memberships/:membershipId", wrapper.UpdateFederationGroupMembership)
+	router.GET(baseURL+"/federation-groups", wrapper.GetFederationGroups)
+	router.POST(baseURL+"/federation-groups", wrapper.CreateFederationGroup)
+	router.DELETE(baseURL+"/federation-groups/:federationGroupID", wrapper.DeleteFederationGroup)
+	router.GET(baseURL+"/federation-groups/:federationGroupID", wrapper.GetFederationGroupById)
+	router.PUT(baseURL+"/federation-groups/:federationGroupID", wrapper.UpdateFederationGroup)
+	router.GET(baseURL+"/federation-relationships", wrapper.GetFederationRelationships)
+	router.POST(baseURL+"/federation-relationships", wrapper.CreateFederationRelationship)
+	router.GET(baseURL+"/federation-relationships/:relationshipID", wrapper.GetFederationRelationshipByID)
+	router.PUT(baseURL+"/federation-relationships/:relationshipID", wrapper.UpdateFederationRelationship)
 	router.GET(baseURL+"/organizations", wrapper.GetOrganizations)
 	router.POST(baseURL+"/organizations", wrapper.CreateOrganization)
 	router.DELETE(baseURL+"/organizations/:orgID", wrapper.DeleteOrganization)
-	router.GET(baseURL+"/organizations/:orgID", wrapper.GetOrgbyID)
-	router.PUT(baseURL+"/organizations/:orgID", wrapper.UpdateOrganizaion)
-	router.GET(baseURL+"/spireServers", wrapper.GetSpireServers)
-	router.POST(baseURL+"/spireServers", wrapper.CreateSpireServer)
-	router.DELETE(baseURL+"/spireServers/:spireServerId", wrapper.DeleteSpireServer)
-	router.PUT(baseURL+"/spireServers/:spireServerId", wrapper.UpdateSpireServer)
-	router.PUT(baseURL+"/trustBundles/:trustBundleId", wrapper.UpdateTrustBundle)
+	router.GET(baseURL+"/organizations/:orgID", wrapper.GetOrgById)
+	router.PUT(baseURL+"/organizations/:orgID", wrapper.UpdateOrganization)
+	router.GET(baseURL+"/spire-servers", wrapper.GetSpireServers)
+	router.POST(baseURL+"/spire-servers", wrapper.CreateSpireServer)
+	router.DELETE(baseURL+"/spire-servers/:spireServerId", wrapper.DeleteSpireServer)
+	router.PUT(baseURL+"/spire-servers/:spireServerId", wrapper.UpdateSpireServer)
+	router.PUT(baseURL+"/trust-bundles/:trustBundleId", wrapper.UpdateTrustBundle)
 
 }
