@@ -39,7 +39,7 @@ func newConfig(configBytes []byte) (*HarvesterConfig, error) {
 	var config HarvesterConfig
 
 	if err := hcl.Decode(&config, string(configBytes)); err != nil {
-		return nil, errors.New(fmt.Sprintf("unable to decode configuration: %v", err))
+		return nil, fmt.Errorf("unable to decode configuration: %v", err)
 	}
 
 	if config.HarvesterConfigSection == nil {
