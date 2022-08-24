@@ -30,10 +30,10 @@ func main() {
 	router := echo.New()
 
 	// Create a server instance
-	galadriel_server := management.NewServer()
+	galadrielServer := management.NewManagement()
 
 	// Register router as handler for API interface and routes
-	management.RegisterHandlers(router, galadriel_server)
+	management.RegisterHandlers(router, galadrielServer)
 
 	// Log all requests
 	router.Use(echomiddleware.Logger())

@@ -175,7 +175,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update an organizaion by ID
-      operationId: updateOrganizaion
+      operationId: updateOrganization
       parameters:
         - name: orgID
           in: path
@@ -307,7 +307,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update a federationGroup by ID
-      operationId: updatefederationGroup
+      operationId: updateFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -333,7 +333,7 @@ paths:
                 $ref: './schemas.yaml'
     delete:
       description: delete a federationGroup
-      operationId: deletefederationGroup
+      operationId: deleteFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -558,7 +558,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update a federationGroupMembership by ID
-      operationId: updatefederationGroupMembership
+      operationId: updateFederationGroupMembership
       parameters:
         - name: membershipID
           in: path
@@ -584,7 +584,7 @@ paths:
                 $ref: './schemas.yaml'
     delete:
       description: delete a federationGroup membership
-      operationId: deletefederationGroupMembership
+      operationId: deleteFederationGroupMembership
       parameters:
         - name: membershipID
           in: path
@@ -699,7 +699,7 @@ paths:
                 $ref: './schemas.yaml'  
     put:
       description: update a federationGroupMembership by ID
-      operationId: updateFederationRelationshipship
+      operationId: updateFederationRelationship
       parameters:
         - name: relationshipID
           in: path
