@@ -12,11 +12,8 @@ import (
 
 type HarvesterController interface {
 	common.RunnablePlugin
-	GetTrustBundle(context.Context, string) (common.TrustBundle, error)
-	AddTrustBundle(context.Context, common.TrustBundle) (common.TrustBundle, error)
-	ApproveFederationRelationship(context.Context, string) (common.FederationRelationship, error)
-	DenyFederationRelationship(context.Context, string) (common.FederationRelationship, error)
-	GetFederationRelationshipsByStatus(context.Context, string) ([]common.FederationRelationship, error)
+	GetTrustBundle(context.Context, string) (string, error)
+	AddTrustBundle(context.Context, string) error
 }
 
 type LocalHarvesterController struct {
@@ -40,43 +37,14 @@ func (c *LocalHarvesterController) Run(ctx context.Context) error {
 	return nil
 }
 
-func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID string) (common.TrustBundle, error) {
+func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
 	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Get)
-	var tb common.TrustBundle
-
-	return tb, errors.New("not implemented")
+	return "", errors.New("not implemented")
 }
 
-func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, tb common.TrustBundle) (common.TrustBundle, error) {
+func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, spiffeID string) error {
 	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
-
-	return tb, errors.New("not implemented")
-}
-
-func (c *LocalHarvesterController) ApproveFederationRelationship(ctx context.Context, spiffeID string) (common.FederationRelationship, error) {
-	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Approve)
-
-	var fr common.FederationRelationship
-	// if spireServerConsent and spireServerFederatedWithConsent == true => response.Status = common.FederationRelationshipStatusActive
-	// fr.spireServerConsent = True
-	return fr, errors.New("not implemented")
-}
-
-func (c *LocalHarvesterController) DenyFederationRelationship(ctx context.Context, spiffeID string) (common.FederationRelationship, error) {
-	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.FederationRelationship, telemetry.Deny)
-
-	var fr common.FederationRelationship
-	// fr.spireServerConsent = False
-
-	return fr, errors.New("not implemented")
-}
-
-func (c *LocalHarvesterController) GetFederationRelationshipsByStatus(ctx context.Context, status string) ([]common.FederationRelationship, error) {
-	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.FederationRelationship, telemetry.Get)
-
-	var fr []common.FederationRelationship
-
-	return fr, errors.New("not implemented")
+	return errors.New("not implemented")
 }
 
 func (c *LocalHarvesterController) run(ctx context.Context) {
