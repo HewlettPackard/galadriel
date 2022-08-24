@@ -11,17 +11,15 @@ components:
           type: integer
           format: int64
         spireServerId:
-          type: string
-          format: string
-        spireServerFederatedWith:
-          type: string
-          format: string
+          type: integer
+          format: int64
+        spireServerIdFederatedWith:
+          type: integer
+          format: int64
         spireServerFederatedWithConsent:
-          type: string
-          format: string
+          type: boolean
         spireServerConsent:
-          type: string
-          format: string
+          type: boolean
         status:
           type: string
           enum:
@@ -32,7 +30,7 @@ components:
         - id
         - federationGroupId
         - spireServerId
-        - spireServerFederatedWith
+        - spireServerIdFederatedWith
         
     TrustBundle:
       # Represents the trust bundle of a SPIRE Server that is a member of the bridge

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -28,6 +29,13 @@ func (a *HTTPApi) GetFederationRelationshipbyId(ctx echo.Context, relationshipID
 
 	var result common.FederationRelationship
 
+	if result == (common.FederationRelationship{}) {
+		a.logger.Error("Federation relationship not found for id", relationshipID)
+		fmt.Print(echo.NewHTTPError(http.StatusNotFound, "Federation relationship not found"))
+		return echo.NewHTTPError(http.StatusNotFound, "Federation relationship not found")
+	}
+
+	a.logger.Info("Federation relationship found for id", relationshipID)
 	return ctx.JSON(http.StatusOK, result)
 }
 
