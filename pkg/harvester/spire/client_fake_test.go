@@ -2,6 +2,8 @@ package spire
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -71,16 +73,49 @@ func (c fakeSpireBundleClient) BatchDeleteFederatedBundle(ctx context.Context, i
 }
 
 type fakeSpireTrustDomainClient struct {
-	batchCreateFederationRelationshipsReponse *trustdomainv1.BatchCreateFederationRelationshipResponse
-	batchCreateFederationRelationshipsError   error
-	batchUpdateFederationRelationshipsReponse *trustdomainv1.BatchUpdateFederationRelationshipResponse
-	batchUpdateFederationRelationshipsError   error
-	batchDeleteFederationRelationshipsReponse *trustdomainv1.BatchDeleteFederationRelationshipResponse
-	batchDeleteFederationRelationshipsError   error
+	federationRelationships                    []*types.FederationRelationship
+	batchListFederationRelationshipsError      error
+	batchCreateFederationRelationshipsReponse  *trustdomainv1.BatchCreateFederationRelationshipResponse
+	batchCreateFederationRelationshipsError    error
+	batchUpdateFederationRelationshipsReponse  *trustdomainv1.BatchUpdateFederationRelationshipResponse
+	batchUpdateFederationRelationshipsError    error
+	batchDeleteFederationRelationshipsResponse *trustdomainv1.BatchDeleteFederationRelationshipResponse
+	batchDeleteFederationRelationshipsError    error
 }
 
 func (c fakeSpireTrustDomainClient) ListFederationRelationships(ctx context.Context, in *trustdomainv1.ListFederationRelationshipsRequest, opts ...grpc.CallOption) (*trustdomainv1.ListFederationRelationshipsResponse, error) {
-	return nil, nil
+	if c.batchListFederationRelationshipsError != nil {
+		return nil, c.batchListFederationRelationshipsError
+	}
+
+	var start int
+	var end int
+	var pageToken string
+
+	if in.PageToken == "" {
+		start = 0
+	} else {
+		s, err := strconv.Atoi(in.PageToken)
+		if err != nil {
+			return nil, fmt.Errorf("invalid page token: %s", in.PageToken)
+		}
+		start = s - 1
+	}
+	end = start + int(in.PageSize)
+
+	if end > len(c.federationRelationships) {
+		end = len(c.federationRelationships)
+	}
+	if end < len(c.federationRelationships) && end > 0 {
+		pageToken = fmt.Sprint(end + 1)
+	}
+
+	out := &trustdomainv1.ListFederationRelationshipsResponse{
+		FederationRelationships: c.federationRelationships[start:end],
+		NextPageToken:           pageToken,
+	}
+
+	return out, nil
 }
 
 func (c fakeSpireTrustDomainClient) GetFederationRelationship(ctx context.Context, in *trustdomainv1.GetFederationRelationshipRequest, opts ...grpc.CallOption) (*types.FederationRelationship, error) {
@@ -105,7 +140,7 @@ func (c fakeSpireTrustDomainClient) BatchDeleteFederationRelationship(ctx contex
 	if c.batchDeleteFederationRelationshipsError != nil {
 		return nil, c.batchDeleteFederationRelationshipsError
 	}
-	return c.batchDeleteFederationRelationshipsReponse, nil
+	return c.batchDeleteFederationRelationshipsResponse, nil
 }
 
 func (c fakeSpireTrustDomainClient) RefreshBundle(ctx context.Context, in *trustdomainv1.RefreshBundleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {

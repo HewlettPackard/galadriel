@@ -13,6 +13,10 @@ import (
 )
 
 func protoToBundle(in *apitypes.Bundle) (*spiffebundle.Bundle, error) {
+	if in == nil {
+		return nil, fmt.Errorf("bundle is empty")
+	}
+
 	td, err := spiffeid.TrustDomainFromString(in.TrustDomain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse trust domain: %v", err)
@@ -68,7 +72,7 @@ func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.F
 	var out []*apitypes.FederationRelationship
 
 	for _, inRel := range in {
-		tdBundle, err := bundleToProto(inRel.TrustDomainBundle)
+		bundle, err := bundleToProto(inRel.TrustDomainBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert trust domain bundle to proto: %v", err)
 		}
@@ -80,7 +84,7 @@ func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.F
 		outRel := &apitypes.FederationRelationship{
 			TrustDomain:       inRel.TrustDomain.String(),
 			BundleEndpointUrl: inRel.BundleEndpointURL,
-			TrustDomainBundle: tdBundle,
+			TrustDomainBundle: bundle,
 		}
 
 		if inRel.BundleEndpointProfile == nil {
@@ -99,7 +103,7 @@ func federationRelationshipsToProto(in []*FederationRelationship) ([]*apitypes.F
 				},
 			}
 		default:
-			return nil, fmt.Errorf("unsupported bundle endpoint profile for trust domain %s: %T", tdBundle.GetTrustDomain(), inRel.BundleEndpointProfile)
+			return nil, fmt.Errorf("unsupported bundle endpoint profile for trust domain %s: %T", bundle.GetTrustDomain(), inRel.BundleEndpointProfile)
 		}
 
 		out = append(out, outRel)

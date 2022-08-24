@@ -52,7 +52,7 @@ var (
 	}
 )
 
-func makeFederationRelationship(td string, profile BundleEndpointProfile) *types.FederationRelationship {
+func makeTypeFederationRelationship(td string, profile BundleEndpointProfile) *types.FederationRelationship {
 	if td == "" {
 		return &types.FederationRelationship{}
 	}
@@ -80,6 +80,49 @@ func makeFederationRelationship(td string, profile BundleEndpointProfile) *types
 
 }
 
+func makeTypeFederationRelationships(number int) []*types.FederationRelationship {
+	var out []*types.FederationRelationship
+
+	for i := 0; i < number; i++ {
+		td := fmt.Sprintf("%d.org", i)
+		out = append(out, makeTypeFederationRelationship(td, &HTTPSSpiffeBundleEndpointProfile{}))
+	}
+
+	return out
+}
+
+func makeFederationRelationshipResult(td string) *FederationRelationship {
+	trustDomain := spiffeid.RequireTrustDomainFromString(td)
+	out := &FederationRelationship{
+		TrustDomain:       trustDomain,
+		TrustDomainBundle: spiffebundle.New(trustDomain),
+		BundleEndpointURL: fmt.Sprintf("https://%s/bundle", td),
+		BundleEndpointProfile: HTTPSSpiffeBundleEndpointProfile{
+			SpiffeID: spiffeid.RequireFromStringf("spiffe://%s/spire/server", td),
+		},
+	}
+	out.TrustDomainBundle.SetX509Authorities([]*x509.Certificate{})
+	// return &FederationRelationshipResult{
+	// 	Status: &FederationRelationshipResultStatus{Code: codes.OK},
+	// 	FederationRelationship: &FederationRelationship{
+	// 		TrustDomain:       trustDomain,
+	// 		TrustDomainBundle: spiffebundle.New(trustDomain),
+	// 	},
+	// }
+	return out
+}
+
+func makeFederationRelationshipResults(number int) []*FederationRelationship {
+	var out []*FederationRelationship
+
+	for i := 0; i < number; i++ {
+		td := fmt.Sprintf("%d.org", i)
+		out = append(out, makeFederationRelationshipResult(td))
+	}
+
+	return out
+}
+
 func TestNewTrustDomainClientSuccess(t *testing.T) {
 	got := NewTrustDomainClient(fakeClientConn{})
 
@@ -105,7 +148,7 @@ func TestClientCreateFederationRelationships(t *testing.T) {
 				Results: []*trustdomainv1.BatchCreateFederationRelationshipResponse_Result{
 					{
 						Status:                 &types.Status{Code: int32(codes.OK)},
-						FederationRelationship: makeFederationRelationship("example.org", &HTTPSSpiffeBundleEndpointProfile{}),
+						FederationRelationship: makeTypeFederationRelationship("example.org", &HTTPSSpiffeBundleEndpointProfile{}),
 					},
 				},
 			},
@@ -117,7 +160,7 @@ func TestClientCreateFederationRelationships(t *testing.T) {
 				Results: []*trustdomainv1.BatchCreateFederationRelationshipResponse_Result{
 					{
 						Status:                 &types.Status{Code: int32(codes.OK)},
-						FederationRelationship: makeFederationRelationship("example.org", &HTTPSWebBundleEndpointProfile{}),
+						FederationRelationship: makeTypeFederationRelationship("example.org", &HTTPSWebBundleEndpointProfile{}),
 					},
 				},
 			},
@@ -196,7 +239,7 @@ func TestClientUpdateFederationRelationships(t *testing.T) {
 				Results: []*trustdomainv1.BatchUpdateFederationRelationshipResponse_Result{
 					{
 						Status:                 &types.Status{Code: int32(codes.OK)},
-						FederationRelationship: makeFederationRelationship("example.org", &HTTPSSpiffeBundleEndpointProfile{}),
+						FederationRelationship: makeTypeFederationRelationship("example.org", &HTTPSSpiffeBundleEndpointProfile{}),
 					},
 				},
 			},
@@ -209,7 +252,7 @@ func TestClientUpdateFederationRelationships(t *testing.T) {
 				Results: []*trustdomainv1.BatchUpdateFederationRelationshipResponse_Result{
 					{
 						Status:                 &types.Status{Code: int32(codes.OK)},
-						FederationRelationship: makeFederationRelationship("example.org", &HTTPSWebBundleEndpointProfile{}),
+						FederationRelationship: makeTypeFederationRelationship("example.org", &HTTPSWebBundleEndpointProfile{}),
 					},
 				},
 			},
@@ -313,7 +356,7 @@ func TestClientDeleteFederationRelationships(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			spireTrustDomainClient := &fakeSpireTrustDomainClient{}
-			spireTrustDomainClient.batchDeleteFederationRelationshipsReponse = tt.clientResponse
+			spireTrustDomainClient.batchDeleteFederationRelationshipsResponse = tt.clientResponse
 
 			if tt.clientErr != "" {
 				spireTrustDomainClient.batchDeleteFederationRelationshipsError = errors.New(tt.clientErr)
@@ -325,6 +368,77 @@ func TestClientDeleteFederationRelationships(t *testing.T) {
 			assert.NoError(t, err)
 
 			got, err := client.DeleteFederationRelationships(context.Background(), tds)
+
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+				assert.Nil(t, got)
+				return
+			}
+
+			assert.Equal(t, tt.expected, got)
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestClientListFederationRelationships(t *testing.T) {
+	tests := []struct {
+		name                   string
+		expected               []*FederationRelationship
+		federatedRelationships []*types.FederationRelationship
+		pageSize               int
+		err                    string
+		clientErr              string
+	}{
+		{
+			name:                   "ok",
+			expected:               makeFederationRelationshipResults(10),
+			federatedRelationships: makeTypeFederationRelationships(10),
+		}, {
+			name:                   "ok_small_pagination",
+			expected:               makeFederationRelationshipResults(10),
+			federatedRelationships: makeTypeFederationRelationships(10),
+			pageSize:               3,
+		}, {
+			name:                   "ok_pagination_overflow",
+			expected:               makeFederationRelationshipResults(2),
+			federatedRelationships: makeTypeFederationRelationships(2),
+			pageSize:               3,
+		}, {
+			name:                   "ok_pagination",
+			expected:               makeFederationRelationshipResults(3),
+			federatedRelationships: makeTypeFederationRelationships(3),
+			pageSize:               3,
+		},
+		{
+			name:      "client_error",
+			clientErr: "error_from_client",
+			err:       "failed to list federation relationships: error_from_client",
+		},
+		{
+			name:                   "error_parsing_proto",
+			federatedRelationships: []*types.FederationRelationship{{}},
+			err:                    "failed to parse federation relationships: failed to parse federated relationship: failed to parse federated trust domain: trust domain is missing",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			spireTrustDomainClient := &fakeSpireTrustDomainClient{}
+			spireTrustDomainClient.federationRelationships = tt.federatedRelationships
+			if tt.pageSize != 0 {
+
+				listFederationRelationshipsPageSize = tt.pageSize
+			}
+
+			client := &trustDomainClient{client: spireTrustDomainClient}
+
+			if tt.clientErr != "" {
+				spireTrustDomainClient.batchListFederationRelationshipsError = errors.New(tt.clientErr)
+			}
+
+			got, err := client.ListFederationRelationships(context.Background())
 
 			if tt.err != "" {
 				assert.EqualError(t, err, tt.err)

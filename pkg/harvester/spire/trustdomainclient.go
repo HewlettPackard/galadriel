@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+var listFederationRelationshipsPageSize = 100
+
 type TrustDomainClient interface {
 	ListFederationRelationships(context.Context) ([]*FederationRelationship, error)
 	CreateFederationRelationships(context.Context, []*FederationRelationship) ([]*FederationRelationshipResult, error)
@@ -27,12 +29,11 @@ func NewTrustDomainClient(cc grpc.ClientConnInterface) TrustDomainClient {
 func (c trustDomainClient) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
 	var rels []*FederationRelationship
 	var pageToken string
-	pageSize := 100
 
 	for {
 		res, err := c.client.ListFederationRelationships(ctx, &trustdomainv1.ListFederationRelationshipsRequest{
 			PageToken: pageToken,
-			PageSize:  int32(pageSize),
+			PageSize:  int32(listFederationRelationshipsPageSize),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to list federation relationships: %v", err)
