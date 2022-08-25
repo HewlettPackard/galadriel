@@ -23,7 +23,7 @@ func TestExecute(t *testing.T) {
 func TestNewRootCmd(t *testing.T) {
 	expected := &cobra.Command{
 		Use:  "harvester",
-		Long: "This is Galadriel Harvester CLI",
+		Long: "This is the Galadriel Harvester CLI",
 	}
 	assert.Equal(t, expected, NewRootCmd())
 }

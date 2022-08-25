@@ -10,8 +10,8 @@ import (
 func TestNewRunCmd(t *testing.T) {
 	expected := &cobra.Command{
 		Use:   "run",
-		Short: "Runs the Galadriel server",
-		Long:  "Run this command to start the Galadriel server",
+		Short: "Runs the Galadriel Harvester",
+		Long:  "Run this command to start the Galadriel Harvester",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configPath, err := cmd.Flags().GetString("config")
 			if err != nil {
