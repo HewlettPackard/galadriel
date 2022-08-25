@@ -7,22 +7,22 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 )
 
-var RootCmd = NewRootCmd()
-
-var cmdExecute = RootCmd.Execute
+var (
+	RootCmd      = NewRootCmd()
+	cmdExecute   = RootCmd.Execute
+	HarvesterCLI = &HarvesterCli{
+		logger: common.NewLogger(telemetry.Harvester),
+	}
+)
 
 type HarvesterCli struct {
 	logger *common.Logger
 }
 
-var HarvesterCLI = &HarvesterCli{
-	logger: common.NewLogger(telemetry.Harvester),
-}
-
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:  "harvester",
-		Long: "This is Galadriel Harvester CLI",
+		Long: "This is the Galadriel Harvester CLI",
 	}
 }
 
