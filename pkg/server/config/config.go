@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ServerConfig struct {
+type Server struct {
 	ServerConfigSection *ServerConfigSection `hcl:"server"`
 }
 
@@ -18,7 +18,7 @@ type ServerConfigSection struct {
 	LogLevel        string `hcl:"log_level"`
 }
 
-func New(config io.Reader) (*ServerConfig, error) {
+func New(config io.Reader) (*Server, error) {
 
 	if config == nil {
 		return nil, errors.New("configuration is required")
@@ -29,18 +29,18 @@ func New(config io.Reader) (*ServerConfig, error) {
 		return nil, errors.Wrap(err, "failed to read configuration")
 	}
 
-	return new(configBytes)
+	return newConfig(configBytes)
 }
 
-func new(configBytes []byte) (*ServerConfig, error) {
-	var config ServerConfig
+func newConfig(configBytes []byte) (*Server, error) {
+	var config Server
 
 	if err := hcl.Decode(&config, string(configBytes)); err != nil {
 		return nil, fmt.Errorf("unable to decode configuration: %v", err)
 	}
 
 	if config.ServerConfigSection == nil {
-		config.ServerConfigSection = &ServerConfigSection{}
+		return nil, errors.Wrap(errors.New("configuration file is empty"), "invalid configuration")
 	}
 
 	config.setDefaults()
@@ -52,7 +52,7 @@ func new(configBytes []byte) (*ServerConfig, error) {
 	return &config, nil
 }
 
-func (c *ServerConfig) validate() error {
+func (c *Server) validate() error {
 	if c.ServerConfigSection.ServerAddress == "" {
 		return errors.New("server.server_address is required")
 	}
@@ -60,7 +60,7 @@ func (c *ServerConfig) validate() error {
 	return nil
 }
 
-func (c *ServerConfig) setDefaults() {
+func (c *Server) setDefaults() {
 	if c.ServerConfigSection.LogLevel == "" {
 		c.ServerConfigSection.LogLevel = "INFO"
 	}

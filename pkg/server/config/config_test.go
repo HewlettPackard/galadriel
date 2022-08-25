@@ -19,13 +19,13 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name     string
 		config   io.Reader
-		expected *ServerConfig
+		expected *Server
 		err      string
 	}{
 		{
 			name:   "ok",
 			config: bytes.NewBuffer([]byte(`server { spire_socket_path = "spire_socket_path" server_address = "server_address" }`)),
-			expected: &ServerConfig{
+			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
 					SpireSocketPath: "spire_socket_path",
 					ServerAddress:   "server_address",
@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 		{
 			name:   "defaults",
 			config: bytes.NewBuffer([]byte(`server { server_address = "server_address" }`)),
-			expected: &ServerConfig{
+			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
 					SpireSocketPath: "/tmp/spire-server/private/api.sock",
 					ServerAddress:   "server_address",
@@ -85,5 +85,4 @@ func TestNew(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
 }

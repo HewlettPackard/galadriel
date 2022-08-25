@@ -12,13 +12,13 @@ func TestLoadFromDisk(t *testing.T) {
 	tests := []struct {
 		name     string
 		path     string
-		expected *ServerConfig
+		expected *Server
 		err      string
 	}{
 		{
 			name: "ok",
 			path: "testdata/ok.conf",
-			expected: &ServerConfig{
+			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
 					SpireSocketPath: "spire_socket_path",
 					ServerAddress:   "server_address",
@@ -28,7 +28,7 @@ func TestLoadFromDisk(t *testing.T) {
 		}, {
 			name:     "ok_empty",
 			path:     "testdata/empty.conf",
-			expected: &ServerConfig{},
+			expected: &Server{},
 		},
 		{
 			name:     "cannot_open_file",
@@ -47,7 +47,7 @@ func TestLoadFromDisk(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			newFn = func(config io.Reader) (*ServerConfig, error) {
+			newFn = func(config io.Reader) (*Server, error) {
 				if tt.err != "" {
 					return nil, errors.New(tt.err)
 				}

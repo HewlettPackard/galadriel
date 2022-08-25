@@ -8,7 +8,7 @@ import (
 var newFn = New
 
 // LoadFromDisk reads the configuration from the given file path.
-func LoadFromDisk(path string) (*ServerConfig, error) {
+func LoadFromDisk(path string) (*Server, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open configuration file: %v", err)

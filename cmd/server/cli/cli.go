@@ -17,6 +17,6 @@ func Run() int {
 }
 
 func (c *serverCLI) Run() int {
-	c.logger.Info("Starting the Server CLI")
+	c.logger.Debug("Starting the Server CLI")
 	return Execute()
 }

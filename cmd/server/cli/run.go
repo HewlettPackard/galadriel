@@ -9,7 +9,6 @@ import (
 const defaultConfigPath = "conf/server/server.conf"
 
 var configPath string
-
 var runServerFn = api.Run
 
 func NewRunCmd() *cobra.Command {
@@ -17,23 +16,35 @@ func NewRunCmd() *cobra.Command {
 		Use:   "run",
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
-		Run: func(cmd *cobra.Command, args []string) {
-			configPath, _ := cmd.Flags().GetString("config")
-			ServerCLI.runServerAPI(configPath)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configPath, err := cmd.Flags().GetString("config")
+			if err != nil {
+				return err
+			}
+
+			err = ServerCLI.runServerAPI(configPath)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 }
 
-func (c *serverCLI) runServerAPI(configPath string) {
-	c.logger.Info("Configuring Harvester CLI")
+func (c *serverCLI) runServerAPI(configPath string) error {
+	c.logger.Debug("Starting Galadriel Server")
 
 	// TODO: pass config variables to runServerFn()
 	_, err := config.LoadFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
+		return err
 	}
 
 	runServerFn()
+
+	return nil
 }
 
 func init() {
