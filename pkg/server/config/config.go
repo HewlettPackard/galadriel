@@ -40,13 +40,13 @@ func newConfig(configBytes []byte) (*Server, error) {
 	}
 
 	if config.ServerConfigSection == nil {
-		return nil, errors.Wrap(errors.New("configuration file is empty"), "invalid configuration")
+		return nil, errors.Wrap(errors.New("configuration file is empty"), "bad configuration")
 	}
 
 	config.setDefaults()
 
 	if err := config.validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid configuration")
+		return nil, errors.Wrap(err, "bad configuration")
 	}
 
 	return &config, nil

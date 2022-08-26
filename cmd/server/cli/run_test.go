@@ -22,14 +22,14 @@ func TestNewRunCmd(t *testing.T) {
 
 func TestRunCommand(t *testing.T) {
 	called := false
-
-	runServerFn = func() {
+	runServerFn = func(config string) {
 		called = true
 	}
 
 	cmd := NewRunCmd()
+	cmd.Flags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file path")
 	err := cmd.Execute()
 
-	assert.Equal(t, err, nil)
-	assert.Equal(t, called, true)
+	assert.Equal(t, err, nil, "unexpected error")
+	assert.Equal(t, called, true, "failed to call runServerFn")
 }

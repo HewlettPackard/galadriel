@@ -47,12 +47,12 @@ func TestNew(t *testing.T) {
 		{
 			name:   "empty_config_file",
 			config: bytes.NewBufferString(``),
-			err:    "invalid configuration: server.server_address is required",
+			err:    "bad configuration: configuration file is empty",
 		},
 		{
 			name:   "requires_server_address",
 			config: bytes.NewBufferString(`server { spire_socket_path = "test" }`),
-			err:    "invalid configuration: server.server_address is required",
+			err:    "bad configuration: server.server_address is required",
 		},
 		{
 			name:   "err_hcl",

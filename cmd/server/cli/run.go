@@ -9,7 +9,7 @@ import (
 const defaultConfigPath = "conf/server/server.conf"
 
 var configPath string
-var runServerFn = api.Run
+var runServerFn = ServerCLI.runServerAPI
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
@@ -22,29 +22,23 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			err = ServerCLI.runServerAPI(configPath)
-			if err != nil {
-				return err
-			}
-
+			runServerFn(configPath)
 			return nil
 		},
 	}
 }
 
-func (c *serverCLI) runServerAPI(configPath string) error {
+func (c *serverCLI) runServerAPI(configPath string) {
 	c.logger.Debug("Starting Galadriel Server")
 
 	// TODO: pass config variables to runServerFn()
 	_, err := config.LoadFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
-		return err
+		return
 	}
 
-	runServerFn()
-
-	return nil
+	api.Run()
 }
 
 func init() {
