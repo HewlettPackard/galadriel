@@ -49,7 +49,7 @@ func (c *HarvesterCli) runHarvesterAPI(configPath string) error {
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.PersistentFlags().StringVar(&configPath, "config", defaultConfigPath, "config file")
+	runCmd.PersistentFlags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file")
 
 	RootCmd.AddCommand(runCmd)
 }
