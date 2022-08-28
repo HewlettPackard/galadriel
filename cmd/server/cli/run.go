@@ -1,17 +1,14 @@
 package cli
 
 import (
-	"github.com/HewlettPackard/galadriel/cmd/server/api"
-	"github.com/HewlettPackard/galadriel/pkg/server/config"
+	"github.com/HewlettPackard/galadriel/pkg/server"
 	"github.com/spf13/cobra"
 )
 
 const defaultConfigPath = "conf/server/server.conf"
 
 var configPath string
-var runServerFn = ServerCLI.runServerAPI
-var runAPI = api.Run
-var loadConfigFromDisk = config.LoadFromDisk
+var runServerFn = server.Run
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
@@ -28,19 +25,6 @@ func NewRunCmd() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-func (c *serverCLI) runServerAPI(configPath string) {
-	c.logger.Info("Starting Galadriel Server")
-
-	// TODO: pass config variables to runServerFn()
-	_, err := loadConfigFromDisk(configPath)
-	if err != nil {
-		c.logger.Error("Error loading config:", err)
-		return
-	}
-
-	runAPI()
 }
 
 func init() {
