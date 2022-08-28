@@ -10,6 +10,8 @@ const defaultConfigPath = "conf/server/server.conf"
 
 var configPath string
 var runServerFn = ServerCLI.runServerAPI
+var runAPI = api.Run
+var loadConfigFromDisk = config.LoadFromDisk
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
@@ -29,16 +31,16 @@ func NewRunCmd() *cobra.Command {
 }
 
 func (c *serverCLI) runServerAPI(configPath string) {
-	c.logger.Debug("Starting Galadriel Server")
+	c.logger.Info("Starting Galadriel Server")
 
 	// TODO: pass config variables to runServerFn()
-	_, err := config.LoadFromDisk(configPath)
+	_, err := loadConfigFromDisk(configPath)
 	if err != nil {
 		c.logger.Error("Error loading config:", err)
 		return
 	}
 
-	api.Run()
+	runAPI()
 }
 
 func init() {
