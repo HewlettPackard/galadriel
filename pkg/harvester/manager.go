@@ -36,7 +36,7 @@ func NewHarvesterManager() *Manager {
 func (m *Manager) Start(ctx context.Context, config config.HarvesterConfig) {
 	type key string
 
-	if m.load(config) != nil {
+	if m.load(ctx, config) != nil {
 		panic("unable to load configuration")
 	}
 
@@ -52,9 +52,9 @@ func (m *Manager) Stop() {
 	// unload and cleanup stuff
 }
 
-func (m *Manager) load(config config.HarvesterConfig) error {
+func (m *Manager) load(ctx context.Context, config config.HarvesterConfig) error {
 	cat := catalog.Catalog{
-		Spire:  spire.NewLocalSpireServer(config.HarvesterConfigSection.SpireSocketPath),
+		Spire:  spire.NewLocalSpireServer(ctx, config.HarvesterConfigSection.SpireSocketPath),
 		Server: server.NewRemoteGaladrielServer(config.HarvesterConfigSection.ServerAddress),
 	}
 
