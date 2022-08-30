@@ -22,5 +22,5 @@ func TestHTTPServer_Run(t *testing.T) {
 	cancel()
 	wg.Wait()
 
-	assert.NoError(t, err, "unexpected error")
+	assert.NoError(t, err)
 }

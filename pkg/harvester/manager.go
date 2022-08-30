@@ -3,8 +3,10 @@ package harvester
 import (
 	"context"
 	"fmt"
+	"os/signal"
 	"runtime/debug"
 	"sync"
+	"syscall"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
@@ -70,11 +72,12 @@ func (m *Manager) load(config config.HarvesterConfig) error {
 }
 
 func (m *Manager) run(ctx context.Context) {
-	// TODO: figure out how to trap signals
 	m.logger.Info("Starting harvester manager")
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
+	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
 	defer func() {
 		wg.Wait()
 		cancel()
@@ -88,7 +91,6 @@ func (m *Manager) run(ctx context.Context) {
 	wg.Add(len(plugins))
 
 	errch := make(chan error, len(plugins))
-
 	for _, plugin := range plugins {
 		plugin := plugin
 		go func() {

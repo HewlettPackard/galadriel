@@ -67,11 +67,11 @@ func (m *Manager) load(configPath string) error {
 }
 
 func (m *Manager) run(ctx context.Context) {
-	// TODO: figure out how to trap signals
 	m.logger.Info("Starting Server manager")
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
+	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer func() {
 		wg.Wait()
 		cancel()
@@ -82,10 +82,7 @@ func (m *Manager) run(ctx context.Context) {
 	}
 	wg.Add(len(plugins))
 
-	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-
 	errch := make(chan error, len(plugins))
-
 	for _, plugin := range plugins {
 		plugin := plugin
 		go func() {
