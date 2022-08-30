@@ -35,7 +35,6 @@ func (c *HarvesterCli) runHarvesterAPI(configPath string) {
 
 	ctx := context.Background()
 	harvester.NewHarvesterManager().Start(ctx, *cfg)
-
 }
 
 func init() {
