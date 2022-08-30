@@ -19,6 +19,7 @@ func NewRunCmd() *cobra.Command {
 		Long:  "Run this command to start the Galadriel Harvester",
 		Run: func(cmd *cobra.Command, args []string) {
 			configPath, _ := cmd.Flags().GetString("config")
+
 			HarvesterCLI.runHarvesterAPI(configPath)
 		},
 	}
