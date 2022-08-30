@@ -36,7 +36,6 @@ func Run() int {
 }
 
 func (c *HarvesterCli) Run() error {
-	c.logger.Info("Starting the Harvester CLI")
 	return c.Execute()
 }
 
