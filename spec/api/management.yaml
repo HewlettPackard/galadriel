@@ -52,7 +52,7 @@ components:
 #        - orgid
         - name
     Member:
-      # Member is a representation of a trust-domain/SpireServer
+      # Member is a representation of a trust-domain/Member
       type: object
       properties:
         id:
@@ -75,8 +75,8 @@ components:
         - trustdomain
         - description
         - status
-    FederationGroupMembership:
-      # A FederationGroupMembership reperesents a particular SPIRE server's presence in a 
+    Membership:
+      # A Membership reperesents a particular SPIRE server's presence in a
       # FederationGroup
       type: object
       properties:
@@ -100,132 +100,132 @@ components:
         - status
     
 paths:
-  /organizations:
-    post:
-      description: Create a new organization
-      operationId: createOrganization
-      requestBody:
-        description: Elements of the organization to add
-        required: true 
-        content:
-          application/jason:
-            schema:
-              $ref: '#/components/schemas/Organization'
-      responses:
-        '201': 
-          description: Organization creation response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        default:
-          description: unexpected error 
-          content:
-            application/json:
-              schema:
-                $ref: './schemas.yaml'
-    get:
-      description: Returns all Organizations
-      operationId: getOrganizations
-      parameters:
-        - name: name
-          in: query
-          description: filter organizations by name
-          schema:
-            type: string
-            format: string
-      responses:
-        '200':
-          description: get organization's response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: './schemas.yaml'
-  /organizations/{orgID}:
-    get: 
-      description: get data for one organization
-      operationId: getOrgbyID
-      parameters:
-        - name: orgID
-          in: path
-          description: Id of the organization to be retrieved
-          required: true 
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: get organization's response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: './schemas.yaml'  
-    put:
-      description: update an organizaion by ID
-      operationId: updateOrganizaion
-      parameters:
-        - name: orgID
-          in: path
-          description: Id of the organization to update
-          required: true
-          schema: 
-            type: integer
-            format: int64
-      requestBody:
-        description: contents of the org to be updated
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Organization'
-      responses:
-        '204':
-          description: no content
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: './schemas.yaml'
-    delete:
-      description: delete an organization
-      operationId: deleteOrganization
-      parameters:
-        - name: orgID
-          in: path
-          description: Id of the organization to delete
-          required: true
-          schema: 
-            type: integer
-            format: int64
-      responses:
-        '204':
-          description: no content
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: './schemas.yaml'
+#  /organizations:
+#    post:
+#      description: Create a new organization
+#      operationId: createOrganization
+#      requestBody:
+#        description: Elements of the organization to add
+#        required: true
+#        content:
+#          application/jason:
+#            schema:
+#              $ref: '#/components/schemas/Organization'
+#      responses:
+#        '201':
+#          description: Organization creation response
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/Organization'
+#        default:
+#          description: unexpected error
+#          content:
+#            application/json:
+#              schema:
+#                $ref: './schemas.yaml'
+#    get:
+#      description: Returns all Organizations
+#      operationId: getOrganizations
+#      parameters:
+#        - name: name
+#          in: query
+#          description: filter organizations by name
+#          schema:
+#            type: string
+#            format: string
+#      responses:
+#        '200':
+#          description: get organization's response
+#          content:
+#            application/json:
+#              schema:
+#                type: array
+#                items:
+#                  $ref: '#/components/schemas/Organization'
+#        default:
+#          description: unexpected error
+#          content:
+#            application/json:
+#              schema:
+#                $ref: './schemas.yaml'
+#  /organizations/{orgID}:
+#    get:
+#      description: get data for one organization
+#      operationId: getOrgbyID
+#      parameters:
+#        - name: orgID
+#          in: path
+#          description: Id of the organization to be retrieved
+#          required: true
+#          schema:
+#            type: integer
+#            format: int64
+#      responses:
+#        '200':
+#          description: get organization's response
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/Organization'
+#        default:
+#          description: unexpected error
+#          content:
+#            application/json:
+#              schema:
+#                $ref: './schemas.yaml'
+#    patch:
+#      description: update an organizaion by ID
+#      operationId: updateOrganizaion
+#      parameters:
+#        - name: orgID
+#          in: path
+#          description: Id of the organization to update
+#          required: true
+#          schema:
+#            type: integer
+#            format: int64
+#      requestBody:
+#        description: contents of the org to be updated
+#        content:
+#          application/x-www-form-urlencoded:
+#            schema:
+#              $ref: '#/components/schemas/Organization'
+#      responses:
+#        '204':
+#          description: no content
+#        default:
+#          description: unexpected error
+#          content:
+#            application/json:
+#              schema:
+#                $ref: './schemas.yaml'
+#    delete:
+#      description: delete an organization
+#      operationId: deleteOrganization
+#      parameters:
+#        - name: orgID
+#          in: path
+#          description: Id of the organization to delete
+#          required: true
+#          schema:
+#            type: integer
+#            format: int64
+#      responses:
+#        '204':
+#          description: no content
+#        default:
+#          description: unexpected error
+#          content:
+#            application/json:
+#              schema:
+#                $ref: './schemas.yaml'
   /federationGroups:
     post:
-      description: Create a new federation group
+      description: Create a new Federation group . It represents a bridge for its Members, allowing relationships to be created.
       operationId: createFederationGroup
       requestBody:
-        description: Elements of the federation group to add
+        description: Elements of the Federation group  to add
         required: true 
         content:
           application/jason:
@@ -262,7 +262,7 @@ paths:
             format: string
         - name: name
           in: query
-          description: filter organizations by federation group name
+          description: filter organizations by Federation group  name
           schema:
             type: string
             format: string
@@ -284,7 +284,7 @@ paths:
   /federationGroups/{federationGroupID}:
     get: 
       description: get data for one FederationGroup
-      operationId: getFederationGroupbyID
+      operationId: getFederationGroupByID
       parameters:
         - name: federationGroupID
           in: path
@@ -306,9 +306,9 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'  
-    put:
+    patch:
       description: update a federationGroup by ID
-      operationId: updatefederationGroup
+      operationId: updateFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -334,7 +334,7 @@ paths:
                 $ref: './schemas.yaml'
     delete:
       description: delete a federationGroup
-      operationId: deletefederationGroup
+      operationId: deleteFederationGroup
       parameters:
         - name: federationGroupID
           in: path
@@ -353,24 +353,24 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /spireServers:
+  /members:
     post:
-      description: Create a new SpireServer
-      operationId: createSpireServer
+      description: Create a new Member
+      operationId: createMember
       requestBody:
         description: Elements of SPIRE server to add
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SpireServer'
+              $ref: '#/components/schemas/Member'
       responses:
         '201': 
-          description: SpireServer creation response
+          description: Member creation response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpireServer'
+                $ref: '#/components/schemas/Member'
         default:
           description: unexpected error 
           content:
@@ -378,18 +378,18 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     get:
-      description: Returns all the SpireServers 
-      operationId: getSpireServers
+      description: Returns all the Members
+      operationId: getMembers
       parameters:
         - name: trustDomain
           in: query
-          description: filter SpireServers by trust domain
+          description: filter Members by trust domain
           schema:
             type: string
             format: string
         - name: status
           in: query
-          description: filter SpireServers by status
+          description: filter Members by status
           schema:
             type: string
             enum:
@@ -398,24 +398,23 @@ paths:
               - active
       responses:
         '200':
-          description: get SpireServers's response 
+          description: get Member response
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SpireServer'
+                  $ref: '#/components/schemas/Member'
         default:
           description: unexpected Error
           content:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-
-  /spireServers/{spireServerId}:
-    put:
-      description: Updates the status of a SpireServer
-      operationId: updateSpireServer
+  /members/{memberId}:
+    patch:
+      description: Updates the status of a Member
+      operationId: updateMember
       parameters:
         - name: spireServerId
           in: path 
@@ -429,14 +428,14 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SpireServer'
+              $ref: '#/components/schemas/Member'
       responses:
         '200':
-          description: get SpireServers's response 
+          description: get Members's response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpireServer'
+                $ref: '#/components/schemas/Member'
         default:
           description: unexpected error
           content:
@@ -444,8 +443,8 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     delete:
-      description: delete a SpireServer
-      operationId: deleteSpireServer
+      description: delete a Member
+      operationId: deleteMember
       parameters:
         - name: spireServerId
           in: path
@@ -463,24 +462,24 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroupMemberships:
+  /memberships:
     post:
-      description: Associate a SpireServer to a Federation Group
-      operationId: createFederationGroupMembership
+      description: Associate a Member to a Federation Group
+      operationId: createMembership
       requestBody:
-        description: Elements of the federation group membership to add
+        description: Elements of the Memberships to add
         required: true 
         content:
           application/jason:
             schema:
-              $ref: '#/components/schemas/FederationGroupMembership'
+              $ref: '#/components/schemas/Membership'
       responses:
         '201': 
-          description: Federation Group membership creation response
+          description: Membership creation response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FederationGroupMembership'
+                $ref: '#/components/schemas/Membership'
         default:
           description: unexpected error 
           content:
@@ -488,18 +487,18 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     get:
-      description: Returns all federation groups memberships
-      operationId: getFederationGroupMemberships
+      description: Returns all memberships
+      operationId: getMemberships
       parameters:
         - name: orgId
           in: query
-          description: filter federation groups memberships by orgId
+          description: filter Memberships by orgId
           schema:
             type: string
             format: int64
         - name: orgname
           in: query
-          description: filter federation groups memberships by orgname
+          description: filter memberships by orgname
           schema:
             type: string
             format: string
@@ -519,61 +518,61 @@ paths:
               - active
       responses:
         '200':
-          description: get FederationGroup memebership's response
+          description: get Membership response
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FederationGroupMembership'
+                  $ref: '#/components/schemas/Membership'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationGroupMemberships/{membershipID}:
+  /memberships/{membershipID}:
     get: 
-      description: get data for one FederationGroup
-      operationId: getFederationGroupMembershipbyID
+      description: get data for one Membership
+      operationId: getMembershipByID
       parameters:
         - name: membershipID
           in: path
-          description: Id of the federationGroup to be retrieved
+          description: Id of the Membership to be retrieved
           required: true 
           schema:
             type: integer
             format: int64
       responses:
         '200':
-          description: get federationGroup ID's response
+          description: get Membership response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FederationGroup'
+                $ref: '#/components/schemas/Membership'
         default:
           description: unexpected error
           content:
             application/json:
               schema:
                 $ref: './schemas.yaml'  
-    put:
-      description: update a federationGroupMembership by ID
-      operationId: updatefederationGroupMembership
+    patch:
+      description: update a Membership by ID
+      operationId: updateMembership
       parameters:
         - name: membershipID
           in: path
-          description: Id of the federationGroup membership to update
+          description: Id of the Membership to update
           required: true
           schema: 
             type: integer
             format: int64
       requestBody:
-        description: contents of the federationGroup membership to be updated
+        description: contents of the Membership to be updated
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/FederationGroupMembership'
+              $ref: '#/components/schemas/Membership'
       responses:
         '204':
           description: no content
@@ -584,12 +583,12 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     delete:
-      description: delete a federationGroup membership
-      operationId: deletefederationGroupMembership
+      description: delete a Membership
+      operationId: deleteMembership
       parameters:
         - name: membershipID
           in: path
-          description: Id of the federationGroup membership to delete
+          description: Id of the Membership to delete
           required: true
           schema: 
             type: integer
@@ -603,12 +602,12 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationRelationships:
+  /relationships:
     post:
-      description: Creates inital request for trustbundle exchange between two SpireServers active in the same federation group
-      operationId: createFederationRelationship
+      description: Creates initial request for trust bundle exchange between two Members active in the same Federation group
+      operationId: createRelationship
       requestBody:
-        description: Elements of the federation relationship to add
+        description: Elements of the Relationship to add
         required: true 
         content:
           application/jason:
@@ -616,7 +615,7 @@ paths:
               $ref: './schemas.yaml'
       responses:
         '201': 
-          description: Federation relationship creation response
+          description: Relationship creation response
           content:
             application/json:
               schema:
@@ -628,18 +627,19 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     get:
-      description: Returns all federation relationships
-      operationId: getFederationRelationships
+      # TODO: review
+      description: Returns all Relationships
+      operationId: getRelationships
       parameters:
         - name: orgId
           in: query
-          description: filter federation groups memberships by orgId
+          description: filter Relationships by orgId
           schema:
             type: string
             format: int64
         - name: orgname
           in: query
-          description: filter federation groups memberships by orgname
+          description: filter memberships by orgname
           schema:
             type: string
             format: string
@@ -660,7 +660,7 @@ paths:
               - invited
       responses:
         '200':
-          description: get Federation relationship's response
+          description: get Relationship response
           content:
             application/json:
               schema:
@@ -673,21 +673,21 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-  /federationRelationships/{relationshipID}:
+  /relationships/{relationshipID}:
     get: 
-      description: get data for one FederationGroup
-      operationId: getFederationRelationshipbyID
+      description: get data for one Relationship
+      operationId: getRelationshipByID
       parameters:
         - name: relationshipID
           in: path
-          description: Id of the federationGroup to be retrieved
+          description: Id of the Relationship to be retrieved
           required: true 
           schema:
             type: integer
             format: int64
       responses:
         '200':
-          description: get federationGroup ID's response
+          description: get Relationship response
           content:
             application/json:
               schema:
@@ -698,19 +698,19 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'  
-    put:
-      description: update a federationGroupMembership by ID
-      operationId: updateFederationRelationshipship
+    patch:
+      description: update a Relationship by ID
+      operationId: updateRelationship
       parameters:
         - name: relationshipID
           in: path
-          description: Id of the federation relationship to update
+          description: Id of the Relationship to update
           required: true
           schema: 
             type: integer
             format: int64
       requestBody:
-        description: contents of the federationGroup membership to be updated
+        description: contents of the Relationship to be updated
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -724,9 +724,9 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-
+# TODO: review
   /trustBundles/{trustBundleId}:
-    put:
+    patch:
       description: Upload a TrustBundle
       operationId: updateTrustBundle
       parameters:
