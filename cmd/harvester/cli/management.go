@@ -1,19 +1,16 @@
 package cli
 
 import (
-	"errors"
-
 	"github.com/spf13/cobra"
 )
 
-func NewManagementCmd() *cobra.Command {
+func NewFederationtCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "manage",
-		Short: "Manages member and federation relationships",
-		Long:  "Run this command to approve and deny relationships between members or federations",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Use:   "federation",
+		Short: "Manage federation relationships",
+		Long:  "Run this command to approve and deny relationships",
+		Run: func(cmd *cobra.Command, args []string) {
 			HarvesterCLI.runManagementAPI()
-			return errors.New("not implemented")
 		},
 	}
 }
@@ -23,6 +20,6 @@ func (c *HarvesterCli) runManagementAPI() {
 }
 
 func init() {
-	runCmd := NewManagementCmd()
+	runCmd := NewFederationtCmd()
 	RootCmd.AddCommand(runCmd)
 }
