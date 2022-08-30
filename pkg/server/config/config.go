@@ -13,9 +13,8 @@ type Server struct {
 }
 
 type ServerConfigSection struct {
-	SpireSocketPath string `hcl:"spire_socket_path"`
-	ServerAddress   string `hcl:"server_address"`
-	LogLevel        string `hcl:"log_level"`
+	ListenAddress string `hcl:"listen_address"`
+	LogLevel      string `hcl:"log_level"`
 }
 
 func New(config io.Reader) (*Server, error) {
@@ -45,27 +44,15 @@ func newConfig(configBytes []byte) (*Server, error) {
 
 	config.setDefaults()
 
-	if err := config.validate(); err != nil {
-		return nil, errors.Wrap(err, "bad configuration")
-	}
-
 	return &config, nil
 }
 
-func (c *Server) validate() error {
-	if c.ServerConfigSection.ServerAddress == "" {
-		return errors.New("server.server_address is required")
+func (c *Server) setDefaults() {
+	if c.ServerConfigSection.ListenAddress == "" {
+		c.ServerConfigSection.ListenAddress = "localhost:8080"
 	}
 
-	return nil
-}
-
-func (c *Server) setDefaults() {
 	if c.ServerConfigSection.LogLevel == "" {
 		c.ServerConfigSection.LogLevel = "INFO"
-	}
-
-	if c.ServerConfigSection.SpireSocketPath == "" {
-		c.ServerConfigSection.SpireSocketPath = "/tmp/spire-server/private/api.sock"
 	}
 }

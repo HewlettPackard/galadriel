@@ -20,9 +20,8 @@ func TestLoadFromDisk(t *testing.T) {
 			path: "testdata/ok.conf",
 			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
-					SpireSocketPath: "spire_socket_path",
-					ServerAddress:   "server_address",
-					LogLevel:        "log_level",
+					ListenAddress: "listen_address",
+					LogLevel:      "log_level",
 				},
 			},
 		}, {

@@ -24,23 +24,21 @@ func TestNew(t *testing.T) {
 	}{
 		{
 			name:   "ok",
-			config: bytes.NewBuffer([]byte(`server { spire_socket_path = "spire_socket_path" server_address = "server_address" }`)),
+			config: bytes.NewBuffer([]byte(`server { listen_address = "listen_address" }`)),
 			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
-					SpireSocketPath: "spire_socket_path",
-					ServerAddress:   "server_address",
-					LogLevel:        "INFO",
+					ListenAddress: "listen_address",
+					LogLevel:      "INFO",
 				},
 			},
 		},
 		{
 			name:   "defaults",
-			config: bytes.NewBuffer([]byte(`server { server_address = "server_address" }`)),
+			config: bytes.NewBuffer([]byte(`server { }`)),
 			expected: &Server{
 				ServerConfigSection: &ServerConfigSection{
-					SpireSocketPath: "/tmp/spire-server/private/api.sock",
-					ServerAddress:   "server_address",
-					LogLevel:        "INFO",
+					ListenAddress: "localhost:8080",
+					LogLevel:      "INFO",
 				},
 			},
 		},
@@ -48,11 +46,6 @@ func TestNew(t *testing.T) {
 			name:   "empty_config_file",
 			config: bytes.NewBufferString(``),
 			err:    "bad configuration: configuration file is empty",
-		},
-		{
-			name:   "requires_server_address",
-			config: bytes.NewBufferString(`server { spire_socket_path = "test" }`),
-			err:    "bad configuration: server.server_address is required",
 		},
 		{
 			name:   "err_hcl",
