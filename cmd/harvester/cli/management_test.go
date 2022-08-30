@@ -12,9 +12,6 @@ func TestNewFederationtCmd(t *testing.T) {
 		Use:   "federation",
 		Short: "Manage federation relationships",
 		Long:  "Run this command to approve and deny relationships",
-		Run: func(cmd *cobra.Command, args []string) {
-			HarvesterCmd.runManagementAPI()
-		},
 	}
 	assert.ObjectsAreEqual(expected, NewFederationtCmd())
 }
