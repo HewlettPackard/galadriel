@@ -10,12 +10,12 @@ import (
 var (
 	RootCmd      = NewRootCmd()
 	cmdExecute   = RootCmd.Execute
-	HarvesterCLI = &HarvesterCli{
+	HarvesterCmd = &HarvesterCLI{
 		logger: common.NewLogger(telemetry.Harvester),
 	}
 )
 
-type HarvesterCli struct {
+type HarvesterCLI struct {
 	logger *common.Logger
 }
 
@@ -27,7 +27,7 @@ func NewRootCmd() *cobra.Command {
 }
 
 func Run() int {
-	err := HarvesterCLI.Run()
+	err := HarvesterCmd.Run()
 	if err != nil {
 		return 1
 	}
@@ -35,11 +35,11 @@ func Run() int {
 	return 0
 }
 
-func (c *HarvesterCli) Run() error {
-	return c.Execute()
+func (hc *HarvesterCLI) Run() error {
+	return hc.Execute()
 }
 
-func (c *HarvesterCli) Execute() error {
+func (*HarvesterCLI) Execute() error {
 	err := cmdExecute()
 	if err != nil {
 		return err
