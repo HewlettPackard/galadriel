@@ -12,12 +12,12 @@ func TestExecute(t *testing.T) {
 	cmdExecute = func() error {
 		return nil
 	}
-	assert.Nil(t, HarvesterCLI.Execute())
+	assert.Nil(t, HarvesterCmd.Execute())
 
 	cmdExecute = func() error {
 		return errors.New("Ops")
 	}
-	assert.NotNil(t, HarvesterCLI.Execute())
+	assert.NotNil(t, HarvesterCmd.Execute())
 }
 
 func TestNewRootCmd(t *testing.T) {

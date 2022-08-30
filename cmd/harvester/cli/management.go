@@ -10,13 +10,13 @@ func NewFederationtCmd() *cobra.Command {
 		Short: "Manage federation relationships",
 		Long:  "Run this command to approve and deny relationships",
 		Run: func(cmd *cobra.Command, args []string) {
-			HarvesterCLI.runManagementAPI()
+			HarvesterCmd.runManagementAPI()
 		},
 	}
 }
 
-func (c *HarvesterCli) runManagementAPI() {
-	c.logger.Info("Starting Management API")
+func (hc *HarvesterCLI) runManagementAPI() {
+	hc.logger.Info("Starting Management API")
 }
 
 func init() {

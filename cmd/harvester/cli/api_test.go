@@ -15,7 +15,7 @@ func TestNewRunCmd(t *testing.T) {
 		Run: func(cmd *cobra.Command, args []string) {
 			configPath, _ := cmd.Flags().GetString("config")
 
-			HarvesterCLI.runHarvesterAPI(configPath)
+			HarvesterCmd.runHarvesterAPI(configPath)
 		},
 	}
 	assert.ObjectsAreEqual(expected, NewRunCmd())
