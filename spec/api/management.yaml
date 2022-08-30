@@ -76,14 +76,14 @@ components:
         - description
         - status
     Membership:
-      # A Membership reperesents a particular SPIRE server's presence in a
+      # A Membership represents a particular SPIRE server's presence in a
       # FederationGroup
       type: object
       properties:
         id:
           type: integer
           format: int64
-        spireServerId:
+        memberId:
           type: integer
           format: int64
         federationGroupId:
@@ -416,7 +416,7 @@ paths:
       description: Updates the status of a Member
       operationId: updateMember
       parameters:
-        - name: spireServerId
+        - name: memberId
           in: path 
           description: Id of the SPIRE server to update 
           required: true
@@ -431,7 +431,7 @@ paths:
               $ref: '#/components/schemas/Member'
       responses:
         '200':
-          description: get Members's response
+          description: get Members response
           content:
             application/json:
               schema:
@@ -446,7 +446,7 @@ paths:
       description: delete a Member
       operationId: deleteMember
       parameters:
-        - name: spireServerId
+        - name: memberId
           in: path
           description: Id of the SPIRE server to delete
           required: true
@@ -627,7 +627,6 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     get:
-      # TODO: review
       description: Returns all Relationships
       operationId: getRelationships
       parameters:
