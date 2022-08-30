@@ -14,6 +14,7 @@ import (
 
 type SpireServer interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
+	ListFederationRelationships(context.Context) ([]*FederationRelationship, error)
 }
 
 type localSpireServer struct {
@@ -23,6 +24,7 @@ type localSpireServer struct {
 
 type client interface {
 	BundleClient
+	TrustDomainClient
 }
 
 var dialFn = dialSocket
@@ -47,6 +49,15 @@ func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle,
 	}
 
 	return bundle, nil
+}
+
+func (s *localSpireServer) ListFederationRelationships(ctx context.Context) ([]*FederationRelationship, error) {
+	feds, err := s.client.ListFederationRelationships(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list federation relationships: %v", err)
+	}
+
+	return feds, nil
 }
 
 type clientMaker func(*grpc.ClientConn) (client, error)
@@ -79,7 +90,9 @@ func makeSpireClient(clientConn *grpc.ClientConn) (client, error) {
 
 	return struct {
 		BundleClient
+		TrustDomainClient
 	}{
-		BundleClient: NewBundleClient(clientConn),
+		BundleClient:      NewBundleClient(clientConn),
+		TrustDomainClient: NewTrustDomainClient(clientConn),
 	}, nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	trustdomainv1 "github.com/spiffe/spire-api-sdk/proto/spire/api/server/trustdomain/v1"
 	apitypes "github.com/spiffe/spire-api-sdk/proto/spire/api/types"
 )
 
@@ -69,6 +70,65 @@ func protoToJWTAuthorities(in []*apitypes.JWTKey) (map[string]crypto.PublicKey, 
 			return nil, fmt.Errorf("failed to parse public key id %s: %v", sjwt.KeyId, err)
 		}
 		out[sjwt.KeyId] = pub
+	}
+
+	return out, nil
+}
+
+func protoToFederationsRelationships(in *trustdomainv1.ListFederationRelationshipsResponse) ([]*FederationRelationship, error) {
+	var out []*FederationRelationship
+
+	for _, inRel := range in.FederationRelationships {
+		outRel, err := protoToFederationsRelationship(inRel)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse federated relationship: %v", err)
+		}
+		out = append(out, outRel)
+	}
+
+	return out, nil
+}
+
+func protoToFederationsRelationship(in *apitypes.FederationRelationship) (*FederationRelationship, error) {
+	td, err := spiffeid.TrustDomainFromString(in.TrustDomain)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse federated trust domain: %v", err)
+	}
+	bundle, err := protoToBundle(in.TrustDomainBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse federated trust bundle: %v", err)
+	}
+	profile, err := protoToBundleProfile(in)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse federated profile: %v", err)
+	}
+
+	out := &FederationRelationship{
+		TrustDomain:           td,
+		TrustDomainBundle:     bundle,
+		BundleEndpointURL:     in.BundleEndpointUrl,
+		BundleEndpointProfile: profile,
+	}
+
+	return out, nil
+}
+
+func protoToBundleProfile(in *apitypes.FederationRelationship) (BundleEndpointProfile, error) {
+	var out BundleEndpointProfile
+
+	switch in.BundleEndpointProfile.(type) {
+	case *apitypes.FederationRelationship_HttpsWeb:
+		out = HTTPSWebBundleEndpointProfile{}
+	case *apitypes.FederationRelationship_HttpsSpiffe:
+		spiffeId, err := spiffeid.FromString(in.GetHttpsSpiffe().EndpointSpiffeId)
+		if err != nil {
+			return nil, err
+		}
+		out = HTTPSSpiffeBundleEndpointProfile{
+			SpiffeID: spiffeId,
+		}
+	default:
+		return nil, fmt.Errorf("unknown bundle endpoint profile type: %T", in.BundleEndpointProfile)
 	}
 
 	return out, nil
