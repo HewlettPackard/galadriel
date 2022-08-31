@@ -32,10 +32,10 @@ func New(config io.Reader) (*HarvesterConfig, error) {
 		return nil, errors.Wrap(err, "failed to read configuration")
 	}
 
-	return new(configBytes)
+	return newConfig(configBytes)
 }
 
-func new(configBytes []byte) (*HarvesterConfig, error) {
+func newConfig(configBytes []byte) (*HarvesterConfig, error) {
 	var config HarvesterConfig
 
 	if err := hcl.Decode(&config, string(configBytes)); err != nil {
@@ -50,7 +50,7 @@ func new(configBytes []byte) (*HarvesterConfig, error) {
 	config.setDefaults()
 
 	if err := config.validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid configuration")
+		return nil, errors.Wrap(err, "bad configuration")
 	}
 
 	return &config, nil

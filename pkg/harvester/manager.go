@@ -3,8 +3,10 @@ package harvester
 import (
 	"context"
 	"fmt"
+	"os/signal"
 	"runtime/debug"
 	"sync"
+	"syscall"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
@@ -16,7 +18,8 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 )
 
-type HarvesterManager struct {
+// Manager is the entity that enables managing the Galadriel Server
+type Manager struct {
 	catalog    catalog.Catalog
 	controller controller.HarvesterController
 	api        api.API
@@ -24,13 +27,13 @@ type HarvesterManager struct {
 	telemetry  telemetry.MetricServer
 }
 
-func NewHarvesterManager() *HarvesterManager {
-	return &HarvesterManager{
+func NewHarvesterManager() *Manager {
+	return &Manager{
 		logger: *common.NewLogger(telemetry.Harvester),
 	}
 }
 
-func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterConfig) {
+func (m *Manager) Start(ctx context.Context, config config.HarvesterConfig) {
 	type key string
 
 	if m.load(config) != nil {
@@ -45,11 +48,11 @@ func (m *HarvesterManager) Start(ctx context.Context, config config.HarvesterCon
 	m.run(ctx)
 }
 
-func (m *HarvesterManager) Stop() {
+func (m *Manager) Stop() {
 	// unload and cleanup stuff
 }
 
-func (m *HarvesterManager) load(config config.HarvesterConfig) error {
+func (m *Manager) load(config config.HarvesterConfig) error {
 	cat := catalog.Catalog{
 		Spire:  spire.NewLocalSpireServer(config.HarvesterConfigSection.SpireSocketPath),
 		Server: server.NewRemoteGaladrielServer(config.HarvesterConfigSection.ServerAddress),
@@ -68,12 +71,14 @@ func (m *HarvesterManager) load(config config.HarvesterConfig) error {
 	return nil
 }
 
-func (m *HarvesterManager) run(ctx context.Context) {
-	// TODO: figure out how to trap signals
+func (m *Manager) run(ctx context.Context) {
 	m.logger.Info("Starting harvester manager")
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
+
+	_, cancel := context.WithCancel(ctx)
+	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
 	defer func() {
 		wg.Wait()
 		cancel()
@@ -87,7 +92,6 @@ func (m *HarvesterManager) run(ctx context.Context) {
 	wg.Add(len(plugins))
 
 	errch := make(chan error, len(plugins))
-
 	for _, plugin := range plugins {
 		plugin := plugin
 		go func() {

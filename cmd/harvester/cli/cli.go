@@ -1,43 +1,49 @@
 package cli
 
 import (
-	"context"
+	"github.com/spf13/cobra"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-	"github.com/HewlettPackard/galadriel/pkg/harvester"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/config"
 )
 
-const defaultConfPath = "conf/harvester/harvester.conf"
+var (
+	RootCmd      = NewRootCmd()
+	cmdExecute   = RootCmd.Execute
+	HarvesterCmd = &HarvesterCLI{
+		logger: common.NewLogger(telemetry.Harvester),
+	}
+)
 
 type HarvesterCLI struct {
 	logger *common.Logger
 }
 
-func NewHarvesterCLI() *HarvesterCLI {
-	return &HarvesterCLI{
-		logger: common.NewLogger(telemetry.Harvester),
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:  "harvester",
+		Long: "This is the Galadriel Harvester CLI",
 	}
 }
 
-func (c *HarvesterCLI) Run(args []string) int {
-	if len(args) != 1 {
-		c.logger.Error("Unknown arguments", args)
-		return 1
-	}
-
-	cfg, err := config.LoadFromDisk(defaultConfPath)
+func Run() int {
+	err := HarvesterCmd.Run()
 	if err != nil {
-		c.logger.Error("Error loading config:", err)
 		return 1
 	}
 
-	ctx := context.Background()
-	if args[0] == "run" {
-		harvester.NewHarvesterManager().Start(ctx, *cfg)
+	return 0
+}
+
+func (hc *HarvesterCLI) Run() error {
+	return hc.Execute()
+}
+
+func (*HarvesterCLI) Execute() error {
+	err := cmdExecute()
+	if err != nil {
+		return err
 	}
 
-	c.logger.Error("Unknown command:", args[0])
-	return 1
+	return nil
 }
