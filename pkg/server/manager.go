@@ -30,16 +30,18 @@ func NewManager() *Manager {
 }
 
 // Run runs the Galadriel server.
-func Run(configPath string) {
+func Run(configPath string) error {
 	m := NewManager()
 	m.logger.Info("Starting the Galadriel Server")
 
 	if err := m.load(configPath); err != nil {
 		m.logger.Error("Error configuring server:", err)
-		return
+		return err
 	}
 
 	m.Start()
+
+	return nil
 }
 
 func (m *Manager) Start() {

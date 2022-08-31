@@ -1,29 +1,17 @@
 package cli
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO: this test does not seem to add any value
-func TestNewRunCmd(t *testing.T) {
-	configPath = ""
-	expected := &cobra.Command{
-		Use:   "run",
-		Short: "Runs the Galadriel server",
-		Long:  "Run this command to start the Galadriel server",
-		Run: func(cmd *cobra.Command, args []string) {
-		},
-	}
-	assert.ObjectsAreEqual(expected, NewRunCmd())
-}
-
 func TestRunCommand(t *testing.T) {
 	called := false
-	runServerFn = func(config string) {
+	runServerFn = func(config string) error {
 		called = true
+		return nil
 	}
 
 	cmd := NewRunCmd()
@@ -31,5 +19,16 @@ func TestRunCommand(t *testing.T) {
 	err := cmd.Execute()
 
 	assert.Equal(t, nil, err, "unexpected error")
+	assert.Equal(t, true, called, "failed to call runServerFn")
+
+	called = false
+	runServerFn = func(config string) error {
+		called = true
+		return errors.New("ops")
+	}
+
+	err = cmd.Execute()
+
+	assert.Equal(t, errors.New("ops"), err, "unexpected error")
 	assert.Equal(t, true, called, "failed to call runServerFn")
 }

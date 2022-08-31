@@ -21,7 +21,11 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			runServerFn(configPath)
+			err = runServerFn(configPath)
+			if err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}
