@@ -75,7 +75,8 @@ oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
 go-check:
 ifeq (go$(go_version), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '))
-	@echo "Installing go$(go_version)..."
+else
+	@echo "Installing go $(go_version)..."
 	$(E)rm -rf $(dir $(go_dir))
 	$(E)mkdir -p $(go_dir)
 	$(E)curl -sSfL $(go_url) | tar xz -C $(go_dir) --strip-components=1
