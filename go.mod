@@ -7,16 +7,14 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.5.0
 	github.com/spiffe/spire-controller-manager v0.2.1
 	github.com/stretchr/testify v1.8.0
-	go.opentelemetry.io/contrib/instrumentation/runtime v0.33.0
+	go.opentelemetry.io/contrib/instrumentation/runtime v0.34.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.31.0
 	go.opentelemetry.io/otel/metric v0.31.0
 	go.opentelemetry.io/otel/sdk/metric v0.31.0
 )
-
-require google.golang.org/grpc v1.48.0 // indirect
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -30,9 +28,10 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	go.opentelemetry.io/otel v1.8.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.8.0 // indirect
-	go.opentelemetry.io/otel/trace v1.8.0 // indirect
+	go.opentelemetry.io/otel v1.9.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.9.0 // indirect
+	go.opentelemetry.io/otel/trace v1.9.0 // indirect
+	google.golang.org/grpc v1.48.0 // indirect
 )
 
 require (
@@ -44,8 +43,8 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.1.1
-	github.com/spiffe/spire-api-sdk v1.3.2 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.0.0
+	github.com/spiffe/spire-api-sdk v1.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect

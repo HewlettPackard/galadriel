@@ -51,12 +51,12 @@ func TestNew(t *testing.T) {
 		{
 			name:   "empty_config_file",
 			config: bytes.NewBufferString(``),
-			err:    "invalid configuration: harvester.server_address is required",
+			err:    "bad configuration: harvester.server_address is required",
 		},
 		{
 			name:   "requires_server_address",
 			config: bytes.NewBufferString(`harvester { spire_socket_path = "test" }`),
-			err:    "invalid configuration: harvester.server_address is required",
+			err:    "bad configuration: harvester.server_address is required",
 		},
 		{
 			name:   "invalid_hcl",
