@@ -73,10 +73,10 @@ func (m *Manager) load(config config.HarvesterConfig) error {
 
 func (m *Manager) run(ctx context.Context) {
 	m.logger.Info("Starting harvester manager")
-  
+
 	var wg sync.WaitGroup
 
-	ctx, cancel := context.WithCancel(ctx)
+	_, cancel := context.WithCancel(ctx)
 	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	defer func() {

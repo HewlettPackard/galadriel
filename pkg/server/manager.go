@@ -16,10 +16,9 @@ import (
 
 // Manager is the entity that enables managing the Galadriel Server
 type Manager struct {
-	api       api.HTTPServer
-	config    config.Server
-	logger    common.Logger
-	telemetry telemetry.MetricServer
+	api    api.HTTPServer
+	config config.Server
+	logger common.Logger
 }
 
 // NewManager returns a new Galadriel Server Manager
@@ -55,7 +54,7 @@ func (m *Manager) Start() {
 }
 
 func (m *Manager) Stop() {
-	return
+	// unload and cleanup stuff
 }
 
 func (m *Manager) load(configPath string) error {
@@ -72,7 +71,7 @@ func (m *Manager) run(ctx context.Context) {
 	m.logger.Info("Starting Server manager")
 
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
+	_, cancel := context.WithCancel(ctx)
 	ctx, _ = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer func() {
 		wg.Wait()
