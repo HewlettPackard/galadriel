@@ -12,8 +12,9 @@ type Model struct {
 
 type Member struct {
 	Model
-	Description   string `gorm:"uniqueIndex"`
-	Memberships   []Membership
+	Description   string
+	TrustDomain   string
+	Memberships   []Membership   `gorm:"constraint:OnDelete:CASCADE;"`
 	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;"`
 	TrustBundles  []TrustBundle  `gorm:"constraint:OnDelete:CASCADE;"`
 }
