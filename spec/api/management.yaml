@@ -14,19 +14,6 @@ components:
     # Deletion is normally automatic (not through API) when the trust bundle contents
     # indicate that it has expired
 
-#    Organization:
-#      # An organization is the building block to create Federation Groups. It provides multitenancy capabilities.
-#      type: object
-#      properties:
-#        id:
-#          type: integer
-#          format: int64
-#        name:
-#          type: string
-#          format: string
-#      required:
-#        - id
-#        - name
     FederationGroup:
       # A Federation Group represents a bridge for its Members,
       # allowing relationships to be established
@@ -35,9 +22,6 @@ components:
         id:
           type: integer
           format: int64
-#        orgid:
-#          type: integer
-#          format: int64
         name:
           type: string
           format: string
@@ -49,7 +33,6 @@ components:
             - active
       required:
         - id
-#        - orgid
         - name
     Member:
       # Member is a representation of a trust-domain/Member
@@ -100,126 +83,6 @@ components:
         - status
     
 paths:
-#  /organizations:
-#    post:
-#      description: Create a new organization
-#      operationId: createOrganization
-#      requestBody:
-#        description: Elements of the organization to add
-#        required: true
-#        content:
-#          application/jason:
-#            schema:
-#              $ref: '#/components/schemas/Organization'
-#      responses:
-#        '201':
-#          description: Organization creation response
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/Organization'
-#        default:
-#          description: unexpected error
-#          content:
-#            application/json:
-#              schema:
-#                $ref: './schemas.yaml'
-#    get:
-#      description: Returns all Organizations
-#      operationId: getOrganizations
-#      parameters:
-#        - name: name
-#          in: query
-#          description: filter organizations by name
-#          schema:
-#            type: string
-#            format: string
-#      responses:
-#        '200':
-#          description: get organization's response
-#          content:
-#            application/json:
-#              schema:
-#                type: array
-#                items:
-#                  $ref: '#/components/schemas/Organization'
-#        default:
-#          description: unexpected error
-#          content:
-#            application/json:
-#              schema:
-#                $ref: './schemas.yaml'
-#  /organizations/{orgID}:
-#    get:
-#      description: get data for one organization
-#      operationId: getOrgbyID
-#      parameters:
-#        - name: orgID
-#          in: path
-#          description: Id of the organization to be retrieved
-#          required: true
-#          schema:
-#            type: integer
-#            format: int64
-#      responses:
-#        '200':
-#          description: get organization's response
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/Organization'
-#        default:
-#          description: unexpected error
-#          content:
-#            application/json:
-#              schema:
-#                $ref: './schemas.yaml'
-#    patch:
-#      description: update an organizaion by ID
-#      operationId: updateOrganizaion
-#      parameters:
-#        - name: orgID
-#          in: path
-#          description: Id of the organization to update
-#          required: true
-#          schema:
-#            type: integer
-#            format: int64
-#      requestBody:
-#        description: contents of the org to be updated
-#        content:
-#          application/x-www-form-urlencoded:
-#            schema:
-#              $ref: '#/components/schemas/Organization'
-#      responses:
-#        '204':
-#          description: no content
-#        default:
-#          description: unexpected error
-#          content:
-#            application/json:
-#              schema:
-#                $ref: './schemas.yaml'
-#    delete:
-#      description: delete an organization
-#      operationId: deleteOrganization
-#      parameters:
-#        - name: orgID
-#          in: path
-#          description: Id of the organization to delete
-#          required: true
-#          schema:
-#            type: integer
-#            format: int64
-#      responses:
-#        '204':
-#          description: no content
-#        default:
-#          description: unexpected error
-#          content:
-#            application/json:
-#              schema:
-#                $ref: './schemas.yaml'
   /federationGroups:
     post:
       description: Create a new Federation group . It represents a bridge for its Members, allowing relationships to be created.
