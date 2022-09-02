@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
@@ -36,14 +36,14 @@ func (ds *Plugin) OpenDB(connectionString, dbtype string) (err error) {
 
 // Implements the CreateMember function from Datastore
 // Creates a new Member in the database. Returns error if fails.
-func (ds *Plugin) CreateMember(ctx echo.Context, entitymember *entity.Member) (*entity.Member, error) {
-
+func (ds *Plugin) CreateMember(ctx context.Context, entitymember *entity.Member) (*entity.Member, error) {
+	var err error
 	dbmember := Member{
 		Description: (*entitymember).Description,
 		TrustDomain: (*entitymember).TrustDomain,
 	}
 
-	if err := ds.db.Where(&dbmember).FirstOrCreate(&dbmember).Error; err != nil {
+	if err = ds.db.Where(&dbmember).FirstOrCreate(&dbmember).Error; err != nil {
 		return nil, fmt.Errorf("sqlstore error: %v", err)
 	}
 	entitymember.MemberID = dbmember.ID

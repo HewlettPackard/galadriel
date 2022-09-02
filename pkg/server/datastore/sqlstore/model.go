@@ -4,10 +4,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
+// Added a gorm hook to insert the uuid before creation
+func (m *Model) BeforeCreate(db *gorm.DB) error {
+	uuid, err := uuid.NewUUID()
+	if err != nil {
+		return err
+	}
+	m.ID = uuid
+	return nil
+}
+
 type Model struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()"`
+	ID        uuid.UUID `gorm:"type:uuid;primary_key"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

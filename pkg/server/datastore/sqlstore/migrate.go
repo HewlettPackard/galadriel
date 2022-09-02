@@ -10,7 +10,7 @@ const (
 	latestSchemaVersion = 0
 )
 
-//This function checks the schema version and calls the migration code before initializing the DB if needed
+// This function checks the schema version and calls the migration code before initializing the DB if needed
 func migrateDB(db *gorm.DB) (err error) {
 	//Check if Table exists
 	isNew := !db.Migrator().HasTable(&Migration{})
@@ -23,7 +23,7 @@ func migrateDB(db *gorm.DB) (err error) {
 	}
 	// Retrieve the Migration table
 	migration := Migration{}
-	if err := db.Assign(Migration{}).FirstOrCreate(migration).Error; err != nil {
+	if err := db.First(&migration).Error; err != nil {
 		return err
 	}
 	// Compare the version with the latest - TODO
