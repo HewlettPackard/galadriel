@@ -2,6 +2,7 @@ package entity
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -19,4 +20,7 @@ type Relationship struct {
 
 	// Fields only used for 'https_spiffe' bundle endpoint profile
 	EndpointSPIFFEID spiffeid.ID
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

@@ -1,10 +1,16 @@
 package entity
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Member struct {
+	MemberID    uuid.UUID
 	Description string
-	ID          uuid.UUID
 	Status      string
 	TrustDomain string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

@@ -1,10 +1,16 @@
 package entity
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type FederationGroup struct {
-	ID     uuid.UUID
-	Name   string
-	Orgid  uint
-	Status string
+	FederationGroupID uuid.UUID
+	Name              string
+	Orgid             uint
+	Status            string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
