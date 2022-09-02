@@ -8,8 +8,8 @@ import (
 
 type Membership struct {
 	MembershipID      uuid.UUID
-	FederationGroupId uint
-	SpireServerId     uint
+	FederationGroupID uuid.UUID
+	MemberID          uuid.UUID
 	Status            string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
