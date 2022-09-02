@@ -24,14 +24,14 @@ type Member struct {
 type Membership struct {
 	Model
 	JoinToken string `gorm:"uniqueIndex"`
-	MemberID  uint
+	MemberID  uuid.UUID
 	TTL       uint
 }
 
 type Relationship struct {
 	Model
-	MemberID         uint // Implicit Foreign Key and also the SourceID for the relationship
-	TargetMemberID   uint
+	MemberID         uuid.UUID // Implicit Foreign Key and also the SourceID for the relationship
+	TargetMemberID   uuid.UUID
 	Status           string
 	RelationshipType string
 	TTL              uint
@@ -39,7 +39,7 @@ type Relationship struct {
 
 type TrustBundle struct {
 	Model
-	MemberID    uint //Implicit Foreign Key
+	MemberID    uuid.UUID //Implicit Foreign Key
 	TrustBundle string
 }
 
