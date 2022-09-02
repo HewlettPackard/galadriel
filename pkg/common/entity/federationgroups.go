@@ -1,7 +1,9 @@
 package entity
 
+import "github.com/google/uuid"
+
 type FederationGroup struct {
-	Id     uint
+	ID     uuid.UUID
 	Name   string
 	Orgid  uint
 	Status string

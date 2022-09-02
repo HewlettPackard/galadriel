@@ -1,8 +1,10 @@
 package entity
 
+import "github.com/google/uuid"
+
 type Member struct {
 	Description string
-	Id          int64
+	ID          uuid.UUID
 	Status      string
 	TrustDomain string
 }

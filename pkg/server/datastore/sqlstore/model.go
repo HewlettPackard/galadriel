@@ -2,10 +2,12 @@ package sqlstore
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Model struct {
-	ID        uint `gorm:"primary_key"`
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
