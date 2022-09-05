@@ -67,15 +67,6 @@ func (ds *SQLStore) CreateTrustBundle(ctx context.Context, trustBundle *common.B
 func (ds *SQLStore) CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) RetrieveMembershipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Membership, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) RetrieveRelationshipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Relationship, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) RetrieveTrustBundlesByID(ctx context.Context, memberID uuid.UUID) (*[]common.Bundle, error) {
-	return nil, fmt.Errorf("not implemented")
-}
 func (ds *SQLStore) RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) (*entity.Member, error) {
 	return nil, fmt.Errorf("not implemented")
 }
@@ -85,7 +76,7 @@ func (ds *SQLStore) RetrieveMembershipByID(ctx context.Context, membershipID uui
 func (ds *SQLStore) RetrieveRelationshipBySourceandTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) RetrieveTrustbundleByMemberID(ctx context.Context, memberID uuid.UUID) (*common.Bundle, error) {
+func (ds *SQLStore) RetrieveTrustBundleByID(ctx context.Context, trustID uuid.UUID) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error) {
