@@ -46,7 +46,7 @@ func (ds *Plugin) CreateMember(ctx context.Context, entitymember *entity.Member)
 	if err = ds.db.Where(&dbmember).FirstOrCreate(&dbmember).Error; err != nil {
 		return nil, fmt.Errorf("sqlstore error: %v", err)
 	}
-	entitymember.MemberID = dbmember.ID
+	entitymember.ID = dbmember.ID
 	entitymember.CreatedAt = dbmember.CreatedAt
 	entitymember.UpdatedAt = dbmember.UpdatedAt
 	return entitymember, nil

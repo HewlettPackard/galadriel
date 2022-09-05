@@ -7,7 +7,7 @@ import (
 )
 
 type Member struct {
-	MemberID    uuid.UUID
+	ID          uuid.UUID
 	Description string
 	Status      string
 	TrustDomain string

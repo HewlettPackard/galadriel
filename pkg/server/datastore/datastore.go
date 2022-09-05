@@ -17,13 +17,13 @@ type DataStore interface {
 	RetrieveMembershipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Membership, error)
 	RetrieveRelationshipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Relationship, error)
 	RetrieveTrustBundlesByID(ctx context.Context, memberID uuid.UUID) (*[]common.Bundle, error)
-	RetrieveMemberByID(ctx context.Context, member entity.Member) (*entity.Member, error)
+	RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) (*entity.Member, error)
 	RetrieveMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error)
 	RetrieveRelationshipBySourceandTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error)
 	RetrieveTrustbundleByMemberID(ctx context.Context, memberID uuid.UUID) (*common.Bundle, error)
-	UpdateMember(ctx context.Context, member entity.Member) error
-	UpdateMembership(ctx context.Context, membership entity.Membership) error
-	UpdateTrust(ctx context.Context, trustbundle common.Bundle) error
+	UpdateMember(ctx context.Context, member *entity.Member) error
+	UpdateMembership(ctx context.Context, membership *entity.Membership) error
+	UpdateTrust(ctx context.Context, trustbundle *common.Bundle) error
 	DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error
 	DeleteMembershipsByID(ctx context.Context, memberid uuid.UUID) error
 	DeleteRelationshipsByID(ctx context.Context, memberid uuid.UUID) error

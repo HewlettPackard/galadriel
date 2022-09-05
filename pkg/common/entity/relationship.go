@@ -12,7 +12,7 @@ import (
 type BundleEndpointType string
 
 type Relationship struct {
-	RelationshipID        uuid.UUID
+	ID                    uuid.UUID
 	TrustDomain           spiffeid.TrustDomain
 	BundleEndpointURL     *url.URL
 	BundleEndpointProfile BundleEndpointType

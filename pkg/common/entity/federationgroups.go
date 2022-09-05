@@ -7,9 +7,9 @@ import (
 )
 
 type FederationGroup struct {
-	FederationGroupID uuid.UUID
-	Name              string
-	Status            string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID        uuid.UUID
+	Name      string
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
