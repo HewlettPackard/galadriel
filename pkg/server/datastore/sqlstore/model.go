@@ -42,7 +42,7 @@ type Membership struct {
 type Relationship struct {
 	Model
 	MemberID         uuid.UUID // Implicit Foreign Key and also the SourceID for the relationship
-	TargetMemberID   uuid.UUID
+	TargetMemberID   uuid.UUID `gorm:"uniqueIndex"`
 	Status           string
 	RelationshipType string
 	TTL              uint

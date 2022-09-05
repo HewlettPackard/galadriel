@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/google/uuid"
+	"github.com/spiffe/spire/proto/spire/common"
 	"gorm.io/gorm"
 )
 
@@ -50,4 +52,65 @@ func (ds *SQLStore) CreateMember(ctx context.Context, entitymember *entity.Membe
 	entitymember.CreatedAt = dbmember.CreatedAt
 	entitymember.UpdatedAt = dbmember.UpdatedAt
 	return entitymember, nil
+}
+
+func (ds *SQLStore) CreateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) CreateTrustBundle(ctx context.Context, trustBundle *common.Bundle, memberID uuid.UUID) (*common.Bundle, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveMembershipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Membership, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveRelationshipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Relationship, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveTrustBundlesByID(ctx context.Context, memberID uuid.UUID) (*[]common.Bundle, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) (*entity.Member, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveRelationshipBySourceandTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) RetrieveTrustbundleByMemberID(ctx context.Context, memberID uuid.UUID) (*common.Bundle, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) UpdateTrust(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteMembershipsByID(ctx context.Context, memberid uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteRelationshipsByID(ctx context.Context, memberid uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteTrustbundlesByID(ctx context.Context, memberid uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteRelationshipBySourceTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error {
+	return fmt.Errorf("not implemented")
+}
+func (ds *SQLStore) DeleteTrustBundleByID(ctx context.Context, memberID uuid.UUID) error {
+	return fmt.Errorf("not implemented")
 }
