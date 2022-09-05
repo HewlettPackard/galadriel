@@ -13,7 +13,7 @@ type DataStore interface {
 	CreateMember(ctx context.Context, member *entity.Member) (*entity.Member, error)
 	CreateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error)
 	CreateTrustBundle(ctx context.Context, trustBundle *common.Bundle, memberID uuid.UUID) (*common.Bundle, error)
-	CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberId uint, targetMemberId uint) (*entity.Relationship, error)
+	CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error)
 	RetrieveMembershipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Membership, error)
 	RetrieveRelationshipsByID(ctx context.Context, memberID uuid.UUID) (*[]entity.Relationship, error)
 	RetrieveTrustBundlesByID(ctx context.Context, memberID uuid.UUID) (*[]common.Bundle, error)
