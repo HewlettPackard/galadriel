@@ -10,7 +10,7 @@ import (
 
 var (
 	ctx = context.Background()
-	ds  = Plugin{}
+	ds  = SQLStore{}
 )
 
 func TestCreateDB(t *testing.T) {

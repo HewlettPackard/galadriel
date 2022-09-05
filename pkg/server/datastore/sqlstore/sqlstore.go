@@ -13,12 +13,12 @@ const (
 	SQLite = "sqlite3"
 )
 
-type Plugin struct {
+type SQLStore struct {
 	db *gorm.DB
 }
 
 // Open a database connection by connection string and DBtype
-func (ds *Plugin) OpenDB(connectionString, dbtype string) (err error) {
+func (ds *SQLStore) OpenDB(connectionString, dbtype string) (err error) {
 	var dialectvar dialect
 
 	switch dbtype {
@@ -36,7 +36,7 @@ func (ds *Plugin) OpenDB(connectionString, dbtype string) (err error) {
 
 // Implements the CreateMember function from Datastore
 // Creates a new Member in the database. Returns error if fails.
-func (ds *Plugin) CreateMember(ctx context.Context, entitymember *entity.Member) (*entity.Member, error) {
+func (ds *SQLStore) CreateMember(ctx context.Context, entitymember *entity.Member) (*entity.Member, error) {
 	var err error
 	dbmember := Member{
 		Description: (*entitymember).Description,
