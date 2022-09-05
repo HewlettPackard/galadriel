@@ -20,11 +20,9 @@ type DataStore interface {
 	RetrieveTrustBundleByID(ctx context.Context, trustID uuid.UUID) (*common.Bundle, error)
 	UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error)
 	UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error)
+	UpdateRelationship(ctx context.Context, relationship *entity.Relationship) (*common.Bundle, error)
 	UpdateTrust(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error)
 	DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error
-	DeleteMembershipsByID(ctx context.Context, memberid uuid.UUID) error
-	DeleteRelationshipsByID(ctx context.Context, memberid uuid.UUID) error
-	DeleteTrustbundlesByID(ctx context.Context, memberid uuid.UUID) error
 	DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error
 	DeleteRelationshipBySourceTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error
 	DeleteTrustBundleByID(ctx context.Context, memberID uuid.UUID) error

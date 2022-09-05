@@ -88,16 +88,10 @@ func (ds *SQLStore) UpdateMembership(ctx context.Context, membership *entity.Mem
 func (ds *SQLStore) UpdateTrust(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
+func (ds *SQLStore) UpdateRelationship(ctx context.Context, relationship *entity.Relationship) (*common.Bundle, error) {
+	return nil, fmt.Errorf("not implemented")
+}
 func (ds *SQLStore) DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error {
-	return fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) DeleteMembershipsByID(ctx context.Context, memberid uuid.UUID) error {
-	return fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) DeleteRelationshipsByID(ctx context.Context, memberid uuid.UUID) error {
-	return fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) DeleteTrustbundlesByID(ctx context.Context, memberid uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error {
