@@ -73,7 +73,7 @@ func (ds *SQLStore) RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) 
 func (ds *SQLStore) RetrieveMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) RetrieveRelationshipBySourceandTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
+func (ds *SQLStore) RetrieveRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) RetrieveTrustBundleByID(ctx context.Context, trustID uuid.UUID) (*common.Bundle, error) {
@@ -97,7 +97,7 @@ func (ds *SQLStore) DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) er
 func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) DeleteRelationshipBySourceTargetID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error {
+func (ds *SQLStore) DeleteRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) DeleteTrustBundleByID(ctx context.Context, memberID uuid.UUID) error {

@@ -17,10 +17,7 @@ type Relationship struct {
 	BundleEndpointURL     *url.URL
 	BundleEndpointProfile BundleEndpointType
 	TrustDomainBundle     *common.Bundle
-
-	// Fields only used for 'https_spiffe' bundle endpoint profile
-	EndpointSPIFFEID spiffeid.ID
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	EndpointSPIFFEID      spiffeid.ID
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
