@@ -7,7 +7,8 @@ import (
 )
 
 type Membership struct {
-	MembershipID      uuid.UUID
+	MembershipID      uuid.UUID //SourceMemberID
+	TargetMemberID    uuid.UUID
 	FederationGroupID uuid.UUID
 	MemberID          uuid.UUID
 	Status            string
