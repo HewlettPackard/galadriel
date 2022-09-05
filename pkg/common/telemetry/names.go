@@ -8,9 +8,9 @@ const (
 
 // entity
 const (
-	TrustBundle = "trust_bundle"
-	PackageName = "package_name"
-	Federation  = "federation"
+	TrustBundle            = "trust_bundle"
+	PackageName            = "package_name"
+	FederationRelationship = "federation_relationship"
 )
 
 // action
@@ -22,12 +22,14 @@ const (
 	Create  = "create"
 	Approve = "approve"
 	Deny    = "deny"
+	Update  = "update"
 )
 
 // component
 const (
 	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
+	LocalSpireServer    = "local_spire_server"
 
 	GaladrielServer = "galadriel_server"
 	HTTPApi         = "http_api"

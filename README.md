@@ -32,3 +32,10 @@ There are a few make targets available to test the code:
 
 * `make test`: Runs all tests.
 * `make coverage`: Runs all unit tests and reports back test coverage. More details can be found in the file `./out/coverage/index.html`.
+
+### Mocking responses
+
+When developing, you might want to simulate responses from the servers. Here is a command to run a mocked server for the `management.yaml`:
+```bash
+docker run -v $(pwd)/spec/api:/api -p 4010:4010 stoplight/prism mock -h 0.0.0.0 /api/management.yaml
+```

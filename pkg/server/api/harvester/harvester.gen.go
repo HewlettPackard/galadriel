@@ -13,30 +13,27 @@ import (
 
 // GetFederationRelationshipsParams defines parameters for GetFederationRelationships.
 type GetFederationRelationshipsParams struct {
-	// filter relationships by spireServer
-	SpireServer *string `form:"spireServer,omitempty" json:"spireServer,omitempty"`
+	// filter relationships by spireServerId
+	SpireServerId *string `form:"spireServerId,omitempty" json:"spireServerId,omitempty"`
 
 	// filter relationships by status
 	Status *string `form:"status,omitempty" json:"status,omitempty"`
 
-	// filter relationships by status
+	// filter relationships by federationGroupId
 	FederationGroupId *int64 `form:"federationGroupId,omitempty" json:"federationGroupId,omitempty"`
 }
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /FederationRelationship)
+	// (GET /federation-relationship)
 	GetFederationRelationships(ctx echo.Context, params GetFederationRelationshipsParams) error
 
-	// (GET /FederationRelationship/{relationshipID})
-	GetRelationshipbyID(ctx echo.Context, relationshipID int64) error
+	// (GET /federation-relationship/{relationshipId})
+	GetFederationRelationshipbyId(ctx echo.Context, relationshipId int64) error
 
-	// (PUT /FederationRelationship/{relationshipID})
-	UpdateFederatedRelationshipStatus(ctx echo.Context, relationshipID int64) error
-
-	// (PUT /trustBundles/{trustBundleId})
-	UpdateTrustBundle(ctx echo.Context, trustBundleId int64) error
+	// (PUT /federation-relationship/{relationshipId})
+	UpdateFederatedRelationshipConsent(ctx echo.Context, relationshipId int64) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -50,11 +47,11 @@ func (w *ServerInterfaceWrapper) GetFederationRelationships(ctx echo.Context) er
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetFederationRelationshipsParams
-	// ------------- Optional query parameter "spireServer" -------------
+	// ------------- Optional query parameter "spireServerId" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "spireServer", ctx.QueryParams(), &params.SpireServer)
+	err = runtime.BindQueryParameter("form", true, false, "spireServerId", ctx.QueryParams(), &params.SpireServerId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter spireServer: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter spireServerId: %s", err))
 	}
 
 	// ------------- Optional query parameter "status" -------------
@@ -76,51 +73,35 @@ func (w *ServerInterfaceWrapper) GetFederationRelationships(ctx echo.Context) er
 	return err
 }
 
-// GetRelationshipbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetRelationshipbyID(ctx echo.Context) error {
+// GetFederationRelationshipbyId converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFederationRelationshipbyId(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "relationshipID" -------------
-	var relationshipID int64
+	// ------------- Path parameter "relationshipId" -------------
+	var relationshipId int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, ctx.Param("relationshipID"), &relationshipID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipId", runtime.ParamLocationPath, ctx.Param("relationshipId"), &relationshipId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetRelationshipbyID(ctx, relationshipID)
+	err = w.Handler.GetFederationRelationshipbyId(ctx, relationshipId)
 	return err
 }
 
-// UpdateFederatedRelationshipStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateFederatedRelationshipStatus(ctx echo.Context) error {
+// UpdateFederatedRelationshipConsent converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateFederatedRelationshipConsent(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "relationshipID" -------------
-	var relationshipID int64
+	// ------------- Path parameter "relationshipId" -------------
+	var relationshipId int64
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, ctx.Param("relationshipID"), &relationshipID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipId", runtime.ParamLocationPath, ctx.Param("relationshipId"), &relationshipId)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipId: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdateFederatedRelationshipStatus(ctx, relationshipID)
-	return err
-}
-
-// UpdateTrustBundle converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateTrustBundle(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "trustBundleId" -------------
-	var trustBundleId int64
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "trustBundleId", runtime.ParamLocationPath, ctx.Param("trustBundleId"), &trustBundleId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustBundleId: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdateTrustBundle(ctx, trustBundleId)
+	err = w.Handler.UpdateFederatedRelationshipConsent(ctx, relationshipId)
 	return err
 }
 
@@ -152,9 +133,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/FederationRelationship", wrapper.GetFederationRelationships)
-	router.GET(baseURL+"/FederationRelationship/:relationshipID", wrapper.GetRelationshipbyID)
-	router.PUT(baseURL+"/FederationRelationship/:relationshipID", wrapper.UpdateFederatedRelationshipStatus)
-	router.PUT(baseURL+"/trustBundles/:trustBundleId", wrapper.UpdateTrustBundle)
+	router.GET(baseURL+"/federation-relationship", wrapper.GetFederationRelationships)
+	router.GET(baseURL+"/federation-relationship/:relationshipId", wrapper.GetFederationRelationshipbyId)
+	router.PUT(baseURL+"/federation-relationship/:relationshipId", wrapper.UpdateFederatedRelationshipConsent)
 
 }
