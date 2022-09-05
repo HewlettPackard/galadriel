@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/google/uuid"
 	"github.com/spiffe/spire/proto/spire/common"
 	"gorm.io/gorm"
@@ -14,6 +15,9 @@ const (
 	// SQLite database type
 	SQLite = "sqlite3"
 )
+
+// Implementation compliance test
+var _ datastore.DataStore = &SQLStore{}
 
 type SQLStore struct {
 	db *gorm.DB
