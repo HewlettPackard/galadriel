@@ -15,7 +15,7 @@ import (
 type API interface {
 	common.RunnablePlugin
 	GetFederationRelationships(ctx echo.Context, params harvester.GetFederationRelationshipsParams) error
-	GetFederationRelationshipbyId(ctx echo.Context, relationshipID int64) error
+	GetFederationRelationshipbyID(ctx echo.Context, relationshipID int64) error
 	UpdateFederatedRelationshipConsent(ctx echo.Context, relationshipID int64) error
 }
 

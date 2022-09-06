@@ -8,14 +8,14 @@ servers:
   - url: http://localhost:32308/
 
 paths:
-  /federation-relationship:
+  /federation-relationships:
     get:
       description: Returns all federated relationships of a SPIRE server in the Galadriel server
       operationId: getFederationRelationships
       parameters:
-        - name: spireServerId
+        - name: spireServerID
           in: query
-          description: filter relationships by spireServerId
+          description: filter relationships by spireServerID
           schema:
             type: string
             format: string
@@ -25,9 +25,9 @@ paths:
           schema:
             type: string
             format: string
-        - name: federationGroupId
+        - name: federationGroupID
           in: query
-          description: filter relationships by federationGroupId
+          description: filter relationships by federationGroupID
           schema:
             type: integer
             format: int64
@@ -47,14 +47,14 @@ paths:
               schema:
                 $ref: './schemas.yaml'
 
-  /federation-relationship/{relationshipId}:
+  /federation-relationships/{relationshipID}:
     get: 
-      description: get data for one organization
-      operationId: getFederationRelationshipbyId
+      description: get data for one federation relationship
+      operationId: getFederationRelationshipbyID
       parameters:
-        - name: relationshipId
+        - name: relationshipID
           in: path
-          description: Id of the relationship to be retrieved
+          description: ID of the relationship to be retrieved
           required: true 
           schema:
             type: integer
@@ -73,18 +73,18 @@ paths:
               schema:
                 $ref: './schemas.yaml'
     put:
-      description: update an the consent of a relationship by Id
+      description: updates the consent of a relationship by ID
       operationId: updateFederatedRelationshipConsent
       parameters:
-        - name: relationshipId
+        - name: relationshipID
           in: path
-          description: Id of the relationship to update
+          description: ID of the relationship to update
           required: true
           schema: 
             type: integer
             format: int64
       requestBody:
-        description: contents of the org to be updated
+        description: content of the relationship to be updated
         content:
           application/x-www-form-urlencoded:
             schema:

@@ -25,12 +25,12 @@ type Error struct {
 
 // FederationRelationship defines model for FederationRelationship.
 type FederationRelationship struct {
-	FederationGroupId               int64                         `json:"federationGroupId"`
+	FederationGroupID               int64                         `json:"federationGroupID"`
 	Id                              int64                         `json:"id"`
 	SpireServerConsent              *bool                         `json:"spireServerConsent,omitempty"`
 	SpireServerFederatedWithConsent *bool                         `json:"spireServerFederatedWithConsent,omitempty"`
-	SpireServerId                   int64                         `json:"spireServerId"`
-	SpireServerIdFederatedWith      int64                         `json:"spireServerIdFederatedWith"`
+	SpireServerID                   int64                         `json:"spireServerID"`
+	SpireServerIdFederatedWith      *int64                        `json:"spireServerIdFederatedWith,omitempty"`
 	Status                          *FederationRelationshipStatus `json:"status,omitempty"`
 }
 

@@ -22,7 +22,7 @@ func (a *HTTPApi) GetFederationRelationships(ctx echo.Context, params harvester.
 	return ctx.JSON(http.StatusOK, result)
 }
 
-func (a *HTTPApi) GetFederationRelationshipbyId(ctx echo.Context, relationshipID int64) error {
+func (a *HTTPApi) GetFederationRelationshipbyID(ctx echo.Context, relationshipID int64) error {
 	a.logger.Info(telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get, relationshipID)
 	telemetry.Count(ctx.Request().Context(), telemetry.HTTPApi, telemetry.FederationRelationship, telemetry.Get)
 

@@ -694,7 +694,7 @@ paths:
       parameters:
         - name: relationshipID
           in: path
-          description: Id of the federationGroup to be retrieved
+          description: ID of the federationGroup to be retrieved
           required: true 
           schema:
             type: integer
@@ -718,7 +718,7 @@ paths:
       parameters:
         - name: relationshipID
           in: path
-          description: Id of the federation relationship to update
+          description: ID of the federation relationship to update
           required: true
           schema: 
             type: integer

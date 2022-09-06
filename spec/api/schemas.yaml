@@ -7,10 +7,10 @@ components:
         id:
           type: integer
           format: int64
-        federationGroupId:
+        federationGroupID:
           type: integer
           format: int64
-        spireServerId:
+        spireServerID:
           type: integer
           format: int64
         spireServerIdFederatedWith:
@@ -28,9 +28,9 @@ components:
             - invited
       required:
         - id
-        - federationGroupId
-        - spireServerId
-        - spireServerIdFederatedWith
+        - federationGroupID
+        - spireServerID
+        - spireServerIDFederatedWith
         
     TrustBundle:
       # Represents the trust bundle of a SPIRE Server that is a member of the bridge
