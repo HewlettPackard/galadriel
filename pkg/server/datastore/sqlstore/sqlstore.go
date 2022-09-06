@@ -85,13 +85,13 @@ func (ds *SQLStore) UpdateMember(ctx context.Context, member *entity.Member) (*e
 func (ds *SQLStore) UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) UpdateTrust(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error) {
+func (ds *SQLStore) UpdateTrustBundle(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) UpdateRelationship(ctx context.Context, relationship *entity.Relationship) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error {
+func (ds *SQLStore) DeleteMemberByID(ctx context.Context, memberID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error {

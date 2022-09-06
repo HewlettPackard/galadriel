@@ -10,11 +10,13 @@ import (
 
 type sqliteDB struct{}
 
-func (s sqliteDB) connect(connectionString string) (db *gorm.DB, err error) {
-	if connectionString, err = s.addQueryValues(connectionString); err != nil {
+func (s sqliteDB) connect(connectionString string) (*gorm.DB, error) {
+	conString, err := s.addQueryValues(connectionString)
+	if err != nil {
 		return nil, err
 	}
-	db, err = gorm.Open(sqlite.Open(connectionString), &gorm.Config{})
+	var db *gorm.DB
+	db, err = gorm.Open(sqlite.Open(conString), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +34,7 @@ func (sqliteDB) addQueryValues(connectionString string) (string, error) {
 
 	switch {
 	case u.Scheme == "":
-		u.Scheme = "file"
-		u.Opaque, u.Path = u.Path, ""
+		u.Opaque, u.Path, u.Scheme = u.Path, "", "file"
 	case u.Scheme != "file":
 		return "", fmt.Errorf("unsupported scheme %q", u.Scheme)
 	}
@@ -42,5 +43,6 @@ func (sqliteDB) addQueryValues(connectionString string) (string, error) {
 	q.Set("_foreign_keys", "ON")
 	q.Set("_journal_mode", "WAL")
 	u.RawQuery = q.Encode()
+
 	return u.String(), nil
 }

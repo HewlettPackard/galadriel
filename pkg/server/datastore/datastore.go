@@ -21,8 +21,8 @@ type DataStore interface {
 	UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error)
 	UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error)
 	UpdateRelationship(ctx context.Context, relationship *entity.Relationship) (*common.Bundle, error)
-	UpdateTrust(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error)
-	DeleteMemberbyID(ctx context.Context, memberID uuid.UUID) error
+	UpdateTrustBundle(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error)
+	DeleteMemberByID(ctx context.Context, memberID uuid.UUID) error
 	DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error
 	DeleteRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error
 	DeleteTrustBundleByID(ctx context.Context, trustBundleID uuid.UUID) error
