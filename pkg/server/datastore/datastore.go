@@ -13,10 +13,10 @@ type DataStore interface {
 	CreateMember(ctx context.Context, member *entity.Member) (*entity.Member, error)
 	CreateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error)
 	CreateTrustBundle(ctx context.Context, trustBundle *common.Bundle, trustBundleID uuid.UUID) (*common.Bundle, error)
-	CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error)
+	CreateRelationship(ctx context.Context, relationship *entity.Relationship) (*entity.Relationship, error)
 	RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) (*entity.Member, error)
 	RetrieveMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error)
-	RetrieveRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error)
+	RetrieveRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error)
 	RetrieveTrustBundleByID(ctx context.Context, trustBundleID uuid.UUID) (*common.Bundle, error)
 	UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error)
 	UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error)
@@ -24,6 +24,6 @@ type DataStore interface {
 	UpdateTrustBundle(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error)
 	DeleteMemberByID(ctx context.Context, memberID uuid.UUID) error
 	DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error
-	DeleteRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error
+	DeleteRelationshipByID(ctx context.Context, relationshipID uuid.UUID) error
 	DeleteTrustBundleByID(ctx context.Context, trustBundleID uuid.UUID) error
 }

@@ -64,7 +64,7 @@ func (ds *SQLStore) CreateMembership(ctx context.Context, membership *entity.Mem
 func (ds *SQLStore) CreateTrustBundle(ctx context.Context, trustBundle *common.Bundle, memberID uuid.UUID) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) CreateRelationship(ctx context.Context, relationship *entity.Relationship, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
+func (ds *SQLStore) CreateRelationship(ctx context.Context, relationship *entity.Relationship) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) (*entity.Member, error) {
@@ -73,7 +73,7 @@ func (ds *SQLStore) RetrieveMemberByID(ctx context.Context, memberID uuid.UUID) 
 func (ds *SQLStore) RetrieveMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) RetrieveRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) (*entity.Relationship, error) {
+func (ds *SQLStore) RetrieveRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) RetrieveTrustBundleByID(ctx context.Context, trustID uuid.UUID) (*common.Bundle, error) {
@@ -97,7 +97,7 @@ func (ds *SQLStore) DeleteMemberByID(ctx context.Context, memberID uuid.UUID) er
 func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) DeleteRelationshipBySourceMemberTargetMemberID(ctx context.Context, sourceMemberID uuid.UUID, targetMemberID uuid.UUID) error {
+func (ds *SQLStore) DeleteRelationshipByID(ctx context.Context, relationshipID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) DeleteTrustBundleByID(ctx context.Context, memberID uuid.UUID) error {
