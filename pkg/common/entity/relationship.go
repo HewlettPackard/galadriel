@@ -15,6 +15,7 @@ type BundleEndpointProfile interface {
 
 type Relationship struct {
 	ID                    uuid.UUID
+	Status                string
 	SourceMemberID        uuid.UUID
 	TargetMemberID        uuid.UUID
 	TrustDomain           spiffeid.TrustDomain

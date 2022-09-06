@@ -27,6 +27,7 @@ type Member struct {
 	Model
 	Description   string
 	TrustDomain   string
+	Status        string
 	Memberships   []Membership   `gorm:"constraint:OnDelete:CASCADE"`
 	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;foreignKey:SourceMemberID"`
 	TrustBundles  TrustBundle    `gorm:"constraint:OnDelete:CASCADE"`
@@ -43,6 +44,7 @@ type Relationship struct {
 	Model
 	SourceMemberID        uuid.UUID `gorm:"type:uuid"`
 	TargetMemberID        uuid.UUID `gorm:"type:uuid"`
+	Status                string
 	TTL                   uint
 	BundleEndpointURL     string
 	BundleEndpointProfile string
