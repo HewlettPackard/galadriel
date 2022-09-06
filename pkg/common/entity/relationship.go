@@ -5,18 +5,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
-	"github.com/spiffe/spire/proto/spire/common"
 )
 
-type BundleEndpointType string
+type BundleEndpointProfile interface {
+	Name() string
+}
 
 type Relationship struct {
 	ID                    uuid.UUID
+	SourceMemberID        uuid.UUID
+	TargetMemberID        uuid.UUID
 	TrustDomain           spiffeid.TrustDomain
 	BundleEndpointURL     *url.URL
-	BundleEndpointProfile BundleEndpointType
-	TrustDomainBundle     *common.Bundle
+	BundleEndpointProfile BundleEndpointProfile
+	TrustDomainBundle     *spiffebundle.Bundle
 	EndpointSPIFFEID      spiffeid.ID
 	CreatedAt             time.Time
 	UpdatedAt             time.Time

@@ -27,30 +27,31 @@ type Member struct {
 	Model
 	Description   string
 	TrustDomain   string
-	Memberships   []Membership   `gorm:"constraint:OnDelete:CASCADE;"`
-	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;"`
-	TrustBundles  []TrustBundle  `gorm:"constraint:OnDelete:CASCADE;"`
+	Memberships   []Membership   `gorm:"constraint:OnDelete:CASCADE"`
+	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;foreignKey:SourceMemberID"`
+	TrustBundles  TrustBundle    `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 type Membership struct {
 	Model
-	JoinToken string `gorm:"uniqueIndex"`
-	MemberID  uuid.UUID
+	JoinToken string    `gorm:"unique_index"`
+	MemberID  uuid.UUID `gorm:"type:uuid"`
 	TTL       uint
 }
 
 type Relationship struct {
 	Model
-	MemberID         uuid.UUID // Implicit Foreign Key and also the SourceID for the relationship
-	TargetMemberID   uuid.UUID `gorm:"uniqueIndex"`
-	Status           string
-	RelationshipType string
-	TTL              uint
+	SourceMemberID        uuid.UUID `gorm:"type:uuid"`
+	TargetMemberID        uuid.UUID `gorm:"type:uuid"`
+	TTL                   uint
+	BundleEndpointURL     string
+	BundleEndpointProfile string
+	EndpointSPIFFEID      string
 }
 
 type TrustBundle struct {
 	Model
-	MemberID    uuid.UUID //Implicit Foreign Key
+	MemberID    uuid.UUID `gorm:"type:uuid"`
 	TrustBundle string
 }
 
