@@ -42,13 +42,14 @@ type Membership struct {
 
 type Relationship struct {
 	Model
-	SourceMemberID        uuid.UUID `gorm:"type:uuid"`
-	TargetMemberID        uuid.UUID `gorm:"type:uuid"`
-	Status                string
-	TTL                   uint
-	BundleEndpointURL     string
-	BundleEndpointProfile string
-	EndpointSPIFFEID      string
+	SourceMemberID              uuid.UUID `gorm:"type:uuid"`
+	TargetMemberID              uuid.UUID `gorm:"type:uuid"`
+	Status                      string
+	TargetTrustDomain           string
+	TargetBundleEndpointURL     string
+	TargetBundleEndpointProfile string
+	TargetEndpointTrustBundle   string
+	TargetEndpointSPIFFEID      string
 }
 
 type TrustBundle struct {

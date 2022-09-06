@@ -32,10 +32,16 @@ func (sqliteDB) addQueryValues(connectionString string) (string, error) {
 		return "", err
 	}
 
-	switch {
-	case u.Scheme == "":
+	if u.Scheme == "" {
+		// connection string is a path. move the path section into the
+		// opaque section so it renders property for sqlite3, for example:
+		// data.db = file:data.db
+		// ./data.db = file:./data.db
+		// /data.db = file:/data.db
 		u.Opaque, u.Path, u.Scheme = u.Path, "", "file"
-	case u.Scheme != "file":
+	}
+	if u.Scheme != "file" {
+		// only no scheme (i.e. file path) or file scheme is supported
 		return "", fmt.Errorf("unsupported scheme %q", u.Scheme)
 	}
 

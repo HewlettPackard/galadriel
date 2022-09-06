@@ -14,15 +14,15 @@ type BundleEndpointProfile interface {
 }
 
 type Relationship struct {
-	ID                    uuid.UUID
-	Status                string
-	SourceMemberID        uuid.UUID
-	TargetMemberID        uuid.UUID
-	TrustDomain           spiffeid.TrustDomain
-	BundleEndpointURL     *url.URL
-	BundleEndpointProfile BundleEndpointProfile
-	TrustDomainBundle     *spiffebundle.Bundle
-	EndpointSPIFFEID      spiffeid.ID
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
+	ID                          uuid.UUID
+	Status                      string
+	SourceMemberID              uuid.UUID
+	TargetMemberID              uuid.UUID
+	TargetTrustDomain           spiffeid.TrustDomain
+	TargetBundleEndpointURL     *url.URL
+	TargetBundleEndpointProfile BundleEndpointProfile
+	TargetEndpointTrustBundle   *spiffebundle.Bundle
+	TargetEndpointSPIFFEID      spiffeid.ID
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }
