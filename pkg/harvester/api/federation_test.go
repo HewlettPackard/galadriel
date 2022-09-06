@@ -38,7 +38,7 @@ func TestGetFederationRelationships(t *testing.T) {
 	assert.NoError(t, a.GetFederationRelationships(c, params))
 }
 
-func TestGetFederationRelationshipbyID(t *testing.T) {
+func TestGetFederationRelationshipByID(t *testing.T) {
 	var controller controller.HarvesterController
 	mockedId := fakeFR.Id
 
@@ -48,7 +48,7 @@ func TestGetFederationRelationshipbyID(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	a := NewHTTPApi(controller)
-	assert.Error(t, a.GetFederationRelationshipbyID(c, int64(mockedId)))
+	assert.Error(t, a.GetFederationRelationshipByID(c, int64(mockedId)))
 }
 
 func TestUpdateFederatedRelationshipConsent(t *testing.T) {

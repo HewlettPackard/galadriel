@@ -50,7 +50,7 @@ paths:
   /federation-relationships/{relationshipID}:
     get: 
       description: get data for one federation relationship
-      operationId: getFederationRelationshipbyID
+      operationId: getFederationRelationshipByID
       parameters:
         - name: relationshipID
           in: path

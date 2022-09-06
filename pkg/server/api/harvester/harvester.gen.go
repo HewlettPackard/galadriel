@@ -30,7 +30,7 @@ type ServerInterface interface {
 	GetFederationRelationships(ctx echo.Context, params GetFederationRelationshipsParams) error
 
 	// (GET /federation-relationships/{relationshipID})
-	GetFederationRelationshipbyID(ctx echo.Context, relationshipID int64) error
+	GetFederationRelationshipByID(ctx echo.Context, relationshipID int64) error
 
 	// (PUT /federation-relationships/{relationshipID})
 	UpdateFederatedRelationshipConsent(ctx echo.Context, relationshipID int64) error
@@ -73,8 +73,8 @@ func (w *ServerInterfaceWrapper) GetFederationRelationships(ctx echo.Context) er
 	return err
 }
 
-// GetFederationRelationshipbyID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFederationRelationshipbyID(ctx echo.Context) error {
+// GetFederationRelationshipByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFederationRelationshipByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID int64
@@ -85,7 +85,7 @@ func (w *ServerInterfaceWrapper) GetFederationRelationshipbyID(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetFederationRelationshipbyID(ctx, relationshipID)
+	err = w.Handler.GetFederationRelationshipByID(ctx, relationshipID)
 	return err
 }
 
@@ -134,7 +134,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/federation-relationships", wrapper.GetFederationRelationships)
-	router.GET(baseURL+"/federation-relationships/:relationshipID", wrapper.GetFederationRelationshipbyID)
+	router.GET(baseURL+"/federation-relationships/:relationshipID", wrapper.GetFederationRelationshipByID)
 	router.PUT(baseURL+"/federation-relationships/:relationshipID", wrapper.UpdateFederatedRelationshipConsent)
 
 }
