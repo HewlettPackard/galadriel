@@ -13,8 +13,8 @@ import (
 
 // GetFederationRelationshipsParams defines parameters for GetFederationRelationships.
 type GetFederationRelationshipsParams struct {
-	// filter relationships by spireServerID
-	SpireServerID *string `form:"spireServerID,omitempty" json:"spireServerID,omitempty"`
+	// filter relationships by memberID
+	MemberID *string `form:"memberID,omitempty" json:"memberID,omitempty"`
 
 	// filter relationships by status
 	Status *string `form:"status,omitempty" json:"status,omitempty"`
@@ -47,11 +47,11 @@ func (w *ServerInterfaceWrapper) GetFederationRelationships(ctx echo.Context) er
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetFederationRelationshipsParams
-	// ------------- Optional query parameter "spireServerID" -------------
+	// ------------- Optional query parameter "memberID" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "spireServerID", ctx.QueryParams(), &params.SpireServerID)
+	err = runtime.BindQueryParameter("form", true, false, "memberID", ctx.QueryParams(), &params.MemberID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter spireServerID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter memberID: %s", err))
 	}
 
 	// ------------- Optional query parameter "status" -------------

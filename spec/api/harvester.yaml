@@ -13,9 +13,9 @@ paths:
       description: Returns all federated relationships of a SPIRE server in the Galadriel server
       operationId: getFederationRelationships
       parameters:
-        - name: spireServerID
+        - name: memberID
           in: query
-          description: filter relationships by spireServerID
+          description: filter relationships by memberID
           schema:
             type: string
             format: string
@@ -98,35 +98,3 @@ paths:
             application/json:
               schema:
                 $ref: './schemas.yaml'
-
-  # /trust-bundles/{trustBundleId}:
-  #   put:
-  #     description: Upload a TrustBundle
-  #     operationId: updateTrustBundle
-  #     parameters:
-  #       - name: trustBundleId
-  #         in: path 
-  #         description: Id of the trust bundle to update 
-  #         required: true
-  #         schema:
-  #           type: integer
-  #           format: int64
-  #     requestBody:
-  #       description: contents of the trust bundle to update
-  #       content:
-  #         application/x-www-form-urlencoded:
-  #           schema:
-  #             $ref: './schemas.yaml'
-  #     responses:
-  #         '200':
-  #           description: get trust bundle's response 
-  #           content:
-  #             application/json:
-  #               schema:
-  #                 $ref: './schemas.yaml'
-  #         default:
-  #           description: unexpected error
-  #           content:
-  #             application/json:
-  #               schema:
-  #                 $ref: './schemas.yaml'
