@@ -50,15 +50,15 @@ require (
 	github.com/spiffe/spire-api-sdk v1.4.0
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
-	github.com/zeebo/errs v1.2.2 // indirect
-	golang.org/x/crypto v0.0.0-20220513210258-46612604a0f9 // indirect
-	golang.org/x/net v0.0.0-20220513224357-95641704303c // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	github.com/zeebo/errs v1.3.0 // indirect
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
-	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
+	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
+	google.golang.org/genproto v0.0.0-20220706132729-d86698d07c53 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/sqlite v1.3.6
 	gorm.io/gorm v1.23.8
