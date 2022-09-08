@@ -61,9 +61,6 @@ func (ds *SQLStore) CreateMember(ctx context.Context, entitymember *entity.Membe
 func (ds *SQLStore) CreateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) CreateTrustBundle(ctx context.Context, trustBundle *common.Bundle, memberID uuid.UUID) (*common.Bundle, error) {
-	return nil, fmt.Errorf("not implemented")
-}
 func (ds *SQLStore) CreateRelationship(ctx context.Context, relationship *entity.Relationship) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
@@ -76,16 +73,10 @@ func (ds *SQLStore) RetrieveMembershipByID(ctx context.Context, membershipID uui
 func (ds *SQLStore) RetrieveRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (ds *SQLStore) RetrieveTrustBundleByID(ctx context.Context, trustID uuid.UUID) (*common.Bundle, error) {
-	return nil, fmt.Errorf("not implemented")
-}
 func (ds *SQLStore) UpdateMember(ctx context.Context, member *entity.Member) (*entity.Member, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) UpdateMembership(ctx context.Context, membership *entity.Membership) (*entity.Membership, error) {
-	return nil, fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) UpdateTrustBundle(ctx context.Context, trustbundle *common.Bundle) (*common.Bundle, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) UpdateRelationship(ctx context.Context, relationship *entity.Relationship) (*common.Bundle, error) {
@@ -98,8 +89,5 @@ func (ds *SQLStore) DeleteMembershipByID(ctx context.Context, membershipID uuid.
 	return fmt.Errorf("not implemented")
 }
 func (ds *SQLStore) DeleteRelationshipByID(ctx context.Context, relationshipID uuid.UUID) error {
-	return fmt.Errorf("not implemented")
-}
-func (ds *SQLStore) DeleteTrustBundleByID(ctx context.Context, memberID uuid.UUID) error {
 	return fmt.Errorf("not implemented")
 }

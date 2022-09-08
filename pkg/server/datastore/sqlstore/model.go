@@ -30,7 +30,7 @@ type Member struct {
 	Status        string
 	Memberships   []Membership   `gorm:"constraint:OnDelete:CASCADE"`
 	Relationships []Relationship `gorm:"constraint:OnDelete:CASCADE;foreignKey:SourceMemberID"`
-	TrustBundles  TrustBundle    `gorm:"constraint:OnDelete:CASCADE"`
+	TrustBundle   string
 }
 
 type Membership struct {
@@ -50,12 +50,6 @@ type Relationship struct {
 	TargetBundleEndpointProfile string
 	TargetEndpointTrustBundle   string
 	TargetEndpointSPIFFEID      string
-}
-
-type TrustBundle struct {
-	Model
-	MemberID    uuid.UUID `gorm:"type:uuid"`
-	TrustBundle string
 }
 
 type Migration struct {

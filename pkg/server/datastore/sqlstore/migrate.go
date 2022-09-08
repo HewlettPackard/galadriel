@@ -47,10 +47,6 @@ func initDB(db *gorm.DB) error {
 	if err := db.AutoMigrate(&Relationship{}); err != nil {
 		return fmt.Errorf("migrate error: automigrate: %v", err)
 	}
-	// Creates the Table for the TrustBundle Model
-	if err := db.AutoMigrate(&TrustBundle{}); err != nil {
-		return fmt.Errorf("migrate error: automigrate: %v", err)
-	} // Creates the Table for the DB version control Model
 	if err := db.AutoMigrate(&Migration{}); err != nil {
 		return fmt.Errorf("migrate error: automigrate: %v", err)
 	}
