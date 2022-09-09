@@ -3,16 +3,22 @@ package catalog
 import (
 	"context"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/sirupsen/logrus"
 )
 
 type Catalog interface {
-	// methods for accessing pluggable interfaces (e.g., NodeAttestors)
-	// no needed for a PoC.
+	GetDataStore() datastore.DataStore
+	// methods for accessing pluggable interfaces (e.g., attestors, upstreamCAs, etc)
 }
 
 type Repository struct {
-	log logrus.FieldLogger
+	DataStore datastore.DataStore
+	log       logrus.FieldLogger
+}
+
+func (r *Repository) GetDataStore() datastore.DataStore {
+	return r.DataStore
 }
 
 func (r *Repository) Close() {
@@ -25,8 +31,11 @@ type Config struct {
 }
 
 func Load(ctx context.Context, config Config) (*Repository, error) {
+	memStore := datastore.MemStore{}
+
 	re := &Repository{
-		log: config.Log,
+		DataStore: &memStore,
+		log:       config.Log,
 	}
 
 	return re, nil

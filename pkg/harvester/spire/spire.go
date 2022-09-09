@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/sirupsen/logrus"
 	"path/filepath"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// TODO: can we change the name to SpireServerLocalClient?
 type SpireServer interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
 }
 
 type localSpireServer struct {
 	client client
-	logger common.Logger
+	log    logrus.FieldLogger
 }
 
 type client interface {
@@ -36,7 +38,7 @@ func NewLocalSpireServer(ctx context.Context, socketPath string) SpireServer {
 
 	return &localSpireServer{
 		client: client,
-		logger: *common.NewLogger("local_spire_server"),
+		log:    logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
 	}
 }
 

@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
@@ -22,12 +23,12 @@ type MetricServer interface {
 }
 
 type LocalMetricServer struct {
-	logger common.Logger
+	logger logrus.FieldLogger
 }
 
 func NewLocalMetricServer() MetricServer {
 	return &LocalMetricServer{
-		logger: *common.NewLogger(MetricsServer),
+		logger: logrus.WithField(SubsystemName, MetricsServer),
 	}
 }
 

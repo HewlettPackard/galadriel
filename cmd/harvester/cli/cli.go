@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 )
 
@@ -11,12 +11,12 @@ var (
 	RootCmd      = NewRootCmd()
 	cmdExecute   = RootCmd.Execute
 	HarvesterCmd = &HarvesterCLI{
-		logger: common.NewLogger(telemetry.Harvester),
+		log: logrus.WithField(telemetry.SubsystemName, telemetry.Harvester),
 	}
 )
 
 type HarvesterCLI struct {
-	logger *common.Logger
+	log logrus.FieldLogger
 }
 
 func NewRootCmd() *cobra.Command {

@@ -11,6 +11,7 @@ const (
 	TrustBundle = "trust_bundle"
 	PackageName = "package_name"
 	Federation  = "federation"
+	Su
 )
 
 // action
@@ -26,12 +27,17 @@ const (
 
 // component
 const (
+	// Catalog functionality related to plugin catalog
+	Catalog = "catalog"
+
 	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
 
 	GaladrielServer = "galadriel_server"
 	HTTPApi         = "http_api"
 
-	ID = "id"
-	// spiffeID = "spiffeID"
+	// SubsystemName declares field for some subsystem name (an API, module...)
+	SubsystemName = "subsystem_name"
+
+	GaladrielServerClient = "galadriel_server_client"
 )

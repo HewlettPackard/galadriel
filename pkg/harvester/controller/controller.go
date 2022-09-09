@@ -2,33 +2,47 @@ package controller
 
 import (
 	"context"
-	"errors"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
+	"net"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/sirupsen/logrus"
 )
 
-type HarvesterController interface {
-	common.RunnablePlugin
-	GetTrustBundle(context.Context, string) (string, error)
-	AddTrustBundle(context.Context, string) error
+// HarvesterController represents the component responsible for handling
+// the controller loops that will keep sending fresh bundles and configurations
+// to and from SPIRE Server and Galadriel Server.
+type HarvesterController struct {
+	logger logrus.FieldLogger
+	spire  spire.SpireServer
+	server client.GaladrielServerClient
 }
 
-type LocalHarvesterController struct {
-	logger  common.Logger
-	catalog catalog.Catalog
+// Config represents the configurations for the Harvester Controller
+type Config struct {
+	ServerAddress   string
+	SpireSocketPath net.Addr
+	Log             logrus.FieldLogger
+	Metrics         telemetry.MetricServer
 }
 
-func NewLocalHarvesterController(catalog catalog.Catalog) HarvesterController {
-	return &LocalHarvesterController{
-		logger:  *common.NewLogger(telemetry.HarvesterController),
-		catalog: catalog,
+func NewHarvesterController(ctx context.Context, config *Config) (*HarvesterController, error) {
+	sc := spire.NewLocalSpireServer(ctx, config.SpireSocketPath.String())
+	gc, err := client.NewGaladrielServerClient(config.ServerAddress)
+	if err != nil {
+		return nil, err
 	}
+
+	return &HarvesterController{
+		spire:  sc,
+		server: gc,
+		logger: logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
+	}, nil
 }
 
-func (c *LocalHarvesterController) Run(ctx context.Context) error {
+func (c *HarvesterController) Run(ctx context.Context) error {
 	c.logger.Info("Starting harvester controller")
 
 	go c.run(ctx)
@@ -37,23 +51,11 @@ func (c *LocalHarvesterController) Run(ctx context.Context) error {
 	return nil
 }
 
-func (c *LocalHarvesterController) GetTrustBundle(ctx context.Context, spiffeID string) (string, error) {
-	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Get)
-	return "", errors.New("not implemented")
-}
-
-func (c *LocalHarvesterController) AddTrustBundle(ctx context.Context, spiffeID string) error {
-	telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
-	return errors.New("not implemented")
-}
-
-func (c *LocalHarvesterController) run(ctx context.Context) {
+func (c *HarvesterController) run(ctx context.Context) {
 	ticker := time.NewTicker(2 * time.Second)
-
 	for {
 		select {
 		case <-ticker.C:
-			c.logger.Debug("Doing something")
 			telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
 		case <-ctx.Done():
 			c.logger.Debug("Done")

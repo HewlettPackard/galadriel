@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/sirupsen/logrus"
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func TestNewLocalSpireServerSuccess(t *testing.T) {
 	got := NewLocalSpireServer(context.Background(), "")
 	expected := &localSpireServer{
 		client: fakeInternalClient{},
-		logger: *common.NewLogger("local_spire_server"),
+		log:    logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
 	}
 
 	assert.NotNil(t, got)

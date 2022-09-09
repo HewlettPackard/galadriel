@@ -3,22 +3,20 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/server"
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-const defaultConfigPath = "conf/server/server.conf"
-
-var configPath string
+const defaultConfigPath = "conf/harvester/harvester.conf"
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
-		Short: "Runs the Galadriel server",
-		Long:  "Run this command to start the Galadriel server",
+		Short: "Runs the Galadriel Harvester",
+		Long:  "Run this command to start the Galadriel Harvester",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configPath, err := cmd.Flags().GetString("config")
 			if err != nil {
@@ -36,22 +34,22 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			sc, err := NewServerConfig(c)
+			hc, err := NewHarvesterConfig(c)
 			if err != nil {
 				return err
 			}
 
-			s := server.New(sc)
+			h := harvester.New(hc)
 
 			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
-			err = s.Run(ctx)
+			err = h.Run(ctx)
 			if err != nil {
 				return err
 			}
 
-			sc.Log.Info("Server stopped gracefully")
+			hc.Log.Info("Harvester stopped gracefully")
 			return nil
 		},
 	}
@@ -59,7 +57,6 @@ func NewRunCmd() *cobra.Command {
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.Flags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file path")
-
+	runCmd.PersistentFlags().StringP("config", "c", defaultConfigPath, "Config file")
 	RootCmd.AddCommand(runCmd)
 }
