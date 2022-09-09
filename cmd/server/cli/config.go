@@ -25,6 +25,7 @@ type serverConfig struct {
 	ListenAddress string `hcl:"listen_address"`
 	ListenPort    int    `hcl:"listen_port"`
 	SocketPath    string `hcl:"socket_path"`
+	LogLevel      string `hcl:"log_level"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
@@ -37,7 +38,7 @@ func ParseConfig(config io.Reader) (*Config, error) {
 
 	configBytes, err := io.ReadAll(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read configuration: %w", err)
+		return nil, errors.Wrap(err, "failed to read configuration")
 	}
 
 	return newConfig(configBytes)
@@ -47,13 +48,12 @@ func ParseConfig(config io.Reader) (*Config, error) {
 func NewServerConfig(c *Config) (*server.Config, error) {
 	sc := &server.Config{}
 
-	addrPort := fmt.Sprintf("%s:%d", c.Server.ListenAddress, c.Server.ListenPort)
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addrPort)
-	if err != nil {
-		return nil, err
+	ip := net.ParseIP(c.Server.ListenAddress)
+	bindAddr := &net.TCPAddr{
+		IP:   ip,
+		Port: c.Server.ListenPort,
 	}
-
-	sc.TCPAddress = tcpAddr
+	sc.TCPAddress = bindAddr
 
 	socketAddr, err := util.GetUnixAddrWithAbsPath(c.Server.SocketPath)
 	if err != nil {
@@ -74,7 +74,7 @@ func newConfig(configBytes []byte) (*Config, error) {
 	}
 
 	if config.Server == nil {
-		return nil, errors.New("server section is empty")
+		return nil, errors.Wrap(errors.New("configuration file is empty"), "bad configuration")
 	}
 
 	config.setDefaults()
@@ -93,5 +93,9 @@ func (c *Config) setDefaults() {
 
 	if c.Server.SocketPath == "" {
 		c.Server.SocketPath = defaultSocketPath
+	}
+
+	if c.Server.LogLevel == "" {
+		c.Server.LogLevel = "INFO"
 	}
 }

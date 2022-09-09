@@ -42,12 +42,13 @@ func TestNew(t *testing.T) {
 		{
 			name: "ok",
 			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "DEBUG"}`)),
+				`server { listen_address = "listen_address" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "DEBUG"}`)),
 			expected: &Config{
 				Server: &serverConfig{
-					ListenAddress: "127.0.0.1",
+					ListenAddress: "listen_address",
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
+					LogLevel:      "DEBUG",
 				},
 			},
 		},
@@ -59,13 +60,14 @@ func TestNew(t *testing.T) {
 					ListenAddress: "0.0.0.0",
 					ListenPort:    8085,
 					SocketPath:    defaultSocketPath,
+					LogLevel:      "INFO",
 				},
 			},
 		},
 		{
 			name:   "empty_config_file",
 			config: bytes.NewBufferString(``),
-			err:    "server section is empty",
+			err:    "bad configuration: configuration file is empty",
 		},
 		{
 			name:   "err_hcl",

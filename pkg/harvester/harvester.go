@@ -8,6 +8,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/endpoints"
 )
 
 // Harvester represents a Galadriel Harvester
@@ -51,8 +52,14 @@ func (h *Harvester) run(ctx context.Context) (err error) {
 		return err
 	}
 
+	endpointsHarvester, err := h.newEndpointsHarvester(cat)
+	if err != nil {
+		return err
+	}
+
 	tasks := []func(context.Context) error{
 		c.Run,
+		endpointsHarvester.ListenAndServe,
 	}
 
 	err = util.RunTasks(ctx, tasks)
@@ -60,6 +67,16 @@ func (h *Harvester) run(ctx context.Context) (err error) {
 		err = nil
 	}
 	return err
+}
+
+func (s *Harvester) newEndpointsHarvester(cat catalog.Catalog) (endpoints.Server, error) {
+	config := endpoints.Config{
+		TCPAddress:   s.config.TCPAddress,
+		LocalAddress: s.config.LocalAddress,
+		Catalog:      cat,
+	}
+
+	return endpoints.New(config)
 }
 
 func (h *Harvester) Stop() {

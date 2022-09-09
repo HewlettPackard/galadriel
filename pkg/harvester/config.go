@@ -2,6 +2,7 @@ package harvester
 
 import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
 	"github.com/sirupsen/logrus"
 	"net"
 )
@@ -29,4 +30,6 @@ type Config struct {
 	Log logrus.FieldLogger
 
 	metrics telemetry.MetricServer
+
+	catalog catalog.Catalog
 }
