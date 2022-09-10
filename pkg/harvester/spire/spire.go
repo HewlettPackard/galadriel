@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
@@ -63,13 +62,11 @@ func (s *localSpireServer) ListFederationRelationships(ctx context.Context) ([]*
 type clientMaker func(*grpc.ClientConn) (client, error)
 
 func dialSocket(ctx context.Context, path string, makeClient clientMaker) (client, error) {
-	var target string
-
-	if filepath.IsAbs(path) {
-		target = "unix://" + path
-	} else {
-		target = "unix:" + path
+	target, err := common.GetAbsoluteUDSPath(path)
+	if err != nil {
+		return nil, err
 	}
+
 	clientConn, err := grpcDialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial API socket: %v", err)
