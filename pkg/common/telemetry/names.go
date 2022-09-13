@@ -11,7 +11,6 @@ const (
 	TrustBundle = "trust_bundle"
 	PackageName = "package_name"
 	Federation  = "federation"
-	Su
 )
 
 // action
@@ -36,7 +35,7 @@ const (
 	GaladrielServer = "galadriel_server"
 	HTTPApi         = "http_api"
 
-	// SubsystemName declares field for some subsystem name (an API, module...)
+	// SubsystemName declares a field for some subsystem name (an API, module...)
 	SubsystemName = "subsystem_name"
 
 	GaladrielServerClient = "galadriel_server_client"

@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// RunTasks runs all the given tasks concurrently and waits for all of them to completed.
+// RunTasks runs all the given tasks concurrently and waits for all of them to be completed.
 // If one task is canceled, all the other tasks are canceled.
 func RunTasks(ctx context.Context, tasks []func(context.Context) error) error {
 	var wg sync.WaitGroup

@@ -25,7 +25,6 @@ type serverConfig struct {
 	ListenAddress string `hcl:"listen_address"`
 	ListenPort    int    `hcl:"listen_port"`
 	SocketPath    string `hcl:"socket_path"`
-	LogLevel      string `hcl:"log_level"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
@@ -93,9 +92,5 @@ func (c *Config) setDefaults() {
 
 	if c.Server.SocketPath == "" {
 		c.Server.SocketPath = defaultSocketPath
-	}
-
-	if c.Server.LogLevel == "" {
-		c.Server.LogLevel = "INFO"
 	}
 }

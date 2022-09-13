@@ -15,6 +15,23 @@ func (fakeReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("error from fake reader")
 }
 
+func TestNewServerConfig(t *testing.T) {
+	config := Config{Server: &serverConfig{
+		ListenAddress: "127.0.0.1",
+		ListenPort:    8000,
+		SocketPath:    "/example",
+	}}
+
+	sc, err := NewServerConfig(&config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, config.Server.ListenAddress, sc.TCPAddress.IP.String())
+	assert.Equal(t, config.Server.ListenPort, sc.TCPAddress.Port)
+	assert.Equal(t, config.Server.SocketPath, sc.LocalAddress.String())
+}
+
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -25,13 +42,12 @@ func TestNew(t *testing.T) {
 		{
 			name: "ok",
 			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "listen_address" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "DEBUG"}`)),
+				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "DEBUG"}`)),
 			expected: &Config{
 				Server: &serverConfig{
-					ListenAddress: "listen_address",
+					ListenAddress: "127.0.0.1",
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
-					LogLevel:      "DEBUG",
 				},
 			},
 		},
@@ -43,7 +59,6 @@ func TestNew(t *testing.T) {
 					ListenAddress: "0.0.0.0",
 					ListenPort:    8085,
 					SocketPath:    defaultSocketPath,
-					LogLevel:      "INFO",
 				},
 			},
 		},

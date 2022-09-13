@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GaladrielServerClient represents a client to connecto to Galadriel Server
+// GaladrielServerClient represents a client to connect to Galadriel Server
 type GaladrielServerClient interface {
 	GetUpdates(context.Context) ([]string, error)
 	PushUpdates(context.Context, []string) error
