@@ -52,14 +52,8 @@ func (h *Harvester) run(ctx context.Context) (err error) {
 		return err
 	}
 
-	endpointsHarvester, err := h.newEndpointsHarvester(cat)
-	if err != nil {
-		return err
-	}
-
 	tasks := []func(context.Context) error{
 		c.Run,
-		endpointsHarvester.ListenAndServe,
 	}
 
 	err = util.RunTasks(ctx, tasks)
