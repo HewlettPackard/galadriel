@@ -18,6 +18,7 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name   string
-	Tokens []AccessToken
+	Name        string
+	TrustDomain string
+	Tokens      []AccessToken
 }

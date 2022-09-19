@@ -23,29 +23,22 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name   string
-	Tokens []AccessToken
-}
-
-type Membership struct {
-	ID uuid.UUID
-
-	Member
+	Name        string
+	TrustDomain string
+	Tokens      []AccessToken
 }
 
 type Relationship struct {
 	ID uuid.UUID
 
-	MemberA           uuid.UUID
-	MemberB           uuid.UUID
-	FederationGroupID uuid.UUID
+	MemberA uuid.UUID
+	MemberB uuid.UUID
 }
 
 // TODO: use until an actual DataStore implementation is added.
 
 type MemStore struct {
 	member       []Member
-	membership   []Membership
 	relationship []Relationship
 
 	mu sync.RWMutex
@@ -70,11 +63,11 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 		return nil, err
 	}
 	m := Member{
-		ID:     id,
-		Name:   member.Name,
-		Tokens: tokens,
+		ID:          id,
+		Name:        member.Name,
+		TrustDomain: member.TrustDomain,
+		Tokens:      tokens,
 	}
-	member.ID = m.ID
 	s.member = append(s.member, m)
 	fmt.Println("Members:", s.member)
 	return &m, nil

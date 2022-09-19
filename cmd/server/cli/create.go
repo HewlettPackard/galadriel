@@ -19,12 +19,12 @@ var createCmd = &cobra.Command{
 var createMemberCmd = &cobra.Command{
 	Use:   "member <trust-domain> --name <name>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Register a new  of member in the database and outputs one associated access token.",
+	Short: "Register a new member and return its associated access token.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := args[0]
+		td := args[0]
 		c := util.NewServerClient(defaultSocketPath)
-		m, err := c.CreateMember(common.Member{Name: name})
+		m, err := c.CreateMember(common.Member{TrustDomain: td})
 		if err != nil {
 			return err
 		}
@@ -37,7 +37,7 @@ var createMemberCmd = &cobra.Command{
 
 var createRelationshipCmd = &cobra.Command{
 	Use:   "relationship <memA> <memB>",
-	Short: "Allows for creation of relationships",
+	Short: "Register a new relationship.",
 	Args:  cobra.ExactArgs(2),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
