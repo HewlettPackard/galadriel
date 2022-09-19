@@ -98,13 +98,15 @@ func (e *Endpoints) generateTokenHandler(ctx context.Context) {
 
 		err = e.DataStore.CreateJoinToken(ctx, t)
 		if err != nil {
-			e.Log.Errorf("failed to generate token: %v", err)
+			_, _ = io.WriteString(w, "failed to generate token")
 			w.WriteHeader(500)
 			return
 		}
 
 		_, err = io.WriteString(w, t.Token)
 		if err != nil {
+			e.Log.Errorf("failed to return token: %v", err)
+			w.WriteHeader(500)
 			return
 		}
 	})

@@ -37,7 +37,7 @@ func ParseConfig(config io.Reader) (*Config, error) {
 
 	configBytes, err := io.ReadAll(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read configuration")
+		return nil, fmt.Errorf("failed to read configuration: %w", err)
 	}
 
 	return newConfig(configBytes)
@@ -47,12 +47,13 @@ func ParseConfig(config io.Reader) (*Config, error) {
 func NewServerConfig(c *Config) (*server.Config, error) {
 	sc := &server.Config{}
 
-	ip := net.ParseIP(c.Server.ListenAddress)
-	bindAddr := &net.TCPAddr{
-		IP:   ip,
-		Port: c.Server.ListenPort,
+	addrPort := fmt.Sprintf("%s:%d", c.Server.ListenAddress, c.Server.ListenPort)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addrPort)
+	if err != nil {
+		return nil, err
 	}
-	sc.TCPAddress = bindAddr
+
+	sc.TCPAddress = tcpAddr
 
 	socketAddr, err := util.GetUnixAddrWithAbsPath(c.Server.SocketPath)
 	if err != nil {
@@ -73,7 +74,7 @@ func newConfig(configBytes []byte) (*Config, error) {
 	}
 
 	if config.Server == nil {
-		return nil, errors.Wrap(errors.New("configuration file is empty"), "bad configuration")
+		return nil, errors.New("server section is empty")
 	}
 
 	config.setDefaults()

@@ -20,28 +20,12 @@ func NewRunCmd() *cobra.Command {
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			configPath, err := cmd.Flags().GetString("config")
+			config, err := LoadConfig(cmd)
 			if err != nil {
 				return err
 			}
 
-			configFile, err := os.Open(configPath)
-			if err != nil {
-				return fmt.Errorf("unable to open configuration file: %v", err)
-			}
-			defer configFile.Close()
-
-			c, err := ParseConfig(configFile)
-			if err != nil {
-				return err
-			}
-
-			sc, err := NewServerConfig(c)
-			if err != nil {
-				return err
-			}
-
-			s := server.New(sc)
+			s := server.New(config)
 
 			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
@@ -51,10 +35,39 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			sc.Log.Info("Server stopped gracefully")
+			config.Log.Info("Server stopped gracefully")
 			return nil
 		},
 	}
+}
+
+func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
+	configPath, err := cmd.Flags().GetString("config")
+	if err != nil {
+		return nil, fmt.Errorf("cannot read flag config: %w", err)
+	}
+
+	if configPath == "" {
+		configPath = defaultConfigPath
+	}
+
+	configFile, err := os.Open(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open configuration file: %w", err)
+	}
+	defer configFile.Close()
+
+	c, err := ParseConfig(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	sc, err := NewServerConfig(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build server configuration: %w", err)
+	}
+
+	return sc, nil
 }
 
 func init() {
