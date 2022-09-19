@@ -63,12 +63,12 @@ func dialSocket(ctx context.Context, path string, makeClient clientMaker) (clien
 	}
 	clientConn, err := grpcDialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial API socket: %v", err)
+		return nil, fmt.Errorf("failed to dial API socket: %w", err)
 	}
 
 	client, err := makeClient(clientConn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make client: %v", err)
+		return nil, fmt.Errorf("failed to make client: %w", err)
 	}
 
 	return client, nil

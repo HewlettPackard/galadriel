@@ -34,7 +34,7 @@ func ParseConfig(config io.Reader) (*Config, error) {
 
 	configBytes, err := io.ReadAll(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read configuration")
+		return nil, fmt.Errorf("failed to read configuration: %w", err)
 	}
 
 	return newConfig(configBytes)
@@ -62,11 +62,11 @@ func newConfig(configBytes []byte) (*Config, error) {
 	var config Config
 
 	if err := hcl.Decode(&config, string(configBytes)); err != nil {
-		return nil, fmt.Errorf("unable to decode configuration: %v", err)
+		return nil, fmt.Errorf("unable to decode configuration: %w", err)
 	}
 
 	if config.Harvester == nil {
-		return nil, errors.Wrap(errors.New("configuration file is empty"), "bad configuration")
+		return nil, errors.New("harvester section is empty")
 	}
 
 	config.setDefaults()

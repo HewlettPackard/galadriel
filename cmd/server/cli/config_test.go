@@ -17,7 +17,7 @@ func (fakeReader) Read(p []byte) (n int, err error) {
 
 func TestNewServerConfig(t *testing.T) {
 	config := Config{Server: &serverConfig{
-		ListenAddress: "127.0.0.1",
+		ListenAddress: "localhost",
 		ListenPort:    8000,
 		SocketPath:    "/example",
 	}}
@@ -27,7 +27,7 @@ func TestNewServerConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, config.Server.ListenAddress, sc.TCPAddress.IP.String())
+	assert.Equal(t, "127.0.0.1", sc.TCPAddress.IP.String())
 	assert.Equal(t, config.Server.ListenPort, sc.TCPAddress.Port)
 	assert.Equal(t, config.Server.SocketPath, sc.LocalAddress.String())
 }
@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 		{
 			name:   "empty_config_file",
 			config: bytes.NewBufferString(``),
-			err:    "bad configuration: configuration file is empty",
+			err:    "server section is empty",
 		},
 		{
 			name:   "err_hcl",
