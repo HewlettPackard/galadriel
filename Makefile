@@ -116,6 +116,9 @@ CONTAINER_OPTIONS = docker podman
 CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
      $(if $(shell which $(exec)),$(exec)))
 
+server-run: build
+	./bin/galadriel-server run
+
 api-doc-build:
 	$(CONTAINER_EXEC) build -f doc/api/Dockerfile -t galadriel-api-doc:latest .
 

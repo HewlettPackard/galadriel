@@ -35,7 +35,7 @@ func Load(ctx context.Context, config Config) (*Repository, error) {
 
 	re := &Repository{
 		DataStore: &memStore,
-		log:       config.Log,
+		log:       logrus.StandardLogger(),
 	}
 
 	return re, nil

@@ -21,7 +21,7 @@ type Config struct {
 
 type harvesterConfig struct {
 	SpireSocketPath string `hcl:"spire_socket_path"`
-	ServerAddress   string `hcl:"server-address"`
+	ServerAddress   string `hcl:"server_address"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it

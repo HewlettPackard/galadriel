@@ -13,14 +13,14 @@ func TestJoinTokenMethods(t *testing.T) {
 	d := datastore.NewMemStore()
 
 	tokenStr := "token"
-	token := datastore.JoinToken{
+	token := datastore.AccessToken{
 		Token:  tokenStr,
 		Expiry: time.Now(),
 	}
 
 	ctx := context.Background()
 
-	err := d.CreateJoinToken(ctx, &token)
+	err := d.CreateAccessToken(ctx, &token)
 	if err != nil {
 		t.Error(err)
 	}
