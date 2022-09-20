@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/google/uuid"
@@ -127,6 +128,10 @@ func (c serverClient) GenerateAccessToken(memberID uuid.UUID) (*datastore.Access
 	createdToken := &datastore.AccessToken{}
 	err = json.Unmarshal(body, createdToken)
 	if err != nil {
+		if len(body) == 0 {
+			// TODO: validation based on error codes/status check
+			return nil, errors.New("not found")
+		}
 		return nil, err
 	}
 	return createdToken, nil

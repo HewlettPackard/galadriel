@@ -17,7 +17,11 @@ var tokenCmd = &cobra.Command{
 	Short: "Generates a join token for provided member",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
-		at, err := c.GenerateAccessToken(uuid.MustParse(args[0]))
+		memberID, err := uuid.Parse(args[0])
+		if err != nil {
+			return err
+		}
+		at, err := c.GenerateAccessToken(memberID)
 		if err != nil {
 			return err
 		}
