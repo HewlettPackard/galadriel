@@ -28,7 +28,7 @@ type Endpoints struct {
 	Log        logrus.FieldLogger
 }
 
-func New(c Config) (*Endpoints, error) {
+func New(c *Config) (*Endpoints, error) {
 	if err := util.PrepareLocalAddr(c.LocalAddress); err != nil {
 		return nil, err
 	}
@@ -42,6 +42,45 @@ func New(c Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
+	tasks := []func(context.Context) error{
+		e.runTCPServer,
+		e.runUDSServer,
+	}
+
+	err := util.RunTasks(ctx, tasks)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Endpoints) runTCPServer(ctx context.Context) error {
+	server := echo.New()
+
+	e.Log.Info("Starting TCP Server")
+	errChan := make(chan error)
+	go func() {
+		errChan <- server.Start(e.TCPAddress.String())
+	}()
+
+	var err error
+	select {
+	case err = <-errChan:
+		e.Log.WithError(err).Error("TCP Server stopped prematurely")
+		return err
+	case <-ctx.Done():
+		e.Log.Info("Stopping TCP Server")
+		server.Close()
+		<-errChan
+		e.Log.Info("TCP Server stopped")
+		return nil
+	}
+}
+
+func (e *Endpoints) runUDSServer(ctx context.Context) error {
+	server := &http.Server{}
+
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
 	if err != nil {
 		return fmt.Errorf("error listening on uds: %w", err)
@@ -50,31 +89,23 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 
 	e.addHandlers(ctx)
 
-	localServer := &http.Server{}
-	tcpServer := echo.New()
-
-	errLocalServer := make(chan error)
+	e.Log.Info("Starting UDS Server")
+	errChan := make(chan error)
 	go func() {
-		errLocalServer <- localServer.Serve(l)
-	}()
-
-	errTcpServer := make(chan error)
-	go func() {
-		errTcpServer <- tcpServer.Start(e.TCPAddress.String())
+		errChan <- server.Serve(l)
 	}()
 
 	select {
-	case err = <-errLocalServer:
+	case err = <-errChan:
+		e.Log.WithError(err).Error("Local Server stopped prematurely")
+		return err
 	case <-ctx.Done():
-		if err != nil {
-			fmt.Printf("error serving HTTP on uds: %v", err)
-		}
-		e.Log.Println("Stopping HTTP Server")
-		localServer.Close()
-		tcpServer.Close()
+		e.Log.Info("Stopping UDS Server")
+		server.Close()
+		<-errChan
+		e.Log.Info("UDS Server stopped")
+		return nil
 	}
-
-	return nil
 }
 
 func (e *Endpoints) addHandlers(ctx context.Context) {

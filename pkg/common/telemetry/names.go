@@ -29,6 +29,8 @@ const (
 	// Catalog functionality related to plugin catalog
 	Catalog = "catalog"
 
+	Endpoints = "endpoints"
+
 	MetricsServer       = "metrics_server"
 	HarvesterController = "harvester_controller"
 

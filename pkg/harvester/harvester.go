@@ -8,13 +8,12 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/endpoints"
 )
 
 // Harvester represents a Galadriel Harvester
 type Harvester struct {
-	controller controller.HarvesterController
-	api        api.API
+	controller controller.HarvesterController //nolint:unused
+	api        api.API                        //nolint:unused
 
 	config *Config
 }
@@ -61,16 +60,6 @@ func (h *Harvester) run(ctx context.Context) (err error) {
 		err = nil
 	}
 	return err
-}
-
-func (s *Harvester) newEndpointsHarvester(cat catalog.Catalog) (endpoints.Server, error) {
-	config := endpoints.Config{
-		TCPAddress:   s.config.TCPAddress,
-		LocalAddress: s.config.LocalAddress,
-		Catalog:      cat,
-	}
-
-	return endpoints.New(config)
 }
 
 func (h *Harvester) Stop() {

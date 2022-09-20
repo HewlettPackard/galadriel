@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
@@ -50,10 +51,11 @@ func (s *Server) run(ctx context.Context) (err error) {
 }
 
 func (s *Server) newEndpointsServer(cat catalog.Catalog) (endpoints.Server, error) {
-	config := endpoints.Config{
+	config := &endpoints.Config{
 		TCPAddress:   s.config.TCPAddress,
 		LocalAddress: s.config.LocalAddress,
 		Catalog:      cat,
+		Log:          s.config.Log.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 	}
 
 	return endpoints.New(config)
