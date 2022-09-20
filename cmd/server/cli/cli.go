@@ -1,15 +1,15 @@
 package cli
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/sirupsen/logrus"
 )
 
 type serverCLI struct {
-	logger *common.Logger
+	log logrus.FieldLogger
 }
 
 var ServerCLI = &serverCLI{
-	logger: common.NewLogger("server"),
+	log: logrus.New(),
 }
 
 func Run() int {
@@ -17,6 +17,5 @@ func Run() int {
 }
 
 func (c *serverCLI) Run() int {
-	c.logger.Debug("Starting the Server CLI")
 	return Execute()
 }

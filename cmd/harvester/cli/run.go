@@ -3,48 +3,47 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/server"
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-const defaultConfigPath = "conf/server/server.conf"
-
-var configPath string
+const defaultConfigPath = "conf/harvester/harvester.conf"
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
-		Short: "Runs the Galadriel server",
-		Long:  "Run this command to start the Galadriel server",
+		Short: "Runs the Galadriel Harvester",
+		Long:  "Run this command to start the Galadriel Harvester",
 		RunE: func(cmd *cobra.Command, args []string) error {
+
 			config, err := LoadConfig(cmd)
 			if err != nil {
 				return err
 			}
 
-			s := server.New(config)
+			h := harvester.New(config)
 
 			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
-			err = s.Run(ctx)
+			err = h.Run(ctx)
 			if err != nil {
 				return err
 			}
 
-			config.Log.Info("Server stopped gracefully")
+			config.Log.Info("Harvester stopped gracefully")
 			return nil
 		},
 	}
 }
 
-func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
+func LoadConfig(cmd *cobra.Command) (*harvester.Config, error) {
 	configPath, err := cmd.Flags().GetString("config")
 	if err != nil {
-		return nil, fmt.Errorf("cannot read flag config: %w", err)
+		return nil, fmt.Errorf("cannot get flag config: %w", err)
 	}
 
 	if configPath == "" {
@@ -62,17 +61,15 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	sc, err := NewServerConfig(c)
+	hc, err := NewHarvesterConfig(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build server configuration: %w", err)
+		return nil, fmt.Errorf("failed to build harvester configuration: %w", err)
 	}
-
-	return sc, nil
+	return hc, nil
 }
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.Flags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file path")
-
+	runCmd.PersistentFlags().StringP("config", "c", defaultConfigPath, "Config file")
 	RootCmd.AddCommand(runCmd)
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
@@ -17,14 +18,14 @@ type API interface {
 
 type HTTPApi struct {
 	controller controller.HarvesterController
-	logger     common.Logger
+	logger     logrus.FieldLogger
 }
 
 func NewHTTPApi(controller controller.HarvesterController) API {
 	// TODO: Add listen address and port
 	return &HTTPApi{
 		controller: controller,
-		logger:     *common.NewLogger(telemetry.HTTPApi),
+		logger:     logrus.WithField(telemetry.SubsystemName, telemetry.HTTPApi),
 	}
 }
 

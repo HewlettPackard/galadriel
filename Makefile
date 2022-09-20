@@ -133,6 +133,10 @@ test: test-unit
 test-unit:
 	go test -cover ./...
 
+## Run unit tests with race detection.
+race-test:
+	go test -cover -race ./...
+
 ## Generate the test coverage for the code with the Go tool.
 coverage:
 	$(E)mkdir -p out/coverage

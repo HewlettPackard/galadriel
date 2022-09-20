@@ -1,9 +1,9 @@
 package telemetry
 
 import (
+	"github.com/sirupsen/logrus"
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric/aggregator/histogram"
@@ -15,7 +15,7 @@ import (
 
 func TestNewLocalMetricServer(t *testing.T) {
 	expected := &LocalMetricServer{
-		logger: *common.NewLogger(MetricsServer),
+		logger: logrus.WithField(SubsystemName, MetricsServer),
 	}
 
 	metricServer := NewLocalMetricServer()
