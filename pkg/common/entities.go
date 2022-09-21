@@ -1,11 +1,14 @@
 package common
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Relationship struct {
+	ID uuid.UUID
+
 	MemberA uuid.UUID
 	MemberB uuid.UUID
 }

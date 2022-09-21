@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/google/uuid"
@@ -45,8 +46,11 @@ var createRelationshipCmd = &cobra.Command{
 			return errors.New("invalid operation. usage: create relationship <memA> <memB>")
 		}
 
-		idA, err := uuid.FromBytes([]byte(args[0]))
-		idB, err := uuid.FromBytes([]byte(args[0]))
+		idA, err := uuid.Parse(args[0])
+		if err != nil {
+			return err
+		}
+		idB, err := uuid.Parse(args[0])
 		if err != nil {
 			return err
 		}
@@ -60,7 +64,7 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("Relationship:", r)
+		fmt.Println("RelationshipID:", r.ID)
 		return nil
 	},
 }

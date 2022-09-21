@@ -5,18 +5,32 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
-	"github.com/google/uuid"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
+
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/google/uuid"
 )
 
 // URL pattern to make http calls on local Unix domain socket,
 // the Host is required for the URL, but it's not relevant
-const localURL = "http://local/%s"
-const tokenPath = "token"
+
+const (
+	localURL = "http://local/%s"
+
+	createTokenPath        = "createToken"
+	createMemberPath       = "createMember"
+	createRelationshipPath = "createRelationship"
+)
+
+var (
+	createMemberURL       = fmt.Sprintf(localURL, createMemberPath)
+	createRelationshipURL = fmt.Sprintf(localURL, createRelationshipPath)
+	createTokenURL        = fmt.Sprintf(localURL, createTokenPath)
+)
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
@@ -56,8 +70,7 @@ func (c serverClient) CreateMember(m common.Member) (*datastore.Member, error) {
 	}
 
 	bytes.NewBuffer(memberBytes)
-	tokenURL := fmt.Sprintf(localURL, tokenPath)
-	r, err := c.client.Post(tokenURL, "application/json", bytes.NewBuffer(memberBytes))
+	r, err := c.client.Post(createMemberURL, "application/json", bytes.NewBuffer(memberBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +102,7 @@ func (c serverClient) CreateRelationship(rel common.Relationship) (*datastore.Re
 	}
 
 	bytes.NewBuffer(relBytes)
-	r, err := c.client.Post("http://unix/createRelationship", "application/json", bytes.NewBuffer(relBytes))
+	r, err := c.client.Post(createRelationshipURL, "application/json", bytes.NewBuffer(relBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +127,7 @@ func (c serverClient) GenerateAccessToken(memberID uuid.UUID) (*datastore.Access
 	if err != nil {
 		return nil, err
 	}
-	r, err := c.client.Post("http://unix/token", "application/json", bytes.NewBuffer(b))
+	r, err := c.client.Post(createTokenURL, "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		return nil, err
 	}
