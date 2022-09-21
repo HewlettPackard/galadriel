@@ -22,18 +22,18 @@ type Server interface {
 	ListenAndServe(ctx context.Context) error
 }
 
-type Endpoints struct {
+type EndpointHandler struct {
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
 	DataStore  datastore.DataStore
 	Log        logrus.FieldLogger
 }
 
-func New(c *Config) (*Endpoints, error) {
+func New(c Config) (*EndpointHandler, error) {
 	if err := util.PrepareLocalAddr(c.LocalAddress); err != nil {
 		return nil, err
 	}
-	return &Endpoints{
+	return &EndpointHandler{
 		TCPAddress: c.TCPAddress,
 		LocalAddr:  c.LocalAddress,
 		DataStore:  c.Catalog.GetDataStore(),
@@ -41,7 +41,7 @@ func New(c *Config) (*Endpoints, error) {
 	}, nil
 }
 
-func (e *Endpoints) ListenAndServe(ctx context.Context) error {
+func (e *EndpointHandler) ListenAndServe(ctx context.Context) error {
 	tasks := []func(context.Context) error{
 		e.runTCPServer,
 		e.runUDSServer,
@@ -55,7 +55,7 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 	return nil
 }
 
-func (e *Endpoints) runTCPServer(ctx context.Context) error {
+func (e *EndpointHandler) runTCPServer(ctx context.Context) error {
 	server := echo.New()
 
 	e.Log.Info("Starting TCP Server")
@@ -78,7 +78,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) runUDSServer(ctx context.Context) error {
+func (e *EndpointHandler) runUDSServer(ctx context.Context) error {
 	server := &http.Server{}
 
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
@@ -108,13 +108,13 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) addHandlers(ctx context.Context) {
+func (e *EndpointHandler) addHandlers(ctx context.Context) {
 	e.createMemberHandler(ctx)
 	e.createRelationshipHandler(ctx)
 	e.generateTokenHandler(ctx)
 }
 
-func (e *Endpoints) createMemberHandler(ctx context.Context) {
+func (e *EndpointHandler) createMemberHandler(ctx context.Context) {
 	http.HandleFunc("/createMember", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -157,7 +157,7 @@ func (e *Endpoints) createMemberHandler(ctx context.Context) {
 	})
 }
 
-func (e *Endpoints) createRelationshipHandler(ctx context.Context) {
+func (e *EndpointHandler) createRelationshipHandler(ctx context.Context) {
 	http.HandleFunc("/createRelationship", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -194,7 +194,7 @@ func (e *Endpoints) createRelationshipHandler(ctx context.Context) {
 	})
 }
 
-func (e *Endpoints) generateTokenHandler(ctx context.Context) {
+func (e *EndpointHandler) generateTokenHandler(ctx context.Context) {
 	http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
