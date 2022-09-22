@@ -19,6 +19,7 @@ func NewRunCmd() *cobra.Command {
 		Use:   "run",
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := LoadConfig(cmd)
 			if err != nil {
