@@ -19,14 +19,14 @@ func (e *Endpoints) createMemberHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var memberReq *common.Member
+	var memberReq common.Member
 	if err = json.Unmarshal(body, &memberReq); err != nil {
 		e.Log.Errorf("failed unmarshalling body: %v", err)
 		w.WriteHeader(500)
 		return
 	}
 
-	m, err := e.DataStore.CreateMember(context.TODO(), memberReq)
+	m, err := e.DataStore.CreateMember(context.TODO(), &memberReq)
 	if err != nil {
 		e.Log.Errorf("failed creating member: %v", err)
 		w.WriteHeader(500)
@@ -55,14 +55,14 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	var relationshipReq *common.Relationship
+	var relationshipReq common.Relationship
 	if err = json.Unmarshal(body, &relationshipReq); err != nil {
 		e.Log.Errorf("failed unmarshalling body: %v", err)
 		w.WriteHeader(500)
 		return
 	}
 
-	rel, err := e.DataStore.CreateRelationship(context.TODO(), relationshipReq)
+	rel, err := e.DataStore.CreateRelationship(context.TODO(), &relationshipReq)
 	if err != nil {
 		e.Log.Errorf("failed creating relationship: %v", err)
 		w.WriteHeader(500)
@@ -90,7 +90,7 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var member *common.Member
+	var member common.Member
 	if err = json.Unmarshal(body, &member); err != nil {
 		e.Log.Errorf("failed unmarshalling body: %v", err)
 		w.WriteHeader(500)
