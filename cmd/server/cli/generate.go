@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -13,21 +12,19 @@ var generateCmd = &cobra.Command{
 }
 
 var tokenCmd = &cobra.Command{
-	Use:   "token <memberID>",
+	Use:   "token <trust-domain>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Generates an access token for provided memberID",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
-		memberID, err := uuid.Parse(args[0])
-		if err != nil {
-			return err
-		}
-		at, err := c.GenerateAccessToken(memberID)
+		trustDomain := args[0]
+
+		at, err := c.GenerateAccessToken(trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(at.Token)
+		fmt.Println("Access Token: " + at.Token)
 		return nil
 	},
 }

@@ -9,13 +9,14 @@ import (
 type Relationship struct {
 	ID uuid.UUID
 
-	MemberA uuid.UUID
-	MemberB uuid.UUID
+	TrustDomainA string
+	TrustDomainB string
 }
 
 type AccessToken struct {
-	Token  string
-	Expiry time.Time
+	Token    string
+	Expiry   time.Time
+	MemberID uuid.UUID
 }
 
 type Member struct {
@@ -23,5 +24,4 @@ type Member struct {
 
 	Name        string
 	TrustDomain string
-	Tokens      []AccessToken
 }

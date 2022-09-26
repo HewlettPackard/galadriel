@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	
+
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
@@ -19,18 +19,18 @@ type Server interface {
 	ListenAndServe(ctx context.Context) error
 }
 
-type EndpointHandler struct {
+type Endpoints struct {
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
 	DataStore  datastore.DataStore
 	Log        logrus.FieldLogger
 }
 
-func New(c *Config) (*EndpointHandler, error) {
+func New(c *Config) (*Endpoints, error) {
 	if err := util.PrepareLocalAddr(c.LocalAddress); err != nil {
 		return nil, err
 	}
-	return &EndpointHandler{
+	return &Endpoints{
 		TCPAddress: c.TCPAddress,
 		LocalAddr:  c.LocalAddress,
 		DataStore:  c.Catalog.GetDataStore(),
@@ -38,7 +38,7 @@ func New(c *Config) (*EndpointHandler, error) {
 	}, nil
 }
 
-func (e *EndpointHandler) ListenAndServe(ctx context.Context) error {
+func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 	tasks := []func(context.Context) error{
 		e.runTCPServer,
 		e.runUDSServer,
@@ -52,7 +52,7 @@ func (e *EndpointHandler) ListenAndServe(ctx context.Context) error {
 	return nil
 }
 
-func (e *EndpointHandler) runTCPServer(ctx context.Context) error {
+func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server := echo.New()
 
 	e.Log.Info("Starting TCP Server")
@@ -75,7 +75,7 @@ func (e *EndpointHandler) runTCPServer(ctx context.Context) error {
 	}
 }
 
-func (e *EndpointHandler) runUDSServer(ctx context.Context) error {
+func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	server := &http.Server{}
 
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
@@ -84,7 +84,7 @@ func (e *EndpointHandler) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.addHandlers(ctx)
+	e.addHandlers()
 
 	e.Log.Info("Starting UDS Server")
 	errChan := make(chan error)
@@ -105,8 +105,8 @@ func (e *EndpointHandler) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *EndpointHandler) addHandlers(ctx context.Context) {
-	e.createMemberHandler(ctx)
-	e.createRelationshipHandler(ctx)
-	e.generateTokenHandler(ctx)
+func (e *Endpoints) addHandlers() {
+	http.HandleFunc("/createMember", e.createMemberHandler)
+	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
+	http.HandleFunc("/generateToken", e.generateTokenHandler)
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
-	"github.com/google/uuid"
 )
 
 // URL pattern to make http calls on local Unix domain socket,
@@ -21,22 +20,24 @@ import (
 const (
 	localURL = "http://local/%s"
 
-	createTokenPath        = "createToken"
+	generateTokenPath      = "generateToken"
 	createMemberPath       = "createMember"
 	createRelationshipPath = "createRelationship"
+
+	contentType = "application/json"
 )
 
 var (
 	createMemberURL       = fmt.Sprintf(localURL, createMemberPath)
 	createRelationshipURL = fmt.Sprintf(localURL, createRelationshipPath)
-	createTokenURL        = fmt.Sprintf(localURL, createTokenPath)
+	generateTokenURL      = fmt.Sprintf(localURL, generateTokenPath)
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
-	CreateMember(m common.Member) (*datastore.Member, error)
-	CreateRelationship(r common.Relationship) (*datastore.Relationship, error)
-	GenerateAccessToken(memberID uuid.UUID) (*datastore.AccessToken, error)
+	CreateMember(m common.Member) error
+	CreateRelationship(r common.Relationship) error
+	GenerateAccessToken(trustDomain string) (*datastore.AccessToken, error)
 }
 
 // TODO: improve this adding options for the transport, dialcontext, and http.Client.
@@ -58,76 +59,62 @@ type serverClient struct {
 	client *http.Client
 }
 
-func (c serverClient) CreateMember(m common.Member) (*datastore.Member, error) {
-	err := validateMember(m)
-	if err != nil {
-		return nil, err
+func (c serverClient) CreateMember(m common.Member) error {
+	if err := validateMember(m); err != nil {
+		return err
 	}
 
 	memberBytes, err := json.Marshal(m)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	bytes.NewBuffer(memberBytes)
-	r, err := c.client.Post(createMemberURL, "application/json", bytes.NewBuffer(memberBytes))
+	_, err = c.client.Post(createMemberURL, contentType, bytes.NewBuffer(memberBytes))
 	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
+		return err
 	}
 
-	createdMember := &datastore.Member{}
-	err = json.Unmarshal(b, createdMember)
-	if err != nil {
-		return nil, err
-	}
-
-	return createdMember, nil
+	return nil
 }
 
-func (c serverClient) CreateRelationship(rel common.Relationship) (*datastore.Relationship, error) {
-	err := validateRelationship(rel)
-	if err != nil {
-		return nil, err
+func (c serverClient) CreateRelationship(rel common.Relationship) error {
+	if err := validateRelationship(rel); err != nil {
+		return err
 	}
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	bytes.NewBuffer(relBytes)
-	r, err := c.client.Post(createRelationshipURL, "application/json", bytes.NewBuffer(relBytes))
+	r, err := c.client.Post(createRelationshipURL, contentType, bytes.NewBuffer(relBytes))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer r.Body.Close()
 
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	createdRelationship := &datastore.Relationship{}
-	err = json.Unmarshal(b, createdRelationship)
-	if err != nil {
-		return nil, err
+	var createdRelationship datastore.Relationship
+	if err = json.Unmarshal(b, &createdRelationship); err != nil {
+		return err
 	}
 
-	return createdRelationship, nil
+	return nil
 }
 
-func (c serverClient) GenerateAccessToken(memberID uuid.UUID) (*datastore.AccessToken, error) {
-	b, err := json.Marshal(common.Member{ID: memberID})
+func (c serverClient) GenerateAccessToken(trustDomain string) (*datastore.AccessToken, error) {
+	b, err := json.Marshal(common.Member{TrustDomain: trustDomain})
 	if err != nil {
 		return nil, err
 	}
-	r, err := c.client.Post(createTokenURL, "application/json", bytes.NewBuffer(b))
+
+	r, err := c.client.Post(generateTokenURL, contentType, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, err
 	}
@@ -138,16 +125,17 @@ func (c serverClient) GenerateAccessToken(memberID uuid.UUID) (*datastore.Access
 		return nil, err
 	}
 
-	createdToken := &datastore.AccessToken{}
-	err = json.Unmarshal(body, createdToken)
-	if err != nil {
+	var createdToken datastore.AccessToken
+	if err = json.Unmarshal(body, &createdToken); err != nil {
 		if len(body) == 0 {
 			// TODO: validation based on error codes/status check
 			return nil, errors.New("not found")
 		}
+
 		return nil, err
 	}
-	return createdToken, nil
+
+	return &createdToken, nil
 }
 
 func validateMember(m common.Member) error {
