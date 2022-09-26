@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -38,8 +39,8 @@ type Relationship struct {
 // TODO: use until an actual DataStore implementation is added.
 
 type MemStore struct {
-	member       map[uuid.UUID]*Member
-	relationship map[uuid.UUID]*Relationship
+	member       map[string]*Member
+	relationship []*Relationship
 	token        []*AccessToken
 
 	mu sync.RWMutex
@@ -47,10 +48,8 @@ type MemStore struct {
 
 func NewMemStore() DataStore {
 	return &MemStore{
-		member:       make(map[uuid.UUID]*Member),
-		relationship: make(map[uuid.UUID]*Relationship),
-		token:        []*AccessToken{},
-		mu:           sync.RWMutex{},
+		member: make(map[string]*Member),
+		mu:     sync.RWMutex{},
 	}
 }
 
@@ -64,7 +63,7 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 		TrustDomain: member.TrustDomain,
 	}
 
-	s.member[m.ID] = m
+	s.member[m.TrustDomain] = m
 
 	return m, nil
 }
@@ -73,13 +72,19 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, ok := s.member[rel.TrustDomainA]; !ok {
+		return nil, errors.New("member not found")
+	}
+	if _, ok := s.member[rel.TrustDomainB]; !ok {
+		return nil, errors.New("member not found")
+	}
 	r := &Relationship{
 		ID:           uuid.New(),
 		TrustDomainA: rel.TrustDomainA,
 		TrustDomainB: rel.TrustDomainB,
 	}
 
-	s.relationship[r.ID] = r
+	s.relationship = append(s.relationship, r)
 
 	return r, nil
 }

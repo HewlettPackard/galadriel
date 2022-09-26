@@ -14,7 +14,7 @@ var generateCmd = &cobra.Command{
 var tokenCmd = &cobra.Command{
 	Use:   "token <trust-domain>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Generates an access token for provided memberID",
+	Short: "Generates an access token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 		trustDomain := args[0]

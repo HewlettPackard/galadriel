@@ -22,7 +22,7 @@ var createMemberCmd = &cobra.Command{
 		td := args[0]
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateMember(common.Member{TrustDomain: td}); err != nil {
+		if err := c.CreateMember(&common.Member{TrustDomain: td}); err != nil {
 			return fmt.Errorf("failed to create member: %v", err)
 		}
 
@@ -38,7 +38,7 @@ var createRelationshipCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateRelationship(common.Relationship{
+		if err := c.CreateRelationship(&common.Relationship{
 			TrustDomainA: args[0],
 			TrustDomainB: args[1],
 		}); err != nil {
