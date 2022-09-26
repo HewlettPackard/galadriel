@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -14,12 +12,13 @@ import (
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
-	CreateAccessToken(ctx context.Context, t *common.AccessToken, memberID uuid.UUID) (*AccessToken, error)
+	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
 }
 
 type AccessToken struct {
-	Token  string
-	Expiry time.Time
+	Token    string
+	Expiry   time.Time
+	MemberID uuid.UUID
 }
 
 type Member struct {
@@ -27,14 +26,13 @@ type Member struct {
 
 	Name        string
 	TrustDomain string
-	Tokens      []AccessToken
 }
 
 type Relationship struct {
 	ID uuid.UUID
 
-	MemberA uuid.UUID
-	MemberB uuid.UUID
+	TrustDomainA string
+	TrustDomainB string
 }
 
 // TODO: use until an actual DataStore implementation is added.
@@ -42,6 +40,7 @@ type Relationship struct {
 type MemStore struct {
 	member       map[uuid.UUID]*Member
 	relationship map[uuid.UUID]*Relationship
+	token        []*AccessToken
 
 	mu sync.RWMutex
 }
@@ -50,6 +49,7 @@ func NewMemStore() DataStore {
 	return &MemStore{
 		member:       make(map[uuid.UUID]*Member),
 		relationship: make(map[uuid.UUID]*Relationship),
+		token:        []*AccessToken{},
 		mu:           sync.RWMutex{},
 	}
 }
@@ -58,47 +58,50 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	m := Member{
+	m := &Member{
 		ID:          uuid.New(),
 		Name:        member.Name,
 		TrustDomain: member.TrustDomain,
 	}
 
-	for _, t := range member.Tokens {
-		m.Tokens = append(m.Tokens, AccessToken{Token: t.Token, Expiry: t.Expiry})
-	}
-	s.member[m.ID] = &m
+	s.member[m.ID] = m
 
-	fmt.Println("Members:", s.member)
-	return s.member[m.ID], nil
+	return m, nil
 }
 
 func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	r := Relationship{
-		ID:      uuid.New(),
-		MemberA: rel.MemberB,
-		MemberB: rel.MemberB,
+	r := &Relationship{
+		ID:           uuid.New(),
+		TrustDomainA: rel.TrustDomainA,
+		TrustDomainB: rel.TrustDomainB,
 	}
-	s.relationship[r.ID] = &r
 
-	fmt.Println("Relationships:", s.relationship)
-	return s.relationship[r.ID], nil
+	s.relationship[r.ID] = r
+
+	return r, nil
 }
 
-func (s *MemStore) CreateAccessToken(_ context.Context, t *common.AccessToken, memberID uuid.UUID) (*AccessToken, error) {
+func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, td string) (*AccessToken, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	m, ok := s.member[memberID]
-	if !ok {
-		return nil, errors.New("member not found")
+	var memberID uuid.UUID
+	for _, member := range s.member {
+		if member.TrustDomain == td {
+			memberID = member.ID
+		}
 	}
 
-	m.Tokens = append(m.Tokens, AccessToken{Token: t.Token, Expiry: t.Expiry})
-	s.member[memberID] = m
+	at := &AccessToken{
+		Token:    token.Token,
+		Expiry:   token.Expiry,
+		MemberID: memberID,
+	}
 
-	return &m.Tokens[len(m.Tokens)-1], nil
+	s.token = append(s.token, at)
+
+	return at, nil
 }
