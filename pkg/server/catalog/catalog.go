@@ -31,10 +31,8 @@ type Config struct {
 }
 
 func Load(ctx context.Context, config Config) (*Repository, error) {
-	memStore := datastore.MemStore{}
-
 	re := &Repository{
-		DataStore: &memStore,
+		DataStore: datastore.NewMemStore(),
 		log:       config.Log,
 	}
 

@@ -2,74 +2,111 @@ package datastore
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
+
+	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/google/uuid"
 )
 
 type DataStore interface {
-	CreateJoinToken(context.Context, *JoinToken) error
-	DeleteJoinToken(ctx context.Context, token string) error
-	FetchJoinToken(ctx context.Context, token string) (*JoinToken, error)
+	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
+	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
+	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
 }
 
-type JoinToken struct {
-	Token  string
-	Expiry time.Time
+type AccessToken struct {
+	Token    string
+	Expiry   time.Time
+	MemberID uuid.UUID
+}
+
+type Member struct {
+	ID uuid.UUID
+
+	Name        string
+	TrustDomain string
+}
+
+type Relationship struct {
+	ID uuid.UUID
+
+	TrustDomainA string
+	TrustDomainB string
 }
 
 // TODO: use until an actual DataStore implementation is added.
+
 type MemStore struct {
-	mu     sync.RWMutex
-	tokens []*JoinToken
+	member       map[string]*Member
+	relationship []*Relationship
+	token        []*AccessToken
+
+	mu sync.RWMutex
 }
 
 func NewMemStore() DataStore {
 	return &MemStore{
+		member: make(map[string]*Member),
 		mu:     sync.RWMutex{},
-		tokens: nil,
 	}
 }
 
-func (s *MemStore) CreateJoinToken(ctx context.Context, token *JoinToken) error {
+func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Member, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.tokens = append(s.tokens, token)
-	return nil
+
+	m := &Member{
+		ID:          uuid.New(),
+		Name:        member.Name,
+		TrustDomain: member.TrustDomain,
+	}
+
+	s.member[m.TrustDomain] = m
+
+	return m, nil
 }
 
-func (s *MemStore) FetchJoinToken(ctx context.Context, token string) (*JoinToken, error) {
+func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for _, t := range s.tokens {
-		if t.Token == token {
-			return t, nil
+
+	if _, ok := s.member[rel.TrustDomainA]; !ok {
+		return nil, errors.New("member not found")
+	}
+	if _, ok := s.member[rel.TrustDomainB]; !ok {
+		return nil, errors.New("member not found")
+	}
+	r := &Relationship{
+		ID:           uuid.New(),
+		TrustDomainA: rel.TrustDomainA,
+		TrustDomainB: rel.TrustDomainB,
+	}
+
+	s.relationship = append(s.relationship, r)
+
+	return r, nil
+}
+
+func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, td string) (*AccessToken, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var memberID uuid.UUID
+	for _, member := range s.member {
+		if member.TrustDomain == td {
+			memberID = member.ID
 		}
-
 	}
-	return nil, fmt.Errorf("token not found")
-}
 
-func (s *MemStore) DeleteJoinToken(ctx context.Context, token string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	index, err := s.getIndex(token)
-	if err != nil {
-		return err
+	at := &AccessToken{
+		Token:    token.Token,
+		Expiry:   token.Expiry,
+		MemberID: memberID,
 	}
-	s.tokens = removeIndex(s.tokens, index)
-	return nil
-}
 
-func (s *MemStore) getIndex(token string) (int, error) {
-	for i, t := range s.tokens {
-		if t.Token == token {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("token not found")
-}
+	s.token = append(s.token, at)
 
-func removeIndex(s []*JoinToken, index int) []*JoinToken {
-	return append(s[:index], s[index+1:]...)
+	return at, nil
 }

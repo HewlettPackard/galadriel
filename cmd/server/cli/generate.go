@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/spf13/cobra"
 )
@@ -11,16 +12,19 @@ var generateCmd = &cobra.Command{
 }
 
 var tokenCmd = &cobra.Command{
-	Use:   "token",
-	Short: "Generates a join token",
+	Use:   "token <trust-domain>",
+	Args:  cobra.ExactArgs(1),
+	Short: "Generates an access token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
-		token, err := c.GenerateJoinToken()
+		trustDomain := args[0]
+
+		at, err := c.GenerateAccessToken(trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(token)
+		fmt.Println("Access Token: " + at.Token)
 		return nil
 	},
 }
