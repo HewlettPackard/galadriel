@@ -1,9 +1,0 @@
-package: common
-generate:
-  echo-server: false
-  client: false
-  models: true
-  embedded-spec: false
-output: pkg/common/schemas.gen.go
-output-options:
-  skip-prune: true

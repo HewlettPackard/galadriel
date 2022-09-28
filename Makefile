@@ -140,6 +140,25 @@ test-unit:
 race-test:
 	go test -cover -race ./...
 
+
+## Temporary targets to test sync APIs
+create-relationship:
+	./bin/galadriel-server create member -t td1
+	./bin/galadriel-server create member -t td2
+	./bin/galadriel-server create relationship -a td1 -b td2
+
+.PHONY: create-relationship
+
+run-harvester: create-relationship
+	token=`./bin/galadriel-server generate token -t td2 | ggrep -Po "(?<=Access Token:\s).*"`; \
+	./bin/galadriel-harvester run -t $$token
+
+test-sync:
+	curl 127.0.0.1:8085/bundle/sync -X "POST" -d "@dev/request_data/outdated_bundle_sync.json" | jq
+
+test-post:
+	curl 127.0.0.1:8085/bundle -X "POST" -d "@dev/request_data/bundle_post.json" | jq
+
 ## Generate the test coverage for the code with the Go tool.
 coverage:
 	$(E)mkdir -p out/coverage

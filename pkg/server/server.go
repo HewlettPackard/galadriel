@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"errors"
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
+	admin "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 )
 
 // Server represents a Galadriel Server.
@@ -33,14 +33,19 @@ func (s *Server) run(ctx context.Context) (err error) {
 		return err
 	}
 	defer cat.Close()
+	harvesterServer := harvester.NewServer(harvester.Config{
+		TCPAddress: s.config.TCPAddress,
+		Logger:     s.config.Log,
+	}, cat)
 
-	endpointsServer, err := s.newEndpointsServer(cat)
-	if err != nil {
-		return err
-	}
+	adminServer := admin.NewServer(admin.Config{
+		LocalAddress: s.config.LocalAddress,
+		Logger:       s.config.Log,
+	}, cat)
 
 	tasks := []func(context.Context) error{
-		endpointsServer.ListenAndServe,
+		harvesterServer.Start,
+		adminServer.Start,
 	}
 
 	err = util.RunTasks(ctx, tasks)
@@ -48,15 +53,4 @@ func (s *Server) run(ctx context.Context) (err error) {
 		err = nil
 	}
 	return err
-}
-
-func (s *Server) newEndpointsServer(cat catalog.Catalog) (endpoints.Server, error) {
-	config := &endpoints.Config{
-		TCPAddress:   s.config.TCPAddress,
-		LocalAddress: s.config.LocalAddress,
-		Catalog:      cat,
-		Log:          s.config.Log.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-	}
-
-	return endpoints.New(config)
 }

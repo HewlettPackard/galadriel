@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -18,19 +18,12 @@ import (
 // the Host is required for the URL, but it's not relevant
 
 const (
-	localURL = "http://local/%s"
-
-	generateTokenPath      = "generateToken"
-	createMemberPath       = "createMember"
-	createRelationshipPath = "createRelationship"
-
+	localURL    = "http://local"
 	contentType = "application/json"
-)
 
-var (
-	createMemberURL       = fmt.Sprintf(localURL, createMemberPath)
-	createRelationshipURL = fmt.Sprintf(localURL, createRelationshipPath)
-	generateTokenURL      = fmt.Sprintf(localURL, generateTokenPath)
+	createMemberURL       = localURL + admin.CreateMemberPath
+	createRelationshipURL = localURL + admin.CreateRelationshipPath
+	generateTokenURL      = localURL + admin.GenerateTokenPath
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
@@ -41,6 +34,7 @@ type ServerLocalClient interface {
 }
 
 // TODO: improve this adding options for the transport, dialcontext, and http.Client.
+
 func NewServerClient(socketPath string) ServerLocalClient {
 	t := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -60,6 +54,7 @@ type serverClient struct {
 
 func (c serverClient) CreateMember(m *common.Member) error {
 	memberBytes, err := json.Marshal(m)
+
 	if err != nil {
 		return err
 	}

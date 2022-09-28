@@ -13,7 +13,12 @@ import (
 
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
+	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*Member, error)
+	GetMember(ctx context.Context, trustDomain string) (*Member, error)
+
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
+	GetRelationship(ctx context.Context, trustDomain string) ([]*Relationship, error)
+
 	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
 	FetchAccessToken(ctx context.Context, token string) (*AccessToken, error)
 }
@@ -27,8 +32,10 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name        string
-	TrustDomain string
+	Name            string
+	TrustDomain     string
+	TrustBundle     []byte
+	TrustBundleHash []byte
 }
 
 type Relationship struct {
@@ -68,9 +75,46 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 		ID:          uuid.New(),
 		Name:        member.Name,
 		TrustDomain: member.TrustDomain.String(),
+		// TODO: remove before merging, allows for easy testing
+		TrustBundleHash: []byte("foo"),
 	}
 
 	s.members[m.TrustDomain] = m
+
+	return m, nil
+}
+
+func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *common.Member) (*Member, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if member == nil {
+		return nil, errors.New("query object cannot be nil")
+	}
+
+	if _, ok := s.members[trustDomain]; !ok {
+		return nil, errors.New("failed updating member: member not found")
+	}
+
+	if len(member.TrustBundle) != 0 {
+		s.members[trustDomain].TrustBundle = member.TrustBundle
+	}
+
+	if member.TrustBundleHash != nil {
+		s.members[trustDomain].TrustBundleHash = member.TrustBundleHash
+	}
+
+	return s.members[trustDomain], nil
+}
+
+func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*Member, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	m, ok := s.members[trustDomain]
+	if !ok {
+		return nil, errors.New("failed updating member: member not found")
+	}
 
 	return m, nil
 }
@@ -98,6 +142,34 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.relationship = append(s.relationship, r)
 
 	return r, nil
+}
+
+func (s *MemStore) GetRelationship(_ context.Context, trustDomain string) ([]*Relationship, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var response []*Relationship
+
+	for _, r := range s.relationship {
+		if r.MemberA.TrustDomain == trustDomain || r.MemberB.TrustDomain == trustDomain {
+
+			memberA, ok := s.members[r.MemberA.TrustDomain]
+			if !ok {
+				return nil, errors.New("failed updating member: member not found")
+			}
+			memberB, ok := s.members[r.MemberB.TrustDomain]
+			if !ok {
+				return nil, errors.New("failed updating member: member not found")
+			}
+
+			response = append(response, &Relationship{
+				ID:      r.ID,
+				MemberA: memberA,
+				MemberB: memberB,
+			})
+		}
+	}
+
+	return response, nil
 }
 
 func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*AccessToken, error) {

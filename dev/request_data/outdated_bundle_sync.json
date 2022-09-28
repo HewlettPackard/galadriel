@@ -1,0 +1,13 @@
+{
+  "federates_with": {
+    "td1": {
+      "trust_bundle_hash": "d2VsbCwgaGVsbG8gaGFuZHNvbWUgOj4=",
+      "trust_domain": "td1"
+    },
+
+    "td3": {
+      "trust_bundle_hash": "d2VsbCwgaGVsbG8gaGFuZHNvbWUgOj4=",
+      "trust_domain": "td1"
+    }
+  }
+}

@@ -2,20 +2,28 @@ package cli
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
+
+var RootCmd = &cobra.Command{}
+var cmdExecute = RootCmd.Execute
 
 type serverCLI struct {
 	log logrus.FieldLogger
 }
 
-var ServerCLI = &serverCLI{
-	log: logrus.New(),
-}
-
 func Run() int {
-	return ServerCLI.Run()
+	serverCLI := &serverCLI{
+		log: logrus.New(),
+	}
+
+	return serverCLI.Run()
 }
 
 func (c *serverCLI) Run() int {
-	return Execute()
+	err := cmdExecute()
+	if err != nil {
+		return 1
+	}
+	return 0
 }
