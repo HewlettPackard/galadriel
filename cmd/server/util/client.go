@@ -52,7 +52,6 @@ func NewServerClient(socketPath string) ServerLocalClient {
 	}
 
 	return serverClient{client: c}
-
 }
 
 type serverClient struct {
@@ -60,28 +59,30 @@ type serverClient struct {
 }
 
 func (c serverClient) CreateMember(m *common.Member) error {
-	if err := validateMember(m); err != nil {
-		return err
-	}
-
 	memberBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
 
-	_, err = c.client.Post(createMemberURL, contentType, bytes.NewReader(memberBytes))
+	r, err := c.client.Post(createMemberURL, contentType, bytes.NewReader(memberBytes))
 	if err != nil {
 		return err
+	}
+	defer r.Body.Close()
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	if r.StatusCode != 200 {
+		return errors.New(string(body))
 	}
 
 	return nil
 }
 
 func (c serverClient) CreateRelationship(rel *common.Relationship) error {
-	if err := validateRelationship(rel); err != nil {
-		return err
-	}
-
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
 		return err
@@ -130,22 +131,11 @@ func (c serverClient) GenerateAccessToken(trustDomain string) (*common.AccessTok
 	var createdToken common.AccessToken
 	if err = json.Unmarshal(body, &createdToken); err != nil {
 		if len(body) == 0 {
-			// TODO: validation based on error codes/status check
-			return nil, errors.New("not found")
+			return nil, errors.New("failed to generate token")
 		}
 
-		return nil, err
+		return nil, errors.New(string(body))
 	}
 
 	return &createdToken, nil
-}
-
-func validateMember(m *common.Member) error {
-	// TODO: checks
-	return nil
-}
-
-func validateRelationship(m *common.Relationship) error {
-	// TODO: checks
-	return nil
 }

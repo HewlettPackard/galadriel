@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -14,12 +15,13 @@ type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
 	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
+	FetchAccessToken(ctx context.Context, token string) (*AccessToken, error)
 }
 
 type AccessToken struct {
-	Token    string
-	Expiry   time.Time
-	MemberID uuid.UUID
+	Token  string
+	Expiry time.Time
+	Member *Member
 }
 
 type Member struct {
@@ -39,17 +41,18 @@ type Relationship struct {
 // TODO: use until an actual DataStore implementation is added.
 
 type MemStore struct {
-	member       map[string]*Member
+	members      map[string]*Member
 	relationship []*Relationship
-	token        []*AccessToken
+	tokens       map[string]*AccessToken
 
 	mu sync.RWMutex
 }
 
 func NewMemStore() DataStore {
 	return &MemStore{
-		member: make(map[string]*Member),
-		mu:     sync.RWMutex{},
+		members: make(map[string]*Member),
+		tokens:  make(map[string]*AccessToken),
+		mu:      sync.RWMutex{},
 	}
 }
 
@@ -63,7 +66,11 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 		TrustDomain: member.TrustDomain,
 	}
 
-	s.member[m.TrustDomain] = m
+	if _, exist := s.members[m.TrustDomain]; exist {
+		return nil, errors.New("member already exists")
+	}
+
+	s.members[m.TrustDomain] = m
 
 	return m, nil
 }
@@ -72,11 +79,11 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.member[rel.TrustDomainA]; !ok {
-		return nil, errors.New("member not found")
+	if _, ok := s.members[rel.TrustDomainA]; !ok {
+		return nil, fmt.Errorf("members not found for trust domain: %s", rel.TrustDomainA)
 	}
-	if _, ok := s.member[rel.TrustDomainB]; !ok {
-		return nil, errors.New("member not found")
+	if _, ok := s.members[rel.TrustDomainB]; !ok {
+		return nil, fmt.Errorf("members not found for trust domain: %s", rel.TrustDomainB)
 	}
 	r := &Relationship{
 		ID:           uuid.New(),
@@ -89,24 +96,33 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	return r, nil
 }
 
-func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, td string) (*AccessToken, error) {
+func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*AccessToken, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var memberID uuid.UUID
-	for _, member := range s.member {
-		if member.TrustDomain == td {
-			memberID = member.ID
-		}
+	member := s.members[trustDomain]
+	if member == nil {
+		return nil, fmt.Errorf("failed to find member for the trust domain: %s", trustDomain)
 	}
 
 	at := &AccessToken{
-		Token:    token.Token,
-		Expiry:   token.Expiry,
-		MemberID: memberID,
+		Token:  token.Token,
+		Expiry: token.Expiry,
+		Member: member,
 	}
 
-	s.token = append(s.token, at)
+	s.tokens[at.Token] = at
 
+	return at, nil
+}
+
+func (s *MemStore) FetchAccessToken(_ context.Context, token string) (*AccessToken, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	at, ok := s.tokens[token]
+	if !ok {
+		return nil, errors.New("failed to find token")
+	}
 	return at, nil
 }

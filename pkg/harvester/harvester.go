@@ -6,7 +6,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 )
 
@@ -27,18 +27,22 @@ func New(config *Config) *Harvester {
 
 // Run starts running the Harvester, starting its endpoints.
 func (h *Harvester) Run(ctx context.Context) error {
-	if err := h.run(ctx); err != nil {
-		return err
-	}
-	return nil
-}
+	h.config.Log.Info("Starting Harvester")
 
-func (h *Harvester) run(ctx context.Context) (err error) {
-	cat, err := catalog.Load(ctx, catalog.Config{Log: h.config.Log})
+	token := h.config.AccessToken
+	if token == "" {
+		return errors.New("token is required to connect the Harvester to the Galadriel Server")
+	}
+
+	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress)
 	if err != nil {
 		return err
 	}
-	defer cat.Close()
+
+	err = galadrielClient.Connect(ctx, token)
+	if err != nil {
+		return err
+	}
 
 	config := &controller.Config{
 		ServerAddress:   h.config.ServerAddress,

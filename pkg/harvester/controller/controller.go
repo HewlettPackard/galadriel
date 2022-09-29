@@ -3,12 +3,10 @@ package controller
 import (
 	"context"
 	"net"
-	"time"
-
-	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,11 +51,8 @@ func (c *HarvesterController) Run(ctx context.Context) error {
 }
 
 func (c *HarvesterController) run(ctx context.Context) {
-	ticker := time.NewTicker(2 * time.Second)
 	for {
 		select {
-		case <-ticker.C:
-			telemetry.Count(ctx, telemetry.HarvesterController, telemetry.TrustBundle, telemetry.Add)
 		case <-ctx.Done():
 			c.logger.Debug("Done")
 			return

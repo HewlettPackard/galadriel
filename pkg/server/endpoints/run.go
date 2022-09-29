@@ -3,13 +3,12 @@ package endpoints
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
-
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+	"net"
+	"net/http"
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -54,6 +53,8 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server := echo.New()
+
+	e.addTCPHandlers(server)
 
 	e.Log.Info("Starting TCP Server")
 	errChan := make(chan error)
@@ -109,4 +110,8 @@ func (e *Endpoints) addHandlers() {
 	http.HandleFunc("/createMember", e.createMemberHandler)
 	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
 	http.HandleFunc("/generateToken", e.generateTokenHandler)
+}
+
+func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
+	server.CONNECT("/onboard", e.onboardHandler)
 }

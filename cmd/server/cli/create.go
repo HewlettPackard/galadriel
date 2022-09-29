@@ -16,15 +16,17 @@ var createCmd = &cobra.Command{
 var createMemberCmd = &cobra.Command{
 	Use:   "member <trust-domain>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Registers a new member.",
+	Short: "Creates a new member for the given trust domain.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		td := args[0]
 		c := util.NewServerClient(defaultSocketPath)
 
 		if err := c.CreateMember(&common.Member{TrustDomain: td}); err != nil {
-			return fmt.Errorf("failed to create member: %v", err)
+			return err
 		}
+
+		fmt.Printf("Member created for trust domain: %s\n", td)
 
 		return nil
 	},
