@@ -2,10 +2,11 @@ package controller
 
 import (
 	"context"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 	"net"
 	"time"
+
+	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/sirupsen/logrus"
@@ -29,7 +30,7 @@ type Config struct {
 }
 
 func NewHarvesterController(ctx context.Context, config *Config) (*HarvesterController, error) {
-	sc := spire.NewLocalSpireServer(ctx, config.SpireSocketPath.String())
+	sc := spire.NewLocalSpireServer(ctx, config.SpireSocketPath)
 	gc, err := client.NewGaladrielServerClient(config.ServerAddress)
 	if err != nil {
 		return nil, err

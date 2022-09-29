@@ -4,21 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"testing"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/sirupsen/logrus"
-	"testing"
 
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 )
 
 func TestNewLocalSpireServerSuccess(t *testing.T) {
-	dialFn = func(ctx context.Context, path string, makeClient clientMaker) (client, error) {
+	dialFn = func(ctx context.Context, addr net.Addr, makeClient clientMaker) (client, error) {
 		return fakeInternalClient{}, nil
 	}
-	got := NewLocalSpireServer(context.Background(), "")
+	got := NewLocalSpireServer(context.Background(), &net.UnixAddr{})
 	expected := &localSpireServer{
 		client: fakeInternalClient{},
 		log:    logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
@@ -29,7 +30,7 @@ func TestNewLocalSpireServerSuccess(t *testing.T) {
 }
 
 func TestNewLocalSpireServerPanic(t *testing.T) {
-	dialFn = func(ctx context.Context, path string, makeClient clientMaker) (client, error) {
+	dialFn = func(ctx context.Context, addr net.Addr, makeClient clientMaker) (client, error) {
 		return nil, errors.New("error from dial function")
 	}
 	defer func() {
@@ -38,83 +39,7 @@ func TestNewLocalSpireServerPanic(t *testing.T) {
 		}
 	}()
 
-	NewLocalSpireServer(context.Background(), "")
-}
-
-func TestMakeSpireClient(t *testing.T) {
-	got, err := makeSpireClient(&grpc.ClientConn{})
-	assert.NotNil(t, got)
-	assert.NoError(t, err)
-
-	got, err = makeSpireClient(nil)
-	assert.Nil(t, got)
-	assert.EqualError(t, err, "grpc client connection is invalid")
-}
-
-func TestDialSocket(t *testing.T) {
-	tests := []struct {
-		name           string
-		path           string
-		expected       client
-		err            string
-		target         string
-		clientErr      string
-		dialContextErr string
-	}{
-		{
-			name:     "ok_abs_path",
-			path:     "/absolute/path",
-			expected: &fakeInternalClient{},
-			target:   "unix:///absolute/path",
-		}, {
-			name:     "ok_rel_path",
-			path:     "relative/path",
-			expected: &fakeInternalClient{},
-			target:   "unix:relative/path",
-		}, {
-			name:           "dial_context_error",
-			dialContextErr: "error_from_dial_context",
-			err:            "failed to dial API socket: error_from_dial_context",
-		},
-		{
-			name:      "make_client_error",
-			clientErr: "error_from_make_client",
-			err:       "failed to make client: error_from_make_client",
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			grpcDialContext = func(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-				if tt.dialContextErr != "" {
-					return nil, errors.New(tt.dialContextErr)
-				}
-				if tt.path != "" {
-					assert.Equal(t, tt.target, target)
-				}
-				return &grpc.ClientConn{}, nil
-			}
-			fakeMakeClient := func(conn *grpc.ClientConn) (client, error) {
-				if tt.clientErr != "" {
-					return nil, errors.New(tt.clientErr)
-				}
-				return tt.expected, nil
-			}
-
-			got, err := dialSocket(context.Background(), tt.path, fakeMakeClient)
-
-			if tt.err != "" {
-				assert.EqualError(t, err, tt.err)
-				assert.Nil(t, got)
-				return
-			}
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, got)
-		})
-	}
-
+	NewLocalSpireServer(context.Background(), &net.UnixAddr{})
 }
 
 func TestLocalSpireGetBundle(t *testing.T) {
