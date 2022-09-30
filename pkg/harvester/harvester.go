@@ -3,6 +3,7 @@ package harvester
 import (
 	"context"
 	"errors"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
@@ -25,7 +26,7 @@ func New(config *Config) *Harvester {
 	}
 }
 
-// Run starts running the Harvester, starting its endpoints.
+// Run starts running the Harvester.
 func (h *Harvester) Run(ctx context.Context) error {
 	h.config.Log.Info("Starting Harvester")
 

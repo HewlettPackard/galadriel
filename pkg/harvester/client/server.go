@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/sirupsen/logrus"
 )
 
 // GaladrielServerClient represents a client to connect to Galadriel Server
@@ -24,12 +25,8 @@ type client struct {
 }
 
 func NewGaladrielServerClient(address string) (GaladrielServerClient, error) {
-	c := http.Client{
-		Transport: http.DefaultTransport,
-	}
-
 	return &client{
-		c:       c,
+		c:       *http.DefaultClient,
 		address: address,
 		logger:  logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
 	}, nil

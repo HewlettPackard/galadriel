@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -108,7 +109,7 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	at, err := e.DataStore.GenerateAccessToken(
-		context.TODO(), &common.AccessToken{Token: token, MemberID: member.ID, Expiry: time.Now().Add(1 * time.Hour)}, member.TrustDomain)
+		context.TODO(), &common.AccessToken{Token: token, MemberID: member.ID, Expiry: time.Now().Add(1 * time.Hour)}, member.TrustDomain.IDString())
 	if err != nil {
 		errMsg := fmt.Sprintf("failed creating access token: %v", err)
 		e.Log.Error(errMsg)

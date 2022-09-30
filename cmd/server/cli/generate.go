@@ -5,6 +5,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/spf13/cobra"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 var generateCmd = &cobra.Command{
@@ -17,7 +18,12 @@ var tokenCmd = &cobra.Command{
 	Short: "Generates an access token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
-		trustDomain := args[0]
+
+		td := args[0]
+		trustDomain, err := spiffeid.TrustDomainFromString(td)
+		if err != nil {
+			return err
+		}
 
 		at, err := c.GenerateAccessToken(trustDomain)
 		if err != nil {

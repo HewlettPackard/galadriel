@@ -6,6 +6,7 @@ import (
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/spf13/cobra"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 var createCmd = &cobra.Command{
@@ -20,9 +21,14 @@ var createMemberCmd = &cobra.Command{
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		td := args[0]
+		trustDomain, err := spiffeid.TrustDomainFromString(td)
+		if err != nil {
+			return err
+		}
+
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateMember(&common.Member{TrustDomain: td}); err != nil {
+		if err := c.CreateMember(&common.Member{TrustDomain: trustDomain}); err != nil {
 			return err
 		}
 
@@ -40,9 +46,21 @@ var createRelationshipCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
+		td1 := args[0]
+		trustDomain1, err := spiffeid.TrustDomainFromString(td1)
+		if err != nil {
+			return err
+		}
+
+		td2 := args[1]
+		trustDomain2, err := spiffeid.TrustDomainFromString(td2)
+		if err != nil {
+			return err
+		}
+
 		if err := c.CreateRelationship(&common.Relationship{
-			TrustDomainA: args[0],
-			TrustDomainB: args[1],
+			TrustDomainA: trustDomain1,
+			TrustDomainB: trustDomain2,
 		}); err != nil {
 			return err
 		}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 // URL pattern to make http calls on local Unix domain socket,
@@ -37,7 +38,7 @@ var (
 type ServerLocalClient interface {
 	CreateMember(m *common.Member) error
 	CreateRelationship(r *common.Relationship) error
-	GenerateAccessToken(trustDomain string) (*common.AccessToken, error)
+	GenerateAccessToken(trustDomain spiffeid.TrustDomain) (*common.AccessToken, error)
 }
 
 // TODO: improve this adding options for the transport, dialcontext, and http.Client.
@@ -111,8 +112,8 @@ func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 	return nil
 }
 
-func (c serverClient) GenerateAccessToken(trustDomain string) (*common.AccessToken, error) {
-	b, err := json.Marshal(common.Member{TrustDomain: trustDomain})
+func (c serverClient) GenerateAccessToken(td spiffeid.TrustDomain) (*common.AccessToken, error) {
+	b, err := json.Marshal(common.Member{TrustDomain: td})
 	if err != nil {
 		return nil, err
 	}
