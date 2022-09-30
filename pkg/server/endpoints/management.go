@@ -3,11 +3,9 @@ package endpoints
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -131,32 +129,20 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (e *Endpoints) onboardHandler(c echo.Context) error {
-	header := c.Request().Header.Get("Authorization")
-	err := e.validateToken(header)
-	if err != nil {
-		return c.String(400, "Invalid token")
-	}
-
 	e.Log.Info("Harvester connected")
 	return nil
 }
 
-func (e *Endpoints) validateToken(header string) error {
-	splitToken := strings.Split(header, "Bearer ")
-	if len(splitToken) != 2 {
-		return errors.New("invalid token")
-	}
-	token := splitToken[1]
-
+func (e *Endpoints) validateToken(token string) (bool, error) {
 	t, err := e.DataStore.FetchAccessToken(context.TODO(), token)
 	if err != nil {
 		e.Log.Errorf("Invalid Token: %s\n", token)
-		return err
+		return false, err
 	}
 
 	e.Log.Infof("Token valid for trust domain: %s\n", t.Member.TrustDomain)
 
-	return nil
+	return true, nil
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, err error) {
