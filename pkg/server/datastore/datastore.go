@@ -41,7 +41,7 @@ type Relationship struct {
 // TODO: use until an actual DataStore implementation is added.
 
 type MemStore struct {
-	members      map[string]*Member // trust_domainID (spiffe://...) -> member
+	members      map[string]*Member // trust_domain (e.g. 'example.org') -> member
 	relationship []*Relationship
 	tokens       map[string]*AccessToken // token uuid string -> access token
 
@@ -63,7 +63,7 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	m := &Member{
 		ID:          uuid.New(),
 		Name:        member.Name,
-		TrustDomain: member.TrustDomain.IDString(),
+		TrustDomain: member.TrustDomain.String(),
 	}
 
 	if _, exist := s.members[m.TrustDomain]; exist {
@@ -79,16 +79,16 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.members[rel.TrustDomainA.IDString()]; !ok {
+	if _, ok := s.members[rel.TrustDomainA.String()]; !ok {
 		return nil, fmt.Errorf("member not found for trust domain: %s", rel.TrustDomainA)
 	}
-	if _, ok := s.members[rel.TrustDomainB.IDString()]; !ok {
+	if _, ok := s.members[rel.TrustDomainB.String()]; !ok {
 		return nil, fmt.Errorf("member not found for trust domain: %s", rel.TrustDomainB)
 	}
 	r := &Relationship{
 		ID:      uuid.New(),
-		MemberA: s.members[rel.TrustDomainA.IDString()],
-		MemberB: s.members[rel.TrustDomainB.IDString()],
+		MemberA: s.members[rel.TrustDomainA.String()],
+		MemberB: s.members[rel.TrustDomainB.String()],
 	}
 
 	s.relationship = append(s.relationship, r)

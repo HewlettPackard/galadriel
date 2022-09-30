@@ -32,7 +32,7 @@ var createMemberCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Member created for trust domain: %s\n", td)
+		fmt.Printf("Member created for trust domain: %s\n", trustDomain.String())
 
 		return nil
 	},
