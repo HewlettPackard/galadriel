@@ -30,26 +30,27 @@ func New(config *Config) *Harvester {
 func (h *Harvester) Run(ctx context.Context) error {
 	h.config.Log.Info("Starting Harvester")
 
-	token := h.config.AccessToken
-	if token == "" {
+	if h.config.AccessToken == "" {
 		return errors.New("token is required to connect the Harvester to the Galadriel Server")
 	}
 
-	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress)
+	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.AccessToken)
 	if err != nil {
 		return err
 	}
 
-	err = galadrielClient.Connect(ctx, token)
+	err = galadrielClient.Connect(ctx, h.config.AccessToken)
 	if err != nil {
 		return err
 	}
 
 	config := &controller.Config{
-		ServerAddress:   h.config.ServerAddress,
-		SpireSocketPath: h.config.SpireAddress,
-		Log:             h.config.Log.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
-		Metrics:         h.config.metrics,
+		ServerAddress:         h.config.ServerAddress,
+		SpireSocketPath:       h.config.SpireAddress,
+		AccessToken:           h.config.AccessToken,
+		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
+		Log:                   h.config.Log.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
+		Metrics:               h.config.metrics,
 	}
 	c, err := controller.NewHarvesterController(ctx, config)
 	if err != nil {
