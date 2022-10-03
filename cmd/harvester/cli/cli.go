@@ -11,12 +11,12 @@ var (
 	RootCmd      = NewRootCmd()
 	cmdExecute   = RootCmd.Execute
 	HarvesterCmd = &HarvesterCLI{
-		log: logrus.WithField(telemetry.SubsystemName, telemetry.Harvester),
+		logger: logrus.WithField(telemetry.SubsystemName, telemetry.Harvester),
 	}
 )
 
 type HarvesterCLI struct {
-	log logrus.FieldLogger
+	logger logrus.FieldLogger
 }
 
 func NewRootCmd() *cobra.Command {

@@ -1,9 +1,10 @@
 package endpoints
 
 import (
+	"net"
+
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 // Config represents the configuration of the Galadriel Server Endpoints
@@ -17,5 +18,5 @@ type Config struct {
 	// Plugin catalog
 	Catalog catalog.Catalog
 
-	Log logrus.FieldLogger
+	Logger logrus.FieldLogger
 }

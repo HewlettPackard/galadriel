@@ -5,11 +5,11 @@ import (
 )
 
 type serverCLI struct {
-	log logrus.FieldLogger
+	logger logrus.FieldLogger
 }
 
 var ServerCLI = &serverCLI{
-	log: logrus.New(),
+	logger: logrus.New(),
 }
 
 func Run() int {

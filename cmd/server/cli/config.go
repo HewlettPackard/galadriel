@@ -61,7 +61,7 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 	}
 
 	sc.LocalAddress = socketAddr
-	sc.Log = logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServer)
+	sc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServer)
 
 	return sc, nil
 }

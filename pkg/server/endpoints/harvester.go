@@ -16,7 +16,7 @@ import (
 )
 
 func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
-	e.Log.Debug("Receiving post bundle request")
+	e.Logger.Debug("Receiving post bundle request")
 
 	token, ok := ctx.Get("token").(*common.AccessToken)
 	if !ok {
@@ -79,14 +79,14 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			e.handleTcpError(ctx, fmt.Sprintf("failed to update member: %v", err))
 			return err
 		}
-		e.Log.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
+		e.Logger.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
 	}
 
 	return nil
 }
 
 func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
-	e.Log.Debug("Receiving sync request")
+	e.Logger.Debug("Receiving sync request")
 
 	token, ok := ctx.Get("token").(*common.AccessToken)
 	if !ok {
@@ -196,9 +196,9 @@ func getCurrentFederatedBundleDigests(federatedMembers []*common.Member) common.
 }
 
 func (e *Endpoints) handleTcpError(ctx echo.Context, errMsg string) {
-	e.Log.Errorf(errMsg)
+	e.Logger.Errorf(errMsg)
 	_, err := ctx.Response().Write([]byte(errMsg))
 	if err != nil {
-		e.Log.Errorf("Failed to write error response: %v", err)
+		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
 }

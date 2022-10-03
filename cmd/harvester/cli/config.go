@@ -31,7 +31,6 @@ type harvesterConfig struct {
 // ParseConfig reads a configuration from the Reader and parses it
 // to a cli.Config object setting the defaults for the missing values.
 func ParseConfig(config io.Reader) (*Config, error) {
-
 	if config == nil {
 		return nil, errors.New("configuration is required")
 	}
@@ -46,7 +45,7 @@ func ParseConfig(config io.Reader) (*Config, error) {
 
 // NewHarvesterConfig creates a harvester.Config object from a cli.Config.
 func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
-	sc := &harvester.Config{}
+	hc := &harvester.Config{}
 
 	spireAddr, err := util.GetUnixAddrWithAbsPath(c.Harvester.SpireSocketPath)
 	if err != nil {
@@ -58,13 +57,13 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 		return nil, fmt.Errorf("failed to parse bundle updates interval: %v", err)
 	}
 
-	sc.SpireAddress = spireAddr
-	sc.ServerAddress = c.Harvester.ServerAddress
-	sc.BundleUpdatesInterval = buInt
+	hc.SpireAddress = spireAddr
+	hc.ServerAddress = c.Harvester.ServerAddress
+	hc.BundleUpdatesInterval = buInt
 
-	sc.Log = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
+	hc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
 
-	return sc, nil
+	return hc, nil
 }
 
 func newConfig(configBytes []byte) (*Config, error) {

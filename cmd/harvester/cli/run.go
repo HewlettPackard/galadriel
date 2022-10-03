@@ -34,7 +34,7 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			config.Log.Info("Harvester stopped gracefully")
+			config.Logger.Info("Harvester stopped gracefully")
 			return nil
 		},
 	}

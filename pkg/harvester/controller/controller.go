@@ -30,7 +30,7 @@ type Config struct {
 	SpireSocketPath       net.Addr
 	AccessToken           string
 	BundleUpdatesInterval time.Duration
-	Log                   logrus.FieldLogger
+	Logger                logrus.FieldLogger
 	Metrics               telemetry.MetricServer
 }
 

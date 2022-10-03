@@ -31,7 +31,7 @@ type Config struct {
 	// Directory to store runtime data
 	DataDir string
 
-	Log logrus.FieldLogger
+	Logger logrus.FieldLogger
 
 	metrics telemetry.MetricServer
 }

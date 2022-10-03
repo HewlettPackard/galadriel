@@ -24,7 +24,7 @@ type Endpoints struct {
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
 	DataStore  datastore.DataStore
-	Log        logrus.FieldLogger
+	Logger     logrus.FieldLogger
 }
 
 func New(c *Config) (*Endpoints, error) {
@@ -35,7 +35,7 @@ func New(c *Config) (*Endpoints, error) {
 		TCPAddress: c.TCPAddress,
 		LocalAddr:  c.LocalAddress,
 		DataStore:  c.Catalog.GetDataStore(),
-		Log:        c.Log,
+		Logger:     c.Logger,
 	}, nil
 }
 
@@ -53,6 +53,8 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server := echo.New()
+	server.HideBanner = true
+	server.HidePort = true
 
 	e.addTCPHandlers(server)
 
@@ -60,7 +62,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		return e.validateToken(c, key)
 	}))
 
-	e.Log.Info("Starting TCP Server")
+	e.Logger.Infof("Starting TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Start(e.TCPAddress.String())
@@ -69,13 +71,13 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	var err error
 	select {
 	case err = <-errChan:
-		e.Log.WithError(err).Error("TCP Server stopped prematurely")
+		e.Logger.WithError(err).Error("TCP Server stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Log.Info("Stopping TCP Server")
+		e.Logger.Info("Stopping TCP Server")
 		server.Close()
 		<-errChan
-		e.Log.Info("TCP Server stopped")
+		e.Logger.Info("TCP Server stopped")
 		return nil
 	}
 }
@@ -91,7 +93,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 	e.addHandlers()
 
-	e.Log.Info("Starting UDS Server")
+	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Serve(l)
@@ -99,13 +101,13 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Log.WithError(err).Error("Local Server stopped prematurely")
+		e.Logger.WithError(err).Error("Local Server stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Log.Info("Stopping UDS Server")
+		e.Logger.Info("Stopping UDS Server")
 		server.Close()
 		<-errChan
-		e.Log.Info("UDS Server stopped")
+		e.Logger.Info("UDS Server stopped")
 		return nil
 	}
 }
