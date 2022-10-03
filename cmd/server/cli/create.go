@@ -15,12 +15,16 @@ var createCmd = &cobra.Command{
 }
 
 var createMemberCmd = &cobra.Command{
-	Use:   "member <trust-domain>",
-	Args:  cobra.ExactArgs(1),
+	Use:   "member",
+	Args:  cobra.ExactArgs(0),
 	Short: "Creates a new member for the given trust domain.",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		td := args[0]
+		td, err := cmd.Flags().GetString("trustDomain")
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
 		trustDomain, err := spiffeid.TrustDomainFromString(td)
 		if err != nil {
 			return err
@@ -32,27 +36,34 @@ var createMemberCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Member created for trust domain: %s\n", trustDomain.String())
+		fmt.Printf("Member created for trust domain: %q\n", trustDomain.String())
 
 		return nil
 	},
 }
 
 var createRelationshipCmd = &cobra.Command{
-	Use:   "relationship <trust-domain-A> <trust-domain-B>",
-	Short: "Registers a new relationship.",
-	Args:  cobra.ExactArgs(2),
+	Use:   "relationship",
+	Short: "Registers a bidirectional federation relationship between two trust domains.",
+	Args:  cobra.ExactArgs(0),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
-		td1 := args[0]
+		td1, err := cmd.Flags().GetString("trustDomainA")
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
 		trustDomain1, err := spiffeid.TrustDomainFromString(td1)
 		if err != nil {
 			return err
 		}
 
-		td2 := args[1]
+		td2, err := cmd.Flags().GetString("trustDomainB")
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
 		trustDomain2, err := spiffeid.TrustDomainFromString(td2)
 		if err != nil {
 			return err
@@ -65,6 +76,7 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
+		fmt.Printf("Relationship created between trust domain %q and trust domain %q\n", trustDomain1.String(), trustDomain2.String())
 		return nil
 	},
 }
@@ -72,6 +84,11 @@ var createRelationshipCmd = &cobra.Command{
 func init() {
 	createCmd.AddCommand(createRelationshipCmd)
 	createCmd.AddCommand(createMemberCmd)
+
+	createMemberCmd.PersistentFlags().StringP("trustDomain", "t", "", "The trust domain represented by the member.")
+
+	createRelationshipCmd.PersistentFlags().StringP("trustDomainA", "a", "", "A trust domain to participate in a relationship.")
+	createRelationshipCmd.PersistentFlags().StringP("trustDomainB", "b", "", "A trust domain to participate in a relationship.")
 
 	RootCmd.AddCommand(createCmd)
 }

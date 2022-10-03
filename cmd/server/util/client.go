@@ -11,7 +11,6 @@ import (
 	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -100,13 +99,8 @@ func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 		return err
 	}
 
-	if len(b) == 0 {
-		return errors.New("error response from server when creating relationship")
-	}
-
-	var createdRelationship datastore.Relationship
-	if err = json.Unmarshal(b, &createdRelationship); err != nil {
-		return err
+	if r.StatusCode != 200 {
+		return errors.New(string(b))
 	}
 
 	return nil

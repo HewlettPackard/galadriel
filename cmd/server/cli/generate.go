@@ -13,13 +13,17 @@ var generateCmd = &cobra.Command{
 }
 
 var tokenCmd = &cobra.Command{
-	Use:   "token <trust-domain>",
-	Args:  cobra.ExactArgs(1),
+	Use:   "token",
+	Args:  cobra.ExactArgs(0),
 	Short: "Generates an access token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
-		td := args[0]
+		td, err := cmd.Flags().GetString("trustDomain")
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
 		trustDomain, err := spiffeid.TrustDomainFromString(td)
 		if err != nil {
 			return err
@@ -37,5 +41,6 @@ var tokenCmd = &cobra.Command{
 
 func init() {
 	generateCmd.AddCommand(tokenCmd)
+	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the access token is tie to.")
 	RootCmd.AddCommand(generateCmd)
 }

@@ -60,14 +60,14 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if _, exist := s.members[member.TrustDomain.String()]; exist {
+		return nil, fmt.Errorf("member already exists: %s", member.TrustDomain)
+	}
+
 	m := &Member{
 		ID:          uuid.New(),
 		Name:        member.Name,
 		TrustDomain: member.TrustDomain.String(),
-	}
-
-	if _, exist := s.members[m.TrustDomain]; exist {
-		return nil, fmt.Errorf("member already exists: %s", m.TrustDomain)
 	}
 
 	s.members[m.TrustDomain] = m
@@ -78,6 +78,10 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if rel.TrustDomainA.Compare(rel.TrustDomainB) == 0 {
+		return nil, fmt.Errorf("cannot create relationship: trust domain members are the same: %s", rel.TrustDomainA)
+	}
 
 	if _, ok := s.members[rel.TrustDomainA.String()]; !ok {
 		return nil, fmt.Errorf("member not found for trust domain: %s", rel.TrustDomainA)
