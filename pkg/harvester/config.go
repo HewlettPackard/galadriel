@@ -20,8 +20,8 @@ type Config struct {
 	// Address of SPIRE Server
 	SpireAddress net.Addr
 
-	// Join token to use for attestation
-	JoinToken string
+	// Access token for connecting to Galadriel Server
+	AccessToken string
 
 	// Directory to store runtime data
 	DataDir string

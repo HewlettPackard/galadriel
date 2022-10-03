@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type Relationship struct {
 	ID uuid.UUID
 
-	TrustDomainA string
-	TrustDomainB string
+	TrustDomainA spiffeid.TrustDomain
+	TrustDomainB spiffeid.TrustDomain
 }
 
 type AccessToken struct {
@@ -23,5 +24,5 @@ type Member struct {
 	ID uuid.UUID
 
 	Name        string
-	TrustDomain string
+	TrustDomain spiffeid.TrustDomain
 }
