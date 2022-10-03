@@ -50,21 +50,21 @@ var createRelationshipCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
-		td1, err := cmd.Flags().GetString("trustDomainA")
+		tdA, err := cmd.Flags().GetString("trustDomainA")
 		if err != nil {
-			return fmt.Errorf("cannot get trust domain flag: %v", err)
+			return fmt.Errorf("cannot get trust domain A flag: %v", err)
 		}
 
-		trustDomain1, err := spiffeid.TrustDomainFromString(td1)
+		trustDomain1, err := spiffeid.TrustDomainFromString(tdA)
 		if err != nil {
 			return err
 		}
 
-		td2, err := cmd.Flags().GetString("trustDomainB")
+		tdb, err := cmd.Flags().GetString("trustDomainB")
 		if err != nil {
-			return fmt.Errorf("cannot get trust domain flag: %v", err)
+			return fmt.Errorf("cannot get trust domain B flag: %v", err)
 		}
-		trustDomain2, err := spiffeid.TrustDomainFromString(td2)
+		trustDomain2, err := spiffeid.TrustDomainFromString(tdb)
 		if err != nil {
 			return err
 		}

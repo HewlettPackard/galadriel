@@ -41,6 +41,6 @@ var tokenCmd = &cobra.Command{
 
 func init() {
 	generateCmd.AddCommand(tokenCmd)
-	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the access token is tie to.")
+	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the access token is bound to.")
 	RootCmd.AddCommand(generateCmd)
 }
