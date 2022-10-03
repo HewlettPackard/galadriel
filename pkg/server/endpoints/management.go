@@ -54,6 +54,32 @@ func (e *Endpoints) createMemberHandler(w http.ResponseWriter, r *http.Request) 
 
 }
 
+func (e *Endpoints) listMembersHandler(w http.ResponseWriter, r *http.Request) {
+	ms, err := e.DataStore.ListMembers(context.TODO())
+	if err != nil {
+		errMsg := fmt.Sprintf("failed listing members: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+	e.Log.Println("Members: %d", len(ms))
+
+	membersBytes, err := json.Marshal(ms)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed marshalling members entities: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+	_, err = w.Write(membersBytes)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed writing response: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+}
+
 func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -86,6 +112,31 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	_, err = w.Write(relBytes)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed writing response: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+}
+
+func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Request) {
+	ms, err := e.DataStore.ListRelationships(context.TODO())
+	if err != nil {
+		errMsg := fmt.Sprintf("failed listing relationships: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+	relsBytes, err := json.Marshal(ms)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed marshalling relationships entities: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+	_, err = w.Write(relsBytes)
+	e.Log.Infof("rels len: %d", len(relsBytes))
+	e.Log.Info(string(relsBytes))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed writing response: %v", err)
 		e.handleError(w, errMsg)

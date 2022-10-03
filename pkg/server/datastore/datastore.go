@@ -9,11 +9,14 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/google/uuid"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
+	ListMembers(ctx context.Context) ([]*common.Member, error)
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
+	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
 	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
 	FetchAccessToken(ctx context.Context, token string) (*AccessToken, error)
 }
@@ -75,6 +78,22 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	return m, nil
 }
 
+func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var members []*common.Member
+	for _, m := range s.members {
+		members = append(members, &common.Member{
+			ID:          m.ID,
+			Name:        m.Name,
+			TrustDomain: spiffeid.RequireTrustDomainFromString(m.TrustDomain),
+		})
+	}
+
+	return members, nil
+}
+
 func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,6 +117,22 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.relationship = append(s.relationship, r)
 
 	return r, nil
+}
+
+func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationship, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var rels []*common.Relationship
+	for _, m := range s.relationship {
+		rels = append(rels, &common.Relationship{
+			ID:           m.ID,
+			TrustDomainA: spiffeid.RequireTrustDomainFromString(m.MemberA.TrustDomain),
+			TrustDomainB: spiffeid.RequireTrustDomainFromString(m.MemberB.TrustDomain),
+		})
+	}
+
+	return rels, nil
 }
 
 func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*AccessToken, error) {

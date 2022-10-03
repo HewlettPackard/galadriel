@@ -130,6 +130,14 @@ api-doc: api-doc-build
 		--mount type=bind,source=${DIR}/spec/api,target=/app/api,readonly \
 		galadriel-api-doc:latest
 
+run:
+	go run cmd/server/main.go run
+
+seed:
+	go run cmd/server/main.go create member -t one.org
+	go run cmd/server/main.go create member -t two.org
+	go run cmd/server/main.go create relationship -a one.org -b two.org
+
 ## Runs the go unit tests.
 test: test-unit
 
