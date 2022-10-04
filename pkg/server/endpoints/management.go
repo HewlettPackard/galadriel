@@ -62,8 +62,6 @@ func (e *Endpoints) listMembersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e.Log.Println("Members: %d", len(ms))
-
 	membersBytes, err := json.Marshal(ms)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed marshalling members entities: %v", err)
@@ -120,14 +118,14 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Request) {
-	ms, err := e.DataStore.ListRelationships(context.TODO())
+	rels, err := e.DataStore.ListRelationships(context.TODO())
 	if err != nil {
 		errMsg := fmt.Sprintf("failed listing relationships: %v", err)
 		e.handleError(w, errMsg)
 		return
 	}
 
-	relsBytes, err := json.Marshal(ms)
+	relsBytes, err := json.Marshal(rels)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed marshalling relationships entities: %v", err)
 		e.handleError(w, errMsg)

@@ -124,11 +124,11 @@ func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationshi
 	defer s.mu.RUnlock()
 
 	var rels []*common.Relationship
-	for _, m := range s.relationship {
+	for _, r := range s.relationship {
 		rels = append(rels, &common.Relationship{
-			ID:           m.ID,
-			TrustDomainA: spiffeid.RequireTrustDomainFromString(m.MemberA.TrustDomain),
-			TrustDomainB: spiffeid.RequireTrustDomainFromString(m.MemberB.TrustDomain),
+			ID:           r.ID,
+			TrustDomainA: spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
+			TrustDomainB: spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
 		})
 	}
 

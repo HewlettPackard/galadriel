@@ -40,7 +40,7 @@ var listMembersCmd = &cobra.Command{
 	},
 }
 
-var listRelationshipCmd = &cobra.Command{
+var listRelationshipsCmd = &cobra.Command{
 	Use:   "relationships",
 	Args:  cobra.ExactArgs(0),
 	Short: "Lists all the relationships.",
@@ -71,7 +71,7 @@ var listRelationshipCmd = &cobra.Command{
 
 func init() {
 	listCmd.AddCommand(listMembersCmd)
-	listCmd.AddCommand(listRelationshipCmd)
+	listCmd.AddCommand(listRelationshipsCmd)
 
 	RootCmd.AddCommand(listCmd)
 }
