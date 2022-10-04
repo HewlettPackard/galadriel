@@ -135,8 +135,6 @@ func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	_, err = w.Write(relsBytes)
-	e.Log.Infof("rels len: %d", len(relsBytes))
-	e.Log.Info(string(relsBytes))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed writing response: %v", err)
 		e.handleError(w, errMsg)

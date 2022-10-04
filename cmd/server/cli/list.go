@@ -52,7 +52,7 @@ var listRelationshipCmd = &cobra.Command{
 		}
 
 		if len(rels) == 0 {
-			fmt.Println("No relationshops found")
+			fmt.Println("No relationships found")
 			return nil
 		}
 
