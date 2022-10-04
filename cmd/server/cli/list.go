@@ -28,12 +28,10 @@ var listMembersCmd = &cobra.Command{
 			return nil
 		}
 
-		for i, m := range members {
+		for _, m := range members {
 			fmt.Printf("ID: %s\n", m.ID)
 			fmt.Printf("Trust Domain: %s\n", m.TrustDomain)
-			if i < len(members)-1 {
-				fmt.Println("---")
-			}
+			fmt.Println()
 		}
 
 		return nil
@@ -56,13 +54,11 @@ var listRelationshipsCmd = &cobra.Command{
 			return nil
 		}
 
-		for i, r := range rels {
+		for _, r := range rels {
 			fmt.Printf("ID: %s\n", r.ID)
 			fmt.Printf("Trust Domain A: %s\n", r.TrustDomainA.String())
 			fmt.Printf("Trust Domain B: %s\n", r.TrustDomainB.String())
-			if i < len(rels)-1 {
-				fmt.Println("---")
-			}
+			fmt.Println()
 		}
 
 		return nil

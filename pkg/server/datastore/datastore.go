@@ -84,10 +84,15 @@ func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
 
 	var members []*common.Member
 	for _, m := range s.members {
+		td, err := spiffeid.TrustDomainFromString(m.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+
 		members = append(members, &common.Member{
 			ID:          m.ID,
 			Name:        m.Name,
-			TrustDomain: spiffeid.RequireTrustDomainFromString(m.TrustDomain),
+			TrustDomain: td,
 		})
 	}
 
@@ -125,10 +130,19 @@ func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationshi
 
 	var rels []*common.Relationship
 	for _, r := range s.relationship {
+		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+		tdB, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+
 		rels = append(rels, &common.Relationship{
 			ID:           r.ID,
-			TrustDomainA: spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
-			TrustDomainB: spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
+			TrustDomainA: tdA,
+			TrustDomainB: tdB,
 		})
 	}
 
