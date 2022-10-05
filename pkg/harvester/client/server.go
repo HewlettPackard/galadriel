@@ -18,6 +18,7 @@ const (
 	contentType = "application/json"
 
 	postBundlePath = "/bundle"
+	onboardPath    = "/onboard"
 )
 
 // GaladrielServerClient represents a client to connect to Galadriel Server
@@ -37,14 +38,15 @@ type client struct {
 func NewGaladrielServerClient(address, token string) (GaladrielServerClient, error) {
 	return &client{
 		c:       *http.DefaultClient,
-		address: address,
+		address: "http://" + address,
 		token:   token,
 		logger:  logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
 	}, nil
 }
 
 func (c *client) Connect(ctx context.Context, token string) error {
-	req, err := http.NewRequestWithContext(ctx, "CONNECT", fmt.Sprintf("http://%s/onboard", c.address), nil)
+	url := c.address + onboardPath
+	req, err := http.NewRequestWithContext(ctx, http.MethodConnect, url, nil)
 	if err != nil {
 		return err
 	}

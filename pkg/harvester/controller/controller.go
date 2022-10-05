@@ -56,7 +56,7 @@ func (c *HarvesterController) Run(ctx context.Context) error {
 	go c.run(ctx)
 
 	<-ctx.Done()
-	c.logger.Debug("Triggering shutdown...")
+	c.logger.Debug("Shutting down...")
 
 	return nil
 }
@@ -77,8 +77,8 @@ func (c *HarvesterController) notifyBundleUpdates(ctx context.Context) error {
 	for {
 		select {
 		case <-t.C:
-			b, changed := c.bundleHasChanged(ctx, currentBundle)
-			if changed {
+			b, hasNew := c.hasNewBundle(ctx, currentBundle)
+			if hasNew {
 				c.logger.Info("Bundle has changed, pushing to Galadriel")
 
 				x509b, err := b.X509Bundle().Marshal()
@@ -103,7 +103,7 @@ func (c *HarvesterController) notifyBundleUpdates(ctx context.Context) error {
 	}
 }
 
-func (c *HarvesterController) bundleHasChanged(ctx context.Context, current *spiffebundle.Bundle) (*spiffebundle.Bundle, bool) {
+func (c *HarvesterController) hasNewBundle(ctx context.Context, current *spiffebundle.Bundle) (*spiffebundle.Bundle, bool) {
 	b, err := c.spire.GetBundle(ctx)
 	if err != nil {
 		c.logger.Errorf("failed to check bundle updates: %v", err)
