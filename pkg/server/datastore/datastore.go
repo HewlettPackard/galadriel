@@ -9,11 +9,14 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/google/uuid"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
+	ListMembers(ctx context.Context) ([]*common.Member, error)
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
+	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
 	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
 	FetchAccessToken(ctx context.Context, token string) (*AccessToken, error)
 }
@@ -75,6 +78,27 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	return m, nil
 }
 
+func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var members []*common.Member
+	for _, m := range s.members {
+		td, err := spiffeid.TrustDomainFromString(m.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+
+		members = append(members, &common.Member{
+			ID:          m.ID,
+			Name:        m.Name,
+			TrustDomain: td,
+		})
+	}
+
+	return members, nil
+}
+
 func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,6 +122,31 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	s.relationship = append(s.relationship, r)
 
 	return r, nil
+}
+
+func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationship, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var rels []*common.Relationship
+	for _, r := range s.relationship {
+		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+		tdB, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+
+		rels = append(rels, &common.Relationship{
+			ID:           r.ID,
+			TrustDomainA: tdA,
+			TrustDomainB: tdB,
+		})
+	}
+
+	return rels, nil
 }
 
 func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*AccessToken, error) {

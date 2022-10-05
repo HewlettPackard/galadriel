@@ -18,25 +18,24 @@ import (
 // the Host is required for the URL, but it's not relevant
 
 const (
-	localURL = "http://local/%s"
-
-	generateTokenPath      = "generateToken"
-	createMemberPath       = "createMember"
-	createRelationshipPath = "createRelationship"
-
+	localURL    = "http://local/%s"
 	contentType = "application/json"
 )
 
 var (
-	createMemberURL       = fmt.Sprintf(localURL, createMemberPath)
-	createRelationshipURL = fmt.Sprintf(localURL, createRelationshipPath)
-	generateTokenURL      = fmt.Sprintf(localURL, generateTokenPath)
+	createMemberURL       = fmt.Sprintf(localURL, "createMember")
+	listMembersURL        = fmt.Sprintf(localURL, "listMembers")
+	createRelationshipURL = fmt.Sprintf(localURL, "createRelationship")
+	listRelationshipsURL  = fmt.Sprintf(localURL, "listRelationships")
+	generateTokenURL      = fmt.Sprintf(localURL, "generateToken")
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
 	CreateMember(m *common.Member) error
+	ListMembers() ([]*common.Member, error)
 	CreateRelationship(r *common.Relationship) error
+	ListRelationships() ([]*common.Relationship, error)
 	GenerateAccessToken(trustDomain spiffeid.TrustDomain) (*common.AccessToken, error)
 }
 
@@ -82,6 +81,30 @@ func (c serverClient) CreateMember(m *common.Member) error {
 	return nil
 }
 
+func (c serverClient) ListMembers() ([]*common.Member, error) {
+	r, err := c.client.Get(listMembersURL)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.StatusCode != 200 {
+		return nil, errors.New(string(b))
+	}
+
+	var members []*common.Member
+	if err = json.Unmarshal(b, &members); err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
 func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
@@ -104,6 +127,31 @@ func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 	}
 
 	return nil
+}
+
+func (c serverClient) ListRelationships() ([]*common.Relationship, error) {
+	r, err := c.client.Get(listRelationshipsURL)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	b, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if r.StatusCode != 200 {
+		return nil, errors.New(string(b))
+	}
+
+	var rels []*common.Relationship
+	if err = json.Unmarshal(b, &rels); err != nil {
+		return nil, err
+	}
+
+	return rels, nil
 }
 
 func (c serverClient) GenerateAccessToken(td spiffeid.TrustDomain) (*common.AccessToken, error) {

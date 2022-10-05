@@ -114,7 +114,9 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 func (e *Endpoints) addHandlers() {
 	http.HandleFunc("/createMember", e.createMemberHandler)
+	http.HandleFunc("/listMembers", e.listMembersHandler)
 	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
+	http.HandleFunc("/listRelationships", e.listRelationshipsHandler)
 	http.HandleFunc("/generateToken", e.generateTokenHandler)
 }
 
