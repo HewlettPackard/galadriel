@@ -1,9 +1,11 @@
 package harvester
 
 import (
+	"net"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 // Config conveys configurations for the Harvester.
@@ -22,6 +24,9 @@ type Config struct {
 
 	// Access token for connecting to Galadriel Server
 	AccessToken string
+
+	// How often to check for bundle rotation
+	BundleUpdatesInterval time.Duration
 
 	// Directory to store runtime data
 	DataDir string
