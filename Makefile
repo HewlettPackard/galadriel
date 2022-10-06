@@ -1,3 +1,5 @@
+-include Makefile-poc.mk
+
 DIR := ${CURDIR}
 
 .DEFAULT_GOAL = help

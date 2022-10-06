@@ -14,11 +14,16 @@ import (
 
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
+	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*Member, error)
+	GetMember(ctx context.Context, trustDomain string) (*Member, error)
 	ListMembers(ctx context.Context) ([]*common.Member, error)
+
 	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
-	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
+	GetRelationships(ctx context.Context, trustDomain string) ([]*Relationship, error)
+
 	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
-	FetchAccessToken(ctx context.Context, token string) (*AccessToken, error)
+	GetAccessToken(ctx context.Context, token string) (*AccessToken, error)
+	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
 }
 
 type AccessToken struct {
@@ -30,8 +35,10 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name        string
-	TrustDomain string
+	Name            string
+	TrustDomain     string
+	TrustBundle     []byte
+	TrustBundleHash []byte
 }
 
 type Relationship struct {
@@ -74,6 +81,41 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	}
 
 	s.members[m.TrustDomain] = m
+
+	return m, nil
+}
+
+func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *common.Member) (*Member, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if member == nil {
+		return nil, errors.New("query object cannot be nil")
+	}
+
+	if _, ok := s.members[trustDomain]; !ok {
+		return nil, errors.New("failed updating member: member not found")
+	}
+
+	if len(member.TrustBundle) != 0 {
+		s.members[trustDomain].TrustBundle = member.TrustBundle
+	}
+
+	if member.TrustBundleHash != nil {
+		s.members[trustDomain].TrustBundleHash = member.TrustBundleHash
+	}
+
+	return s.members[trustDomain], nil
+}
+
+func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*Member, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	m, ok := s.members[trustDomain]
+	if !ok {
+		return nil, errors.New("failed getting member: member not found")
+	}
 
 	return m, nil
 }
@@ -124,6 +166,34 @@ func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationshi
 	return r, nil
 }
 
+func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*Relationship, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var response []*Relationship
+
+	for _, r := range s.relationship {
+		if r.MemberA.TrustDomain == trustDomain || r.MemberB.TrustDomain == trustDomain {
+
+			memberA, ok := s.members[r.MemberA.TrustDomain]
+			if !ok {
+				return nil, errors.New("failed getting relationship: memberA not found")
+			}
+			memberB, ok := s.members[r.MemberB.TrustDomain]
+			if !ok {
+				return nil, errors.New("failed getting relationship: memberB not found")
+			}
+
+			response = append(response, &Relationship{
+				ID:      r.ID,
+				MemberA: memberA,
+				MemberB: memberB,
+			})
+		}
+	}
+
+	return response, nil
+}
+
 func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationship, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -169,9 +239,9 @@ func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessTo
 	return at, nil
 }
 
-func (s *MemStore) FetchAccessToken(_ context.Context, token string) (*AccessToken, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *MemStore) GetAccessToken(_ context.Context, token string) (*AccessToken, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	at, ok := s.tokens[token]
 	if !ok {

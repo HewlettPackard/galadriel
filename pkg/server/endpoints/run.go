@@ -122,4 +122,6 @@ func (e *Endpoints) addHandlers() {
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 	server.CONNECT("/onboard", e.onboardHandler)
+	server.POST("/bundle", e.postBundleHandler)
+	server.POST("/bundle/sync", e.syncBundleHandler)
 }

@@ -191,13 +191,13 @@ func (e *Endpoints) onboardHandler(c echo.Context) error {
 }
 
 func (e *Endpoints) validateToken(token string) (bool, error) {
-	t, err := e.DataStore.FetchAccessToken(context.TODO(), token)
+	t, err := e.DataStore.GetAccessToken(context.TODO(), token)
 	if err != nil {
 		e.Log.Errorf("Invalid Token: %s\n", token)
 		return false, err
 	}
 
-	e.Log.Infof("Token valid for trust domain: %s\n", t.Member.TrustDomain)
+	e.Log.Debugf("Token valid for trust domain: %s\n", t.Member.TrustDomain)
 
 	return true, nil
 }

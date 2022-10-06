@@ -1,0 +1,13 @@
+{
+  "federates_with": {
+    "td1": {
+      "trust_bundle_hash": "Zm9v",
+      "trust_domain": "td1"
+    },
+
+    "td3": {
+      "trust_bundle_hash": "Zm9v",
+      "trust_domain": "td1"
+    }
+  }
+}
