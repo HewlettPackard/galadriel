@@ -14,15 +14,15 @@ import (
 
 type DataStore interface {
 	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
-	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*Member, error)
-	GetMember(ctx context.Context, trustDomain string) (*Member, error)
+	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*common.Member, error)
+	GetMember(ctx context.Context, trustDomain string) (*common.Member, error)
 	ListMembers(ctx context.Context) ([]*common.Member, error)
 
-	CreateRelationship(ctx context.Context, r *common.Relationship) (*Relationship, error)
-	GetRelationships(ctx context.Context, trustDomain string) ([]*Relationship, error)
+	CreateRelationship(ctx context.Context, r *common.Relationship) (*common.Relationship, error)
+	GetRelationships(ctx context.Context, trustDomain string) ([]*common.Relationship, error)
 
-	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*AccessToken, error)
-	GetAccessToken(ctx context.Context, token string) (*AccessToken, error)
+	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*common.AccessToken, error)
+	GetAccessToken(ctx context.Context, token string) (*common.AccessToken, error)
 	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
 }
 
@@ -85,16 +85,16 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	return m, nil
 }
 
-func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *common.Member) (*Member, error) {
+func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *common.Member) (*common.Member, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if member == nil {
-		return nil, errors.New("query object cannot be nil")
+		return nil, errors.New("failed to updated member: no member data given")
 	}
 
 	if _, ok := s.members[trustDomain]; !ok {
-		return nil, errors.New("failed updating member: member not found")
+		return nil, errors.New("failed updating member: trust domain not found: " + trustDomain)
 	}
 
 	if len(member.TrustBundle) != 0 {
@@ -105,19 +105,31 @@ func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *c
 		s.members[trustDomain].TrustBundleHash = member.TrustBundleHash
 	}
 
-	return s.members[trustDomain], nil
+	return &common.Member{
+		ID:              member.ID,
+		Name:            member.Name,
+		TrustDomain:     member.TrustDomain,
+		TrustBundle:     member.TrustBundle,
+		TrustBundleHash: member.TrustBundleHash,
+	}, nil
 }
 
-func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*Member, error) {
+func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*common.Member, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	m, ok := s.members[trustDomain]
 	if !ok {
-		return nil, errors.New("failed getting member: member not found")
+		return nil, errors.New("failed getting member: trust domain not found: " + trustDomain)
 	}
 
-	return m, nil
+	return &common.Member{
+		ID:              m.ID,
+		Name:            m.Name,
+		TrustDomain:     spiffeid.RequireTrustDomainFromString(m.TrustDomain),
+		TrustBundle:     m.TrustBundle,
+		TrustBundleHash: m.TrustBundleHash,
+	}, nil
 }
 
 func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
@@ -141,52 +153,65 @@ func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
 	return members, nil
 }
 
-func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*Relationship, error) {
+func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*common.Relationship, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if rel.TrustDomainA.Compare(rel.TrustDomainB) == 0 {
-		return nil, fmt.Errorf("cannot create relationship: trust domain members are the same: %s", rel.TrustDomainA)
+	if rel.MemberA.TrustDomain.Compare(rel.MemberB.TrustDomain) == 0 {
+		return nil, fmt.Errorf("cannot create relationship: trust domain members are the same: %s", rel.MemberA.TrustDomain)
 	}
 
-	if _, ok := s.members[rel.TrustDomainA.String()]; !ok {
-		return nil, fmt.Errorf("member not found for trust domain: %s", rel.TrustDomainA)
+	if _, ok := s.members[rel.MemberA.TrustDomain.String()]; !ok {
+		return nil, fmt.Errorf("member not found for trust domain: %s", rel.MemberA.TrustDomain)
 	}
-	if _, ok := s.members[rel.TrustDomainB.String()]; !ok {
-		return nil, fmt.Errorf("member not found for trust domain: %s", rel.TrustDomainB)
+	if _, ok := s.members[rel.MemberB.TrustDomain.String()]; !ok {
+		return nil, fmt.Errorf("member not found for trust domain: %s", rel.MemberB.TrustDomain)
 	}
 	r := &Relationship{
 		ID:      uuid.New(),
-		MemberA: s.members[rel.TrustDomainA.String()],
-		MemberB: s.members[rel.TrustDomainB.String()],
+		MemberA: s.members[rel.MemberA.TrustDomain.String()],
+		MemberB: s.members[rel.MemberB.TrustDomain.String()],
 	}
 
 	s.relationship = append(s.relationship, r)
 
-	return r, nil
+	rel.ID = r.ID
+	return rel, nil
 }
 
-func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*Relationship, error) {
+func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*common.Relationship, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	var response []*Relationship
+	var response []*common.Relationship
 
 	for _, r := range s.relationship {
 		if r.MemberA.TrustDomain == trustDomain || r.MemberB.TrustDomain == trustDomain {
 
-			memberA, ok := s.members[r.MemberA.TrustDomain]
+			_, ok := s.members[r.MemberA.TrustDomain]
 			if !ok {
 				return nil, errors.New("failed getting relationship: memberA not found")
 			}
-			memberB, ok := s.members[r.MemberB.TrustDomain]
+			_, ok = s.members[r.MemberB.TrustDomain]
 			if !ok {
 				return nil, errors.New("failed getting relationship: memberB not found")
 			}
 
-			response = append(response, &Relationship{
-				ID:      r.ID,
-				MemberA: memberA,
-				MemberB: memberB,
+			response = append(response, &common.Relationship{
+				ID: r.ID,
+				MemberA: &common.Member{
+					ID:              r.MemberA.ID,
+					Name:            r.MemberA.Name,
+					TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
+					TrustBundle:     r.MemberA.TrustBundle,
+					TrustBundleHash: r.MemberA.TrustBundleHash,
+				},
+				MemberB: &common.Member{
+					ID:              r.MemberB.ID,
+					Name:            r.MemberB.Name,
+					TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
+					TrustBundle:     r.MemberB.TrustBundle,
+					TrustBundleHash: r.MemberB.TrustBundleHash,
+				},
 			})
 		}
 	}
@@ -200,26 +225,29 @@ func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationshi
 
 	var rels []*common.Relationship
 	for _, r := range s.relationship {
-		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-
 		rels = append(rels, &common.Relationship{
-			ID:           r.ID,
-			TrustDomainA: tdA,
-			TrustDomainB: tdB,
+			ID: r.ID,
+			MemberA: &common.Member{
+				ID:              r.MemberA.ID,
+				Name:            r.MemberA.Name,
+				TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
+				TrustBundle:     r.MemberA.TrustBundle,
+				TrustBundleHash: r.MemberA.TrustBundleHash,
+			},
+			MemberB: &common.Member{
+				ID:              r.MemberB.ID,
+				Name:            r.MemberB.Name,
+				TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
+				TrustBundle:     r.MemberB.TrustBundle,
+				TrustBundleHash: r.MemberB.TrustBundleHash,
+			},
 		})
 	}
 
 	return rels, nil
 }
 
-func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*AccessToken, error) {
+func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*common.AccessToken, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -236,10 +264,11 @@ func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessTo
 
 	s.tokens[at.Token] = at
 
-	return at, nil
+	token.MemberID = member.ID
+	return token, nil
 }
 
-func (s *MemStore) GetAccessToken(_ context.Context, token string) (*AccessToken, error) {
+func (s *MemStore) GetAccessToken(_ context.Context, token string) (*common.AccessToken, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -247,5 +276,10 @@ func (s *MemStore) GetAccessToken(_ context.Context, token string) (*AccessToken
 	if !ok {
 		return nil, errors.New("failed to find token")
 	}
-	return at, nil
+	return &common.AccessToken{
+		MemberID:    at.Member.ID,
+		TrustDomain: at.Member.TrustDomain,
+		Token:       at.Token,
+		Expiry:      at.Expiry,
+	}, nil
 }

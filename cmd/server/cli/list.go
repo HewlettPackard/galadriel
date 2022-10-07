@@ -56,8 +56,8 @@ var listRelationshipsCmd = &cobra.Command{
 
 		for _, r := range rels {
 			fmt.Printf("ID: %s\n", r.ID)
-			fmt.Printf("Trust Domain A: %s\n", r.TrustDomainA.String())
-			fmt.Printf("Trust Domain B: %s\n", r.TrustDomainB.String())
+			fmt.Printf("Trust Domain A: %s\n", r.MemberA.TrustDomain.String())
+			fmt.Printf("Trust Domain B: %s\n", r.MemberB.TrustDomain.String())
 			fmt.Println()
 		}
 

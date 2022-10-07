@@ -7,16 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"io"
 )
 
 func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
-	logger := ctx.Logger()
-	logger.Debug("Receiving sync request")
+	e.Log.Debug("Receiving sync request")
 
-	token, ok := ctx.Get("token").(*datastore.AccessToken)
+	token, ok := ctx.Get("token").(*common.AccessToken)
 	if !ok {
 		err := errors.New("error asserting user token")
 		e.handleTcpError(ctx, err.Error())
@@ -36,14 +34,14 @@ func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
 		return err
 	}
 
-	_, foundSelf := receivedHarvesterState.FederatesWith[token.Member.TrustDomain]
+	_, foundSelf := receivedHarvesterState.FederatesWith[token.TrustDomain]
 	if foundSelf {
 		e.handleTcpError(ctx, "bad request: harvester cannot federate with itself")
 		return err
 	}
 
 	// get relationships for that member
-	relationships, err := e.DataStore.GetRelationships(context.TODO(), token.Member.TrustDomain)
+	relationships, err := e.DataStore.GetRelationships(context.TODO(), token.TrustDomain)
 	if err != nil {
 		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
 		return err
@@ -51,14 +49,14 @@ func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
 
 	response := common.SyncBundleResponse{}
 
-	currentState, err := e.calculateBundleState(relationships, token.Member.TrustDomain)
+	currentState, err := e.calculateBundleState(relationships, token.TrustDomain)
 	if err != nil {
 		e.handleTcpError(ctx, fmt.Sprintf("failed calculating bundle state: %v", err))
 		return err
 	}
 
 	response.State = currentState
-	response.Update = e.calculateBundleSync(receivedHarvesterState.FederatesWith, relationships, token.Member)
+	response.Update = e.calculateBundleSync(receivedHarvesterState.FederatesWith, relationships, token.TrustDomain)
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
@@ -76,10 +74,9 @@ func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
 }
 
 func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
-	logger := ctx.Logger()
-	logger.Debug("Receiving post bundle request")
+	e.Log.Debug("Receiving post bundle request")
 
-	token, ok := ctx.Get("token").(*datastore.AccessToken)
+	token, ok := ctx.Get("token").(*common.AccessToken)
 	if !ok {
 		err := errors.New("error asserting user token")
 		e.handleTcpError(ctx, err.Error())
@@ -101,15 +98,15 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	receivedHarvesterState.TrustBundleHash = calculateBundleHash(receivedHarvesterState.TrustBundle)
 
 	// fetch harvester state from db
-	currentState, err := e.DataStore.GetMember(context.TODO(), token.Member.TrustDomain)
+	currentState, err := e.DataStore.GetMember(context.TODO(), token.TrustDomain)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch member: %v", err))
+		e.handleTcpError(ctx, err.Error())
 		return err
 	}
 
 	// update internal state
 	if !bytes.Equal(receivedHarvesterState.TrustBundleHash, currentState.TrustBundleHash) {
-		_, err := e.DataStore.UpdateMember(context.TODO(), token.Member.TrustDomain, &common.Member{
+		_, err := e.DataStore.UpdateMember(context.TODO(), token.TrustDomain, &common.Member{
 			TrustBundle:     receivedHarvesterState.TrustBundle,
 			TrustBundleHash: receivedHarvesterState.TrustBundleHash,
 		})
@@ -117,7 +114,7 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			e.handleTcpError(ctx, fmt.Sprintf("failed to update member: %v", err))
 			return err
 		}
-		logger.Infof("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
+		e.Log.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
 	}
 
 	return nil
@@ -126,35 +123,37 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 // calculateBundleSync iterates over all relationships in db, and for each, it calls findOutdatedRelationship.
 // Calls to findOutdatedRelationship will return if the currently iterated relationship was found or not, and also
 // if it's outdated or not. This way we can know if we need to append an update request, either due to the relationship
-// not being found, or by holding an outdated relationship state.
+// not being found, or by finding an outdated relationship state.
 func (e *Endpoints) calculateBundleSync(
 	received common.FederationState,
-	current []*datastore.Relationship,
-	callingMember *datastore.Member) common.FederationState {
+	current []*common.Relationship,
+	callerTD string) common.FederationState {
 	response := make(common.FederationState)
 
 	// calculate hashes for received bundles
 	received = calculateBundleHashes(received)
 
 	for _, r := range current {
-		update, found := findOutdatedRelationship(r, received, callingMember)
+		update, found := e.findOutdatedRelationship(r, received, callerTD)
 		if found && update != nil {
 			response[update.TrustDomain] = *update
 			continue
 		}
 
-		if r.MemberA.TrustDomain != callingMember.TrustDomain && r.MemberA.TrustBundle != nil {
-			response[r.MemberA.TrustDomain] = common.MemberState{
-				TrustDomain: r.MemberB.TrustDomain,
+		// trust bundle could be nil in case we didn't receive one yet.
+		if r.MemberA.TrustDomain.String() != callerTD && r.MemberA.TrustBundle != nil {
+			response[r.MemberA.TrustDomain.String()] = common.MemberState{
+				TrustDomain: r.MemberB.TrustDomain.String(),
 				TrustBundle: r.MemberB.TrustBundle,
 			}
 		} else if r.MemberB.TrustBundle != nil {
-			response[r.MemberB.TrustDomain] = common.MemberState{
-				TrustDomain: r.MemberB.TrustDomain,
+			response[r.MemberB.TrustDomain.String()] = common.MemberState{
+				TrustDomain: r.MemberB.TrustDomain.String(),
 				TrustBundle: r.MemberB.TrustBundle,
 			}
 		}
 	}
+
 	return response
 }
 
@@ -162,32 +161,33 @@ func (e *Endpoints) calculateBundleSync(
 // If we find a match, we validate it's state and return the updated version.
 // A (nil, false) response means no update is needed, but creation is needed since we did not find it.
 // A (non-nil, true) response means we found a match, but its outdated, so update it with the returned MemberState.
-func findOutdatedRelationship(
-	r *datastore.Relationship,
+func (e *Endpoints) findOutdatedRelationship(
+	r *common.Relationship,
 	received common.FederationState,
-	callingMember *datastore.Member) (*common.MemberState, bool) {
-	if r.MemberA.TrustDomain != callingMember.TrustDomain {
-		member, ok := received[r.MemberA.TrustDomain]
+	callerTD string) (*common.MemberState, bool) {
+	if r.MemberA.TrustDomain.String() != callerTD {
+		member, ok := received[r.MemberA.TrustDomain.String()]
 		if !ok {
 			return nil, false
 		}
 
 		if !bytes.Equal(r.MemberA.TrustBundleHash, member.TrustBundleHash) {
 			return &common.MemberState{
-				TrustDomain: r.MemberA.TrustDomain,
+				TrustDomain: r.MemberA.TrustDomain.String(),
 				TrustBundle: r.MemberA.TrustBundle,
 			}, true
 		}
+
 		return nil, true
 	}
 
-	member, ok := received[r.MemberB.TrustDomain]
+	member, ok := received[r.MemberB.TrustDomain.String()]
 	if !ok {
 		return nil, false
 	}
 	if !bytes.Equal(r.MemberB.TrustBundleHash, member.TrustBundleHash) {
 		return &common.MemberState{
-			TrustDomain: r.MemberB.TrustDomain,
+			TrustDomain: r.MemberB.TrustDomain.String(),
 			TrustBundle: r.MemberB.TrustBundle,
 		}, true
 	}
@@ -196,21 +196,21 @@ func findOutdatedRelationship(
 }
 
 func (e *Endpoints) calculateBundleState(
-	relationships []*datastore.Relationship,
+	relationships []*common.Relationship,
 	receivedTD string) (common.FederationState, error) {
 	response := make(common.FederationState, len(relationships))
 
 	for _, r := range relationships {
-		if r.MemberA.TrustDomain != receivedTD {
-			response[r.MemberA.TrustDomain] = common.MemberState{
-				TrustDomain:     r.MemberA.TrustDomain,
+		if r.MemberA.TrustDomain.String() != receivedTD {
+			response[r.MemberA.TrustDomain.String()] = common.MemberState{
+				TrustDomain:     r.MemberA.TrustDomain.String(),
 				TrustBundle:     r.MemberA.TrustBundle,
 				TrustBundleHash: r.MemberA.TrustBundleHash,
 			}
 		}
-		if r.MemberB.TrustDomain != receivedTD {
-			response[r.MemberB.TrustDomain] = common.MemberState{
-				TrustDomain:     r.MemberB.TrustDomain,
+		if r.MemberB.TrustDomain.String() != receivedTD {
+			response[r.MemberB.TrustDomain.String()] = common.MemberState{
+				TrustDomain:     r.MemberB.TrustDomain.String(),
 				TrustBundle:     r.MemberB.TrustBundle,
 				TrustBundleHash: r.MemberB.TrustBundleHash,
 			}

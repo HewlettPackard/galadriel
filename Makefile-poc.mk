@@ -22,4 +22,4 @@ test-post:
 	curl 127.0.0.1:8085/bundle \
 		-X "POST" \
 		-H "Authorization: Bearer $$token" \
-		-d "@dev/request_data/bundle_post.json" | jq
+		-d "@dev/request_data/bundle_post.json"

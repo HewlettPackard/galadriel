@@ -6,8 +6,9 @@ type FederationState map[string]MemberState
 // MemberState is the minimum necessary to define a member state.
 // All returned MemberState's implicitly federate with the calling Harvester.
 type MemberState struct {
-	TrustDomain     string `json:"trust_domain"`
-	TrustBundle     []byte `json:"trust_bundle"`
+	TrustDomain string `json:"trust_domain"`
+	TrustBundle []byte `json:"trust_bundle"`
+	// TrustBundleHash is calculated internally.
 	TrustBundleHash []byte
 }
 

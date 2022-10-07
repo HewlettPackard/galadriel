@@ -70,8 +70,8 @@ var createRelationshipCmd = &cobra.Command{
 		}
 
 		if err := c.CreateRelationship(&common.Relationship{
-			TrustDomainA: trustDomain1,
-			TrustDomainB: trustDomain2,
+			MemberA: &common.Member{TrustDomain: trustDomain1},
+			MemberB: &common.Member{TrustDomain: trustDomain2},
 		}); err != nil {
 			return err
 		}
