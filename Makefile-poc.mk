@@ -7,18 +7,18 @@ create-relationship:
 .PHONY: create-relationship
 
 run-harvester: create-relationship
-	token=`./bin/galadriel-server generate token -t td2 | ggrep -Po "(?<=Access Token:\s).*"`; \
+	token=`./bin/galadriel-server generate token -t td2 | grep -Po "(?<=Access Token:\s).*"`; \
 	./bin/galadriel-harvester run -t $$token
 
 test-sync:
-	token=`./bin/galadriel-server generate token -t td1 | ggrep -Po "(?<=Access Token:\s).*"`; \
+	token=`./bin/galadriel-server generate token -t td1 | grep -Po "(?<=Access Token:\s).*"`; \
 	curl 127.0.0.1:8085/bundle/sync \
 		-X "POST" \
 		-H "Authorization: Bearer $$token" \
-		-d "@dev/request_data/outdated_bundle_sync.json" | jq
+		-d "@dev/request_data/bundle_sync.json" | jq
 
 test-post:
-	token=`./bin/galadriel-server generate token -t td2 | ggrep -Po "(?<=Access Token:\s).*"`; \
+	token=`./bin/galadriel-server generate token -t td2 | grep -Po "(?<=Access Token:\s).*"`; \
 	curl 127.0.0.1:8085/bundle \
 		-X "POST" \
 		-H "Authorization: Bearer $$token" \

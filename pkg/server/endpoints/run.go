@@ -59,7 +59,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	e.addTCPHandlers(server)
 
 	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		return e.validateToken(key)
+		return e.validateToken(c, key)
 	}))
 
 	e.Log.Info("Starting TCP Server")

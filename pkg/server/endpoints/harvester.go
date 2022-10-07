@@ -4,22 +4,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"io"
-	"strings"
 )
 
 func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
 	logger := ctx.Logger()
 	logger.Debug("Receiving sync request")
 
-	tokenHeader := ctx.Request().Header["Authorization"]
-	token, err := e.DataStore.GetAccessToken(context.TODO(), strings.Split(tokenHeader[0], "Bearer ")[1])
-	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("error fetching token: %v", err))
+	token, ok := ctx.Get("token").(*datastore.AccessToken)
+	if !ok {
+		err := errors.New("error asserting user token")
+		e.handleTcpError(ctx, err.Error())
 		return err
 	}
 
@@ -79,10 +79,10 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	logger := ctx.Logger()
 	logger.Debug("Receiving post bundle request")
 
-	tokenHeader := ctx.Request().Header["Authorization"]
-	token, err := e.DataStore.GetAccessToken(context.TODO(), strings.Split(tokenHeader[0], "Bearer ")[1])
-	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("error fetching token: %v", err))
+	token, ok := ctx.Get("token").(*datastore.AccessToken)
+	if !ok {
+		err := errors.New("error asserting user token")
+		e.handleTcpError(ctx, err.Error())
 		return err
 	}
 
@@ -133,6 +133,9 @@ func (e *Endpoints) calculateBundleSync(
 	callingMember *datastore.Member) common.FederationState {
 	response := make(common.FederationState)
 
+	// calculate hashes for received bundles
+	received = calculateBundleHashes(received)
+
 	for _, r := range current {
 		update, found := findOutdatedRelationship(r, received, callingMember)
 		if found && update != nil {
@@ -168,6 +171,7 @@ func findOutdatedRelationship(
 		if !ok {
 			return nil, false
 		}
+
 		if !bytes.Equal(r.MemberA.TrustBundleHash, member.TrustBundleHash) {
 			return &common.MemberState{
 				TrustDomain: r.MemberA.TrustDomain,
@@ -222,6 +226,15 @@ func (e *Endpoints) handleTcpError(ctx echo.Context, errMsg string) {
 	if err != nil {
 		e.Log.Errorf("Failed to write error response: %v", err)
 	}
+}
+
+func calculateBundleHashes(received common.FederationState) common.FederationState {
+	for td, m := range received {
+		m.TrustBundleHash = calculateBundleHash(m.TrustBundle)
+		received[td] = m
+	}
+
+	return received
 }
 
 func calculateBundleHash(bundle []byte) []byte {
