@@ -5,12 +5,19 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	// owner has full access over the path, others can read and list
+	udsDirPermissions = 0755
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -85,9 +92,14 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	server := &http.Server{}
 
+	udsDir := filepath.Dir(e.LocalAddr.String())
+	if err := os.MkdirAll(udsDir, udsDirPermissions); err != nil {
+		return fmt.Errorf("failed to create local UDS directory %s: %v", udsDir, err)
+	}
+
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
 	if err != nil {
-		return fmt.Errorf("error listening on uds: %w", err)
+		return fmt.Errorf("error listening on UDS: %w", err)
 	}
 	defer l.Close()
 
