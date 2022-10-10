@@ -17,6 +17,7 @@ import (
 type SpireServer interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
 	SetFederatedBundles(context.Context, []*spiffebundle.Bundle) ([]*BatchSetFederatedBundleStatus, error)
+	GetFederatedBundles(context.Context) (*ListFederatedBundlesResponse, error)
 }
 
 type localSpireServer struct {
@@ -55,7 +56,17 @@ func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle,
 	return bundle, nil
 }
 
-// SetFederatedBundles adds or updates a set of federated bundles on a SPIRE Server
+// GetFederatedBundles lists all the external SPIFFE bundles the SPIRE Server knows about
+func (s *localSpireServer) GetFederatedBundles(ctx context.Context) (*ListFederatedBundlesResponse, error) {
+	bundles, err := s.client.ListFederatedBundles(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return bundles, nil
+}
+
+// SetFederatedBundles adds or updates a set of federated SPIFFE bundles on the SPIRE Server
 func (s *localSpireServer) SetFederatedBundles(ctx context.Context, bundles []*spiffebundle.Bundle) ([]*BatchSetFederatedBundleStatus, error) {
 	res, err := s.client.BatchSetFederatedBundle(ctx, bundles)
 	if err != nil {

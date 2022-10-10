@@ -6,13 +6,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/controller/watcher"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 	"github.com/sirupsen/logrus"
-	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 )
 
 // HarvesterController represents the component responsible for handling
@@ -62,60 +61,13 @@ func (c *HarvesterController) Run(ctx context.Context) error {
 }
 
 func (c *HarvesterController) run(ctx context.Context) {
-	err := util.RunTasks(ctx, []func(context.Context) error{
-		c.notifyBundleUpdates,
-	})
+	federatedBundlesInterval := time.Second * 10
+
+	err := util.RunTasks(ctx,
+		watcher.BuildSelfBundleWatcher(c.config.BundleUpdatesInterval, c.server, c.spire),
+		watcher.BuildFederatedBundlesWatcher(federatedBundlesInterval, c.server, c.spire),
+	)
 	if err != nil && !errors.Is(err, context.Canceled) {
 		c.logger.Error(err)
 	}
-}
-
-func (c *HarvesterController) notifyBundleUpdates(ctx context.Context) error {
-	t := time.NewTicker(c.config.BundleUpdatesInterval)
-	var currentBundle *spiffebundle.Bundle
-
-	for {
-		select {
-		case <-t.C:
-			b, hasNew := c.hasNewBundle(ctx, currentBundle)
-			if hasNew {
-				c.logger.Info("Bundle has changed, pushing to Galadriel")
-
-				x509b, err := b.X509Bundle().Marshal()
-				if err != nil {
-					c.logger.Error("failed to marshal X.509 bundle: %v", err)
-				}
-
-				err = c.server.PostBundle(ctx, &common.PostBundleRequest{
-					TrustBundle: common.TrustBundle{
-						TrustDomain:  b.TrustDomain(),
-						Bundle:       x509b,
-						BundleDigest: util.GetDigest(x509b),
-					},
-				})
-				if err != nil {
-					c.logger.Errorf("failed to push X.509 bundle: %v", err)
-					break
-				}
-
-				currentBundle = b
-			}
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-func (c *HarvesterController) hasNewBundle(ctx context.Context, current *spiffebundle.Bundle) (*spiffebundle.Bundle, bool) {
-	b, err := c.spire.GetBundle(ctx)
-	if err != nil {
-		c.logger.Errorf("failed to check bundle updates: %v", err)
-		return nil, false
-	}
-
-	if !current.Equal(b) {
-		return b, true
-	}
-
-	return nil, false
 }

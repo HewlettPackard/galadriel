@@ -174,7 +174,6 @@ func protoToBatchSetFederatedBundleResult(in *bundlev1.BatchSetFederatedBundleRe
 			if err != nil {
 				return nil, err
 			}
-
 		}
 
 		if r.Status == nil {
@@ -189,6 +188,21 @@ func protoToBatchSetFederatedBundleResult(in *bundlev1.BatchSetFederatedBundleRe
 			},
 		}
 		out = append(out, bs)
+	}
+
+	return out, nil
+}
+
+func protoToFederatedBundles(in *bundlev1.ListFederatedBundlesResponse) ([]*spiffebundle.Bundle, error) {
+	var out []*spiffebundle.Bundle
+
+	for _, b := range in.Bundles {
+		bundle, err := protoToBundle(b)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, bundle)
 	}
 
 	return out, nil

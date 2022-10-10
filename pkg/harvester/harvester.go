@@ -54,11 +54,7 @@ func (h *Harvester) Run(ctx context.Context) error {
 		return err
 	}
 
-	tasks := []func(context.Context) error{
-		c.Run,
-	}
-
-	err = util.RunTasks(ctx, tasks)
+	err = util.RunTasks(ctx, c.Run)
 	if errors.Is(err, context.Canceled) {
 		err = nil
 	}
