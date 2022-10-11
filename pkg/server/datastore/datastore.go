@@ -134,7 +134,7 @@ func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationshi
 		if err != nil {
 			return nil, fmt.Errorf("invalid trust domain: %v", err)
 		}
-		tdB, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
 		if err != nil {
 			return nil, fmt.Errorf("invalid trust domain: %v", err)
 		}
