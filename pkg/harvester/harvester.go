@@ -6,7 +6,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 )
@@ -14,9 +13,7 @@ import (
 // Harvester represents a Galadriel Harvester
 type Harvester struct {
 	controller controller.HarvesterController //nolint:unused
-	api        api.API                        //nolint:unused
-
-	config *Config
+	config     *Config
 }
 
 // New creates a new instances of Harvester with the given configuration.
