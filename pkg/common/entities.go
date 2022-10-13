@@ -16,7 +16,7 @@ type Relationship struct {
 
 type AccessToken struct {
 	MemberID    uuid.UUID
-	TrustDomain string
+	TrustDomain spiffeid.TrustDomain
 
 	Token  string
 	Expiry time.Time
@@ -25,8 +25,6 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name            string
-	TrustDomain     spiffeid.TrustDomain
-	TrustBundle     []byte
-	TrustBundleHash []byte
+	Name string
+	TrustBundle
 }

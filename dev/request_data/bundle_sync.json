@@ -1,13 +1,5 @@
 {
-  "federates_with": {
-    "td2": {
-      "trust_bundle": "d2VsbCwgaGVsbG8gaGFuZHNvbWUgOj4=",
-      "trust_domain": "td2"
-    },
-
-    "td3": {
-      "trust_bundle": "d2VsbCwgaGVsbG8gaGFuZHNvbWUgOj4=",
-      "trust_domain": "td1"
-    }
+  "state": {
+    "td2": "rJYNLNt7SjfQBrJ/6vO5mrtuedic1hYdwvGoXqtAQiI="
   }
 }

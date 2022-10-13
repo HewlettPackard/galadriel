@@ -35,10 +35,10 @@ type AccessToken struct {
 type Member struct {
 	ID uuid.UUID
 
-	Name            string
-	TrustDomain     string
-	TrustBundle     []byte
-	TrustBundleHash []byte
+	Name         string
+	TrustDomain  string
+	TrustBundle  []byte
+	BundleDigest []byte
 }
 
 type Relationship struct {
@@ -97,20 +97,18 @@ func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *c
 		return nil, errors.New("failed updating member: trust domain not found: " + trustDomain)
 	}
 
-	if len(member.TrustBundle) != 0 {
-		s.members[trustDomain].TrustBundle = member.TrustBundle
+	if len(member.TrustBundle.Bundle) != 0 {
+		s.members[trustDomain].TrustBundle = member.Bundle
 	}
 
-	if member.TrustBundleHash != nil {
-		s.members[trustDomain].TrustBundleHash = member.TrustBundleHash
+	if member.BundleDigest != nil {
+		s.members[trustDomain].BundleDigest = member.BundleDigest
 	}
 
 	return &common.Member{
-		ID:              member.ID,
-		Name:            member.Name,
-		TrustDomain:     member.TrustDomain,
-		TrustBundle:     member.TrustBundle,
-		TrustBundleHash: member.TrustBundleHash,
+		ID:          member.ID,
+		Name:        member.Name,
+		TrustBundle: member.TrustBundle,
 	}, nil
 }
 
@@ -123,12 +121,19 @@ func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*common.Mem
 		return nil, errors.New("failed getting member: trust domain not found: " + trustDomain)
 	}
 
+	td, err := spiffeid.TrustDomainFromString(m.TrustDomain)
+	if err != nil {
+		return nil, fmt.Errorf("invalid trust domain: %v", err)
+	}
+
 	return &common.Member{
-		ID:              m.ID,
-		Name:            m.Name,
-		TrustDomain:     spiffeid.RequireTrustDomainFromString(m.TrustDomain),
-		TrustBundle:     m.TrustBundle,
-		TrustBundleHash: m.TrustBundleHash,
+		ID:   m.ID,
+		Name: m.Name,
+		TrustBundle: common.TrustBundle{
+			TrustDomain:  td,
+			Bundle:       m.TrustBundle,
+			BundleDigest: m.BundleDigest,
+		},
 	}, nil
 }
 
@@ -146,7 +151,7 @@ func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
 		members = append(members, &common.Member{
 			ID:          m.ID,
 			Name:        m.Name,
-			TrustDomain: td,
+			TrustBundle: common.TrustBundle{TrustDomain: td},
 		})
 	}
 
@@ -195,22 +200,34 @@ func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*c
 			if !ok {
 				return nil, errors.New("failed getting relationship: memberB not found")
 			}
+			tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+			if err != nil {
+				return nil, fmt.Errorf("invalid trust domain: %v", err)
+			}
+			tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
+			if err != nil {
+				return nil, fmt.Errorf("invalid trust domain: %v", err)
+			}
 
 			response = append(response, &common.Relationship{
 				ID: r.ID,
 				MemberA: &common.Member{
-					ID:              r.MemberA.ID,
-					Name:            r.MemberA.Name,
-					TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
-					TrustBundle:     r.MemberA.TrustBundle,
-					TrustBundleHash: r.MemberA.TrustBundleHash,
+					ID:   r.MemberA.ID,
+					Name: r.MemberA.Name,
+					TrustBundle: common.TrustBundle{
+						TrustDomain:  tdA,
+						Bundle:       r.MemberA.TrustBundle,
+						BundleDigest: r.MemberA.BundleDigest,
+					},
 				},
 				MemberB: &common.Member{
-					ID:              r.MemberB.ID,
-					Name:            r.MemberB.Name,
-					TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
-					TrustBundle:     r.MemberB.TrustBundle,
-					TrustBundleHash: r.MemberB.TrustBundleHash,
+					ID:   r.MemberB.ID,
+					Name: r.MemberB.Name,
+					TrustBundle: common.TrustBundle{
+						TrustDomain:  tdB,
+						Bundle:       r.MemberB.TrustBundle,
+						BundleDigest: r.MemberB.BundleDigest,
+					},
 				},
 			})
 		}
@@ -225,21 +242,33 @@ func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationshi
 
 	var rels []*common.Relationship
 	for _, r := range s.relationship {
+		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
 		rels = append(rels, &common.Relationship{
 			ID: r.ID,
 			MemberA: &common.Member{
-				ID:              r.MemberA.ID,
-				Name:            r.MemberA.Name,
-				TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberA.TrustDomain),
-				TrustBundle:     r.MemberA.TrustBundle,
-				TrustBundleHash: r.MemberA.TrustBundleHash,
+				ID:   r.MemberA.ID,
+				Name: r.MemberA.Name,
+				TrustBundle: common.TrustBundle{
+					TrustDomain:  tdA,
+					Bundle:       r.MemberA.TrustBundle,
+					BundleDigest: r.MemberA.BundleDigest,
+				},
 			},
 			MemberB: &common.Member{
-				ID:              r.MemberB.ID,
-				Name:            r.MemberB.Name,
-				TrustDomain:     spiffeid.RequireTrustDomainFromString(r.MemberB.TrustDomain),
-				TrustBundle:     r.MemberB.TrustBundle,
-				TrustBundleHash: r.MemberB.TrustBundleHash,
+				ID:   r.MemberB.ID,
+				Name: r.MemberB.Name,
+				TrustBundle: common.TrustBundle{
+					TrustDomain:  tdB,
+					Bundle:       r.MemberB.TrustBundle,
+					BundleDigest: r.MemberB.BundleDigest,
+				},
 			},
 		})
 	}
@@ -276,9 +305,14 @@ func (s *MemStore) GetAccessToken(_ context.Context, token string) (*common.Acce
 	if !ok {
 		return nil, errors.New("failed to find token")
 	}
+
+	td, err := spiffeid.TrustDomainFromString(at.Member.TrustDomain)
+	if err != nil {
+		return nil, fmt.Errorf("invalid trust domain: %v", err)
+	}
 	return &common.AccessToken{
 		MemberID:    at.Member.ID,
-		TrustDomain: at.Member.TrustDomain,
+		TrustDomain: td,
 		Token:       at.Token,
 		Expiry:      at.Expiry,
 	}, nil

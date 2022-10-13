@@ -163,7 +163,7 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 	}
 	newToken := &common.AccessToken{
 		MemberID:    member.ID,
-		TrustDomain: member.TrustDomain.String(),
+		TrustDomain: member.TrustDomain,
 		Token:       token,
 		Expiry:      time.Now().Add(1 * time.Hour),
 	}

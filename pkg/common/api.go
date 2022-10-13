@@ -1,36 +1,38 @@
 package common
 
-// FederationState maps MemberState's by their trust domain.
-type FederationState map[string]MemberState
+import "github.com/spiffe/go-spiffe/v2/spiffeid"
 
-// MemberState is the minimum necessary to define a member state.
-// All returned MemberState's implicitly federate with the calling Harvester.
-type MemberState struct {
-	TrustDomain string `json:"trust_domain"`
-	TrustBundle []byte `json:"trust_bundle"`
-	// TrustBundleHash is calculated internally.
-	TrustBundleHash []byte
+// BundlesDigests is a map of trust bundle digests keyed by trust domain.
+type BundlesDigests map[spiffeid.TrustDomain][]byte
+
+// BundleUpdates is a map of trust bundles keyed by trust domain.
+type BundleUpdates map[spiffeid.TrustDomain]TrustBundle
+
+// TrustBundle represents a SPIFFE Trust bundle along with its digest.
+type TrustBundle struct {
+	TrustDomain  spiffeid.TrustDomain `json:"trust_domain"`
+	Bundle       []byte               `json:"trust_bundle"`
+	BundleDigest []byte               `json:"bundle_digest"`
 }
 
-// SyncBundleRequest is the request body for the /bundle/sync endpoint.
+// SyncBundleRequest represents a request to send the current state of federated bundles digests.
 type SyncBundleRequest struct {
-	// FederatesWith maps to (keyed by trust-domain) which members federate with the calling harvester.
-	// In other words, each entry in this map represents a relationship between the calling harvester the MemberState.
-	// With this, the server can know what the calling harvester needs to be updated of.
-	FederatesWith FederationState `json:"federates_with"`
+	State BundlesDigests `json:"state"`
 }
 
-// SyncBundleResponse is the request response for the /bundle/sync endpoint.
+// SyncBundleResponse represents a response from Galadriel Server containing the
+// federated trust bundles updates.
 type SyncBundleResponse struct {
-	// Update represent bundle sets that need to be performed by the calling harvester.
-	Update FederationState `json:"update"`
-	// State is the current source-of-truth list of relationships.
-	// It essentially allows triggering deletions on calling harvesters.
-	State FederationState `json:"state"`
+	// Update conveys trust bundles that are new or updates.
+	Updates BundleUpdates `json:"updates"`
+
+	// State is the current source-of-truth map of all trust bundles.
+	// It essentially allows triggering deletions of trust bundles on harvesters.
+	State BundlesDigests `json:"state"`
 }
 
-// PostBundleRequest is the request body for the /bundle endpoint.
+// PostBundleRequest represents the request to submit the local SPIRE Server's bundle.
 type PostBundleRequest struct {
-	// MemberState is the latest watched state from the calling harvester.
-	MemberState `json:"state"`
+	// TrustBundle is the latest watched SPIRE Server trust bundle.
+	TrustBundle `json:"state"`
 }

@@ -87,9 +87,9 @@ func (c *HarvesterController) notifyBundleUpdates(ctx context.Context) error {
 				}
 
 				err = c.server.PostBundle(ctx, &common.PostBundleRequest{
-					MemberState: common.MemberState{
-						TrustDomain: b.TrustDomain().String(),
-						TrustBundle: x509b,
+					TrustBundle: common.TrustBundle{
+						TrustDomain: b.TrustDomain(),
+						Bundle:      x509b,
 					},
 				})
 				if err != nil {
