@@ -93,16 +93,17 @@ func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *c
 		return nil, errors.New("failed to updated member: no member data given")
 	}
 
-	if _, ok := s.members[trustDomain]; !ok {
+	m, ok := s.members[trustDomain]
+	if !ok {
 		return nil, errors.New("failed updating member: trust domain not found: " + trustDomain)
 	}
 
-	if len(member.TrustBundle.Bundle) != 0 {
-		s.members[trustDomain].TrustBundle = member.Bundle
+	if len(member.Bundle) != 0 {
+		m.TrustBundle = member.Bundle
 	}
 
-	if member.BundleDigest != nil {
-		s.members[trustDomain].BundleDigest = member.BundleDigest
+	if len(member.BundleDigest) != 0 {
+		m.BundleDigest = member.BundleDigest
 	}
 
 	return &common.Member{
@@ -190,47 +191,47 @@ func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*c
 	var response []*common.Relationship
 
 	for _, r := range s.relationship {
-		if r.MemberA.TrustDomain == trustDomain || r.MemberB.TrustDomain == trustDomain {
-
-			_, ok := s.members[r.MemberA.TrustDomain]
-			if !ok {
-				return nil, errors.New("failed getting relationship: memberA not found")
-			}
-			_, ok = s.members[r.MemberB.TrustDomain]
-			if !ok {
-				return nil, errors.New("failed getting relationship: memberB not found")
-			}
-			tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
-			if err != nil {
-				return nil, fmt.Errorf("invalid trust domain: %v", err)
-			}
-			tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
-			if err != nil {
-				return nil, fmt.Errorf("invalid trust domain: %v", err)
-			}
-
-			response = append(response, &common.Relationship{
-				ID: r.ID,
-				MemberA: &common.Member{
-					ID:   r.MemberA.ID,
-					Name: r.MemberA.Name,
-					TrustBundle: common.TrustBundle{
-						TrustDomain:  tdA,
-						Bundle:       r.MemberA.TrustBundle,
-						BundleDigest: r.MemberA.BundleDigest,
-					},
-				},
-				MemberB: &common.Member{
-					ID:   r.MemberB.ID,
-					Name: r.MemberB.Name,
-					TrustBundle: common.TrustBundle{
-						TrustDomain:  tdB,
-						Bundle:       r.MemberB.TrustBundle,
-						BundleDigest: r.MemberB.BundleDigest,
-					},
-				},
-			})
+		if r.MemberA.TrustDomain != trustDomain && r.MemberB.TrustDomain != trustDomain {
+			continue
 		}
+		_, ok := s.members[r.MemberA.TrustDomain]
+		if !ok {
+			return nil, errors.New("failed getting relationship: memberA not found")
+		}
+		_, ok = s.members[r.MemberB.TrustDomain]
+		if !ok {
+			return nil, errors.New("failed getting relationship: memberB not found")
+		}
+		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
+		if err != nil {
+			return nil, fmt.Errorf("invalid trust domain: %v", err)
+		}
+
+		response = append(response, &common.Relationship{
+			ID: r.ID,
+			MemberA: &common.Member{
+				ID:   r.MemberA.ID,
+				Name: r.MemberA.Name,
+				TrustBundle: common.TrustBundle{
+					TrustDomain:  tdA,
+					Bundle:       r.MemberA.TrustBundle,
+					BundleDigest: r.MemberA.BundleDigest,
+				},
+			},
+			MemberB: &common.Member{
+				ID:   r.MemberB.ID,
+				Name: r.MemberB.Name,
+				TrustBundle: common.TrustBundle{
+					TrustDomain:  tdB,
+					Bundle:       r.MemberB.TrustBundle,
+					BundleDigest: r.MemberB.BundleDigest,
+				},
+			},
+		})
 	}
 
 	return response, nil

@@ -13,7 +13,7 @@ import (
 	"io"
 )
 
-func (e *Endpoints) syncBundleHandler(ctx echo.Context) error {
+func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	e.Log.Debug("Receiving sync request")
 
 	token, ok := ctx.Get("token").(*common.AccessToken)
@@ -96,13 +96,23 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 		return err
 	}
 
+	if receivedHarvesterState.TrustDomain.Compare(token.TrustDomain) != 0 {
+		err := errors.New("authenticated trust domain does not match received trust domain")
+		e.handleTcpError(ctx, err.Error())
+		return err
+	}
+
+	if !bytes.Equal(receivedHarvesterState.BundleDigest, util.GetDigest(receivedHarvesterState.Bundle)) {
+		err := errors.New("calculated digest does not match received digest")
+		e.handleTcpError(ctx, err.Error())
+		return err
+	}
+
 	currentState, err := e.DataStore.GetMember(context.TODO(), token.TrustDomain.String())
 	if err != nil {
 		e.handleTcpError(ctx, err.Error())
 		return err
 	}
-
-	receivedHarvesterState.BundleDigest = util.GetDigest(receivedHarvesterState.Bundle)
 
 	if !bytes.Equal(receivedHarvesterState.BundleDigest, currentState.BundleDigest) {
 		_, err := e.DataStore.UpdateMember(context.TODO(), token.TrustDomain.String(), &common.Member{
@@ -133,7 +143,7 @@ func (e *Endpoints) calculateBundleSync(
 
 		if !found {
 			// trust bundle could be nil in case we didn't receive one yet.
-			if r.MemberA.TrustDomain.String() != callerTD.String() && r.MemberA.Bundle != nil {
+			if r.MemberA.TrustDomain.Compare(callerTD) != 0 && r.MemberA.Bundle != nil {
 				response[r.MemberA.TrustDomain] = r.MemberA.TrustBundle
 			} else if r.MemberB.Bundle != nil {
 				response[r.MemberB.TrustDomain] = r.MemberB.TrustBundle
@@ -151,20 +161,20 @@ func (e *Endpoints) calculateBundleSync(
 }
 
 // findOutdatedRelationship looks for a federated entry found in r, in the received State.
-// If we find a match, we validate it's state and return the updated version.
+// If we find a match, we validate its state and return the updated version.
 // A (nil, false) response means no update is needed, but creation is needed since we did not find it.
-// A (non-nil, true) response means we found a match, but its outdated, so update it with the returned MemberState.
+// A (non-nil, true) response means we found a match, but its outdated, so update it with the returned TrustBundle.
 func (e *Endpoints) findOutdatedRelationship(
 	r *common.Relationship,
 	received common.BundlesDigests,
 	callerTD spiffeid.TrustDomain) (*common.TrustBundle, bool) {
-	if r.MemberA.TrustDomain.String() != callerTD.String() {
-		member, ok := received[r.MemberA.TrustDomain]
+	if r.MemberA.TrustDomain.Compare(callerTD) != 0 {
+		receivedDigest, ok := received[r.MemberA.TrustDomain]
 		if !ok {
 			return nil, false
 		}
 
-		if !bytes.Equal(r.MemberA.BundleDigest, member) {
+		if !bytes.Equal(r.MemberA.BundleDigest, receivedDigest) {
 			return &r.MemberA.TrustBundle, true
 		}
 
@@ -172,11 +182,11 @@ func (e *Endpoints) findOutdatedRelationship(
 	}
 
 	if r.MemberB.TrustDomain.String() != callerTD.String() {
-		member, ok := received[r.MemberB.TrustDomain]
+		receivedDigest, ok := received[r.MemberB.TrustDomain]
 		if !ok {
 			return nil, false
 		}
-		if !bytes.Equal(r.MemberB.BundleDigest, member) {
+		if !bytes.Equal(r.MemberB.BundleDigest, receivedDigest) {
 			return &r.MemberB.TrustBundle, true
 		}
 
@@ -189,14 +199,14 @@ func (e *Endpoints) findOutdatedRelationship(
 
 func (e *Endpoints) calculateBundleState(
 	relationships []*common.Relationship,
-	receivedTD spiffeid.TrustDomain) (common.BundlesDigests, error) {
+	callerTD spiffeid.TrustDomain) (common.BundlesDigests, error) {
 	federationState := make(common.BundlesDigests, len(relationships))
 
 	for _, r := range relationships {
-		if r.MemberA.TrustDomain.String() != receivedTD.String() {
+		if r.MemberA.TrustDomain.Compare(callerTD) != 0 {
 			federationState[r.MemberA.TrustDomain] = r.MemberA.BundleDigest
 		}
-		if r.MemberB.TrustDomain.String() != receivedTD.String() {
+		if r.MemberB.TrustDomain.Compare(callerTD) != 0 {
 			federationState[r.MemberB.TrustDomain] = r.MemberB.BundleDigest
 		}
 	}
