@@ -100,7 +100,7 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	e.Log.Printf("Created relationship between trust domains %s and %s", relationshipReq.TrustDomainA, relationshipReq.TrustDomainB)
+	e.Log.Printf("Created relationship between trust domains %s and %s", relationshipReq.MemberA.TrustDomain, relationshipReq.MemberB.TrustDomain)
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
@@ -161,9 +161,15 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		e.handleError(w, errMsg)
 		return
 	}
-
+	newToken := &common.AccessToken{
+		MemberID:    member.ID,
+		TrustDomain: member.TrustDomain,
+		Token:       token,
+		Expiry:      time.Now().Add(1 * time.Hour),
+	}
 	at, err := e.DataStore.GenerateAccessToken(
-		context.TODO(), &common.AccessToken{Token: token, MemberID: member.ID, Expiry: time.Now().Add(1 * time.Hour)}, member.TrustDomain.String())
+		context.TODO(), newToken, member.TrustDomain.String())
+
 	if err != nil {
 		errMsg := fmt.Sprintf("failed generating access token: %v", err)
 		e.handleError(w, errMsg)
@@ -190,14 +196,16 @@ func (e *Endpoints) onboardHandler(c echo.Context) error {
 	return nil
 }
 
-func (e *Endpoints) validateToken(token string) (bool, error) {
-	t, err := e.DataStore.FetchAccessToken(context.TODO(), token)
+func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) {
+	t, err := e.DataStore.GetAccessToken(context.TODO(), token)
 	if err != nil {
 		e.Log.Errorf("Invalid Token: %s\n", token)
 		return false, err
 	}
 
-	e.Log.Infof("Token valid for trust domain: %s\n", t.Member.TrustDomain)
+	e.Log.Debugf("Token valid for trust domain: %s\n", t.TrustDomain)
+
+	ctx.Set("token", t)
 
 	return true, nil
 }

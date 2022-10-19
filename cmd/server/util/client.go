@@ -155,7 +155,7 @@ func (c serverClient) ListRelationships() ([]*common.Relationship, error) {
 }
 
 func (c serverClient) GenerateAccessToken(td spiffeid.TrustDomain) (*common.AccessToken, error) {
-	b, err := json.Marshal(common.Member{TrustDomain: td})
+	b, err := json.Marshal(common.Member{TrustBundle: common.TrustBundle{TrustDomain: td}})
 	if err != nil {
 		return nil, err
 	}

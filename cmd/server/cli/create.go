@@ -32,7 +32,7 @@ var createMemberCmd = &cobra.Command{
 
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateMember(&common.Member{TrustDomain: trustDomain}); err != nil {
+		if err := c.CreateMember(&common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain}}); err != nil {
 			return err
 		}
 
@@ -70,8 +70,8 @@ var createRelationshipCmd = &cobra.Command{
 		}
 
 		if err := c.CreateRelationship(&common.Relationship{
-			TrustDomainA: trustDomain1,
-			TrustDomainB: trustDomain2,
+			MemberA: &common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain1}},
+			MemberB: &common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain2}},
 		}); err != nil {
 			return err
 		}

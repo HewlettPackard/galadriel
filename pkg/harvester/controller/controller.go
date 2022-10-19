@@ -87,8 +87,11 @@ func (c *HarvesterController) notifyBundleUpdates(ctx context.Context) error {
 				}
 
 				err = c.server.PostBundle(ctx, &common.PostBundleRequest{
-					TrustDomain: b.TrustDomain().String(),
-					TrustBundle: x509b,
+					TrustBundle: common.TrustBundle{
+						TrustDomain:  b.TrustDomain(),
+						Bundle:       x509b,
+						BundleDigest: util.GetDigest(x509b),
+					},
 				})
 				if err != nil {
 					c.logger.Errorf("failed to push X.509 bundle: %v", err)
