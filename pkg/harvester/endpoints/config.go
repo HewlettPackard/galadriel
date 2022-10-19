@@ -14,5 +14,6 @@ type Config struct {
 	// LocalAddr is the local address to bind the listener to.
 	LocalAddress net.Addr
 
+	Log logrus.FieldLogger
 	Logger logrus.FieldLogger
 }
