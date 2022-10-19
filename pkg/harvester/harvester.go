@@ -47,7 +47,6 @@ func (h *Harvester) Run(ctx context.Context) error {
 		AccessToken:           h.config.AccessToken,
 		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
 		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
-		Metrics:               h.config.metrics,
 	}
 	c, err := controller.NewHarvesterController(ctx, config)
 	if err != nil {

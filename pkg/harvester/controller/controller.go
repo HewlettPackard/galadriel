@@ -31,7 +31,6 @@ type Config struct {
 	AccessToken           string
 	BundleUpdatesInterval time.Duration
 	Logger                logrus.FieldLogger
-	Metrics               telemetry.MetricServer
 }
 
 func NewHarvesterController(ctx context.Context, config *Config) (*HarvesterController, error) {

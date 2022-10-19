@@ -1,0 +1,347 @@
+Index: pkg/common/api.go
+===================================================================
+diff --git a/pkg/common/api.go b/pkg/common/api.go
+deleted file mode 100644
+--- a/pkg/common/api.go	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ /dev/null	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
+@@ -1,38 +0,0 @@
+-package common
+-
+-import "github.com/spiffe/go-spiffe/v2/spiffeid"
+-
+-// BundlesDigests is a map of trust bundle digests keyed by trust domain.
+-type BundlesDigests map[spiffeid.TrustDomain][]byte
+-
+-// BundleUpdates is a map of trust bundles keyed by trust domain.
+-type BundleUpdates map[spiffeid.TrustDomain]TrustBundle
+-
+-// TrustBundle represents a SPIFFE Trust bundle along with its digest.
+-type TrustBundle struct {
+-	TrustDomain  spiffeid.TrustDomain `json:"trust_domain"`
+-	Bundle       []byte               `json:"trust_bundle"`
+-	BundleDigest []byte               `json:"bundle_digest"`
+-}
+-
+-// SyncBundleRequest represents a request to send the current state of federated bundles digests.
+-type SyncBundleRequest struct {
+-	State BundlesDigests `json:"state"`
+-}
+-
+-// SyncBundleResponse represents a response from Galadriel Server containing the
+-// federated trust bundles updates.
+-type SyncBundleResponse struct {
+-	// Update conveys trust bundles that are new or updates.
+-	Updates BundleUpdates `json:"updates"`
+-
+-	// State is the current source-of-truth map of all trust bundles.
+-	// It essentially allows triggering deletions of trust bundles on harvesters.
+-	State BundlesDigests `json:"state"`
+-}
+-
+-// PostBundleRequest represents the request to submit the local SPIRE Server's bundle.
+-type PostBundleRequest struct {
+-	// TrustBundle is the latest watched SPIRE Server trust bundle.
+-	TrustBundle `json:"state"`
+-}
+Index: pkg/common/entities.go
+===================================================================
+diff --git a/pkg/common/entities.go b/pkg/common/entities.go
+deleted file mode 100644
+--- a/pkg/common/entities.go	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ /dev/null	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
+@@ -1,30 +0,0 @@
+-package common
+-
+-import (
+-	"time"
+-
+-	"github.com/google/uuid"
+-	"github.com/spiffe/go-spiffe/v2/spiffeid"
+-)
+-
+-type Relationship struct {
+-	ID uuid.UUID
+-
+-	MemberA *Member
+-	MemberB *Member
+-}
+-
+-type AccessToken struct {
+-	MemberID    uuid.UUID
+-	TrustDomain spiffeid.TrustDomain
+-
+-	Token  string
+-	Expiry time.Time
+-}
+-
+-type Member struct {
+-	ID uuid.UUID
+-
+-	Name string
+-	TrustBundle
+-}
+Index: pkg/server/datastore/datastore.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pkg/server/datastore/datastore.go b/pkg/server/datastore/datastore.go
+--- a/pkg/server/datastore/datastore.go	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ b/pkg/server/datastore/datastore.go	(date 1666268181122)
+@@ -5,7 +5,6 @@
+ 	"errors"
+ 	"fmt"
+ 	"sync"
+-	"time"
+ 
+ 	"github.com/HewlettPackard/galadriel/pkg/common"
+ 	"github.com/google/uuid"
+@@ -13,7 +12,7 @@
+ )
+ 
+ type DataStore interface {
+-	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
++	CreateMember(ctx context.Context, m *common.Member) (*common.Member, error)
+ 	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*common.Member, error)
+ 	GetMember(ctx context.Context, trustDomain string) (*common.Member, error)
+ 	ListMembers(ctx context.Context) ([]*common.Member, error)
+@@ -26,28 +25,6 @@
+ 	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
+ }
+ 
+-type AccessToken struct {
+-	Token  string
+-	Expiry time.Time
+-	Member *Member
+-}
+-
+-type Member struct {
+-	ID uuid.UUID
+-
+-	Name         string
+-	TrustDomain  string
+-	TrustBundle  []byte
+-	BundleDigest []byte
+-}
+-
+-type Relationship struct {
+-	ID uuid.UUID
+-
+-	MemberA *Member
+-	MemberB *Member
+-}
+-
+ // TODO: use until an actual DataStore implementation is added.
+ 
+ type MemStore struct {
+Index: pkg/server/datastore/sqlstore/models.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pkg/server/datastore/sqlstore/models.go b/pkg/server/datastore/sqlstore/models.go
+new file mode 100644
+--- /dev/null	(date 1666267885890)
++++ b/pkg/server/datastore/sqlstore/models.go	(date 1666267885890)
+@@ -0,0 +1,27 @@
++package sqlstore
++
++import (
++	"gorm.io/gorm"
++)
++
++type Bundle struct {
++	gorm.Model
++
++	TrustDomain string `gorm:"not null;unique_index"`
++	Data        []byte
++	Digest      []byte
++}
++
++type Member struct {
++	gorm.Model
++
++	TrustDomain string `gorm:"not null;unique_index"`
++	TrustBundle Bundle
++}
++
++type Relationship struct {
++	gorm.Model
++
++	MemberA Member
++	MemberB Member
++}
+Index: pkg/common/domain.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pkg/common/domain.go b/pkg/common/domain.go
+new file mode 100644
+--- /dev/null	(date 1666268181081)
++++ b/pkg/common/domain.go	(date 1666268181081)
+@@ -0,0 +1,32 @@
++package common
++
++import (
++	"time"
++
++	"github.com/spiffe/go-spiffe/v2/spiffeid"
++)
++
++type Relationship struct {
++	MemberA *Member
++	MemberB *Member
++}
++
++type AccessToken struct {
++	Member      *Member
++	TrustDomain spiffeid.TrustDomain
++
++	Token  string
++	Expiry time.Time
++}
++
++type Member struct {
++	TrustDomain spiffeid.TrustDomain
++	TrustBundle TrustBundle
++}
++
++// TrustBundle represents a SPIFFE Trust bundle along with its digest.
++type TrustBundle struct {
++	TrustDomain  spiffeid.TrustDomain `json:"trust_domain"`
++	Bundle       []byte               `json:"trust_bundle"`
++	BundleDigest []byte               `json:"bundle_digest"`
++}
+Index: go.sum
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/go.sum b/go.sum
+--- a/go.sum	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ b/go.sum	(date 1666267885887)
+@@ -158,6 +158,11 @@
+ github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
+ github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
+ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
++github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
++github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
++github.com/jinzhu/now v1.1.4/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
++github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
++github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
+ github.com/jpillora/backoff v1.0.0/go.mod h1:J/6gKK9jxlEcS3zixgDgUAsiuZ7yrSoa/FX5e0EB2j4=
+ github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
+ github.com/json-iterator/go v1.1.10/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
+@@ -188,6 +193,8 @@
+ github.com/mattn/go-colorable v0.1.12/go.mod h1:u5H1YNBxpqRaxsYJYSkiCWKzEfiAb1Gb520KVy5xxl4=
+ github.com/mattn/go-isatty v0.0.14 h1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=
+ github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
++github.com/mattn/go-sqlite3 v1.14.15 h1:vfoHhTN1af61xCRSWzFIWzx2YskyMTwHLrExkBOjvxI=
++github.com/mattn/go-sqlite3 v1.14.15/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
+ github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+ github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 h1:I0XW9+e1XWDxdcEniV4rQAIOPUGDq67JSCiRCgGCZLI=
+ github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
+@@ -595,6 +602,10 @@
+ gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+ gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+ gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
++gorm.io/driver/sqlite v1.4.3 h1:HBBcZSDnWi5BW3B3rwvVTc510KGkBkexlOg0QrmLUuU=
++gorm.io/driver/sqlite v1.4.3/go.mod h1:0Aq3iPO+v9ZKbcdiz8gLWRw5VOPcBOPUQJFLq5e2ecI=
++gorm.io/gorm v1.24.0 h1:j/CoiSm6xpRpmzbFJsQHYj+I8bGYWLXVHeYEyyKlF74=
++gorm.io/gorm v1.24.0/go.mod h1:DVrVomtaYTbqs7gB/x2uVvqnXzv0nqjB396B8cG4dBA=
+ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
+ honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
+ honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
+Index: go.mod
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/go.mod b/go.mod
+--- a/go.mod	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ b/go.mod	(date 1666267885885)
+@@ -41,10 +41,13 @@
+ 	github.com/davecgh/go-spew v1.1.1 // indirect
+ 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+ 	github.com/golang/protobuf v1.5.2 // indirect
++	github.com/jinzhu/inflection v1.0.0 // indirect
++	github.com/jinzhu/now v1.1.5 // indirect
+ 	github.com/kr/pretty v0.3.0 // indirect
+ 	github.com/labstack/gommon v0.3.1 // indirect
+ 	github.com/mattn/go-colorable v0.1.12 // indirect
+ 	github.com/mattn/go-isatty v0.0.14 // indirect
++	github.com/mattn/go-sqlite3 v1.14.15 // indirect
+ 	github.com/pmezard/go-difflib v1.0.0 // indirect
+ 	github.com/rogpeppe/go-internal v1.8.0 // indirect
+ 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+@@ -59,4 +62,6 @@
+ 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+ 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
+ 	gopkg.in/yaml.v3 v3.0.1 // indirect
++	gorm.io/driver/sqlite v1.4.3 // indirect
++	gorm.io/gorm v1.24.0 // indirect
+ )
+Index: pkg/common/dto.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pkg/common/dto.go b/pkg/common/dto.go
+new file mode 100644
+--- /dev/null	(date 1666268181105)
++++ b/pkg/common/dto.go	(date 1666268181105)
+@@ -0,0 +1,33 @@
++package common
++
++import (
++	"github.com/spiffe/go-spiffe/v2/spiffeid"
++)
++
++// BundlesDigests is a map of trust bundle digests keyed by trust domain.
++type BundlesDigests map[spiffeid.TrustDomain][]byte
++
++// BundleUpdates is a map of trust bundles keyed by trust domain.
++type BundleUpdates map[spiffeid.TrustDomain]TrustBundle
++
++// SyncBundleRequest represents a request to send the current state of federated bundles digests.
++type SyncBundleRequest struct {
++	State BundlesDigests `json:"state"`
++}
++
++// SyncBundleResponse represents a response from Galadriel Server containing the
++// federated trust bundles updates.
++type SyncBundleResponse struct {
++	// Update conveys trust bundles that are new or updates.
++	Updates BundleUpdates `json:"updates"`
++
++	// State is the current source-of-truth map of all trust bundles.
++	// It essentially allows triggering deletions of trust bundles on harvesters.
++	State BundlesDigests `json:"state"`
++}
++
++// PostBundleRequest represents the request to submit the local SPIRE Server's bundle.
++type PostBundleRequest struct {
++	// TrustBundle is the latest watched SPIRE Server trust bundle.
++	TrustBundle `json:"state"`
++}
+Index: pkg/server/endpoints/management.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pkg/server/endpoints/management.go b/pkg/server/endpoints/management.go
+--- a/pkg/server/endpoints/management.go	(revision 872932876a6c41c4d221d5451340bdd8f001abca)
++++ b/pkg/server/endpoints/management.go	(date 1666268181074)
+@@ -8,9 +8,9 @@
+ 	"net/http"
+ 	"time"
+ 
+-	"github.com/labstack/echo/v4"
+-
+ 	"github.com/HewlettPackard/galadriel/pkg/common"
++	"github.com/labstack/echo/v4"
++
+ 	"github.com/HewlettPackard/galadriel/pkg/common/util"
+ )
+ 

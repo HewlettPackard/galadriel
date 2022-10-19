@@ -3,7 +3,6 @@ package catalog
 import (
 	"context"
 
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/sirupsen/logrus"
 )
@@ -27,8 +26,7 @@ func (r *Repository) Close() {
 }
 
 type Config struct {
-	Logger  logrus.FieldLogger
-	Metrics telemetry.MetricServer
+	Logger logrus.FieldLogger
 }
 
 func Load(ctx context.Context, config Config) (*Repository, error) {
