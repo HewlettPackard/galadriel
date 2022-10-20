@@ -35,7 +35,7 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			config.Log.Info("Server stopped gracefully")
+			config.Logger.Info("Server stopped gracefully")
 			return nil
 		},
 	}

@@ -36,7 +36,7 @@ func (e *Endpoints) createMemberHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	e.Log.Printf("Created member for trust domain: %s", memberReq.TrustDomain)
+	e.Logger.Printf("Created member for trust domain: %s", memberReq.TrustDomain)
 
 	memberBytes, err := json.Marshal(m)
 	if err != nil {
@@ -100,7 +100,7 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	e.Log.Printf("Created relationship between trust domains %s and %s", relationshipReq.MemberA.TrustDomain, relationshipReq.MemberB.TrustDomain)
+	e.Logger.Printf("Created relationship between trust domains %s and %s", relationshipReq.MemberA.TrustDomain, relationshipReq.MemberB.TrustDomain)
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
@@ -192,18 +192,18 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (e *Endpoints) onboardHandler(c echo.Context) error {
-	e.Log.Info("Harvester connected")
+	e.Logger.Info("Harvester connected")
 	return nil
 }
 
 func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) {
 	t, err := e.DataStore.GetAccessToken(context.TODO(), token)
 	if err != nil {
-		e.Log.Errorf("Invalid Token: %s\n", token)
+		e.Logger.Errorf("Invalid Token: %s\n", token)
 		return false, err
 	}
 
-	e.Log.Debugf("Token valid for trust domain: %s\n", t.TrustDomain)
+	e.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomain)
 
 	ctx.Set("token", t)
 
@@ -211,10 +211,10 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
-	e.Log.Errorf(errMsg)
+	e.Logger.Errorf(errMsg)
 	w.WriteHeader(500)
 	_, err := w.Write([]byte(errMsg))
 	if err != nil {
-		e.Log.Errorf("Failed to write error response: %v", err)
+		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
 }

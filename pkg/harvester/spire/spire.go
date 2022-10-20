@@ -22,7 +22,7 @@ type SpireServer interface {
 
 type localSpireServer struct {
 	client client
-	log    logrus.FieldLogger
+	logger logrus.FieldLogger
 }
 
 type client interface {
@@ -42,7 +42,7 @@ func NewLocalSpireServer(ctx context.Context, addr net.Addr) SpireServer {
 
 	return &localSpireServer{
 		client: client,
-		log:    logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
+		logger: logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
 	}
 }
 

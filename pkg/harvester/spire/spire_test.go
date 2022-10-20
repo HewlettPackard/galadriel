@@ -22,7 +22,7 @@ func TestNewLocalSpireServerSuccess(t *testing.T) {
 	got := NewLocalSpireServer(context.Background(), &net.UnixAddr{})
 	expected := &localSpireServer{
 		client: fakeInternalClient{},
-		log:    logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
+		logger: logrus.WithField(telemetry.SubsystemName, "local_spire_server"),
 	}
 
 	assert.NotNil(t, got)

@@ -28,8 +28,8 @@ func (s *Server) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) run(ctx context.Context) (err error) {
-	cat, err := catalog.Load(ctx, catalog.Config{Log: s.config.Log})
+func (s *Server) run(ctx context.Context) error {
+	cat, err := catalog.Load(ctx, catalog.Config{Logger: s.config.Logger})
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (s *Server) newEndpointsServer(cat catalog.Catalog) (endpoints.Server, erro
 		TCPAddress:   s.config.TCPAddress,
 		LocalAddress: s.config.LocalAddress,
 		Catalog:      cat,
-		Log:          s.config.Log.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		Logger:       s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 	}
 
 	return endpoints.New(config)

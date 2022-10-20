@@ -3,8 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	runtimemetrics "go.opentelemetry.io/contrib/instrumentation/runtime"
