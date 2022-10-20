@@ -3,11 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/harvester"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/HewlettPackard/galadriel/pkg/harvester"
+	"github.com/spf13/cobra"
 )
 
 const defaultConfigPath = "conf/harvester/harvester.conf"
@@ -18,7 +19,6 @@ func NewRunCmd() *cobra.Command {
 		Short: "Runs the Galadriel Harvester",
 		Long:  "Run this command to start the Galadriel Harvester",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			config, err := LoadConfig(cmd)
 			if err != nil {
 				return err

@@ -10,9 +10,13 @@ type BundleUpdates map[spiffeid.TrustDomain]TrustBundle
 
 // TrustBundle represents a SPIFFE Trust bundle along with its digest.
 type TrustBundle struct {
-	TrustDomain  spiffeid.TrustDomain `json:"trust_domain"`
-	Bundle       []byte               `json:"trust_bundle"`
-	BundleDigest []byte               `json:"bundle_digest"`
+	// Trust Domain of the bundle
+	TrustDomain spiffeid.TrustDomain `json:"trust_domain"`
+	// SPIFFE bundle according to the SPIFFE Trust Domain and Bundle specification.
+	// https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#4-spiffe-bundle-format
+	Bundle []byte `json:"trust_bundle"`
+	// SHA3-256 digest of the PEM-encoded X.509 bundle certificate blocks.
+	BundleDigest []byte `json:"bundle_digest"`
 }
 
 // SyncBundleRequest represents a request to send the current state of federated bundles digests.

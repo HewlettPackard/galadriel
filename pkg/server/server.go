@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
@@ -39,11 +40,7 @@ func (s *Server) run(ctx context.Context) (err error) {
 		return err
 	}
 
-	tasks := []func(context.Context) error{
-		endpointsServer.ListenAndServe,
-	}
-
-	err = util.RunTasks(ctx, tasks)
+	err = util.RunTasks(ctx, endpointsServer.ListenAndServe)
 	if errors.Is(err, context.Canceled) {
 		err = nil
 	}

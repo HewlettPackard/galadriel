@@ -9,9 +9,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+const listFederatedBundlesPageSize = 100
+
 type BundleClient interface {
 	GetBundle(context.Context) (*spiffebundle.Bundle, error)
 	BatchSetFederatedBundle(context.Context, []*spiffebundle.Bundle) ([]*BatchSetFederatedBundleStatus, error)
+	ListFederatedBundles(context.Context) (*ListFederatedBundlesResponse, error)
 }
 
 // NewBundleClient creates a new SPIRE Bundle API client
@@ -36,6 +39,36 @@ func (c bundleClient) GetBundle(ctx context.Context) (*spiffebundle.Bundle, erro
 	}
 
 	return spiffeBundle, nil
+}
+
+// ListFederatedBunles retrieves all the bundles the server knows about
+func (c bundleClient) ListFederatedBundles(ctx context.Context) (*ListFederatedBundlesResponse, error) {
+	var out ListFederatedBundlesResponse
+	var pageToken string
+
+	for {
+		res, err := c.client.ListFederatedBundles(ctx, &bundlev1.ListFederatedBundlesRequest{
+			PageToken: pageToken,
+			PageSize:  int32(listFederatedBundlesPageSize),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		bundles, err := protoToFederatedBundles(res)
+		if err != nil {
+			return nil, err
+		}
+
+		out.Bundles = append(out.Bundles, bundles...)
+
+		if res.NextPageToken == "" {
+			break
+		}
+		pageToken = res.NextPageToken
+	}
+
+	return &out, nil
 }
 
 // BatchSetFederatedBundle adds or updates federated bundles

@@ -15,3 +15,11 @@ type BatchSetFederatedBundleStatus struct {
 	Bundle *spiffebundle.Bundle
 	Status *Status
 }
+
+type BatchGetFederatedBundleStatus struct {
+	Bundle *spiffebundle.Bundle
+}
+
+type ListFederatedBundlesResponse struct {
+	Bundles []*spiffebundle.Bundle
+}

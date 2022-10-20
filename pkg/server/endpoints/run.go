@@ -40,12 +40,10 @@ func New(c *Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
-	tasks := []func(context.Context) error{
+	err := util.RunTasks(ctx,
 		e.runTCPServer,
 		e.runUDSServer,
-	}
-
-	err := util.RunTasks(ctx, tasks)
+	)
 	if err != nil {
 		return err
 	}
