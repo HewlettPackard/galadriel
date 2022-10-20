@@ -4,7 +4,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,6 +31,4 @@ type Config struct {
 	DataDir string
 
 	Logger logrus.FieldLogger
-
-	metrics telemetry.MetricServer
 }
