@@ -80,3 +80,15 @@ func (c fakeInternalClient) GetBundle(context.Context) (*spiffebundle.Bundle, er
 
 	return c.bundle, nil
 }
+
+func (c fakeInternalClient) BatchSetFederatedBundle(context.Context, []*spiffebundle.Bundle) ([]*BatchSetFederatedBundleStatus, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (c fakeInternalClient) ListFederatedBundles(context.Context) (*ListFederatedBundlesResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (c fakeInternalClient) GetFederatedBundles(context.Context, []*spiffebundle.Bundle) ([]*BatchSetFederatedBundleStatus, error) {
+	return nil, errors.New("not implemented")
+}

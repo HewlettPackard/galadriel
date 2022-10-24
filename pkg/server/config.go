@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/sirupsen/logrus"
 	"net"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Config conveys configurations for the Galadriel Server
@@ -16,5 +17,5 @@ type Config struct {
 	// Directory to store runtime data
 	DataDir string
 
-	Log logrus.FieldLogger
+	Logger logrus.FieldLogger
 }

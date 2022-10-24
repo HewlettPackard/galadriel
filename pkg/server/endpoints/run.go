@@ -3,15 +3,14 @@ package endpoints
 import (
 	"context"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/sirupsen/logrus"
-	"io"
 	"net"
 	"net/http"
-	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/sirupsen/logrus"
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -25,29 +24,26 @@ type Endpoints struct {
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
 	DataStore  datastore.DataStore
-	Log        logrus.FieldLogger
+	Logger     logrus.FieldLogger
 }
 
 func New(c *Config) (*Endpoints, error) {
 	if err := util.PrepareLocalAddr(c.LocalAddress); err != nil {
 		return nil, err
 	}
-
 	return &Endpoints{
 		TCPAddress: c.TCPAddress,
 		LocalAddr:  c.LocalAddress,
 		DataStore:  c.Catalog.GetDataStore(),
-		Log:        c.Log,
+		Logger:     c.Logger,
 	}, nil
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
-	tasks := []func(context.Context) error{
+	err := util.RunTasks(ctx,
 		e.runTCPServer,
 		e.runUDSServer,
-	}
-
-	err := util.RunTasks(ctx, tasks)
+	)
 	if err != nil {
 		return err
 	}
@@ -57,8 +53,16 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server := echo.New()
+	server.HideBanner = true
+	server.HidePort = true
 
-	e.Log.Info("Starting TCP Server")
+	e.addTCPHandlers(server)
+
+	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
+		return e.validateToken(c, key)
+	}))
+
+	e.Logger.Infof("Starting TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Start(e.TCPAddress.String())
@@ -67,13 +71,13 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	var err error
 	select {
 	case err = <-errChan:
-		e.Log.WithError(err).Error("TCP Server stopped prematurely")
+		e.Logger.WithError(err).Error("TCP Server stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Log.Info("Stopping TCP Server")
+		e.Logger.Info("Stopping TCP Server")
 		server.Close()
 		<-errChan
-		e.Log.Info("TCP Server stopped")
+		e.Logger.Info("TCP Server stopped")
 		return nil
 	}
 }
@@ -87,9 +91,9 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.addHandlers(ctx)
+	e.addHandlers()
 
-	e.Log.Info("Starting UDS Server")
+	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Serve(l)
@@ -97,48 +101,27 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Log.WithError(err).Error("Local Server stopped prematurely")
+		e.Logger.WithError(err).Error("Local Server stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Log.Info("Stopping UDS Server")
+		e.Logger.Info("Stopping UDS Server")
 		server.Close()
 		<-errChan
-		e.Log.Info("UDS Server stopped")
+		e.Logger.Info("UDS Server stopped")
 		return nil
 	}
 }
 
-func (e *Endpoints) addHandlers(ctx context.Context) {
-	e.generateTokenHandler(ctx)
+func (e *Endpoints) addHandlers() {
+	http.HandleFunc("/createMember", e.createMemberHandler)
+	http.HandleFunc("/listMembers", e.listMembersHandler)
+	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
+	http.HandleFunc("/listRelationships", e.listRelationshipsHandler)
+	http.HandleFunc("/generateToken", e.generateTokenHandler)
 }
 
-func (e *Endpoints) generateTokenHandler(ctx context.Context) {
-	http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-
-		token, err := util.GenerateToken()
-		if err != nil {
-			e.Log.Errorf("failed to generate token: %v", err)
-			w.WriteHeader(500)
-			return
-		}
-
-		t := &datastore.JoinToken{
-			Token:  token,
-			Expiry: time.Now(),
-		}
-
-		err = e.DataStore.CreateJoinToken(ctx, t)
-		if err != nil {
-			_, _ = io.WriteString(w, "failed to generate token")
-			w.WriteHeader(500)
-			return
-		}
-
-		_, err = io.WriteString(w, t.Token)
-		if err != nil {
-			e.Log.Errorf("failed to return token: %v", err)
-			w.WriteHeader(500)
-			return
-		}
-	})
+func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
+	server.CONNECT("/onboard", e.onboardHandler)
+	server.POST("/bundle", e.postBundleHandler)
+	server.POST("/bundle/sync", e.syncFederatedBundleHandler)
 }

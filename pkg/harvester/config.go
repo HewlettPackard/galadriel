@@ -1,9 +1,10 @@
 package harvester
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-	"github.com/sirupsen/logrus"
 	"net"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Config conveys configurations for the Harvester.
@@ -20,13 +21,14 @@ type Config struct {
 	// Address of SPIRE Server
 	SpireAddress net.Addr
 
-	// Join token to use for attestation
-	JoinToken string
+	// Access token for connecting to Galadriel Server
+	AccessToken string
+
+	// How often to check for bundle rotation
+	BundleUpdatesInterval time.Duration
 
 	// Directory to store runtime data
 	DataDir string
 
-	Log logrus.FieldLogger
-
-	metrics telemetry.MetricServer
+	Logger logrus.FieldLogger
 }

@@ -3,22 +3,22 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/server"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/HewlettPackard/galadriel/pkg/server"
+	"github.com/spf13/cobra"
 )
 
 const defaultConfigPath = "conf/server/server.conf"
-
-var configPath string
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
 		Short: "Runs the Galadriel server",
 		Long:  "Run this command to start the Galadriel server",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := LoadConfig(cmd)
 			if err != nil {
@@ -35,7 +35,7 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			config.Log.Info("Server stopped gracefully")
+			config.Logger.Info("Server stopped gracefully")
 			return nil
 		},
 	}
@@ -72,7 +72,7 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.Flags().StringVarP(&configPath, "config", "c", defaultConfigPath, "config file path")
+	runCmd.Flags().StringP("config", "c", defaultConfigPath, "config file path")
 
 	RootCmd.AddCommand(runCmd)
 }

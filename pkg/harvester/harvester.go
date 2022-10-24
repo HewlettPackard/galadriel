@@ -3,19 +3,17 @@ package harvester
 import (
 	"context"
 	"errors"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/api"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 )
 
 // Harvester represents a Galadriel Harvester
 type Harvester struct {
 	controller controller.HarvesterController //nolint:unused
-	api        api.API                        //nolint:unused
-
-	config *Config
+	config     *Config
 }
 
 // New creates a new instances of Harvester with the given configuration.
@@ -25,37 +23,37 @@ func New(config *Config) *Harvester {
 	}
 }
 
-// Run starts running the Harvester, starting its endpoints.
+// Run starts running the Harvester.
 func (h *Harvester) Run(ctx context.Context) error {
-	if err := h.run(ctx); err != nil {
-		return err
-	}
-	return nil
-}
+	h.config.Logger.Info("Starting Harvester")
 
-func (h *Harvester) run(ctx context.Context) (err error) {
-	cat, err := catalog.Load(ctx, catalog.Config{Log: h.config.Log})
+	if h.config.AccessToken == "" {
+		return errors.New("token is required to connect the Harvester to the Galadriel Server")
+	}
+
+	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.AccessToken)
 	if err != nil {
 		return err
 	}
-	defer cat.Close()
+
+	err = galadrielClient.Connect(ctx, h.config.AccessToken)
+	if err != nil {
+		return err
+	}
 
 	config := &controller.Config{
-		ServerAddress:   h.config.ServerAddress,
-		SpireSocketPath: h.config.SpireAddress,
-		Log:             h.config.Log.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
-		Metrics:         h.config.metrics,
+		ServerAddress:         h.config.ServerAddress,
+		SpireSocketPath:       h.config.SpireAddress,
+		AccessToken:           h.config.AccessToken,
+		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
+		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
 	}
 	c, err := controller.NewHarvesterController(ctx, config)
 	if err != nil {
 		return err
 	}
 
-	tasks := []func(context.Context) error{
-		c.Run,
-	}
-
-	err = util.RunTasks(ctx, tasks)
+	err = util.RunTasks(ctx, c.Run)
 	if errors.Is(err, context.Canceled) {
 		err = nil
 	}

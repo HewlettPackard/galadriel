@@ -2,17 +2,20 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
 	"github.com/hashicorp/hcl"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"io"
 )
 
 const (
-	defaultSpireSocketPath = "/tmp/spire-server/private/api.sock"
+	defaultSpireSocketPath       = "/tmp/spire-server/private/api.sock"
+	defaultBundleUpdatesInterval = "30s"
 )
 
 type Config struct {
@@ -20,14 +23,14 @@ type Config struct {
 }
 
 type harvesterConfig struct {
-	SpireSocketPath string `hcl:"spire_socket_path"`
-	ServerAddress   string `hcl:"server-address"`
+	SpireSocketPath       string `hcl:"spire_socket_path"`
+	ServerAddress         string `hcl:"server_address"`
+	BundleUpdatesInterval string `hcl:"bundle_updates_interval"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
 // to a cli.Config object setting the defaults for the missing values.
 func ParseConfig(config io.Reader) (*Config, error) {
-
 	if config == nil {
 		return nil, errors.New("configuration is required")
 	}
@@ -42,20 +45,25 @@ func ParseConfig(config io.Reader) (*Config, error) {
 
 // NewHarvesterConfig creates a harvester.Config object from a cli.Config.
 func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
-	sc := &harvester.Config{}
+	hc := &harvester.Config{}
 
 	spireAddr, err := util.GetUnixAddrWithAbsPath(c.Harvester.SpireSocketPath)
 	if err != nil {
 		return nil, err
 	}
 
-	sc.SpireAddress = spireAddr
+	buInt, err := time.ParseDuration(c.Harvester.BundleUpdatesInterval)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse bundle updates interval: %v", err)
+	}
 
-	sc.ServerAddress = c.Harvester.ServerAddress
+	hc.SpireAddress = spireAddr
+	hc.ServerAddress = c.Harvester.ServerAddress
+	hc.BundleUpdatesInterval = buInt
 
-	sc.Log = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
+	hc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
 
-	return sc, nil
+	return hc, nil
 }
 
 func newConfig(configBytes []byte) (*Config, error) {
@@ -77,5 +85,9 @@ func newConfig(configBytes []byte) (*Config, error) {
 func (c *Config) setDefaults() {
 	if c.Harvester.SpireSocketPath == "" {
 		c.Harvester.SpireSocketPath = defaultSpireSocketPath
+	}
+
+	if c.Harvester.BundleUpdatesInterval == "" {
+		c.Harvester.BundleUpdatesInterval = defaultBundleUpdatesInterval
 	}
 }

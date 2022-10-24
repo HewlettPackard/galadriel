@@ -2,7 +2,7 @@ package catalog
 
 import (
 	"context"
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +14,7 @@ type Catalog interface {
 
 type Repository struct {
 	DataStore datastore.DataStore
-	log       logrus.FieldLogger
+	logger    logrus.FieldLogger
 }
 
 func (r *Repository) GetDataStore() datastore.DataStore {
@@ -26,16 +26,13 @@ func (r *Repository) Close() {
 }
 
 type Config struct {
-	Log     logrus.FieldLogger
-	Metrics telemetry.MetricServer
+	Logger logrus.FieldLogger
 }
 
 func Load(ctx context.Context, config Config) (*Repository, error) {
-	memStore := datastore.MemStore{}
-
 	re := &Repository{
-		DataStore: &memStore,
-		log:       config.Log,
+		DataStore: datastore.NewMemStore(),
+		logger:    config.Logger,
 	}
 
 	return re, nil

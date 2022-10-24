@@ -2,9 +2,10 @@ package endpoints
 
 import (
 	"context"
+	"net"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -17,7 +18,7 @@ type Server interface {
 type Endpoints struct {
 	TCPAddress   *net.TCPAddr
 	LocalAddress net.Addr
-	Log          logrus.FieldLogger
+	Logger       logrus.FieldLogger
 }
 
 func New(c Config) (*Endpoints, error) {
@@ -32,6 +33,6 @@ func New(c Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
-	e.Log.Fatal("not implemented")
+	e.Logger.Fatal("not implemented")
 	return nil
 }

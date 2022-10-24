@@ -7,9 +7,11 @@ import (
 	"sync"
 )
 
+type RunnableTask func(context.Context) error
+
 // RunTasks runs all the given tasks concurrently and waits for all of them to be completed.
 // If one task is canceled, all the other tasks are canceled.
-func RunTasks(ctx context.Context, tasks []func(context.Context) error) error {
+func RunTasks(ctx context.Context, tasks ...RunnableTask) error {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
@@ -19,7 +21,7 @@ func RunTasks(ctx context.Context, tasks []func(context.Context) error) error {
 
 	errch := make(chan error, len(tasks))
 
-	runTask := func(task func(context.Context) error) (err error) {
+	runTask := func(task RunnableTask) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				err = fmt.Errorf("panic: %v\n%s\n", r, string(debug.Stack())) //nolint: revive // newlines are intentional
