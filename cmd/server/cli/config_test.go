@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,6 +22,7 @@ func TestNewServerConfig(t *testing.T) {
 		ListenAddress: "localhost",
 		ListenPort:    8000,
 		SocketPath:    "/example",
+		LogLevel:      "INFO",
 	}}
 
 	sc, err := NewServerConfig(&config)
@@ -30,6 +33,7 @@ func TestNewServerConfig(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", sc.TCPAddress.IP.String())
 	assert.Equal(t, config.Server.ListenPort, sc.TCPAddress.Port)
 	assert.Equal(t, config.Server.SocketPath, sc.LocalAddress.String())
+	assert.Equal(t, strings.ToLower(config.Server.LogLevel), logrus.GetLevel().String())
 }
 
 func TestNew(t *testing.T) {
@@ -42,12 +46,13 @@ func TestNew(t *testing.T) {
 		{
 			name: "ok",
 			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "DEBUG"}`)),
+				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "INFO"}`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: "127.0.0.1",
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
+					LogLevel:      "INFO",
 				},
 			},
 		},
@@ -59,6 +64,7 @@ func TestNew(t *testing.T) {
 					ListenAddress: "0.0.0.0",
 					ListenPort:    8085,
 					SocketPath:    defaultSocketPath,
+					LogLevel:      "INFO",
 				},
 			},
 		},

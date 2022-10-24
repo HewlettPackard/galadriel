@@ -26,6 +26,7 @@ type harvesterConfig struct {
 	SpireSocketPath       string `hcl:"spire_socket_path"`
 	ServerAddress         string `hcl:"server_address"`
 	BundleUpdatesInterval string `hcl:"bundle_updates_interval"`
+	LogLevel              string `hcl:"log_level"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
@@ -89,5 +90,9 @@ func (c *Config) setDefaults() {
 
 	if c.Harvester.BundleUpdatesInterval == "" {
 		c.Harvester.BundleUpdatesInterval = defaultBundleUpdatesInterval
+	}
+
+	if c.Harvester.LogLevel == "" {
+		c.Harvester.LogLevel = "INFO"
 	}
 }
