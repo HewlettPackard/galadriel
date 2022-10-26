@@ -44,7 +44,7 @@ After registering the `Member` you will need to generate a new token to onboard 
 ACCESS_TOKEN=$(bin/galadriel-server generate token -t <your SPIRE Trust Domain> | cut -d ' ' -f 3)
 ```
 ## Galadriel Harvester
-To start the Galadriel Harvester you can execute the following command, using the `Access Token` generated from the Galadirel Server:
+To start the Galadriel Harvester you can execute the following command, using the `Access Token` generated from the Galadriel Server:
 
 ```bash
 bin/galadriel-harvester run -t $ACCESS_TOKEN
