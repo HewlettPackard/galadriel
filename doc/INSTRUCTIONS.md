@@ -17,32 +17,34 @@ After cloning the repository you will be able to build the application:
 make build
 ```
 
-With the built application you can use the `bin` file produced to execute the commands to start the server and the harvester:
+With the built application you can use the binaries in the `bin` directory to run the Galadriel Server and Harvester:
+
+## Configuring the Galadriel Server and Harvester
+Before continuing make sure you have configured the Galadriel [Server](./USAGE.md#galadriel-server-configuration-file) and [Harvester](./USAGE.md#galadriel-harvester-configuration-file) with the appropriate configuration for your environment.
 
 ## Galadriel Server
-To start the server you can use:
+To start the Galadriel Server you can use:
 ```bash
 bin/galadriel-server run
 ```
 
-You should see something like this in your terminal, indicating that the server is now `running`
+You should see something like this in your terminal, indicating that the Galadriel Server is now `running`
 ```bash
 INFO[0000] Starting TCP Server on 127.0.0.1:8085         subsystem_name=endpoints
 INFO[0000] Starting UDS Server on /tmp/galadriel-server/api.sock  subsystem_name=endpoints
 ```
 
-With the server running you will need to register a new `Member`:
+With the Galadriel Server running you will need to register a new Galadriel Harvester `Member`:
 ```bash
-bin/galadriel-server create member -t domain.test
+bin/galadriel-server create member -t <your SPIRE Trust Domain>
 ```
 
-After registering the `Member` you will need to generate a new token for the trust domain:
+After registering the `Member` you will need to generate a new token to onboard the Galadriel Harvester that will manage the SPIRE Server:
 ```bash
-ACCESS_TOKEN=$(bin/galadriel-server generate token -t domain.test | cut -d ' ' -f 3)
+ACCESS_TOKEN=$(bin/galadriel-server generate token -t <your SPIRE Trust Domain> | cut -d ' ' -f 3)
 ```
 ## Galadriel Harvester
-
-To start the harvester you can execute the following command, using the `Access Token` generated from the Server:
+To start the Galadriel Harvester you can execute the following command, using the `Access Token` generated from the Galadirel Server:
 
 ```bash
 bin/galadriel-harvester run -t $ACCESS_TOKEN
