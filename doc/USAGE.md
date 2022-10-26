@@ -1,5 +1,5 @@
 # Galadriel Server CLI
-The Galadriel Sserver CLI contains the functionality to:
+The Galadriel Server CLI contains the functionality to:
 ### `galadriel-server create member`
 | Flag      |  Type  | Description               |
 |-----------|--------|---------------------------|
