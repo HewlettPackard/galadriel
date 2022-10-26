@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/HewlettPackard/galadriel/pkg/server"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -66,6 +67,12 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to build server configuration: %w", err)
 	}
+
+	logLevel, err := logrus.ParseLevel(c.Server.LogLevel)
+	if err != nil {
+		return nil, err
+	}
+	logrus.SetLevel(logLevel)
 
 	return sc, nil
 }
