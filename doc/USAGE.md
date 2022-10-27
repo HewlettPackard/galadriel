@@ -10,7 +10,7 @@ The Galadriel Server CLI contains the functionality to:
 | Flag | Type | Required | Description |
 |--|--|--|--|
 | `-a`, `--trustDomainA` | string | Yes | SPIRE Server trust domain A |
-| `-b`, `--trustDomainB` | string | Yes | SPIRE Server trust domain A |
+| `-b`, `--trustDomainB` | string | Yes | SPIRE Server trust domain B |
 
 
 ### `galadriel-server generate token`
