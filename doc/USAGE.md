@@ -1,22 +1,22 @@
 # Galadriel Server CLI
 The Galadriel Server CLI contains the functionality to:
 ### `galadriel-server create member`
-| Flag | Type | Description |
-|--|--|--|
-| `-t`, `--trustDomain`| string | SPIRE server trust domain |
+| Flag | Type | Required | Description |
+|--|--|--|--|
+| `-t`, `--trustDomain`| string | Yes | SPIRE server trust domain |
 
 
 ### `galadriel-server create relationship`
-| Flag | Type | Description |
-|--|--|--|
-| `-a`, `--trustDomainA` | string | SPIRE Server trust domain A |
-| `-b`, `--trustDomainB` | string | SPIRE Server trust domain A |
+| Flag | Type | Required | Description |
+|--|--|--|--|
+| `-a`, `--trustDomainA` | string | Yes | SPIRE Server trust domain A |
+| `-b`, `--trustDomainB` | string | Yes | SPIRE Server trust domain A |
 
 
 ### `galadriel-server generate token`
-| Flag| Type | Description |
-|--|--|--|
-| `-t`, `--trustDomain` | string | SPIRE server trust domain |
+| Flag | Type | Required | Description |
+|--|--|--|--|
+| `-t`, `--trustDomain` | string | Yes | SPIRE server trust domain |
 
 
 ### `galadriel-server list`
@@ -29,10 +29,10 @@ The Galadriel Server CLI contains the functionality to:
 The Galadriel Harvester CLI contains the functionality to run the Galadriel Harvester while attaching it to the Galadriel Server instance, based on the token used as a argument:
 
 ### `galadriel-harvester run`
-| Flag | Type | Description |
-|--|--|--|
-| `-t`, `--token` | string | SPIRE server trust domain |
-| `-c`, `--config` | string | Config file path |
+| Flag | Type | Required | Description |
+|--|--|--|--|
+| `-t`, `--token` | string | Yes | SPIRE server trust domain |
+| `-c`, `--config` | string |  | Config file path. If not set uses the default value: `conf/harvester/harvester.conf` |
 
 # Galadriel Server Configuration File
 You can find the default Galadriel Server configuration file at `conf/server/server.conf`
