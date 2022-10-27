@@ -3,20 +3,20 @@ The Galadriel Server CLI contains the functionality to:
 ### `galadriel-server create member`
 | Flag | Type | Description |
 |--|--|--|
-| `-t, --trustDomain`| string | SPIRE server trust domain |
+| `-t`, `--trustDomain`| string | SPIRE server trust domain |
 
 
 ### `galadriel-server create relationship`
 | Flag | Type | Description |
 |--|--|--|
-| `-a, --trustDomainA` | string | SPIRE Server trust domain A |
-| `-b, --trustDomainB` | string | SPIRE Server trust domain A |
+| `-a`, `--trustDomainA` | string | SPIRE Server trust domain A |
+| `-b`, `--trustDomainB` | string | SPIRE Server trust domain A |
 
 
 ### `galadriel-server generate token`
 | Flag| Type | Description |
 |--|--|--|
-| `-t, --trustDomain` | string | SPIRE server trust domain |
+| `-t`, `--trustDomain` | string | SPIRE server trust domain |
 
 
 ### `galadriel-server list`
@@ -31,8 +31,8 @@ The Galadriel Harvester CLI contains the functionality to run the Galadriel Harv
 ### `galadriel-harvester run`
 | Flag | Type | Description |
 |--|--|--|
-| `-t, --token` | string | SPIRE server trust domain |
-| `-c, --config` | string | Config file path |
+| `-t`, `--token` | string | SPIRE server trust domain |
+| `-c`, `--config` | string | Config file path |
 
 # Galadriel Server Configuration File
 You can find the default Galadriel Server configuration file at `conf/server/server.conf`
@@ -42,12 +42,14 @@ You can find the default Galadriel Server configuration file at `conf/server/ser
 | `listen_address` | IP address or DNS name of the Galadriel server. | localhost |
 | `listen_port` | HTTP Port number of the Galadriel server. | 8085 |
 | `socket_path` | Path to bind the Galadriel Server API socket to. | /tmp/galadriel-server/api.sock |
+| `log_level` | Application log level. One of: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `PANIC` | INFO |
 
 # Galadriel Harvester Configuration File
 You can find the default Galadriel Harvester configuration file at `conf/harvester/harvester.conf`
 
-| Configuration | Description | Default
-|--|--|--|
-| `spire_socket_path` | SPIRE Server Socket of the instance to manage. | /tmp/spire-server/private/api.sock |
-| `server_address` | Upstream Galadriel Server DNS name or IP address with port. | localhost:8085 |
-| `bundle_updates_interval` | Sets how often to check for bundle rotation. | 5s |
+| Configuration | Description | Required | Default
+|--|--|--|--|
+| `spire_socket_path` | SPIRE Server Socket of the instance to manage. | | /tmp/spire-server/private/api.sock |
+| `server_address` | Upstream Galadriel Server DNS name or IP address with port. | Yes | localhost:8085 |
+| `bundle_updates_interval` | Sets how often to check for bundle rotation. | | 30s |
+| `log_level` | Application log level. One of: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `PANIC` | | INFO |
