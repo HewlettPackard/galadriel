@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -70,6 +71,13 @@ func LoadConfig(cmd *cobra.Command) (*harvester.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to build harvester configuration: %w", err)
 	}
+
+	logLevel, err := logrus.ParseLevel(c.Harvester.LogLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	logrus.SetLevel(logLevel)
 
 	hc.AccessToken = token
 
