@@ -12,3 +12,5 @@ Versions of the project that are currently being supported with security updates
 ## Reporting a Vulnerability
 
 If you've found a vulnerability or a potential vulnerability in Galadriel please reach out to any of the maintainers using any private communication channel at your discretion.
+
+The mainteners are currently available at the [SPIFFE Slack channel](https://slack.spiffe.io).
