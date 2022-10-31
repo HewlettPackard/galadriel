@@ -2,7 +2,9 @@
 
 ### Users
 
-These are individuals who 1) want to learn more about the Galadriel Project; or 2) are existing users of Galadriel and its tools who wish to follow the Project's progress.
+These are individuals who 
+- 1) Want to learn more about the Galadriel Project; 
+- 2) Are existing users of Galadriel and its tools who wish to follow the Project's progress.
 
 ### Contributors
 
