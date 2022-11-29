@@ -24,6 +24,6 @@
     - Trust bundles are cryptographically signed and verified end-to-end.
     - Galadriel supports SPIRE in an HA topology.
     - Server and Harvester can be configured to emit metrics to an open telemetry standard.
-    - Harvester admins explicitly approve or deny relationships.
+    - Harvester admins explicitly approve or deny memberships.
     - Components and flows are thoroughly and continuously tested and exercised.
     - There are deployment options for bare metal and Kubernetes.

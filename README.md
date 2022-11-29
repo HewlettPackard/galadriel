@@ -8,13 +8,13 @@
 
 Project Galadriel, or just Galadriel, is an open source project that enables scalable and easy configuration of Federation relationships among SPIRE Servers. It works as a central hub for managing and auditing Federation relationships.
 
-### What is Galadriel?
+### What Galadriel IS?
 - **Alternative approach to SPIRE Federation**: it's built on top of SPIRE APIs to facilitate foreign Trust Bundles management.
-- **Multi-tenant**: multiple organization can leverage the same Galadriel deployment, while ensuring data and operations isolation.
-- **Federation at scale**: configuring multiple SPIRE Server federation should be easy and secure by defaults, that is Galadriel's main focus.
+- **Multi-tenant**: multiple organizations can leverage the same Galadriel deployment, while ensuring data and operations isolation.
+- **Federation at scale**: configuring multiple SPIRE Server federation should be easy and secure by default, that is Galadriel's main focus.
 - **Central hub**: it's a central place where federation relationships can be defined and audited.
 
-### What is NOT Galadriel?
+### What Galadriel IS NOT?
 - **A replacement of SPIRE/SPIFFE Federation**: it doesn't replace SPIRE Federation, it leverages what's already built in there.
 - **A SPIRE plugin**: it's deployed as a separate component, not as a SPIRE plugin.
 
