@@ -12,12 +12,12 @@ These are individuals who wish to contribute code or ideas to Galadriel. Contrib
 
 ### Maintainers
 
-These are individuals who can approve submitted pull requests to be merged into the primary codebase. The project requires pull requests to be approved by at least two (2) maintaners. Once approved, a pull request can be merged by either maintainers or the contributor who submitted it. A list of the current maintainers can be found in the [Codeowners](./CODEOWNERS) file.
+These are individuals who can approve submitted pull requests to be merged into the primary codebase. The project requires pull requests to be approved by at least two (2) maintainers. Once approved, a pull request can be merged by maintainers. A list of the current maintainers can be found in the [Codeowners](./CODEOWNERS) file.
 
 ## Change Review Process
 
 **All changes must be submitted as a GitHub Pull Request (PR)**
 
-The submitter of a pull request is responsible for responding to feedback from reviewers. While it remains open, the submitter is also responsible for ensuring the change is always in a state where it can be merged. Guidelines for submitting a pull request for approval can be found [here](/CONTRIBUTING.md).
+The submitter of a pull request is responsible for responding to any feedback. While it remains open, the submitter is also responsible for ensuring the change is always in a state where it can be merged. Guidelines for submitting a pull request for approval can be found [here](/CONTRIBUTING.md).
 
 **All changes must be approved by at least two (2) Maintainers**
