@@ -15,7 +15,7 @@ var generateCmd = &cobra.Command{
 var tokenCmd = &cobra.Command{
 	Use:   "token",
 	Args:  cobra.ExactArgs(0),
-	Short: "Generates an access token for provided trust domain",
+	Short: "Generates a join token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
 
@@ -29,18 +29,18 @@ var tokenCmd = &cobra.Command{
 			return err
 		}
 
-		at, err := c.GenerateAccessToken(trustDomain)
+		at, err := c.GenerateJoinToken(trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("Access Token: " + at.Token)
+		fmt.Println("Join Token: " + at.Token)
 		return nil
 	},
 }
 
 func init() {
 	generateCmd.AddCommand(tokenCmd)
-	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the access token is bound to.")
+	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the join token is bound to.")
 	RootCmd.AddCommand(generateCmd)
 }

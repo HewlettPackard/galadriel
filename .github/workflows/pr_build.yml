@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504
+      uses: step-security/harden-runner@1f99358870fe1c846a3ccba386cc2b2246836776
       with:
         egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
@@ -20,12 +20,12 @@ jobs:
       uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
    
     - name: "Setup Go"
-      uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v3.2.0
+      uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
       with:
         go-version-file: 'go.mod'
 
     - name: "Lint"
-      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
+      uses: golangci/golangci-lint-action@08e2f20817b15149a52b5b3ebe7de50aff2ba8c5 # v3.4.0
       with:
         version: v1.48
         args: --timeout 3m0s

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
@@ -119,17 +120,15 @@ func buildPostBundleRequest(b *spiffebundle.Bundle) (*common.PostBundleRequest, 
 		return nil, fmt.Errorf("failed to marshal X.509 bundle: %v", err)
 	}
 
-	x509b, err := b.X509Bundle().Marshal()
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal X.509 bundle: %v", err)
+	ent := entity.Bundle{
+		Data:            bundle,
+		TrustDomainName: b.TrustDomain(),
+		CreatedAt:       time.Time{},
+		UpdatedAt:       time.Time{},
 	}
 
 	req := &common.PostBundleRequest{
-		TrustBundle: common.TrustBundle{
-			TrustDomain:  b.TrustDomain(),
-			Bundle:       bundle,
-			BundleDigest: util.GetDigest(x509b),
-		},
+		Bundle: &ent,
 	}
 
 	return req, nil
@@ -166,12 +165,12 @@ func buildSyncBundlesRequest(ctx context.Context, spire spire.SpireServer) (*com
 
 func federatedBundlesUpdatesToSpiffeBundles(res *common.SyncBundleResponse) (bundles []*spiffebundle.Bundle, processed uint32) {
 	for td, b := range res.Updates {
-		if b.Bundle == nil {
+		if b.Data == nil {
 			logger.Errorf("Received an empty bundle for trust domain %q", td)
 			continue
 		}
 
-		bundle, err := spiffebundle.Parse(td, b.Bundle)
+		bundle, err := spiffebundle.Parse(td, b.Data)
 		if err != nil {
 			logger.Errorf("Failed to parse trust bundle for %q: %v", td, err)
 			continue

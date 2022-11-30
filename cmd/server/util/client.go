@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	createMemberURL       = fmt.Sprintf(localURL, "createMember")
-	listMembersURL        = fmt.Sprintf(localURL, "listMembers")
+	createTrustDomainURL  = fmt.Sprintf(localURL, "createTrustDomain")
+	listTrustDomainsURL   = fmt.Sprintf(localURL, "listTrustDomains")
 	createRelationshipURL = fmt.Sprintf(localURL, "createRelationship")
 	listRelationshipsURL  = fmt.Sprintf(localURL, "listRelationships")
 	generateTokenURL      = fmt.Sprintf(localURL, "generateToken")
@@ -32,11 +32,11 @@ var (
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
-	CreateMember(m *common.Member) error
-	ListMembers() ([]*common.Member, error)
-	CreateRelationship(r *common.Relationship) error
-	ListRelationships() ([]*common.Relationship, error)
-	GenerateAccessToken(trustDomain spiffeid.TrustDomain) (*common.AccessToken, error)
+	CreateTrustDomain(m *entity.TrustDomain) error
+	ListTrustDomains() ([]*entity.TrustDomain, error)
+	CreateRelationship(r *entity.Relationship) error
+	ListRelationships() ([]*entity.Relationship, error)
+	GenerateJoinToken(trustDomain spiffeid.TrustDomain) (*entity.JoinToken, error)
 }
 
 // TODO: improve this adding options for the transport, dialcontext, and http.Client.
@@ -57,13 +57,13 @@ type serverClient struct {
 	client *http.Client
 }
 
-func (c serverClient) CreateMember(m *common.Member) error {
-	memberBytes, err := json.Marshal(m)
+func (c serverClient) CreateTrustDomain(m *entity.TrustDomain) error {
+	trustDomainBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
 
-	r, err := c.client.Post(createMemberURL, contentType, bytes.NewReader(memberBytes))
+	r, err := c.client.Post(createTrustDomainURL, contentType, bytes.NewReader(trustDomainBytes))
 	if err != nil {
 		return err
 	}
@@ -81,8 +81,8 @@ func (c serverClient) CreateMember(m *common.Member) error {
 	return nil
 }
 
-func (c serverClient) ListMembers() ([]*common.Member, error) {
-	r, err := c.client.Get(listMembersURL)
+func (c serverClient) ListTrustDomains() ([]*entity.TrustDomain, error) {
+	r, err := c.client.Get(listTrustDomainsURL)
 	if err != nil {
 		return nil, err
 	}
@@ -97,15 +97,15 @@ func (c serverClient) ListMembers() ([]*common.Member, error) {
 		return nil, errors.New(string(b))
 	}
 
-	var members []*common.Member
-	if err = json.Unmarshal(b, &members); err != nil {
+	var trustDomains []*entity.TrustDomain
+	if err = json.Unmarshal(b, &trustDomains); err != nil {
 		return nil, err
 	}
 
-	return members, nil
+	return trustDomains, nil
 }
 
-func (c serverClient) CreateRelationship(rel *common.Relationship) error {
+func (c serverClient) CreateRelationship(rel *entity.Relationship) error {
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 
 	r, err := c.client.Post(createRelationshipURL, contentType, bytes.NewReader(relBytes))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create relationship: %v", err)
 	}
 	defer r.Body.Close()
 
@@ -129,7 +129,7 @@ func (c serverClient) CreateRelationship(rel *common.Relationship) error {
 	return nil
 }
 
-func (c serverClient) ListRelationships() ([]*common.Relationship, error) {
+func (c serverClient) ListRelationships() ([]*entity.Relationship, error) {
 	r, err := c.client.Get(listRelationshipsURL)
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func (c serverClient) ListRelationships() ([]*common.Relationship, error) {
 		return nil, errors.New(string(b))
 	}
 
-	var rels []*common.Relationship
+	var rels []*entity.Relationship
 	if err = json.Unmarshal(b, &rels); err != nil {
 		return nil, err
 	}
@@ -154,8 +154,8 @@ func (c serverClient) ListRelationships() ([]*common.Relationship, error) {
 	return rels, nil
 }
 
-func (c serverClient) GenerateAccessToken(td spiffeid.TrustDomain) (*common.AccessToken, error) {
-	b, err := json.Marshal(common.Member{TrustBundle: common.TrustBundle{TrustDomain: td}})
+func (c serverClient) GenerateJoinToken(td spiffeid.TrustDomain) (*entity.JoinToken, error) {
+	b, err := json.Marshal(entity.TrustDomain{Name: td})
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (c serverClient) GenerateAccessToken(td spiffeid.TrustDomain) (*common.Acce
 		return nil, err
 	}
 
-	var createdToken common.AccessToken
+	var createdToken entity.JoinToken
 	if err = json.Unmarshal(body, &createdToken); err != nil {
 		if len(body) == 0 {
 			return nil, errors.New("failed to generate token")

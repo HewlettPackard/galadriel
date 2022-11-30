@@ -9,77 +9,85 @@ import (
 	"io"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
+
+const tokenKey = "token"
 
 func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	e.Logger.Debug("Receiving post bundle request")
 
-	token, ok := ctx.Get("token").(*common.AccessToken)
+	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
-		err := errors.New("error asserting user token")
-		e.handleTcpError(ctx, err.Error())
+		err := errors.New("error parsing token")
+		e.handleTCPError(ctx, err.Error())
+		return err
+	}
+
+	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
+	if err != nil {
+		err := errors.New("error looking up token")
+		e.handleTCPError(ctx, err.Error())
+		return err
+	}
+
+	authenticatedTD, err := e.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
+	if err != nil {
+		err := errors.New("error looking up trust domain")
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	body, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
 		return err
 	}
 
-	receivedHarvesterState := common.PostBundleRequest{}
-	err = json.Unmarshal(body, &receivedHarvesterState)
+	harvesterReq := common.PostBundleRequest{}
+	err = json.Unmarshal(body, &harvesterReq)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
 		return err
 	}
 
-	if receivedHarvesterState.TrustDomain.Compare(token.TrustDomain) != 0 {
-		err := fmt.Errorf("authenticated trust domain {%s} does not match received trust domain {%s}", receivedHarvesterState.TrustDomain.String(), token.TrustDomain.String())
-
-		e.handleTcpError(ctx, err.Error())
+	if harvesterReq.TrustDomainName != authenticatedTD.Name {
+		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request: {%s}", harvesterReq.TrustDomainID, token.TrustDomainID)
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
-	bundle, err := spiffebundle.Parse(receivedHarvesterState.TrustDomain, receivedHarvesterState.Bundle)
+	currentStoredBundle, err := e.Datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to parse bundle: %v", err))
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
-	x509b, err := bundle.X509Bundle().Marshal()
-	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to marshal bundle: %v", err))
-		return err
-	}
-
-	digest := util.GetDigest(x509b)
-
-	if !bytes.Equal(receivedHarvesterState.BundleDigest, digest) {
-		err := errors.New("calculated digest does not match received digest")
-		e.handleTcpError(ctx, err.Error())
-		return err
-	}
-
-	currentState, err := e.DataStore.GetMember(context.TODO(), token.TrustDomain.String())
-	if err != nil {
-		e.handleTcpError(ctx, err.Error())
-		return err
-	}
-
-	if !bytes.Equal(receivedHarvesterState.BundleDigest, currentState.BundleDigest) {
-		_, err := e.DataStore.UpdateMember(context.TODO(), token.TrustDomain.String(), &common.Member{
-			TrustBundle: receivedHarvesterState.TrustBundle,
+	if harvesterReq.Bundle != nil && currentStoredBundle != nil {
+		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
+			Data: harvesterReq.Bundle.Data,
 		})
 		if err != nil {
-			e.handleTcpError(ctx, fmt.Sprintf("failed to update member: %v", err))
+			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
 			return err
 		}
-		e.Logger.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
+
+		e.Logger.Infof("Trust domain %s has been successfully updated", authenticatedTD.Name)
+	} else if currentStoredBundle == nil {
+		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
+			Data:          harvesterReq.Bundle.Data,
+			TrustDomainID: authenticatedTD.ID.UUID,
+		})
+		if err != nil {
+			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
+			return err
+		}
+
+		e.Logger.Debugf("Trust domain %s has been successfully updated", harvesterReq.TrustDomainName)
 	}
 
 	return nil
@@ -88,114 +96,160 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	e.Logger.Debug("Receiving sync request")
 
-	token, ok := ctx.Get("token").(*common.AccessToken)
+	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
-		err := errors.New("error asserting user token")
-		e.handleTcpError(ctx, err.Error())
+		err := errors.New("error parsing join token")
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
-	harvesterTrustDomain := token.TrustDomain
+
+	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
+	if err != nil {
+		err := errors.New("error looking up token")
+		e.handleTCPError(ctx, err.Error())
+		return err
+	}
+
+	harvesterTrustDomain, err := e.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
+	if err != nil {
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		return err
+	}
 
 	body, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
 		return err
 	}
 
 	receivedHarvesterState := common.SyncBundleRequest{}
 	err = json.Unmarshal(body, &receivedHarvesterState)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
 		return err
 	}
 
 	harvesterBundleDigests := receivedHarvesterState.State
 
-	_, foundSelf := receivedHarvesterState.State[token.TrustDomain]
+	_, foundSelf := receivedHarvesterState.State[harvesterTrustDomain.Name]
 	if foundSelf {
-		e.handleTcpError(ctx, "bad request: harvester cannot federate with itself")
+		e.handleTCPError(ctx, "bad request: harvester cannot federate with itself")
 		return err
 	}
 
-	relationships, err := e.DataStore.GetRelationships(context.TODO(), harvesterTrustDomain.String())
+	relationships, err := e.Datastore.FindRelationshipsByTrustDomainID(ctx.Request().Context(), harvesterTrustDomain.ID.UUID)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
 		return err
 	}
 
-	federatedMembers := getFederatedMembers(relationships, harvesterTrustDomain)
-	lastBundlesDigests := getCurrentFederatedBundleDigests(federatedMembers)
-	bundlesUpdates := getFederatedBundlesUpdates(harvesterBundleDigests, federatedMembers)
+	federatedTDs := getFederatedTrustDomains(relationships, harvesterTrustDomain.ID.UUID)
+
+	if len(federatedTDs) == 0 {
+		e.Logger.Debug("No federated trust domains yet")
+		return nil
+	}
+
+	federatedBundles, federatedBundlesDigests, err := e.getCurrentFederatedBundles(ctx.Request().Context(), federatedTDs)
+	if err != nil {
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
+		return err
+	}
+
+	if len(federatedBundles) == 0 {
+		e.Logger.Debug("No federated bundles yet")
+		return nil
+	}
+
+	bundlesUpdates, err := e.getFederatedBundlesUpdates(ctx.Request().Context(), harvesterBundleDigests, federatedBundles)
+	if err != nil {
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
+		return err
+	}
 
 	response := common.SyncBundleResponse{
 		Updates: bundlesUpdates,
-		State:   lastBundlesDigests,
+		State:   federatedBundlesDigests,
 	}
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to marshal response: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to marshal response: %v", err))
 		return err
 	}
 
 	_, err = ctx.Response().Write(responseBytes)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to write response: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to write response: %v", err))
 		return err
 	}
 
 	return nil
 }
 
-func getFederatedMembers(relationships []*common.Relationship, td spiffeid.TrustDomain) []*common.Member {
-	var federatedMembers []*common.Member
+func getFederatedTrustDomains(relationships []*entity.Relationship, tdID uuid.UUID) []uuid.UUID {
+	var federatedTrustDomains []uuid.UUID
 
 	for _, r := range relationships {
-		ma := r.MemberA
-		mb := r.MemberB
+		ma := r.TrustDomainAID
+		mb := r.TrustDomainBID
 
-		if td.Compare(ma.TrustDomain) != 0 {
-			federatedMembers = append(federatedMembers, ma)
+		if tdID == ma {
+			federatedTrustDomains = append(federatedTrustDomains, mb)
 		} else {
-			federatedMembers = append(federatedMembers, mb)
+			federatedTrustDomains = append(federatedTrustDomains, ma)
 		}
 	}
-	return federatedMembers
+	return federatedTrustDomains
 }
 
-func getFederatedBundlesUpdates(harvesterBundlesDigests common.BundlesDigests, federatedMembers []*common.Member) common.BundleUpdates {
+func (e *Endpoints) getFederatedBundlesUpdates(ctx context.Context, harvesterBundlesDigests common.BundlesDigests, federatedBundles []*entity.Bundle) (common.BundleUpdates, error) {
 	response := make(common.BundleUpdates)
 
-	for _, m := range federatedMembers {
-		td := m.TrustDomain
-		serverDigest := m.BundleDigest
-		harvesterDigest := harvesterBundlesDigests[td]
+	for _, b := range federatedBundles {
+		td, err := e.Datastore.FindTrustDomainByID(ctx, b.TrustDomainID)
+		if err != nil {
+			return nil, err
+		}
+
+		serverDigest := util.GetDigest(b.Data)
+		harvesterDigest := harvesterBundlesDigests[td.Name]
 
 		// If the bundle digest received from a federated trust domain of the calling harvester is not the same as the
 		// digest the server has, the harvester needs to be updated of the new bundle. This also covers the case of
-		// the harvester not being aware of any bundles. The update represents a newly federated member's bundle.
+		// the harvester not being aware of any bundles. The update represents a newly federated trustDomain's bundle.
 		if !bytes.Equal(harvesterDigest, serverDigest) {
-			tb := common.TrustBundle{
-				TrustDomain:  td,
-				Bundle:       m.Bundle,
-				BundleDigest: m.BundleDigest,
-			}
-			response[td] = tb
+			response[td.Name] = b
 		}
 	}
 
-	return response
+	return response, nil
 }
 
-func getCurrentFederatedBundleDigests(federatedMembers []*common.Member) common.BundlesDigests {
-	bundlesDigests := make(common.BundlesDigests, len(federatedMembers))
-	for _, m := range federatedMembers {
-		bundlesDigests[m.TrustDomain] = m.BundleDigest
+func (e *Endpoints) getCurrentFederatedBundles(ctx context.Context, federatedTDs []uuid.UUID) ([]*entity.Bundle, common.BundlesDigests, error) {
+	var bundles []*entity.Bundle
+	bundlesDigests := map[spiffeid.TrustDomain][]byte{}
+
+	for _, id := range federatedTDs {
+		b, err := e.Datastore.FindBundleByTrustDomainID(ctx, id)
+		if err != nil {
+			return nil, nil, err
+		}
+		td, err := e.Datastore.FindTrustDomainByID(ctx, id)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if b != nil {
+			bundles = append(bundles, b)
+			bundlesDigests[td.Name] = util.GetDigest(b.Data)
+		}
 	}
-	return bundlesDigests
+
+	return bundles, bundlesDigests, nil
 }
 
-func (e *Endpoints) handleTcpError(ctx echo.Context, errMsg string) {
+func (e *Endpoints) handleTCPError(ctx echo.Context, errMsg string) {
 	e.Logger.Errorf(errMsg)
 	_, err := ctx.Response().Write([]byte(errMsg))
 	if err != nil {
