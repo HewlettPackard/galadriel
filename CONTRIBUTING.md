@@ -1,8 +1,7 @@
 # Contributing to the Galadriel Project
 
 The change management process for the Galadriel Project is designed to be transparent, fair, and
-efficient. Anyone may contribute to a project in the galadriel repository that they have read access
-to, provided they:
+efficient. Anyone may contribute to a project in the Galadriel repository that they have read access to, provided they:
 
 * Abide by the SPIFFE [code of conduct](https://github.com/spiffe/spiffe/blob/main/CODE-OF-CONDUCT.md)
 * Can certify the clauses in the [Developer Certificate of Origin](https://github.com/spiffe/spiffe/blob/main/DCO)
@@ -24,8 +23,7 @@ To get started:
 8. Open a [pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
    against the upstream `main` branch
 
-All changes to galadriel project must be code reviewed in a pull request (this goes for everyone, even
-those who have merge rights).
+All changes to Galadriel project must be code reviewed in a pull request (this goes for everyone, even those who have merge rights).
 
 ## After your pull request is submitted
 
@@ -56,6 +54,4 @@ All repositories under this project should include:
 * A `LICENSE` file with the Apache 2.0 license
 * A [CODEOWNERS](https://help.github.com/articles/about-codeowners/) file listing the maintainers
 
-All code projects should use the [Apache License version
-2.0](https://www.apache.org/licenses/LICENSE-2.0), and all documentation repositories should use the
-[Creative Commons License version 4.0](https://creativecommons.org/licenses/by/4.0/legalcode).
+All code projects should use the [Apache License version 2.0](https://www.apache.org/licenses/LICENSE-2.0), and all documentation repositories should use the [Creative Commons License version 4.0](https://creativecommons.org/licenses/by/4.0/legalcode).

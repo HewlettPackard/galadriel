@@ -1,10 +1,10 @@
 # Instructions
-Below is a list of instructions for running the PoC application.
+Below is a list of instructions for running the Proof of Concept of Galadriel.
 
 ## Requirements
 In order to run Galadriel you should have:
-- [Go Lang](https://go.dev/dl/) installed at version `1.19.x`
-- A running [SPIRE](https://spiffe.io/docs/latest/deploying/install-server/) server
+- [Go Lang](https://go.dev/dl/) installed at the version specified in [.go-version](/.go-version)
+- A running [SPIRE](https://spiffe.io/docs/latest/deploying/install-server/) Server
 
 ## Running the PoC locally
 In order to run the PoC locally, clone the repository:
@@ -34,12 +34,12 @@ INFO[0000] Starting TCP Server on 127.0.0.1:8085         subsystem_name=endpoint
 INFO[0000] Starting UDS Server on /tmp/galadriel-server/api.sock  subsystem_name=endpoints
 ```
 
-With the Galadriel Server running you will need to register a new Galadriel Harvester `Member`:
+With the Galadriel Server running you will need to register a new Galadriel Harvester `Member`, which represents a Trust Domain:
 ```bash
-bin/galadriel-server create member -t <your SPIRE Trust Domain>
+bin/galadriel-server create member --trustDomain <your SPIRE Trust Domain>
 ```
 
-After registering the `Member` you will need to generate a new token to onboard the Galadriel Harvester that will manage the SPIRE Server:
+After registering the `Member` you will need to generate a new token to onboard the Galadriel Harvester that will manage the SPIRE Server in the given Trust Domain:
 ```bash
 ACCESS_TOKEN=$(bin/galadriel-server generate token -t <your SPIRE Trust Domain> | cut -d ' ' -f 3)
 ```
@@ -56,3 +56,5 @@ INFO[0000] Starting Harvester                            subsystem_name=harveste
 INFO[0000] Connected to Galadriel Server                 subsystem_name=galadriel_server_client
 INFO[0000] Starting harvester controller                 subsystem_name=harvester_controller
 ```
+
+Now the Galadriel Harvester will start managing the Federation relationships in the SPIRE Server that are defined in the upstream Galadriel Server. Please refer to the [Usage documentation](./USAGE.md) to learn more.

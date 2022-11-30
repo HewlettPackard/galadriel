@@ -3,7 +3,7 @@
 https://github.com/apps/dco
 -->
 
-**Pull Request check list**
+**Pull request check list**
 
 - [ ] Proper tests/regressions included?
 - [ ] Documentation updated?
@@ -14,6 +14,6 @@ https://github.com/apps/dco
 **Description of change**
 <!-- Please provide a description of the change -->
 
-**Which issue this PR fixes**
-<!-- optional. `fixes #<issue number>` format will close an issue when this PR is merged -->
+**Which issue this pull requests fixes**
+<!-- optional. `fixes #<issue number>` format will close an issue when this pull request is merged -->
 
