@@ -2,7 +2,7 @@ name: trivy
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -23,10 +23,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@d0651293c4a5a52e711f25b41b05b2212f385d28
-
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -f doc/api/Dockerfile -t galadriel-doc:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
