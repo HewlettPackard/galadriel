@@ -17,7 +17,7 @@ bold  := $(shell which tput > /dev/null && tput bold 2>/dev/null || echo "")
 
 default: build
 
-all: build 
+all: build test
 
 ############################################################################
 # OS/ARCH detection
@@ -74,6 +74,17 @@ go_path := PATH="$(go_bin_dir):$(PATH)"
 oapi_codegen_version = 1.11.0
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
+sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
+sqlc_bin = $(sqlc_dir)/sqlc
+sqlc_version = 1.16.0
+sqlc_config_file = $(DIR)/db/sqlc.yaml
+ifeq ($(os1),windows)
+	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_windows_amd64.zip
+else ifeq ($(os1),darwin)
+	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_darwin_$(arch2).zip
+else
+	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_linux_amd64.zip
+endif
 
 go-check:
 ifeq (go$(go_version), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '))
@@ -87,6 +98,17 @@ endif
 ## Checks installed go version and prints the path it is installed.
 go-bin-path: go-check
 	@echo "$(go_bin_dir):${PATH}"
+
+install-toolchain: install-sqlc | go-check
+
+install-sqlc: $(sqlc_bin)
+
+$(sqlc_bin):
+	@echo "Installing sqlc $(sqlc_version)..."
+	$(E)rm -rf $(dir $(sqlc_dir))
+	$(E)mkdir -p $(sqlc_dir)
+	$(E)echo $(sqlc_url); curl -sSfL $(sqlc_url) -o $(build_dir)/tmp.zip; unzip -q -d $(sqlc_dir) $(build_dir)/tmp.zip; rm $(build_dir)/tmp.zip
+
 
 # The following vars are used in rule construction
 comma := ,
@@ -165,21 +187,24 @@ TARGET_MAX_CHAR_NUM=30
 
 ## Shows help.
 help:
-	@echo "--------------------------------------------------------------------------------"
-	@echo "Author  : ${GREEN}$(AUTHOR)${RESET}"
-	@echo "Project : ${GREEN}$(NAME)${RESET}"
-	@echo "Version : ${GREEN}$(VERSION)${RESET}"
-	@echo "--------------------------------------------------------------------------------"
-	@echo ""
-	@echo "Usage:"
-	@echo "  ${GREEN}make${RESET} <target>"
-	@echo "Targets:"
-	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
-		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")); \
-			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-			printf "  ${GREEN}%-$(TARGET_MAX_CHAR_NUM)s${RESET} %s\n", helpCommand, helpMessage; \
-		} \
-	} \
-{ lastLine = $$0 }' $(MAKEFILE_LIST)
+	@echo "$(bold)Usage:$(reset) make $(cyan)<target>$(reset)"
+	@echo
+	@echo "$(bold)Build:$(reset)"
+	@echo "  $(cyan)build$(reset)                                 - build all Galadriel binaries"
+	@echo
+	@echo "$(bold)Test:$(reset)"
+	@echo "  $(cyan)test$(reset)                                  - run unit tests"
+	@echo
+	@echo "$(bold)Build and test:$(reset)"
+	@echo "  $(cyan)all$(reset)                                   - build all Galadriel binaries, and run unit tests"
+	@echo
+	@echo "$(bold)Code generation:$(reset)"
+	@echo "  $(cyan)generate$(reset)                              - generate datastore sql code"
+
+### Code generation ####
+.PHONE: generate generatesql
+
+generate: generatesql
+
+generatesql:
+	$(sqlc_bin) generate --file $(sqlc_config_file)
