@@ -455,12 +455,21 @@ func TestMembershipForeignKeysConstraints(t *testing.T) {
 	membership1, err = datastore.CreateOrUpdateMembership(ctx, membership1)
 	require.NoError(t, err)
 
-	// Cannot delete Federation Group that has a membership associated
-	err = datastore.DeleteFederationGroup(ctx, fg1.ID.UUID)
+	// Cannot add a new membership for the same Member and Federation Group
+	membership1.ID = uuid.NullUUID{}
+	membership1, err = datastore.CreateOrUpdateMembership(ctx, membership1)
 	require.Error(t, err)
 
 	wrappedErr := errors.Unwrap(err)
 	errCode := wrappedErr.(*pgconn.PgError).SQLState()
+	assert.Equal(t, pgerrcode.UniqueViolation, errCode, "Unique constraint violation error was expected")
+
+	// Cannot delete Federation Group that has a membership associated
+	err = datastore.DeleteFederationGroup(ctx, fg1.ID.UUID)
+	require.Error(t, err)
+
+	wrappedErr = errors.Unwrap(err)
+	errCode = wrappedErr.(*pgconn.PgError).SQLState()
 	assert.Equal(t, pgerrcode.ForeignKeyViolation, errCode, "Foreign key violation error was expected")
 
 	// Cannot delete Member that has a membership associated
