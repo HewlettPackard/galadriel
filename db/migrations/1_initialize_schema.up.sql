@@ -28,7 +28,8 @@ CREATE TABLE memberships
     federation_group_id UUID                     NOT NULL,
     status              status                   NOT NULL,
     created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    UNIQUE (member_id, federation_group_id)
 );
 
 CREATE TABLE bundles
