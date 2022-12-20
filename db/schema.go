@@ -15,7 +15,7 @@ var fs embed.FS
 // currentDBVersion defines the current migration version supported by the app.
 // This is used to ensure that the app is compatible with the database schema.
 // When a new migration is created, this version should be updated in order to force
-// the migrations running when starting up the app.
+// the migrations to run when starting up the app.
 const currentDBVersion = 1
 
 const scheme = "postgresql"
