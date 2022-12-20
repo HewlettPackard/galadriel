@@ -202,7 +202,7 @@ help:
 	@echo "  $(cyan)generate$(reset)                              - generate datastore sql code"
 
 ### Code generation ####
-.PHONE: generate generatesql
+.PHONY: generate generatesql
 
 generate: generatesql
 
