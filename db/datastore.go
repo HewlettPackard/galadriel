@@ -49,6 +49,8 @@ func (d *Datastore) Close() error {
 	return d.db.Close()
 }
 
+// CreateOrUpdateMember creates or updates the given Member in the underlying datastore, based on
+// whether the given entity has an ID, in which case, it is updated.
 func (d *Datastore) CreateOrUpdateMember(ctx context.Context, req *entity.Member) (*entity.Member, error) {
 	if req.Status == "" {
 		return nil, errors.New("member status is missing")
@@ -57,38 +59,15 @@ func (d *Datastore) CreateOrUpdateMember(ctx context.Context, req *entity.Member
 		return nil, errors.New("member trust domain is missing")
 	}
 
-	var status Status
-	err := status.Scan(req.Status.String())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing status: %w", err)
-	}
-
-	var member Member
+	var member *Member
+	var err error
 	if req.ID.Valid {
-		pgID, err := uuidToPgType(req.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := UpdateMemberParams{
-			ID:          pgID,
-			TrustDomain: req.TrustDomain.String(),
-			Status:      status,
-		}
-
-		member, err = d.querier.UpdateMember(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed updating member: %w", err)
-		}
+		member, err = d.updateMember(ctx, req)
 	} else {
-		params := CreateMemberParams{
-			TrustDomain: req.TrustDomain.String(),
-			Status:      status,
-		}
-
-		member, err = d.querier.CreateMember(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new member: %w", err)
-		}
+		member, err = d.createMember(ctx, req)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	response, err := member.ToEntity()
@@ -97,6 +76,50 @@ func (d *Datastore) CreateOrUpdateMember(ctx context.Context, req *entity.Member
 	}
 
 	return response, nil
+}
+
+func (d *Datastore) createMember(ctx context.Context, req *entity.Member) (*Member, error) {
+	var status Status
+	err := status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := CreateMemberParams{
+		TrustDomain: req.TrustDomain.String(),
+		Status:      status,
+	}
+
+	member, err := d.querier.CreateMember(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new member: %w", err)
+	}
+	return &member, nil
+}
+
+func (d *Datastore) updateMember(ctx context.Context, req *entity.Member) (*Member, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var status Status
+	err = status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := UpdateMemberParams{
+		ID:          pgID,
+		TrustDomain: req.TrustDomain.String(),
+		Status:      status,
+	}
+
+	member, err := d.querier.UpdateMember(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating member: %w", err)
+	}
+	return &member, nil
 }
 
 func (d *Datastore) DeleteMember(ctx context.Context, memberID uuid.UUID) error {
@@ -177,46 +200,15 @@ func (d *Datastore) CreateOrUpdateFederationGroup(ctx context.Context, req *enti
 		return nil, errors.New("federation group status is missing")
 	}
 
-	var status Status
-	err := status.Scan(req.Status.String())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing status: %w", err)
-	}
-
-	var fg FederationGroup
+	var fg *FederationGroup
+	var err error
 	if req.ID.Valid {
-		pgID, err := uuidToPgType(req.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
-
-		params := UpdateFederationGroupParams{
-			ID:   pgID,
-			Name: req.Name,
-			Description: sql.NullString{
-				String: req.Description,
-				Valid:  true,
-			},
-			Status: status,
-		}
-		fg, err = d.querier.UpdateFederationGroup(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new federation group: %w", err)
-		}
-
+		fg, err = d.updateFederationGroup(ctx, req)
 	} else {
-		params := CreateFederationGroupParams{
-			Name: req.Name,
-			Description: sql.NullString{
-				String: req.Description,
-				Valid:  true,
-			},
-			Status: status,
-		}
-		fg, err = d.querier.CreateFederationGroup(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new federation group: %w", err)
-		}
+		fg, err = d.createFederationGroup(ctx, req)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	response, err := fg.ToEntity()
@@ -225,6 +217,59 @@ func (d *Datastore) CreateOrUpdateFederationGroup(ctx context.Context, req *enti
 	}
 
 	return response, nil
+}
+
+func (d *Datastore) createFederationGroup(ctx context.Context, req *entity.FederationGroup) (*FederationGroup, error) {
+	var status Status
+	err := status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := CreateFederationGroupParams{
+		Name: req.Name,
+		Description: sql.NullString{
+			String: req.Description,
+			Valid:  true,
+		},
+		Status: status,
+	}
+	fg, err := d.querier.CreateFederationGroup(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new federation group: %w", err)
+	}
+
+	return &fg, nil
+}
+
+func (d *Datastore) updateFederationGroup(ctx context.Context, req *entity.FederationGroup) (*FederationGroup, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var status Status
+	err = status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := UpdateFederationGroupParams{
+		ID:   pgID,
+		Name: req.Name,
+		Description: sql.NullString{
+			String: req.Description,
+			Valid:  true,
+		},
+		Status: status,
+	}
+
+	fg, err := d.querier.UpdateFederationGroup(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new federation group: %w", err)
+	}
+
+	return &fg, nil
 }
 
 func (d *Datastore) FindFederationGroupByID(ctx context.Context, federatioGroupID uuid.UUID) (*entity.FederationGroup, error) {
@@ -284,50 +329,16 @@ func (d *Datastore) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle
 	if !req.MemberID.Valid {
 		return nil, errors.New("bundle member ID cannot be empty")
 	}
-	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+
+	var bundle *Bundle
+	var err error
+	if req.ID.Valid {
+		bundle, err = d.updateBundle(ctx, req)
+	} else {
+		bundle, err = d.createBundle(ctx, req)
+	}
 	if err != nil {
 		return nil, err
-	}
-
-	var bundle Bundle
-	if req.ID.Valid {
-		pgID, err := uuidToPgType(req.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := UpdateBundleParams{
-			ID:           pgID,
-			RawBundle:    req.RawBundle,
-			Digest:       req.Digest,
-			SignedBundle: req.SignedBundle,
-			TlogID:       req.TlogID,
-			SvidPem: sql.NullString{
-				String: req.SvidPem,
-				Valid:  true,
-			},
-		}
-
-		bundle, err = d.querier.UpdateBundle(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed updating bundle: %w", err)
-		}
-	} else {
-		params := CreateBundleParams{
-			RawBundle:    req.RawBundle,
-			Digest:       req.Digest,
-			SignedBundle: req.SignedBundle,
-			TlogID:       req.TlogID,
-			SvidPem: sql.NullString{
-				String: req.SvidPem,
-				Valid:  true,
-			},
-			MemberID: pgMemberID,
-		}
-
-		bundle, err = d.querier.CreateBundle(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new bundle: %w", err)
-		}
 	}
 
 	response, err := bundle.ToEntity()
@@ -336,6 +347,56 @@ func (d *Datastore) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle
 	}
 
 	return response, nil
+}
+
+func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
+	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	if err != nil {
+		return nil, err
+	}
+	params := CreateBundleParams{
+		RawBundle:    req.RawBundle,
+		Digest:       req.Digest,
+		SignedBundle: req.SignedBundle,
+		TlogID:       req.TlogID,
+		SvidPem: sql.NullString{
+			String: req.SvidPem,
+			Valid:  true,
+		},
+		MemberID: pgMemberID,
+	}
+
+	bundle, err := d.querier.CreateBundle(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new bundle: %w", err)
+	}
+
+	return &bundle, err
+}
+
+func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+	params := UpdateBundleParams{
+		ID:           pgID,
+		RawBundle:    req.RawBundle,
+		Digest:       req.Digest,
+		SignedBundle: req.SignedBundle,
+		TlogID:       req.TlogID,
+		SvidPem: sql.NullString{
+			String: req.SvidPem,
+			Valid:  true,
+		},
+	}
+
+	bundle, err := d.querier.UpdateBundle(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating bundle: %w", err)
+	}
+
+	return &bundle, nil
 }
 
 func (d *Datastore) FindBundleByID(ctx context.Context, bundleID uuid.UUID) (*entity.Bundle, error) {
@@ -537,53 +598,15 @@ func (d *Datastore) CreateOrUpdateMembership(ctx context.Context, req *entity.Me
 		return nil, errors.New("Membership status is missing")
 	}
 
-	var status Status
-	err := status.Scan(req.Status.String())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing status: %w", err)
-	}
-
-	var membership Membership
+	var membership *Membership
+	var err error
 	if req.ID.Valid {
-		pgID, err := uuidToPgType(req.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := UpdateMembershipParams{
-			ID:     pgID,
-			Status: status,
-		}
-
-		membership, err = d.querier.UpdateMembership(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed updating membership: %w", err)
-		}
+		membership, err = d.updateMembership(ctx, req)
 	} else {
-		if !req.MemberID.Valid {
-			return nil, errors.New("Member ID is missing")
-		}
-		pgMemberID, err := uuidToPgType(req.MemberID.UUID)
-		if err != nil {
-			return nil, err
-		}
-
-		if !req.FederationGroupID.Valid {
-			return nil, errors.New("FederatioGroup ID is missing")
-		}
-		pgFederationGroupID, err := uuidToPgType(req.FederationGroupID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := CreateMembershipParams{
-			MemberID:          pgMemberID,
-			FederationGroupID: pgFederationGroupID,
-			Status:            status,
-		}
-
-		membership, err = d.querier.CreateMembership(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new membership: %w", err)
-		}
+		membership, err = d.createMembership(ctx, req)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	response, err := membership.ToEntity()
@@ -592,6 +615,68 @@ func (d *Datastore) CreateOrUpdateMembership(ctx context.Context, req *entity.Me
 	}
 
 	return response, nil
+}
+
+func (d *Datastore) createMembership(ctx context.Context, req *entity.Membership) (*Membership, error) {
+	if !req.MemberID.Valid {
+		return nil, errors.New("Member ID is missing")
+	}
+	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !req.FederationGroupID.Valid {
+		return nil, errors.New("FederationGroup ID is missing")
+	}
+	pgFederationGroupID, err := uuidToPgType(req.FederationGroupID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var status Status
+	err = status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := CreateMembershipParams{
+		MemberID:          pgMemberID,
+		FederationGroupID: pgFederationGroupID,
+		Status:            status,
+	}
+
+	membership, err := d.querier.CreateMembership(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new membership: %w", err)
+	}
+
+	return &membership, nil
+}
+
+func (d *Datastore) updateMembership(ctx context.Context, req *entity.Membership) (*Membership, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var status Status
+	err = status.Scan(req.Status.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing status: %w", err)
+	}
+
+	params := UpdateMembershipParams{
+		ID:     pgID,
+		Status: status,
+	}
+
+	membership, err := d.querier.UpdateMembership(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating membership: %w", err)
+	}
+
+	return &membership, nil
 }
 
 func (d *Datastore) FindMembershipByID(ctx context.Context, membershipID uuid.UUID) (*entity.Membership, error) {
@@ -674,49 +759,67 @@ func (d *Datastore) DeleteMembership(ctx context.Context, id uuid.UUID) error {
 }
 
 func (d *Datastore) CreateOrUpdateHarvester(ctx context.Context, req *entity.Harvester) (*entity.Harvester, error) {
-	var harvester Harvester
+	var harvester *Harvester
+	var err error
 	if req.ID.Valid {
-		pgID, err := uuidToPgType(req.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := UpdateHarvesterParams{
-			ID: pgID,
-			IsLeader: sql.NullBool{
-				Bool:  req.IsLeader,
-				Valid: true,
-			},
-			LeaderUntil: req.LeaderUntil,
-		}
-
-		harvester, err = d.querier.UpdateHarvester(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed updating harvester: %w", err)
-		}
+		harvester, err = d.updateHarvester(ctx, req)
 	} else {
-		if !req.MemberID.Valid {
-			return nil, errors.New("harvester member ID cannot be empty")
-		}
-		pgMemberID, err := uuidToPgType(req.MemberID.UUID)
-		if err != nil {
-			return nil, err
-		}
-		params := CreateHarvesterParams{
-			MemberID: pgMemberID,
-			IsLeader: sql.NullBool{
-				Bool:  req.IsLeader,
-				Valid: true,
-			},
-			LeaderUntil: req.LeaderUntil,
-		}
-
-		harvester, err = d.querier.CreateHarvester(ctx, params)
-		if err != nil {
-			return nil, fmt.Errorf("failed creating new harvester: %w", err)
-		}
+		harvester, err = d.createHarvester(ctx, req)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return harvester.ToEntity(), nil
+}
+
+func (d *Datastore) updateHarvester(ctx context.Context, req *entity.Harvester) (*Harvester, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := UpdateHarvesterParams{
+		ID: pgID,
+		IsLeader: sql.NullBool{
+			Bool:  req.IsLeader,
+			Valid: true,
+		},
+		LeaderUntil: req.LeaderUntil,
+	}
+
+	harvester, err := d.querier.UpdateHarvester(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating harvester: %w", err)
+	}
+
+	return &harvester, nil
+}
+
+func (d *Datastore) createHarvester(ctx context.Context, req *entity.Harvester) (*Harvester, error) {
+	if !req.MemberID.Valid {
+		return nil, errors.New("harvester member ID cannot be empty")
+	}
+	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := CreateHarvesterParams{
+		MemberID: pgMemberID,
+		IsLeader: sql.NullBool{
+			Bool:  req.IsLeader,
+			Valid: true,
+		},
+		LeaderUntil: req.LeaderUntil,
+	}
+
+	harvester, err := d.querier.CreateHarvester(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new harvester: %w", err)
+	}
+
+	return &harvester, nil
 }
 
 func (d *Datastore) FindHarvesterByID(ctx context.Context, harvesterID uuid.UUID) (*entity.Harvester, error) {
