@@ -13,9 +13,9 @@
     - Harvester communicates with the SPIRE Server to fetch its bundle and to set foreign bundles.
     - Harvester sends its collocated SPIRE bundle, and fetches and keeps in sync foreign bundles based on the defined relationships.
 
-### Minimum Viable Business Product (MVBP)
+### Minimum Viable Product (MVP)
 - **Status**: In Progress
-- **Goal**: Have a production-ready product that is API based and implements the security and core principles identified in the [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true).
+- **Goal**: Have a minimal product for early evaluation, that is is API based, and implements the security and core principles identified in the [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true).
 - **Result**:
     - Server and Harvester APIs are well defined and documented.
     - Harvester is securely introduced to the Server.
