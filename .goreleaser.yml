@@ -1,0 +1,204 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # # you may remove this if you don't need go generate
+    # - go generate ./...
+
+# Documentation Reference: https://goreleaser.com/customization/build/#builds
+builds:
+  - id: "server-cli"
+    main: ./cmd/server/
+    binary: server_cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      # - windows
+      # - darwin
+
+
+  - id: "harvester-cli"
+    main: ./cmd/harvester/
+    binary: harvester_cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      # - windows
+      # - darwin
+  
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# The lines beneath this are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+signs:
+  - # Which artifacts to sign
+    #
+    #   all:      all artifacts
+    #   none:     no signing
+    #   checksum: only checksum file(s)
+    #   source:   source archive
+    #   package:  linux packages (deb, rpm, apk)
+    #   archive:  archives from archive pipe
+    #   binary:   binaries if archiving format is set to binary
+    #   sbom:     any Software Bill of Materials generated for other artifacts
+    #
+    # Defaults to `none`
+    artifacts: checksum
+
+    # ID of the sign config, must be unique.
+    #
+    # Defaults to "default".
+    id: default
+
+    # Name/template of the signature file.
+    #
+    # Defaults to `${artifact}.sig`.
+    signature: "${artifact}.sig"
+
+    # Path to the signature command
+    #
+    # Defaults to `gpg`
+    cmd: gpg2
+
+    # Command line templateable arguments for the command
+    #
+    # to sign with a specific key use
+    # args: ["-u", "<key id, fingerprint, email, ...>", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    #
+    # Defaults to `["--output", "${signature}", "--detach-sign", "${artifact}"]`
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
+    # IDs of the artifacts to sign.
+    #
+    # If `artifacts` is checksum or source, this fields has no effect.
+    #
+    # Defaults to empty (which implies no filtering).
+    ids: []
+
+    # Stdin data template to be given to the signature command as stdin.
+    #
+    # Defaults to empty
+    # stdin: '{{ .Env.GPG_PASSWORD }}'
+
+    # StdinFile file to be given to the signature command as stdin.
+    #
+    # Defaults to empty
+    # stdin_file: ./.password
+
+    # Sets a certificate that your signing command should write to.
+    # You can later use `${certificate}` or `.Env.certificate` in the `args` section.
+    # This is particularly useful for keyless signing (for instance, with cosign).
+    # Note that this should be a name, not a path.
+    #
+    # Defaults to empty.
+    # certificate: '{{ trimsuffix .Env.artifact ".tar.gz" }}.pem'
+
+    # List of environment variables that will be passed to the signing command as well as the templates.
+    #
+    # Defaults to empty
+    env: []
+
+    # By default, the stdout and stderr of the signing cmd are discarded unless
+    # GoReleaser is running with `--debug` set.
+    # You can set this to true if you want them to be displayed regardless.
+    #
+    # Default: false.
+    # Since: v1.2.
+    output: false
+
+
+sboms:
+  -
+    # ID of the sbom config, must be unique.
+    #
+    # Defaults to "default".
+    id: default
+
+    # List of Names/templates of the SBOM documents created at this step
+    # (relative to the dist dir).
+    #
+    # Each element configured is made available as variables. For example:
+    #   documents: ["foo", "bar"]
+    #
+    # would make the following variables that can be referenced as template keys:
+    #   document0: "foo"
+    #   document1: "bar"
+    #
+    # Default value is conditional based on the value of "artifacts"
+    #   - "binary":   ["{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom"]
+    #   - "any":      []
+    #   - otherwise:  ["{{ .ArtifactName }}.sbom"]
+    #
+    # Note that multiple sbom values are only allowed if the value of
+    # "artifacts" is "any".
+    documents:
+      - "${artifact}.spdx.sbom"
+
+    # Path to the SBOM generator command
+    #
+    # Note: the process CWD will be set to the same location as "dist"
+    #
+    # Defaults to `syft`
+    cmd: syft
+
+    # Command line templateable arguments for the command
+    #
+    # Defaults to `["$artifact", "--file", "$document", "--output", "spdx-json"]`
+    args: ["$artifact", "--file", "$document", "--output", "spdx-json"]
+
+    # List of environment variables that will be passed to the SBOM command as
+    # well as the templates.
+    #
+    # Defaults to [ "SYFT_FILE_METADATA_CATALOGER_ENABLED=true" ]
+    env:
+      - SYFT_FILE_METADATA_CATALOGER_ENABLED=true
+
+    # Which artifacts to catalog
+    #
+    #   any:      let the SBOM tool decide what artifacts available in the cwd
+    #             should be cataloged
+    #   source:   source archive
+    #   package:  linux packages (deb, rpm, apk)
+    #   archive:  archives from archive pipe
+    #   binary:   binaries output from the build stage
+    #
+    # Defaults to `archive`
+    artifacts: archive
+
+    # IDs of the artifacts to catalog.
+    #
+    # If `artifacts` is "source" or "any" then this fields has no effect.
+    #
+    # Defaults to empty (which implies no filtering).
+    ids: []
