@@ -871,7 +871,7 @@ func TestCRUDHarvester(t *testing.T) {
 	assert.Equal(t, harvester1, stored)
 
 	loc, _ := time.LoadLocation("UTC")
-	inOneHour := time.Now().In(loc).Add(1 * time.Hour)
+	inOneHour := time.Now().Add(1 * time.Hour).In(loc)
 
 	// Create second harvester -> member_2
 	req2 := &entity.Harvester{
@@ -885,6 +885,10 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NotNil(t, harvester1)
 	assert.Equal(t, req2.MemberID, harvester2.MemberID)
 	assert.Equal(t, req2.IsLeader, harvester2.IsLeader)
+
+	logrus.Printf("req2.LeaderUntil: %v", req2.LeaderUntil)
+	logrus.Printf("harvester2.LeaderUntil: %v", harvester2.LeaderUntil)
+
 	require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil.In(loc)))
 
 	// Look up token stored in DB and compare
