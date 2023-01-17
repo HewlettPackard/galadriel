@@ -40,7 +40,15 @@ func (s *Server) run(ctx context.Context) error {
 		return err
 	}
 
-	err = util.RunTasks(ctx, endpointsServer.ListenAndServe)
+	metrics, err := telemetry.NewMetrics(&telemetry.MetricsConfig{
+		Logger:      s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Telemetry),
+		ServiceName: telemetry.GaladrielServer,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = util.RunTasks(ctx, endpointsServer.ListenAndServe, metrics.ListenAndServe)
 	if errors.Is(err, context.Canceled) {
 		err = nil
 	}

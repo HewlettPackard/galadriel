@@ -48,12 +48,21 @@ func (h *Harvester) Run(ctx context.Context) error {
 		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
 		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
 	}
+
 	c, err := controller.NewHarvesterController(ctx, config)
 	if err != nil {
 		return err
 	}
 
-	err = util.RunTasks(ctx, c.Run)
+	metrics, err := telemetry.NewMetrics(&telemetry.MetricsConfig{
+		Logger:      h.config.Logger.WithField(telemetry.SubsystemName, telemetry.Telemetry),
+		ServiceName: telemetry.HarvesterController,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = util.RunTasks(ctx, c.Run, metrics.ListenAndServe)
 	if errors.Is(err, context.Canceled) {
 		err = nil
 	}
