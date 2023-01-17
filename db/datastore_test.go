@@ -928,7 +928,7 @@ func TestCRUDHarvester(t *testing.T) {
 	updated, err := datastore.CreateOrUpdateHarvester(ctx, harvester1)
 	require.NoError(t, err)
 	assert.Equal(t, harvester1.IsLeader, updated.IsLeader)
-	require.True(t, harvester1.LeaderUntil.Equal(updated.LeaderUntil))
+	requireEqualDate(t, harvester1.LeaderUntil, updated.LeaderUntil.In(loc))
 	harvester1 = updated
 
 	// Look up in DB and compare
