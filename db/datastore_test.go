@@ -111,6 +111,7 @@ func TestCRUDFederationGroup(t *testing.T) {
 
 	// and that one federation group remains
 	fedGroups, err = datastore.ListFederationGroups(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, 1, len(fedGroups))
 	assert.Equal(t, fg2, fedGroups[0])
 }
@@ -238,6 +239,7 @@ func TestCRUDMember(t *testing.T) {
 
 	// and that one member remains
 	members, err = datastore.ListMembers(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, 1, len(members))
 	assert.Equal(t, m2, members[0])
 
@@ -263,7 +265,7 @@ func TestMemberUniqueTrustDomainConstraint(t *testing.T) {
 		TrustDomain: td1,
 		Status:      entity.StatusActive,
 	}
-	m1, err = datastore.CreateOrUpdateMember(ctx, m1)
+	_, err = datastore.CreateOrUpdateMember(ctx, m1)
 	require.NoError(t, err)
 
 	// second member with same trust domain
@@ -271,7 +273,7 @@ func TestMemberUniqueTrustDomainConstraint(t *testing.T) {
 		TrustDomain: td1,
 		Status:      entity.StatusPending,
 	}
-	m2, err = datastore.CreateOrUpdateMember(ctx, m2)
+	_, err = datastore.CreateOrUpdateMember(ctx, m2)
 	require.Error(t, err)
 
 	wrappedErr := errors.Unwrap(err)
@@ -457,7 +459,7 @@ func TestMembershipForeignKeysConstraints(t *testing.T) {
 
 	// Cannot add a new membership for the same Member and Federation Group
 	membership1.ID = uuid.NullUUID{}
-	membership1, err = datastore.CreateOrUpdateMembership(ctx, membership1)
+	_, err = datastore.CreateOrUpdateMembership(ctx, membership1)
 	require.Error(t, err)
 
 	wrappedErr := errors.Unwrap(err)
