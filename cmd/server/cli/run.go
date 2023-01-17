@@ -72,7 +72,9 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	logrus.SetLevel(logLevel)
+	logrus.SetOutput(os.Stdout)
 
 	return sc, nil
 }
