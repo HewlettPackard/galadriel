@@ -739,7 +739,11 @@ func TestCRUDJoinToken(t *testing.T) {
 	assert.Equal(t, req2.Token, token2.Token)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 	require.False(t, token2.Used)
-	require.True(t, req2.Expiry.Equal(token2.Expiry))
+
+	logrus.Printf("req2.Expiry: %v", req2.Expiry)
+	logrus.Printf("token2.Expiry: %v", token2.Expiry.In(loc))
+
+	require.True(t, req2.Expiry.Equal(token2.Expiry.In(loc)))
 	assert.Equal(t, req2.MemberID, token2.MemberID)
 
 	// Look up token stored in DB and compare
