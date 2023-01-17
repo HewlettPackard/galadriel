@@ -78,6 +78,7 @@ func LoadConfig(cmd *cobra.Command) (*harvester.Config, error) {
 	}
 
 	logrus.SetLevel(logLevel)
+	logrus.SetOutput(os.Stdout)
 
 	hc.AccessToken = token
 
