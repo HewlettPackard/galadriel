@@ -717,7 +717,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token1)
 	assert.Equal(t, req1.Token, token1.Token)
-	require.True(t, req1.Expiry.Equal(token1.Expiry.In(loc)))
+	requireEqualDate(t, req1.Expiry, token1.Expiry.In(loc))
 	require.False(t, token1.Used)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 
@@ -740,7 +740,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 	require.False(t, token2.Used)
 
-	require.True(t, req2.Expiry.Equal(token2.Expiry.In(loc)))
+	requireEqualDate(t, req2.Expiry, token2.Expiry.In(loc))
 	assert.Equal(t, req2.MemberID, token2.MemberID)
 
 	// Look up token stored in DB and compare
@@ -885,11 +885,7 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NotNil(t, harvester1)
 	assert.Equal(t, req2.MemberID, harvester2.MemberID)
 	assert.Equal(t, req2.IsLeader, harvester2.IsLeader)
-
-	logrus.Printf("req2.LeaderUntil: %v", req2.LeaderUntil)
-	logrus.Printf("harvester2.LeaderUntil: %v", harvester2.LeaderUntil)
-
-	require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil.In(loc)))
+	requireEqualDate(t, req2.LeaderUntil, harvester2.LeaderUntil.In(loc))
 
 	// Look up token stored in DB and compare
 	stored, err = datastore.FindHarvesterByID(ctx, harvester2.ID.UUID)
@@ -971,6 +967,20 @@ func TestCRUDHarvester(t *testing.T) {
 	harvesters, err = datastore.ListHarvesters(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, len(harvesters))
+}
+
+func requireEqualDate(t *testing.T, time1 time.Time, time2 time.Time) {
+	y1, m1, d1 := time1.Date()
+	y2, m2, d2 := time2.Date()
+	h1, mt1, s1 := time1.Clock()
+	h2, mt2, s2 := time2.Clock()
+
+	require.Equal(t, y1, y2, "Year doesn't match")
+	require.Equal(t, m1, m2, "Month doesn't match")
+	require.Equal(t, d1, d2, "Day doesn't match")
+	require.Equal(t, h1, h2, "Hour doesn't match")
+	require.Equal(t, mt1, mt2, "Minute doesn't match")
+	require.Equal(t, s1, s2, "Seconds doesn't match")
 }
 
 func setupDatastore(t *testing.T) (*Datastore, error) {
