@@ -703,10 +703,13 @@ func TestCRUDJoinToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, m2.ID)
 
+	loc, _ := time.LoadLocation("UTC")
+	expiry := time.Now().In(loc).Add(1 * time.Hour)
+
 	// Create first join_token -> member_1
 	req1 := &entity.JoinToken{
 		Token:    uuid.NewString(),
-		Expiry:   time.Now(),
+		Expiry:   expiry,
 		MemberID: m1.ID,
 	}
 
@@ -714,10 +717,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token1)
 	assert.Equal(t, req1.Token, token1.Token)
-
-	// FAILING test - investigating
-	//require.True(t, req1.Expiry.Equal(token1.Expiry))
-
+	require.True(t, req1.Expiry.Equal(token1.Expiry))
 	require.False(t, token1.Used)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 
@@ -729,7 +729,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	// Create second join_token -> member_2
 	req2 := &entity.JoinToken{
 		Token:    uuid.NewString(),
-		Expiry:   time.Now(),
+		Expiry:   expiry,
 		MemberID: m2.ID,
 	}
 
@@ -750,7 +750,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	// Create second join_token -> member_2
 	req3 := &entity.JoinToken{
 		Token:    uuid.NewString(),
-		Expiry:   time.Now(),
+		Expiry:   expiry,
 		MemberID: m2.ID,
 	}
 
@@ -869,8 +869,10 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, harvester1, stored)
 
+	loc, _ := time.LoadLocation("UTC")
+	inOneHour := time.Now().In(loc).Add(1 * time.Hour)
+
 	// Create second harvester -> member_2
-	inOneHour := time.Now().Add(1 * time.Hour)
 	req2 := &entity.Harvester{
 		MemberID:    m2.ID,
 		IsLeader:    true,
@@ -882,9 +884,7 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NotNil(t, harvester1)
 	assert.Equal(t, req2.MemberID, harvester2.MemberID)
 	assert.Equal(t, req2.IsLeader, harvester2.IsLeader)
-
-	// FAILING test - investigating
-	//require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil))
+	require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil))
 
 	// Look up token stored in DB and compare
 	stored, err = datastore.FindHarvesterByID(ctx, harvester2.ID.UUID)
