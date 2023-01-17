@@ -82,4 +82,4 @@ ALTER TABLE "harvesters"
     ADD FOREIGN KEY ("member_id") REFERENCES "members" ("id");
 
 -- create indexes
--- PostgreSQL automatically creates a unique index when a unique constraint or primary key is defined for a table
+-- PostgresSQL automatically creates a unique index when a unique constraint or primary key is defined for a table

@@ -272,8 +272,8 @@ func (d *Datastore) updateFederationGroup(ctx context.Context, req *entity.Feder
 	return &fg, nil
 }
 
-func (d *Datastore) FindFederationGroupByID(ctx context.Context, federatioGroupID uuid.UUID) (*entity.FederationGroup, error) {
-	pgID, err := uuidToPgType(federatioGroupID)
+func (d *Datastore) FindFederationGroupByID(ctx context.Context, federationGroupID uuid.UUID) (*entity.FederationGroup, error) {
+	pgID, err := uuidToPgType(federationGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (d *Datastore) FindFederationGroupByID(ctx context.Context, federatioGroupI
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up federation group with ID=%q: %w", federatioGroupID, err)
+		return nil, fmt.Errorf("failed looking up federation group with ID=%q: %w", federationGroupID, err)
 	}
 
 	r, err := m.ToEntity()
