@@ -717,7 +717,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token1)
 	assert.Equal(t, req1.Token, token1.Token)
-	require.True(t, req1.Expiry.Equal(token1.Expiry))
+	require.True(t, req1.Expiry.Equal(token1.Expiry.In(loc)))
 	require.False(t, token1.Used)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 
@@ -739,9 +739,6 @@ func TestCRUDJoinToken(t *testing.T) {
 	assert.Equal(t, req2.Token, token2.Token)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 	require.False(t, token2.Used)
-
-	logrus.Printf("req2.Expiry: %v", req2.Expiry)
-	logrus.Printf("token2.Expiry: %v", token2.Expiry.In(loc))
 
 	require.True(t, req2.Expiry.Equal(token2.Expiry.In(loc)))
 	assert.Equal(t, req2.MemberID, token2.MemberID)
@@ -888,7 +885,7 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NotNil(t, harvester1)
 	assert.Equal(t, req2.MemberID, harvester2.MemberID)
 	assert.Equal(t, req2.IsLeader, harvester2.IsLeader)
-	require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil))
+	require.True(t, req2.LeaderUntil.Equal(harvester2.LeaderUntil.In(loc)))
 
 	// Look up token stored in DB and compare
 	stored, err = datastore.FindHarvesterByID(ctx, harvester2.ID.UUID)
