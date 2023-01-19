@@ -95,7 +95,7 @@ space := $(null)
 
 .PHONY: build
 
-## Compile Go binaries for the Galadriel.
+## Compiles all Galadriel binaries.
 build: bin/galadriel-harvester bin/galadriel-server
 
 # This is the master template for compiling Go binaries
@@ -121,32 +121,32 @@ CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
 server-run: build
 	./bin/galadriel-server run
 
-api-doc-build:
-	$(CONTAINER_EXEC) build -f doc/api/Dockerfile -t galadriel-api-doc:latest .
-
-## Build the API documentation for the Galadriel.
-api-doc: api-doc-build
-	$(CONTAINER_EXEC) run --rm \
-		--name galadriel-api-doc \
-		-p 8000:8000 \
-		--mount type=bind,source=${DIR}/spec/api,target=/app/api,readonly \
-		galadriel-api-doc:latest
-
 ## Runs the go unit tests.
 test: test-unit
 
 test-unit:
 	go test -cover ./...
 
-## Run unit tests with race detection.
+## Runs unit tests with race detection.
 race-test:
 	go test -cover -race ./...
 
-## Generate the test coverage for the code with the Go tool.
+## Generates the test coverage for the code with the Go tool.
 coverage:
 	$(E)mkdir -p out/coverage
 	go test -v -coverprofile ./out/coverage/coverage.out ./... && \
 	go tool cover -html=./out/coverage/coverage.out -o ./out/coverage/index.html
+
+## Builds docker image for Galadriel Server.
+docker-build-server:
+	docker build . --target galadriel-server --tag galadriel-server:latest
+
+## Builds docker image for Galadriel Harvester.
+docker-build-harvester:
+	docker build . --target galadriel-harvester --tag galadriel-harvester:latest
+
+## Builds all docker images.
+docker-build: docker-build-server docker-build-harvester
 
 #------------------------------------------------------------------------
 # Document file
@@ -161,7 +161,7 @@ AUTHOR=HPE
 GREEN := $(shell tput -Txterm setaf 2)
 RESET := $(shell tput -Txterm sgr0)
 
-TARGET_MAX_CHAR_NUM=20
+TARGET_MAX_CHAR_NUM=30
 
 ## Shows help.
 help:

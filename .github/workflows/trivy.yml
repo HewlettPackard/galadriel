@@ -2,7 +2,7 @@ name: trivy
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -17,19 +17,15 @@ jobs:
       
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504
+        uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518
         with:
           egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
 
       - name: Checkout code
         uses: actions/checkout@d0651293c4a5a52e711f25b41b05b2212f385d28
 
-      - name: Build an image from Dockerfile
-        run: |
-          docker build -f doc/api/Dockerfile -t galadriel-doc:${{ github.sha }} .
-
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+        uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5
         with:
           scan-type: 'fs'
           scan-ref: '.'
