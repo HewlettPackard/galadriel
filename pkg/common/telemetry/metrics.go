@@ -10,6 +10,7 @@ import (
 )
 
 // Label is a label/tag for a metric
+// TODO: Sanitize labels
 type Label = metrics.Label
 
 // Sink is an interface for emitting metrics
@@ -85,11 +86,12 @@ func NewMetrics(c *MetricsConfig) (*MetricsImpl, error) {
 
 // ListenAndServe starts the metrics process
 func (m *MetricsImpl) ListenAndServe(ctx context.Context) error {
-	var err error
+	var tasks []util.RunnableTask
 	for _, runner := range m.runners {
-		err = util.RunTasks(ctx, runner.run)
+		tasks = append(tasks, runner.run)
 	}
-	return err
+
+	return util.RunTasks(ctx, tasks...)
 }
 
 //SetGauge sets the gauge for the metrics
@@ -100,7 +102,6 @@ func (m *MetricsImpl) SetGauge(key []string, val float32) {
 }
 
 // SetGaugeWithLabels sets the gauge with labels/tags
-// TODO: Sanatize Labels
 func (m *MetricsImpl) SetGaugeWithLabels(key []string, val float32, labels []Label) {
 	for _, s := range m.metricsSinks {
 		s.SetGaugeWithLabels(key, val, labels)
@@ -121,7 +122,6 @@ func (m *MetricsImpl) IncrCounter(key []string, val float32) {
 }
 
 // IncrCounterWithLabels delegates to embedded metrics
-// TODO: Sanatize Labels
 func (m *MetricsImpl) IncrCounterWithLabels(key []string, val float32, labels []Label) {
 	for _, s := range m.metricsSinks {
 		s.IncrCounterWithLabels(key, val, labels)
@@ -136,7 +136,6 @@ func (m *MetricsImpl) AddSample(key []string, val float32) {
 }
 
 // AddSampleWithLabels add a sample value to the metrics with labels/tag
-// TODO: Sanatize Labels
 func (m *MetricsImpl) AddSampleWithLabels(key []string, val float32, labels []Label) {
 	for _, s := range m.metricsSinks {
 		s.AddSampleWithLabels(key, val, labels)
@@ -151,7 +150,6 @@ func (m *MetricsImpl) MeasureSince(key []string, start time.Time) {
 }
 
 // MeasureSinceWithLabels measure the elapsed time with labels/tags embedded to it
-// TODO: Sanatize Labels
 func (m *MetricsImpl) MeasureSinceWithLabels(key []string, start time.Time, labels []Label) {
 	for _, s := range m.metricsSinks {
 		s.MeasureSinceWithLabels(key, start, labels)

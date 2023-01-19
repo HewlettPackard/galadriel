@@ -14,65 +14,79 @@ import (
 
 func TestNewPrometheusRunner(t *testing.T) {
 	config := testPrometheusConfig()
-	pr, err := newTestPrometheusRunner(config)
-	assert.Nil(t, err)
-	assert.NotNil(t, pr)
 
-	config.PrometheusConf = nil
-	pr, err = newTestPrometheusRunner(config)
-	assert.Nil(t, err)
-	assert.NotNil(t, pr)
+	t.Run("Configuration is properly set and no error is returned", func(t *testing.T) {
+		pr, err := newTestPrometheusRunner(config)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+	})
+
+	t.Run("No error is returned but the configuration is nil", func(t *testing.T) {
+		config.PrometheusConf = nil
+		pr, err := newTestPrometheusRunner(config)
+		assert.Nil(t, err)
+		assert.NotNil(t, pr)
+	})
+
 }
 
-func TestIsConfigured(t *testing.T) {
+func TestConfiguration(t *testing.T) {
 	config := testPrometheusConfig()
 
-	pr, err := newTestPrometheusRunner(config)
-	require.NoError(t, err)
-	assert.True(t, pr.isConfigured())
+	t.Run("Success when the config is properly filled", func(t *testing.T) {
+		pr, err := newTestPrometheusRunner(config)
+		require.NoError(t, err)
+		assert.True(t, pr.isConfigured())
+	})
 
-	config.PrometheusConf = nil
-	pr, err = newTestPrometheusRunner(config)
-	require.NoError(t, err)
-	assert.False(t, pr.isConfigured())
+	t.Run("Error when the config is missing required properties", func(t *testing.T) {
+		config.PrometheusConf = nil
+		pr, err := newTestPrometheusRunner(config)
+		require.NoError(t, err)
+		assert.False(t, pr.isConfigured())
+	})
 }
 
 func TestRun(t *testing.T) {
 	config := testPrometheusConfig()
-
-	pr, err := newTestPrometheusRunner(config)
-	require.NoError(t, err)
-
 	errCh := make(chan error)
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		errCh <- pr.run(ctx)
-	}()
 
-	// It stops when it's supposed to
-	cancel()
-	select {
-	case err := <-errCh:
-		assert.Equal(t, context.Canceled, err)
-	case <-time.After(time.Minute):
-		t.Fatal("timeout waiting for shutdown")
-	}
+	t.Run("Runs and stops when the context is canceled", func(t *testing.T) {
+		pr, err := newTestPrometheusRunner(config)
+		require.NoError(t, err)
 
-	config.PrometheusConf = nil
-	pr, err = newTestPrometheusRunner(config)
-	require.NoError(t, err)
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			errCh <- pr.run(ctx)
+		}()
 
-	go func() {
-		errCh <- pr.run(context.Background())
-	}()
+		cancel()
+		select {
+		case err := <-errCh:
+			assert.Equal(t, context.Canceled, err)
+		case <-time.After(time.Minute):
+			t.Fatal("timeout waiting for shutdown")
+		}
 
-	// It doesn't run if it's not configured
-	select {
-	case err := <-errCh:
-		assert.Nil(t, err, "should be nil if not configured")
-	case <-time.After(time.Minute):
-		t.Fatal("prometheus running but not configured")
-	}
+	})
+
+	t.Run("Does not run if not configured", func(t *testing.T) {
+		config.PrometheusConf = nil
+		pr, err := newTestPrometheusRunner(config)
+		require.NoError(t, err)
+
+		go func() {
+			errCh <- pr.run(context.Background())
+		}()
+
+		select {
+		case err := <-errCh:
+			assert.Nil(t, err, "should be nil if not configured")
+		case <-time.After(time.Minute):
+			t.Fatal("prometheus running but not configured")
+		}
+	})
+
 }
 
 func testPrometheusConfig() *MetricsConfig {

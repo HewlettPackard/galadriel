@@ -6,7 +6,7 @@ import "github.com/sirupsen/logrus"
 type MetricsConfig struct {
 	Logger logrus.FieldLogger
 
-	// ServiceName is the name of the service that is been monitored
+	// ServiceName is the name of the service that is being monitored
 	ServiceName string
 
 	// Sink represents the interface for sending metrics
