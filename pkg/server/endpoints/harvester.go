@@ -79,7 +79,9 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			e.handleTcpError(ctx, fmt.Sprintf("failed to update member: %v", err))
 			return err
 		}
-		e.Logger.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
+
+		td := util.LogSanitize(receivedHarvesterState.TrustDomain.String())
+		e.Logger.Debugf("Trust domain %s has been successfully updated", td)
 	}
 
 	return nil

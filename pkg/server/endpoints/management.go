@@ -36,7 +36,8 @@ func (e *Endpoints) createMemberHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	e.Logger.Printf("Created member for trust domain: %s", memberReq.TrustDomain)
+	td := util.LogSanitize(memberReq.TrustDomain.String())
+	e.Logger.Printf("Created member for trust domain: %s", td)
 
 	memberBytes, err := json.Marshal(m)
 	if err != nil {
@@ -100,7 +101,9 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	e.Logger.Printf("Created relationship between trust domains %s and %s", relationshipReq.MemberA.TrustDomain, relationshipReq.MemberB.TrustDomain)
+	tdA := util.LogSanitize(relationshipReq.MemberA.TrustDomain.String())
+	tdB := util.LogSanitize(relationshipReq.MemberB.TrustDomain.String())
+	e.Logger.Printf("Created relationship between trust domains %s and %s", tdA, tdB)
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {
@@ -211,9 +214,13 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
+	errMsg = util.LogSanitize(errMsg)
 	e.Logger.Errorf(errMsg)
-	w.WriteHeader(500)
-	_, err := w.Write([]byte(errMsg))
+
+	errBytes := []byte(errMsg)
+	w.WriteHeader(len(errBytes))
+
+	err := json.NewEncoder(w).Encode(errBytes)
 	if err != nil {
 		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
