@@ -717,7 +717,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token1)
 	assert.Equal(t, req1.Token, token1.Token)
-	requireEqualDate(t, req1.Expiry, token1.Expiry.In(loc))
+	assertEqualDate(t, req1.Expiry, token1.Expiry.In(loc))
 	require.False(t, token1.Used)
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 
@@ -740,7 +740,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	assert.Equal(t, req1.MemberID, token1.MemberID)
 	require.False(t, token2.Used)
 
-	requireEqualDate(t, req2.Expiry, token2.Expiry.In(loc))
+	assertEqualDate(t, req2.Expiry, token2.Expiry.In(loc))
 	assert.Equal(t, req2.MemberID, token2.MemberID)
 
 	// Look up token stored in DB and compare
@@ -885,7 +885,7 @@ func TestCRUDHarvester(t *testing.T) {
 	require.NotNil(t, harvester1)
 	assert.Equal(t, req2.MemberID, harvester2.MemberID)
 	assert.Equal(t, req2.IsLeader, harvester2.IsLeader)
-	requireEqualDate(t, req2.LeaderUntil, harvester2.LeaderUntil.In(loc))
+	assertEqualDate(t, req2.LeaderUntil, harvester2.LeaderUntil.In(loc))
 
 	// Look up token stored in DB and compare
 	stored, err = datastore.FindHarvesterByID(ctx, harvester2.ID.UUID)
@@ -928,7 +928,7 @@ func TestCRUDHarvester(t *testing.T) {
 	updated, err := datastore.CreateOrUpdateHarvester(ctx, harvester1)
 	require.NoError(t, err)
 	assert.Equal(t, harvester1.IsLeader, updated.IsLeader)
-	requireEqualDate(t, harvester1.LeaderUntil, updated.LeaderUntil.In(loc))
+	assertEqualDate(t, harvester1.LeaderUntil, updated.LeaderUntil.In(loc))
 	harvester1 = updated
 
 	// Look up in DB and compare
@@ -969,7 +969,7 @@ func TestCRUDHarvester(t *testing.T) {
 	assert.Equal(t, 0, len(harvesters))
 }
 
-func requireEqualDate(t *testing.T, time1 time.Time, time2 time.Time) {
+func assertEqualDate(t *testing.T, time1 time.Time, time2 time.Time) {
 	y1, m1, d1 := time1.Date()
 	y2, m2, d2 := time2.Date()
 	h1, mt1, s1 := time1.Clock()
