@@ -37,8 +37,8 @@ type Member struct {
 
 type Membership struct {
 	ID                uuid.NullUUID
-	MemberID          uuid.NullUUID `json:"member_id"`
-	FederationGroupID uuid.NullUUID `json:"federation_group_id"`
+	MemberID          uuid.UUID `json:"member_id"`
+	FederationGroupID uuid.UUID `json:"federation_group_id"`
 	Status            Status
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
@@ -49,9 +49,9 @@ type JoinToken struct {
 	Token     string
 	Expiry    time.Time
 	Used      bool
-	MemberID  uuid.NullUUID `json:"member_id"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	MemberID  uuid.UUID `json:"member_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // Bundle represents a SPIFFE Trust bundle along with its digest.
@@ -62,18 +62,18 @@ type Bundle struct {
 	SignedBundle []byte        `json:"signed_bundle"`
 	TlogID       uuid.NullUUID `json:"tlog_id"`
 	SvidPem      string        `json:"svid_pem"`
-	MemberID     uuid.NullUUID `json:"member_id"`
+	MemberID     uuid.UUID     `json:"member_id"`
 	CreatedAt    time.Time     `json:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"`
 }
 
 type Harvester struct {
 	ID          uuid.NullUUID
-	MemberID    uuid.NullUUID `json:"member_id"`
-	IsLeader    bool          `json:"is_leader"`
-	LeaderUntil time.Time     `json:"leader_until"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
+	MemberID    uuid.UUID `json:"member_id"`
+	IsLeader    bool      `json:"is_leader"`
+	LeaderUntil time.Time `json:"leader_until"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (s Status) String() string {

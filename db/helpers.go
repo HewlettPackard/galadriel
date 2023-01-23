@@ -63,20 +63,10 @@ func (m Membership) ToEntity() (*entity.Membership, error) {
 		Valid: true,
 	}
 
-	memberID := uuid.NullUUID{
-		UUID:  m.MemberID.Bytes,
-		Valid: true,
-	}
-
-	fgID := uuid.NullUUID{
-		UUID:  m.FederationGroupID.Bytes,
-		Valid: true,
-	}
-
 	return &entity.Membership{
 		ID:                id,
-		MemberID:          memberID,
-		FederationGroupID: fgID,
+		MemberID:          m.MemberID.Bytes,
+		FederationGroupID: m.FederationGroupID.Bytes,
 		Status:            status,
 		CreatedAt:         m.CreatedAt,
 		UpdatedAt:         m.UpdatedAt,
@@ -86,10 +76,6 @@ func (m Membership) ToEntity() (*entity.Membership, error) {
 func (b Bundle) ToEntity() (*entity.Bundle, error) {
 	id := uuid.NullUUID{
 		UUID:  b.ID.Bytes,
-		Valid: true,
-	}
-	memberID := uuid.NullUUID{
-		UUID:  b.MemberID.Bytes,
 		Valid: true,
 	}
 
@@ -105,7 +91,7 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 		SignedBundle: b.SignedBundle,
 		TlogID:       b.TlogID,
 		SvidPem:      pem,
-		MemberID:     memberID,
+		MemberID:     b.MemberID.Bytes,
 		CreatedAt:    b.CreatedAt,
 		UpdatedAt:    b.UpdatedAt,
 	}, nil
@@ -114,10 +100,6 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 func (t JoinToken) ToEntity() *entity.JoinToken {
 	id := uuid.NullUUID{
 		UUID:  t.ID.Bytes,
-		Valid: true,
-	}
-	memberID := uuid.NullUUID{
-		UUID:  t.MemberID.Bytes,
 		Valid: true,
 	}
 
@@ -131,7 +113,7 @@ func (t JoinToken) ToEntity() *entity.JoinToken {
 		Token:     t.Token,
 		Expiry:    t.Expiry,
 		Used:      used,
-		MemberID:  memberID,
+		MemberID:  t.MemberID.Bytes,
 		CreatedAt: t.CreatedAt,
 		UpdatedAt: t.UpdatedAt,
 	}
@@ -142,10 +124,6 @@ func (h Harvester) ToEntity() *entity.Harvester {
 		UUID:  h.ID.Bytes,
 		Valid: true,
 	}
-	memberID := uuid.NullUUID{
-		UUID:  h.MemberID.Bytes,
-		Valid: true,
-	}
 
 	isLeader := false
 	if h.IsLeader.Valid {
@@ -154,7 +132,7 @@ func (h Harvester) ToEntity() *entity.Harvester {
 
 	return &entity.Harvester{
 		ID:          id,
-		MemberID:    memberID,
+		MemberID:    h.MemberID.Bytes,
 		IsLeader:    isLeader,
 		LeaderUntil: h.LeaderUntil,
 		CreatedAt:   h.CreatedAt,

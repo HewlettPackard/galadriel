@@ -324,8 +324,8 @@ func TestCRUDMembership(t *testing.T) {
 
 	// Create membership Member-1 -> FederationGroup-1
 	req1 := &entity.Membership{
-		MemberID:          m1.ID,
-		FederationGroupID: fg1.ID,
+		MemberID:          m1.ID.UUID,
+		FederationGroupID: fg1.ID.UUID,
 		Status:            entity.StatusPending,
 	}
 	membership1, err := datastore.CreateOrUpdateMembership(ctx, req1)
@@ -341,8 +341,8 @@ func TestCRUDMembership(t *testing.T) {
 
 	// Create membership Member-1 -> FederationGroup-2
 	req2 := &entity.Membership{
-		MemberID:          m1.ID,
-		FederationGroupID: fg2.ID,
+		MemberID:          m1.ID.UUID,
+		FederationGroupID: fg2.ID.UUID,
 		Status:            entity.StatusPending,
 	}
 	membership2, err := datastore.CreateOrUpdateMembership(ctx, req2)
@@ -358,8 +358,8 @@ func TestCRUDMembership(t *testing.T) {
 
 	// Create membership Member-2 -> FederationGroup-2
 	req3 := &entity.Membership{
-		MemberID:          m2.ID,
-		FederationGroupID: fg2.ID,
+		MemberID:          m2.ID.UUID,
+		FederationGroupID: fg2.ID.UUID,
 		Status:            entity.StatusPending,
 	}
 	membership3, err := datastore.CreateOrUpdateMembership(ctx, req3)
@@ -377,13 +377,13 @@ func TestCRUDMembership(t *testing.T) {
 	memberships, err := datastore.FindMembershipsByMemberID(ctx, m1.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(memberships))
-	memberships[0].MemberID = m1.ID
-	memberships[1].MemberID = m1.ID
+	memberships[0].MemberID = m1.ID.UUID
+	memberships[1].MemberID = m1.ID.UUID
 
 	memberships, err = datastore.FindMembershipsByMemberID(ctx, m2.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(memberships))
-	memberships[0].MemberID = m2.ID
+	memberships[0].MemberID = m2.ID.UUID
 
 	// List all memberships
 	memberships, err = datastore.ListMemberships(ctx)
@@ -450,8 +450,8 @@ func TestMembershipForeignKeysConstraints(t *testing.T) {
 	require.NoError(t, err)
 
 	membership1 := &entity.Membership{
-		MemberID:          m1.ID,
-		FederationGroupID: fg1.ID,
+		MemberID:          m1.ID.UUID,
+		FederationGroupID: fg1.ID.UUID,
 		Status:            entity.StatusPending,
 	}
 	membership1, err = datastore.CreateOrUpdateMembership(ctx, membership1)
@@ -518,7 +518,7 @@ func TestCRUDBundle(t *testing.T) {
 			Valid: true,
 		},
 		SvidPem:  "svid-pem",
-		MemberID: m1.ID,
+		MemberID: m1.ID.UUID,
 	}
 
 	b1, err := datastore.CreateOrUpdateBundle(ctx, req1)
@@ -546,7 +546,7 @@ func TestCRUDBundle(t *testing.T) {
 			Valid: true,
 		},
 		SvidPem:  "svid-2-pem",
-		MemberID: m2.ID,
+		MemberID: m2.ID.UUID,
 	}
 
 	b2, err := datastore.CreateOrUpdateBundle(ctx, req2)
@@ -651,7 +651,7 @@ func TestBundleUniqueMemberConstraint(t *testing.T) {
 			Valid: true,
 		},
 		SvidPem:  "svid-pem",
-		MemberID: m1.ID,
+		MemberID: m1.ID.UUID,
 	}
 	b1, err = datastore.CreateOrUpdateBundle(ctx, b1)
 	require.NoError(t, err)
@@ -667,7 +667,7 @@ func TestBundleUniqueMemberConstraint(t *testing.T) {
 			Valid: true,
 		},
 		SvidPem:  "svid-pem",
-		MemberID: m1.ID,
+		MemberID: m1.ID.UUID,
 	}
 	b2, err = datastore.CreateOrUpdateBundle(ctx, b2)
 	require.Error(t, err)
@@ -710,7 +710,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	req1 := &entity.JoinToken{
 		Token:    uuid.NewString(),
 		Expiry:   expiry,
-		MemberID: m1.ID,
+		MemberID: m1.ID.UUID,
 	}
 
 	token1, err := datastore.CreateJoinToken(ctx, req1)
@@ -730,7 +730,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	req2 := &entity.JoinToken{
 		Token:    uuid.NewString(),
 		Expiry:   expiry,
-		MemberID: m2.ID,
+		MemberID: m2.ID.UUID,
 	}
 
 	token2, err := datastore.CreateJoinToken(ctx, req2)
@@ -752,7 +752,7 @@ func TestCRUDJoinToken(t *testing.T) {
 	req3 := &entity.JoinToken{
 		Token:    uuid.NewString(),
 		Expiry:   expiry,
-		MemberID: m2.ID,
+		MemberID: m2.ID.UUID,
 	}
 
 	token3, err := datastore.CreateJoinToken(ctx, req3)
@@ -854,7 +854,7 @@ func TestCRUDHarvester(t *testing.T) {
 
 	// Create first harvester -> member_1
 	req1 := &entity.Harvester{
-		MemberID: m1.ID,
+		MemberID: m1.ID.UUID,
 		IsLeader: false,
 	}
 
@@ -875,7 +875,7 @@ func TestCRUDHarvester(t *testing.T) {
 
 	// Create second harvester -> member_2
 	req2 := &entity.Harvester{
-		MemberID:    m2.ID,
+		MemberID:    m2.ID.UUID,
 		IsLeader:    true,
 		LeaderUntil: inOneHour,
 	}
@@ -894,7 +894,7 @@ func TestCRUDHarvester(t *testing.T) {
 
 	// Create third harvester -> member_2
 	req3 := &entity.Harvester{
-		MemberID: m2.ID,
+		MemberID: m2.ID.UUID,
 		IsLeader: false,
 	}
 

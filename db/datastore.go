@@ -326,10 +326,6 @@ func (d *Datastore) ListFederationGroups(ctx context.Context) ([]*entity.Federat
 }
 
 func (d *Datastore) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle) (*entity.Bundle, error) {
-	if !req.MemberID.Valid {
-		return nil, errors.New("bundle member ID cannot be empty")
-	}
-
 	var bundle *Bundle
 	var err error
 	if req.ID.Valid {
@@ -350,7 +346,7 @@ func (d *Datastore) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle
 }
 
 func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
-	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	pgMemberID, err := uuidToPgType(req.MemberID)
 	if err != nil {
 		return nil, err
 	}
@@ -475,7 +471,7 @@ func (d *Datastore) DeleteBundle(ctx context.Context, bundleID uuid.UUID) error 
 }
 
 func (d *Datastore) CreateJoinToken(ctx context.Context, req *entity.JoinToken) (*entity.JoinToken, error) {
-	pgID, err := uuidToPgType(req.MemberID.UUID)
+	pgID, err := uuidToPgType(req.MemberID)
 	if err != nil {
 		return nil, err
 	}
@@ -618,18 +614,12 @@ func (d *Datastore) CreateOrUpdateMembership(ctx context.Context, req *entity.Me
 }
 
 func (d *Datastore) createMembership(ctx context.Context, req *entity.Membership) (*Membership, error) {
-	if !req.MemberID.Valid {
-		return nil, errors.New("Member ID is missing")
-	}
-	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	pgMemberID, err := uuidToPgType(req.MemberID)
 	if err != nil {
 		return nil, err
 	}
 
-	if !req.FederationGroupID.Valid {
-		return nil, errors.New("FederationGroup ID is missing")
-	}
-	pgFederationGroupID, err := uuidToPgType(req.FederationGroupID.UUID)
+	pgFederationGroupID, err := uuidToPgType(req.FederationGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -797,10 +787,7 @@ func (d *Datastore) updateHarvester(ctx context.Context, req *entity.Harvester) 
 }
 
 func (d *Datastore) createHarvester(ctx context.Context, req *entity.Harvester) (*Harvester, error) {
-	if !req.MemberID.Valid {
-		return nil, errors.New("harvester member ID cannot be empty")
-	}
-	pgMemberID, err := uuidToPgType(req.MemberID.UUID)
+	pgMemberID, err := uuidToPgType(req.MemberID)
 	if err != nil {
 		return nil, err
 	}
