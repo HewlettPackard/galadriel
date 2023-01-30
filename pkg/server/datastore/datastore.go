@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -72,8 +71,7 @@ func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Memb
 	defer s.mu.Unlock()
 
 	if _, exist := s.members[member.TrustDomain.String()]; exist {
-		td := util.Sanitize(member.TrustDomain.String())
-		return nil, fmt.Errorf("member already exists: %s", td)
+		return nil, fmt.Errorf("member already exists: %s", member.TrustDomain)
 	}
 
 	m := &Member{

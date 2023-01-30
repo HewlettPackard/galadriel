@@ -220,7 +220,9 @@ func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
 	errBytes := []byte(errMsg)
 	w.WriteHeader(len(errBytes))
 
-	err := json.NewEncoder(w).Encode(errBytes)
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(true)
+	err := encoder.Encode(errBytes)
 	if err != nil {
 		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
