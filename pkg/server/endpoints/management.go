@@ -36,8 +36,7 @@ func (e *Endpoints) createMemberHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	td := util.LogSanitize(memberReq.TrustDomain.String())
-	e.Logger.Printf("Created member for trust domain: %s", td)
+	e.Logger.Printf("Created member for trust domain: %s", memberReq.TrustDomain)
 
 	memberBytes, err := json.Marshal(m)
 	if err != nil {
@@ -101,9 +100,7 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	tdA := util.LogSanitize(relationshipReq.MemberA.TrustDomain.String())
-	tdB := util.LogSanitize(relationshipReq.MemberB.TrustDomain.String())
-	e.Logger.Printf("Created relationship between trust domains %s and %s", tdA, tdB)
+	e.Logger.Printf("Created relationship between trust domains %s and %s", relationshipReq.MemberA.TrustDomain, relationshipReq.MemberB.TrustDomain)
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {

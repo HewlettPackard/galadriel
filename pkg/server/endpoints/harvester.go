@@ -80,8 +80,7 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			return err
 		}
 
-		td := util.LogSanitize(receivedHarvesterState.TrustDomain.String())
-		e.Logger.Debugf("Trust domain %s has been successfully updated", td)
+		e.Logger.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
 	}
 
 	return nil
