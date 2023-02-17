@@ -13,7 +13,7 @@ require (
 	github.com/spiffe/spire-api-sdk v1.5.5
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.6.0
-	google.golang.org/grpc v1.52.3
+	google.golang.org/grpc v1.53.0
 )
 
 require (
@@ -38,7 +38,7 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
-	google.golang.org/genproto v0.0.0-20230109162033-3c3c17ce83e6 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
