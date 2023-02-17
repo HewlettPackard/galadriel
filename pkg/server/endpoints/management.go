@@ -211,9 +211,15 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
+	errMsg = util.LogSanitize(errMsg)
 	e.Logger.Errorf(errMsg)
-	w.WriteHeader(500)
-	_, err := w.Write([]byte(errMsg))
+
+	errBytes := []byte(errMsg)
+	w.WriteHeader(len(errBytes))
+
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(true)
+	err := encoder.Encode(errBytes)
 	if err != nil {
 		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
