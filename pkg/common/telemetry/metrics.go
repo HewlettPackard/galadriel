@@ -10,7 +10,6 @@ import (
 )
 
 // Label is a label/tag for a metric
-// TODO: Sanitize labels
 type Label = metrics.Label
 
 // Sink is an interface for emitting metrics
@@ -94,7 +93,7 @@ func (m *MetricsImpl) ListenAndServe(ctx context.Context) error {
 	return util.RunTasks(ctx, tasks...)
 }
 
-//SetGauge sets the gauge for the metrics
+// SetGauge sets the gauge for the metrics
 func (m *MetricsImpl) SetGauge(key []string, val float32) {
 	for _, s := range m.metricsSinks {
 		s.SetGauge(key, val)
@@ -114,7 +113,7 @@ func (m *MetricsImpl) EmitKey(key []string, val float32) {
 	}
 }
 
-//IncrCounter increments the counter for the given metric.
+// IncrCounter increments the counter for the given metric.
 func (m *MetricsImpl) IncrCounter(key []string, val float32) {
 	for _, s := range m.metricsSinks {
 		s.IncrCounter(key, val)

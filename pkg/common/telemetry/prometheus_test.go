@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	errNotConfigured = errors.New("configuration file not specified")
 )
 
 func TestNewPrometheusRunner(t *testing.T) {
@@ -24,9 +29,9 @@ func TestNewPrometheusRunner(t *testing.T) {
 	t.Run("No error is returned but the configuration is nil", func(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
-		assert.NotNil(t, err, "should not be nil if not configured")
+		assert.NotNil(t, err)
 		assert.Nil(t, pr)
-		assert.Equal(t, err.Error(), "configuration file not specified")
+		assert.Equal(t, err, errNotConfigured)
 	})
 
 }
@@ -43,9 +48,9 @@ func TestConfiguration(t *testing.T) {
 	t.Run("Error when the config is missing required properties", func(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
-		assert.NotNil(t, err, "should not be nil if not configured")
+		assert.NotNil(t, err)
 		assert.Nil(t, pr)
-		assert.Equal(t, err.Error(), "configuration file not specified")
+		assert.Equal(t, err, errNotConfigured)
 	})
 }
 
@@ -76,8 +81,8 @@ func TestRun(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
 		assert.Nil(t, pr)
-		assert.NotNil(t, err, "should not be nil if not configured")
-		assert.Equal(t, err.Error(), "configuration file not specified")
+		assert.NotNil(t, err)
+		assert.Equal(t, err, errNotConfigured)
 	})
 
 }
