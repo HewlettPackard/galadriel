@@ -28,13 +28,13 @@ func newPrometheusRunner(c *MetricsConfig) (sinkRunner, error) {
 	}
 
 	if runner.c == nil {
-		return runner, nil
+		return nil, errors.New("configuration file not specified")
 	}
 
 	var err error
 	runner.sink, err = prommetrics.NewPrometheusSinkFrom(prommetrics.PrometheusOpts{})
 	if err != nil {
-		return runner, err
+		return nil, err
 	}
 
 	handlerOpts := promhttp.HandlerOpts{

@@ -24,8 +24,9 @@ func TestNewPrometheusRunner(t *testing.T) {
 	t.Run("No error is returned but the configuration is nil", func(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
+		assert.NotNil(t, err, "should not be nil if not configured")
+		assert.Nil(t, pr)
+		assert.Equal(t, err.Error(), "configuration file not specified")
 	})
 
 }
@@ -42,8 +43,9 @@ func TestConfiguration(t *testing.T) {
 	t.Run("Error when the config is missing required properties", func(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
-		require.NoError(t, err)
-		assert.False(t, pr.isConfigured())
+		assert.NotNil(t, err, "should not be nil if not configured")
+		assert.Nil(t, pr)
+		assert.Equal(t, err.Error(), "configuration file not specified")
 	})
 }
 
@@ -73,18 +75,9 @@ func TestRun(t *testing.T) {
 	t.Run("Does not run if not configured", func(t *testing.T) {
 		config.PrometheusConf = nil
 		pr, err := newTestPrometheusRunner(config)
-		require.NoError(t, err)
-
-		go func() {
-			errCh <- pr.run(context.Background())
-		}()
-
-		select {
-		case err := <-errCh:
-			assert.Nil(t, err, "should be nil if not configured")
-		case <-time.After(time.Minute):
-			t.Fatal("prometheus running but not configured")
-		}
+		assert.Nil(t, pr)
+		assert.NotNil(t, err, "should not be nil if not configured")
+		assert.Equal(t, err.Error(), "configuration file not specified")
 	})
 
 }

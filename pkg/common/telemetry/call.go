@@ -30,15 +30,19 @@ func StartCall(metrics Metrics, key string, keyn ...string) *CallCounter {
 // AddLabel adds a label to be emitted with the call counter.
 func (c *CallCounter) AddLabel(name, value string) {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.labels = append(c.labels, Label{Name: name, Value: value})
-	c.mu.Unlock()
 }
 
 // Done finishes the "call" and emits metrics.
 func (c *CallCounter) Done(errp *error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.done {
 		return
 	}
+
 	c.done = true
 	key := c.key
 
@@ -46,6 +50,7 @@ func (c *CallCounter) Done(errp *error) {
 	if errp != nil {
 		code = status.Code(*errp)
 	}
+
 	c.AddLabel(Status, code.String())
 
 	c.metrics.IncrCounterWithLabels(key, 1, c.labels)
