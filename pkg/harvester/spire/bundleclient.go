@@ -17,7 +17,7 @@ type BundleClient interface {
 	ListFederatedBundles(context.Context) (*ListFederatedBundlesResponse, error)
 }
 
-// NewBundleClient creates a new SPIRE Data API client
+// NewBundleClient creates a new SPIRE Bundle API client
 func NewBundleClient(cc grpc.ClientConnInterface) BundleClient {
 	return bundleClient{client: bundlev1.NewBundleClient(cc)}
 }

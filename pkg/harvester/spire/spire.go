@@ -46,7 +46,7 @@ func NewLocalSpireServer(ctx context.Context, addr net.Addr) SpireServer {
 	}
 }
 
-// GetBundle returns the current Trust Data of the SPIRE Server
+// GetBundle returns the current Trust Bundle of the SPIRE Server
 func (s *localSpireServer) GetBundle(ctx context.Context) (*spiffebundle.Bundle, error) {
 	bundle, err := s.client.GetBundle(ctx)
 	if err != nil {
