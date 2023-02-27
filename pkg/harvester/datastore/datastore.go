@@ -3,7 +3,6 @@ package datastore
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"os"
 	"time"
 
@@ -14,11 +13,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	defaultTTL      = 60 // seconds
-	harvesterPrefix = "harvester"
-	bundleKey       = "latest_bundle"
-)
+//const (
+//	defaultTTL      = 60 // seconds
+//	harvesterPrefix = "harvester"
+//	bundleKey       = "latest_bundle"
+//)
 
 type Datastore interface {
 	EnsureID(id string) (harvesterID string, err error)
@@ -26,9 +25,10 @@ type Datastore interface {
 	IsLeader(harvesterID string) (bool, error)
 	UpdateBundle(bundle *spiffebundle.Bundle) error
 	RevertBundleUpdate() error
+	Close() error
 }
 
-type DatastoreConfig struct {
+type datastoreConfig struct {
 	Endpoints []string
 	RootPath  string
 	CertPath  string
@@ -39,26 +39,24 @@ type DatastoreConfig struct {
 }
 
 type etcd struct {
-	c      *clientv3.Client
-	s      *concurrency.Session
-	logger logrus.Logger
+	c *clientv3.Client
+	s *concurrency.Session
+	// logger logrus.Logger
 }
 
-func MustNewDatastore(dsConfig DatastoreConfig) Datastore {
+func MustNewDatastore(dsConfig datastoreConfig) Datastore {
 	var tlsConfig *tls.Config
 
 	// if any of the cert/key paths are present, assume that TLS is intended.
 	if dsConfig.CertPath != "" {
 		clientCert, err := tls.LoadX509KeyPair(dsConfig.CertPath, dsConfig.KeyPath)
 		if err != nil {
-			fmt.Println("Error loading client certificate:", err)
-			panic(err)
+			logrus.Fatalf("Error loading client certificate: %v", err)
 		}
 
 		caBytes, err := os.ReadFile(dsConfig.RootPath)
 		if err != nil {
-			fmt.Println("Error loading CA certificate:", err)
-			panic(err)
+			logrus.Fatalf("Error loading CA certificate: %v", err)
 		}
 
 		caCertPool := x509.NewCertPool()
@@ -86,8 +84,7 @@ func MustNewDatastore(dsConfig DatastoreConfig) Datastore {
 	// start a new leased session
 	s, err := concurrency.NewSession(cli)
 	if err != nil {
-		fmt.Println("Error creating etcd session:", err)
-		panic(err)
+		logrus.Fatalf("Error creating etcd session: %v", err)
 	}
 
 	return &etcd{
@@ -122,6 +119,11 @@ func (d *etcd) UpdateBundle(bundle *spiffebundle.Bundle) error {
 }
 
 func (d *etcd) RevertBundleUpdate() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *etcd) Close() error {
 	//TODO implement me
 	panic("implement me")
 }
