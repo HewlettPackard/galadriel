@@ -137,7 +137,7 @@ func (d *SQLDatastore) updateTrustDomain(ctx context.Context, req *entity.TrustD
 		}
 	}
 
-	if req.HarvesterSpiffeID.IsZero() != true {
+	if !req.HarvesterSpiffeID.IsZero() {
 		params.HarvesterSpiffeID = sql.NullString{
 			String: req.HarvesterSpiffeID.String(),
 			Valid:  true,

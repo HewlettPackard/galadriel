@@ -124,7 +124,7 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	}
 
 	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), t.Token)
-	if !ok {
+	if err != nil {
 		err := errors.New("error looking up token")
 		e.handleTcpError(ctx, err.Error())
 		return err

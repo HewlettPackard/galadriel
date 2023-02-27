@@ -285,6 +285,9 @@ func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
 	errBytes := []byte(errMsg)
 	w.WriteHeader(500)
 	_, err := w.Write(errBytes)
+	if err != nil {
+		e.Logger.Errorf("Failed to write error response: %v", err)
+	}
 
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(true)
