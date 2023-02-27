@@ -16,7 +16,7 @@ This regenerates the files `models.go`, `db.go`, `querier.go`, and files ending 
 
 # Migrations
 
-Migrations are done using [golang-migrate](github.com/golang-migrate/migrate/v4).
+Migrations are done using [golang-migrate](https://github.com/golang-migrate/migrate).
 
 When a new Datastore object is created using the NewDatastore method, the schema version is verified and 
 migrations are applied if needed. 
