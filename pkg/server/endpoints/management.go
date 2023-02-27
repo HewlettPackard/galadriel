@@ -134,7 +134,7 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	e.Logger.Printf("Created relationship between trust domains %s and %s", relationshipReq.TrustDomainAID, relationshipReq.TrustDomainBID)
+	e.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
 	relBytes, err := json.Marshal(rel)
 	if err != nil {

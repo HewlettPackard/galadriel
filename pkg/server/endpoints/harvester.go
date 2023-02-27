@@ -107,7 +107,7 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			return err
 		}
 
-		e.Logger.Debugf("Trust domain %s has been successfully updated", receivedHarvesterState.TrustDomain)
+		e.Logger.Debugf("Trust domain %s has been successfully updated", harvesterReq.TrustDomainName)
 	}
 
 	return nil
