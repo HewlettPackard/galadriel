@@ -1,5 +1,5 @@
 -- name: CreateJoinToken :one
-INSERT INTO join_tokens(token, expiry, member_id)
+INSERT INTO join_tokens(token, expires_at, trust_domain_id)
 VALUES ($1, $2, $3)
 RETURNING *;
 
@@ -25,10 +25,10 @@ SELECT *
 FROM join_tokens
 WHERE token = $1;
 
--- name: FindJoinTokensByMemberID :many
+-- name: FindJoinTokensByTrustDomainID :many
 SELECT *
 FROM join_tokens
-WHERE member_id = $1;
+WHERE trust_domain_id = $1;
 
 -- name: ListJoinTokens :many
 SELECT *

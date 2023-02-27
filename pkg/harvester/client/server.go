@@ -118,6 +118,7 @@ func (c *client) PostBundle(ctx context.Context, req *common.PostBundleRequest) 
 	}
 
 	url := c.address + postBundlePath
+
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create push bundle request: %v", err)

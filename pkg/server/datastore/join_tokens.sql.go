@@ -3,7 +3,7 @@
 //   sqlc v1.16.0
 // source: join_tokens.sql
 
-package db
+package datastore
 
 import (
 	"context"
@@ -14,26 +14,26 @@ import (
 )
 
 const createJoinToken = `-- name: CreateJoinToken :one
-INSERT INTO join_tokens(token, expiry, member_id)
+INSERT INTO join_tokens(token, expires_at, trust_domain_id)
 VALUES ($1, $2, $3)
-RETURNING id, token, used, expiry, member_id, created_at, updated_at
+RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
 
 type CreateJoinTokenParams struct {
-	Token    string
-	Expiry   time.Time
-	MemberID pgtype.UUID
+	Token         string
+	ExpiresAt     time.Time
+	TrustDomainID pgtype.UUID
 }
 
 func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams) (JoinToken, error) {
-	row := q.queryRow(ctx, q.createJoinTokenStmt, createJoinToken, arg.Token, arg.Expiry, arg.MemberID)
+	row := q.queryRow(ctx, q.createJoinTokenStmt, createJoinToken, arg.Token, arg.ExpiresAt, arg.TrustDomainID)
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
+		&i.TrustDomainID,
 		&i.Token,
 		&i.Used,
-		&i.Expiry,
-		&i.MemberID,
+		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -52,7 +52,7 @@ func (q *Queries) DeleteJoinToken(ctx context.Context, id pgtype.UUID) error {
 }
 
 const findJoinToken = `-- name: FindJoinToken :one
-SELECT id, token, used, expiry, member_id, created_at, updated_at
+SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
 WHERE token = $1
 `
@@ -62,10 +62,10 @@ func (q *Queries) FindJoinToken(ctx context.Context, token string) (JoinToken, e
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
+		&i.TrustDomainID,
 		&i.Token,
 		&i.Used,
-		&i.Expiry,
-		&i.MemberID,
+		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -73,7 +73,7 @@ func (q *Queries) FindJoinToken(ctx context.Context, token string) (JoinToken, e
 }
 
 const findJoinTokenByID = `-- name: FindJoinTokenByID :one
-SELECT id, token, used, expiry, member_id, created_at, updated_at
+SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
 WHERE id = $1
 `
@@ -83,24 +83,24 @@ func (q *Queries) FindJoinTokenByID(ctx context.Context, id pgtype.UUID) (JoinTo
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
+		&i.TrustDomainID,
 		&i.Token,
 		&i.Used,
-		&i.Expiry,
-		&i.MemberID,
+		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const findJoinTokensByMemberID = `-- name: FindJoinTokensByMemberID :many
-SELECT id, token, used, expiry, member_id, created_at, updated_at
+const findJoinTokensByTrustDomainID = `-- name: FindJoinTokensByTrustDomainID :many
+SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
-WHERE member_id = $1
+WHERE trust_domain_id = $1
 `
 
-func (q *Queries) FindJoinTokensByMemberID(ctx context.Context, memberID pgtype.UUID) ([]JoinToken, error) {
-	rows, err := q.query(ctx, q.findJoinTokensByMemberIDStmt, findJoinTokensByMemberID, memberID)
+func (q *Queries) FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID pgtype.UUID) ([]JoinToken, error) {
+	rows, err := q.query(ctx, q.findJoinTokensByTrustDomainIDStmt, findJoinTokensByTrustDomainID, trustDomainID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +110,10 @@ func (q *Queries) FindJoinTokensByMemberID(ctx context.Context, memberID pgtype.
 		var i JoinToken
 		if err := rows.Scan(
 			&i.ID,
+			&i.TrustDomainID,
 			&i.Token,
 			&i.Used,
-			&i.Expiry,
-			&i.MemberID,
+			&i.ExpiresAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -131,7 +131,7 @@ func (q *Queries) FindJoinTokensByMemberID(ctx context.Context, memberID pgtype.
 }
 
 const listJoinTokens = `-- name: ListJoinTokens :many
-SELECT id, token, used, expiry, member_id, created_at, updated_at
+SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
 ORDER BY created_at DESC
 `
@@ -147,10 +147,10 @@ func (q *Queries) ListJoinTokens(ctx context.Context) ([]JoinToken, error) {
 		var i JoinToken
 		if err := rows.Scan(
 			&i.ID,
+			&i.TrustDomainID,
 			&i.Token,
 			&i.Used,
-			&i.Expiry,
-			&i.MemberID,
+			&i.ExpiresAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -172,7 +172,7 @@ UPDATE join_tokens
     SET used = $2,
         updated_at = now()
 WHERE id = $1
-RETURNING id, token, used, expiry, member_id, created_at, updated_at
+RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
 
 type UpdateJoinTokenParams struct {
@@ -185,10 +185,10 @@ func (q *Queries) UpdateJoinToken(ctx context.Context, arg UpdateJoinTokenParams
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
+		&i.TrustDomainID,
 		&i.Token,
 		&i.Used,
-		&i.Expiry,
-		&i.MemberID,
+		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

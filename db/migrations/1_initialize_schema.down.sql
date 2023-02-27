@@ -1,7 +1,0 @@
-DROP TABLE IF EXISTS harvesters;
-DROP TABLE IF EXISTS join_tokens;
-DROP TABLE IF EXISTS memberships;
-DROP TABLE IF EXISTS bundles;
-DROP TABLE IF EXISTS members;
-DROP TABLE IF EXISTS federation_groups;
-DROP TYPE IF EXISTS status;
