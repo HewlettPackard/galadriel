@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
+
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
-	"github.com/sirupsen/logrus"
-	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 )
 
 var logger = logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterController)
@@ -20,25 +21,70 @@ var logger = logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterContro
 func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) util.RunnableTask {
 	return func(ctx context.Context) error {
 		t := time.NewTicker(interval)
-		var currentDigest []byte
+		var (
+			currentDigest []byte
+			// harvesterID   string
+		)
 
 		for {
 			select {
 			case <-t.C:
+				var err error
+				//if ds != nil {
+				//	currentDigest, err = ds.GetCurrentDigest()
+				//	logger.Errorf("Failed fetching current digest: %v", err)
+				//	break
+				//}
+
 				bundle, digest, hasNew := hasNewBundle(ctx, currentDigest, spire)
 				if !hasNew {
 					break
 				}
 				logger.Info("Bundle has changed, pushing to Galadriel Server")
 
+				// HA mode push
+				//if ds != nil {
+				//	harvesterID, err = ds.EnsureID(harvesterID)
+				//	if err != nil {
+				//		// TODO: handle
+				//		logger.Errorf("Failed ensuring harvester ID: %v", err)
+				//		break
+				//	}
+				//	isLeader, err := ds.IsLeader(harvesterID)
+				//	if err != nil {
+				//		// TODO: handle
+				//		logger.Errorf("Failed ensuring harvester ID: %v", err)
+				//		break
+				//	}
+				//	if !isLeader {
+				//		break
+				//	}
+				//}
 				req, err := buildPostBundleRequest(bundle)
 				if err != nil {
 					logger.Error(err)
 					break
 				}
 
+				//if ds != nil {
+				//	// needs to retry
+				//	err = ds.UpdateBundle(bundle)
+				//	// understand better what to do here (faulty db connection)
+				//	if err != nil {
+				//		logger.Errorf("Failed to update X.509 bundle: %v", err)
+				//		break
+				//	}
+				//}
+
 				if err = server.PostBundle(ctx, req); err != nil {
 					logger.Errorf("Failed to push X.509 bundle: %v", err)
+					//if ds != nil {
+					//	// blocks until lease TTL
+					//	err = ds.RevertBundleUpdate()
+					//	if err != nil {
+					//		logger.Errorf("Failed reverting bundle update: %v", err)
+					//	}
+					//}
 					break
 				}
 				logger.Debug("New bundle successfully pushed to Galadriel Server")
