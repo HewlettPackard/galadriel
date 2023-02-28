@@ -1,4 +1,4 @@
-package datastore
+package datastore_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -31,25 +32,18 @@ var (
 	spiffeTD1 = spiffeid.RequireTrustDomainFromString("foo.test")
 	spiffeTD2 = spiffeid.RequireTrustDomainFromString("bar.test")
 	spiffeTD3 = spiffeid.RequireTrustDomainFromString("baz.test")
-	otherTD   = spiffeid.RequireTrustDomainFromString("other.test")
 )
 
-func TestCRUDTrustDomain(t *testing.T) {
+func TestCreateTrustDomain(t *testing.T) {
 	t.Parallel()
-	ds, err := setupDatastore(t)
-	require.NoError(t, err, "Failed to setup the ds")
+	ds, ctx := setupTest(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-
-	// Create Name
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1, err := ds.CreateOrUpdateTrustDomain(ctx, req1)
-	require.NoError(t, err)
-	require.NotNil(t, td1.ID)
+	td1 := createTrustDomain(t, ctx, ds, req1)
 	assert.Equal(t, req1.Name, td1.Name)
+	require.NotNil(t, td1.ID)
 	require.NotNil(t, td1.CreatedAt)
 	require.NotNil(t, td1.UpdatedAt)
 
@@ -57,85 +51,107 @@ func TestCRUDTrustDomain(t *testing.T) {
 	stored, err := ds.FindTrustDomainByID(ctx, td1.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, td1, stored)
+}
 
-	// Create second trust domain
-	req2 := &entity.TrustDomain{
-		Name: spiffeTD2,
+func TestUpdateTrustDomain(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	req1 := &entity.TrustDomain{
+		Name: spiffeTD1,
 	}
-	td2, err := ds.CreateOrUpdateTrustDomain(ctx, req2)
-	require.NoError(t, err)
-	require.NotNil(t, td2.ID)
-	assert.Equal(t, req2.Name, td2.Name)
-	require.NotNil(t, td2.CreatedAt)
-	require.NotNil(t, td2.UpdatedAt)
+	td1 := createTrustDomain(t, ctx, ds, req1)
 
-	// Look up trustDomain stored in DB and compare
-	stored, err = ds.FindTrustDomainByID(ctx, td2.ID.UUID)
-	require.NoError(t, err)
-	assert.Equal(t, td2, stored)
-
-	// Update First Name
 	td1.Description = "updated_description"
 	td1.HarvesterSpiffeID = spiffeid.RequireFromString("spiffe://domain/test")
 	td1.OnboardingBundle = []byte{1, 2, 3}
+
+	// Update Trust Domain
 	updated1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
 	require.NoError(t, err)
 	require.NotNil(t, updated1)
-	assert.Equal(t, td1.Description, updated1.Description)
-	assert.Equal(t, td1.HarvesterSpiffeID, updated1.HarvesterSpiffeID)
-	assert.Equal(t, td1.OnboardingBundle, updated1.OnboardingBundle)
 
-	// Look up trustDomain stored in DB and compare
-	stored, err = ds.FindTrustDomainByID(ctx, td1.ID.UUID)
+	// Look up trust domain stored in DB and compare
+	stored, err := ds.FindTrustDomainByID(ctx, td1.ID.UUID)
 	require.NoError(t, err)
-	assert.Equal(t, updated1, stored)
+	assert.Equal(t, td1.ID, stored.ID)
+	assert.Equal(t, td1.Description, stored.Description)
+	assert.Equal(t, td1.HarvesterSpiffeID, stored.HarvesterSpiffeID)
+	assert.Equal(t, td1.OnboardingBundle, stored.OnboardingBundle)
+}
 
-	// Find trustDomains by Trust Domain
-	found1, err := ds.FindTrustDomainByName(ctx, td1.Name)
+func TestTrustFindDomainByName(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	req1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 := createTrustDomain(t, ctx, ds, req1)
+
+	req2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 := createTrustDomain(t, ctx, ds, req2)
+
+	stored1, err := ds.FindTrustDomainByName(ctx, td1.Name)
 	require.NoError(t, err)
-	require.NotNil(t, found1)
-	assert.Equal(t, updated1, found1)
+	assert.Equal(t, td1, stored1)
 
-	found2, err := ds.FindTrustDomainByName(ctx, td2.Name)
+	stored2, err := ds.FindTrustDomainByName(ctx, td2.Name)
 	require.NoError(t, err)
-	require.NotNil(t, found2)
-	assert.Equal(t, td2, found2)
+	assert.Equal(t, td2, stored2)
+}
 
-	// Look up non-existent trustDomain
-	found, err := ds.FindTrustDomainByName(ctx, otherTD)
+func TestDeleteTrustDomain(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	req1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 := createTrustDomain(t, ctx, ds, req1)
+
+	req2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 := createTrustDomain(t, ctx, ds, req2)
+
+	err := ds.DeleteTrustDomain(ctx, td1.ID.UUID)
 	require.NoError(t, err)
-	require.Nil(t, found)
 
-	// List trustDomains
-	trustDomains, err := ds.ListTrustDomains(ctx)
+	stored, err := ds.FindTrustDomainByID(ctx, td1.ID.UUID)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(trustDomains))
-	require.Contains(t, trustDomains, found1)
-	require.Contains(t, trustDomains, found2)
+	require.Nil(t, stored)
 
-	// Delete trustDomain
-	err = ds.DeleteTrustDomain(ctx, td1.ID.UUID)
-	require.NoError(t, err)
-
-	// Check that the deleted trustDomain is no longer in the DB
-	found, err = ds.FindTrustDomainByID(ctx, td1.ID.UUID)
-	require.NoError(t, err)
-	require.Nil(t, found)
-
-	// and that one trustDomain remains
-	trustDomains, err = ds.ListTrustDomains(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(trustDomains))
-	assert.Equal(t, td2, trustDomains[0])
-
-	// Delete the other trustDomain
 	err = ds.DeleteTrustDomain(ctx, td2.ID.UUID)
 	require.NoError(t, err)
 
-	// Check that all trustDomains were deleted
-	trustDomains, err = ds.ListTrustDomains(ctx)
+	stored, err = ds.FindTrustDomainByID(ctx, td2.ID.UUID)
 	require.NoError(t, err)
-	assert.Equal(t, 0, len(trustDomains))
+	require.Nil(t, stored)
+}
+
+func TestListTrustDomains(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	req1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 := createTrustDomain(t, ctx, ds, req1)
+
+	req2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 := createTrustDomain(t, ctx, ds, req2)
+
+	list, err := ds.ListTrustDomains(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, list)
+	assert.Equal(t, 2, len(list))
+	assert.Contains(t, list, td1)
+	assert.Contains(t, list, td2)
 }
 
 func TestTrustDomainUniqueTrustDomainConstraint(t *testing.T) {
@@ -164,109 +180,218 @@ func TestTrustDomainUniqueTrustDomainConstraint(t *testing.T) {
 	assert.Equal(t, pgerrcode.UniqueViolation, errCode, "Unique constraint violation was expected")
 }
 
-func TestCRUDRelationship(t *testing.T) {
+func TestCreateRelationship(t *testing.T) {
 	t.Parallel()
-	datastore, err := setupDatastore(t)
-	require.NoError(t, err, "Failed to setup the datastore")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
+	ds, ctx := setupTest(t)
 
 	// Setup
 	// Create TrustDomains
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1, err = datastore.CreateOrUpdateTrustDomain(ctx, td1)
-	require.NoError(t, err)
+	td1 = createTrustDomain(t, ctx, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2, err = datastore.CreateOrUpdateTrustDomain(ctx, td2)
-	require.NoError(t, err)
-
-	td3 := &entity.TrustDomain{
-		Name: spiffeTD3,
-	}
-	td3, err = datastore.CreateOrUpdateTrustDomain(ctx, td3)
-	require.NoError(t, err)
+	td2 = createTrustDomain(t, ctx, ds, td2)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
 		TrustDomainAID: td1.ID.UUID,
 		TrustDomainBID: td2.ID.UUID,
 	}
-	relationship1, err := datastore.CreateOrUpdateRelationship(ctx, req1)
-	require.NoError(t, err)
+
+	relationship1 := createRelationship(t, ctx, ds, req1)
 	require.NotNil(t, relationship1.ID)
+	require.NotNil(t, relationship1.CreatedAt)
+	require.NotNil(t, relationship1.UpdatedAt)
 	assert.Equal(t, req1.TrustDomainAID, relationship1.TrustDomainAID)
 	assert.Equal(t, req1.TrustDomainBID, relationship1.TrustDomainBID)
 
 	// Look up relationship in DB and compare
-	stored, err := datastore.FindRelationshipByID(ctx, relationship1.ID.UUID)
+	stored, err := ds.FindRelationshipByID(ctx, relationship1.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, relationship1, stored)
+}
+
+func TestUpdateRelationship(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	// Setup
+	// Create TrustDomains
+	td1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 = createTrustDomain(t, ctx, ds, td1)
+
+	td2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 = createTrustDomain(t, ctx, ds, td2)
+
+	// Create relationship TrustDomain1 -- TrustDomain2
+	req1 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td2.ID.UUID,
+	}
+
+	relationship1 := createRelationship(t, ctx, ds, req1)
+
+	relationship1.TrustDomainAConsent = true
+	relationship1.TrustDomainBConsent = true
+
+	updated1, err := ds.CreateOrUpdateRelationship(ctx, relationship1)
+	require.NoError(t, err)
+
+	// Look up relationship in DB and compare
+	stored, err := ds.FindRelationshipByID(ctx, updated1.ID.UUID)
+	require.NoError(t, err)
+	assert.Equal(t, updated1, stored)
+	assert.True(t, stored.TrustDomainAConsent)
+	assert.True(t, stored.TrustDomainBConsent)
+}
+
+func TestFindRelationshipByTrustDomain(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	// Setup
+	// Create TrustDomains
+	td1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 = createTrustDomain(t, ctx, ds, td1)
+
+	td2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 = createTrustDomain(t, ctx, ds, td2)
+
+	td3 := &entity.TrustDomain{
+		Name: spiffeTD3,
+	}
+	td3 = createTrustDomain(t, ctx, ds, td3)
+
+	// Create relationship TrustDomain1 -- TrustDomain2
+	req1 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td2.ID.UUID,
+	}
+
+	relationship1 := createRelationship(t, ctx, ds, req1)
 
 	// Create relationship TrustDomain1 -- TrustDomain3
 	req2 := &entity.Relationship{
 		TrustDomainAID: td1.ID.UUID,
 		TrustDomainBID: td3.ID.UUID,
 	}
-	relationship2, err := datastore.CreateOrUpdateRelationship(ctx, req2)
-	require.NoError(t, err)
-	require.NotNil(t, relationship2.ID)
-	assert.Equal(t, req2.TrustDomainAID, relationship2.TrustDomainAID)
-	assert.Equal(t, req2.TrustDomainBID, relationship2.TrustDomainBID)
-
-	// Look up relationship in DB and compare
-	stored, err = datastore.FindRelationshipByID(ctx, relationship2.ID.UUID)
-	require.NoError(t, err)
-	assert.Equal(t, relationship2, stored)
+	relationship2 := createRelationship(t, ctx, ds, req2)
 
 	// Find relationships by TrustDomainID
-	relationships, err := datastore.FindRelationshipsByTrustDomainID(ctx, td1.ID.UUID)
+	relationships, err := ds.FindRelationshipsByTrustDomainID(ctx, td1.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(relationships))
+	assert.Contains(t, relationships, relationship1)
+	assert.Contains(t, relationships, relationship2)
 
-	relationships, err = datastore.FindRelationshipsByTrustDomainID(ctx, td2.ID.UUID)
+	relationships, err = ds.FindRelationshipsByTrustDomainID(ctx, td2.ID.UUID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(relationships))
+	assert.Contains(t, relationships, relationship1)
+}
 
-	// List all relationships
-	relationships, err = datastore.ListRelationships(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(relationships))
+func TestDeleteRelationship(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
 
-	// Update relationship
-	relationship1.TrustDomainAConsent = true
-	relationship1.TrustDomainBConsent = true
-	updated, err := datastore.CreateOrUpdateRelationship(ctx, relationship1)
-	require.NoError(t, err)
-	assert.True(t, updated.TrustDomainAConsent)
-	assert.True(t, updated.TrustDomainBConsent)
+	// Setup
+	// Create TrustDomains
+	td1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 = createTrustDomain(t, ctx, ds, td1)
 
-	// Look up relationship in DB and compare
-	stored, err = datastore.FindRelationshipByID(ctx, relationship1.ID.UUID)
-	require.NoError(t, err)
-	assert.Equal(t, updated, stored)
+	td2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 = createTrustDomain(t, ctx, ds, td2)
+
+	td3 := &entity.TrustDomain{
+		Name: spiffeTD3,
+	}
+	td3 = createTrustDomain(t, ctx, ds, td3)
+
+	// Create relationship TrustDomain1 -- TrustDomain2
+	req1 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td2.ID.UUID,
+	}
+
+	relationship1 := createRelationship(t, ctx, ds, req1)
+
+	// Create relationship TrustDomain1 -- TrustDomain3
+	req2 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td3.ID.UUID,
+	}
+	relationship2 := createRelationship(t, ctx, ds, req2)
 
 	// Delete relationships
-	err = datastore.DeleteRelationship(ctx, relationship1.ID.UUID)
+	err := ds.DeleteRelationship(ctx, relationship1.ID.UUID)
 	require.NoError(t, err)
-	stored, err = datastore.FindRelationshipByID(ctx, relationship1.ID.UUID)
-	require.NoError(t, err)
-	assert.Nil(t, stored)
-
-	err = datastore.DeleteRelationship(ctx, relationship2.ID.UUID)
-	require.NoError(t, err)
-	stored, err = datastore.FindRelationshipByID(ctx, relationship2.ID.UUID)
+	stored, err := ds.FindRelationshipByID(ctx, relationship1.ID.UUID)
 	require.NoError(t, err)
 	assert.Nil(t, stored)
 
-	relationships, err = datastore.ListRelationships(ctx)
+	err = ds.DeleteRelationship(ctx, relationship2.ID.UUID)
 	require.NoError(t, err)
-	require.Empty(t, relationships)
+	stored, err = ds.FindRelationshipByID(ctx, relationship2.ID.UUID)
+	require.NoError(t, err)
+	assert.Nil(t, stored)
+}
+
+func TestListRelationships(t *testing.T) {
+	t.Parallel()
+	ds, ctx := setupTest(t)
+
+	// Setup
+	// Create TrustDomains
+	td1 := &entity.TrustDomain{
+		Name: spiffeTD1,
+	}
+	td1 = createTrustDomain(t, ctx, ds, td1)
+
+	td2 := &entity.TrustDomain{
+		Name: spiffeTD2,
+	}
+	td2 = createTrustDomain(t, ctx, ds, td2)
+
+	td3 := &entity.TrustDomain{
+		Name: spiffeTD3,
+	}
+	td3 = createTrustDomain(t, ctx, ds, td3)
+
+	// Create relationship TrustDomain1 -- TrustDomain2
+	req1 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td2.ID.UUID,
+	}
+
+	relationship1 := createRelationship(t, ctx, ds, req1)
+
+	// Create relationship TrustDomain1 -- TrustDomain3
+	req2 := &entity.Relationship{
+		TrustDomainAID: td1.ID.UUID,
+		TrustDomainBID: td3.ID.UUID,
+	}
+	relationship2 := createRelationship(t, ctx, ds, req2)
+
+	relationships, err := ds.ListRelationships(ctx)
+	require.NoError(t, err)
+	assert.Contains(t, relationships, relationship1)
+	assert.Contains(t, relationships, relationship2)
 }
 
 func TestRelationshipForeignKeysConstraints(t *testing.T) {
@@ -320,6 +445,22 @@ func TestRelationshipForeignKeysConstraints(t *testing.T) {
 	wrappedErr = errors.Unwrap(err)
 	errCode = wrappedErr.(*pgconn.PgError).SQLState()
 	assert.Equal(t, pgerrcode.ForeignKeyViolation, errCode, "Foreign key violation error was expected")
+}
+
+func createTrustDomain(t *testing.T, ctx context.Context, ds *datastore.SQLDatastore, req *entity.TrustDomain) *entity.TrustDomain {
+	td1, err := ds.CreateOrUpdateTrustDomain(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, td1.ID)
+
+	return td1
+}
+
+func createRelationship(t *testing.T, ctx context.Context, ds *datastore.SQLDatastore, req *entity.Relationship) *entity.Relationship {
+	td1, err := ds.CreateOrUpdateRelationship(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, td1.ID)
+
+	return td1
 }
 
 func TestCRUDBundle(t *testing.T) {
@@ -668,11 +809,21 @@ func assertEqualDate(t *testing.T, time1 time.Time, time2 time.Time) {
 	require.Equal(t, s1, s2, "Seconds doesn't match")
 }
 
-func setupDatastore(t *testing.T) (*SQLDatastore, error) {
+func setupTest(t *testing.T) (*datastore.SQLDatastore, context.Context) {
+	ds, err := setupDatastore(t)
+	require.NoError(t, err, "Failed to setup the ds")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	return ds, ctx
+}
+
+func setupDatastore(t *testing.T) (*datastore.SQLDatastore, error) {
 	log := logrus.New()
 
 	conn := startDB(t)
-	datastore, err := NewSQLDatastore(log, conn)
+	datastore, err := datastore.NewSQLDatastore(log, conn)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {

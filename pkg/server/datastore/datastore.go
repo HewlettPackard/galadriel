@@ -36,7 +36,7 @@ type Datastore interface {
 	FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error)
 	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error)
 	ListRelationships(ctx context.Context) ([]*entity.Relationship, error)
-	DeleteRelationship(ctx context.Context, id uuid.UUID) error
+	DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error
 }
 
 // SQLDatastore is a SQL database accessor that provides convenient methods
@@ -49,7 +49,7 @@ type SQLDatastore struct {
 
 // NewSQLDatastore creates a new instance of a Datastore object that connects to a Postgres database
 // parsing the connString.
-// The connString can be a URL, e.g, "postgresql://host...", or a DSN, e.g., "host= user= password= dbname= port="
+// The connString can be a URL, e.g, "postgresql://host...", or a DSN, e.g., "host= user= password= dbname= port=".
 func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastore, error) {
 	c, err := pgx.ParseConfig(connString)
 	if err != nil {
@@ -144,11 +144,11 @@ func (d *SQLDatastore) updateTrustDomain(ctx context.Context, req *entity.TrustD
 		}
 	}
 
-	trustDomain, err := d.querier.UpdateTrustDomain(ctx, params)
+	td, err := d.querier.UpdateTrustDomain(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed updating trust domain: %w", err)
 	}
-	return &trustDomain, nil
+	return &td, nil
 }
 
 func (d *SQLDatastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UUID) error {
@@ -204,16 +204,16 @@ func (d *SQLDatastore) FindTrustDomainByID(ctx context.Context, trustDomainID uu
 	return r, nil
 }
 
-func (d *SQLDatastore) FindTrustDomainByName(ctx context.Context, trustDomain spiffeid.TrustDomain) (*entity.TrustDomain, error) {
-	m, err := d.querier.FindTrustDomainByName(ctx, trustDomain.String())
+func (d *SQLDatastore) FindTrustDomainByName(ctx context.Context, name spiffeid.TrustDomain) (*entity.TrustDomain, error) {
+	trustDomain, err := d.querier.FindTrustDomainByName(ctx, name.String())
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up trust domain for Trust Domain=%q: %w", trustDomain, err)
+		return nil, fmt.Errorf("failed looking up trust domain for Trust Domain=%q: %w", name, err)
 	}
 
-	r, err := m.ToEntity()
+	r, err := trustDomain.ToEntity()
 	if err != nil {
 		return nil, fmt.Errorf("failed converting model trust domain to entity: %w", err)
 	}
@@ -261,7 +261,7 @@ func (d *SQLDatastore) createBundle(ctx context.Context, req *entity.Bundle) (*B
 		return nil, fmt.Errorf("failed creating new bundle: %w", err)
 	}
 
-	return &bundle, err
+	return &bundle, nil
 }
 
 func (d *SQLDatastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
@@ -293,7 +293,7 @@ func (d *SQLDatastore) FindBundleByID(ctx context.Context, bundleID uuid.UUID) (
 		return nil, err
 	}
 
-	m, err := d.querier.FindBundleByID(ctx, pgID)
+	bundle, err := d.querier.FindBundleByID(ctx, pgID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -301,12 +301,12 @@ func (d *SQLDatastore) FindBundleByID(ctx context.Context, bundleID uuid.UUID) (
 		return nil, fmt.Errorf("failed looking up bundle with ID=%q: %w", bundleID, err)
 	}
 
-	r, err := m.ToEntity()
+	b, err := bundle.ToEntity()
 	if err != nil {
 		return nil, fmt.Errorf("failed converting model bundle to entity: %w", err)
 	}
 
-	return r, nil
+	return b, nil
 }
 
 func (d *SQLDatastore) FindBundleByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) (*entity.Bundle, error) {
@@ -315,7 +315,7 @@ func (d *SQLDatastore) FindBundleByTrustDomainID(ctx context.Context, trustDomai
 		return nil, err
 	}
 
-	m, err := d.querier.FindBundleByTrustDomainID(ctx, pgID)
+	trustDomain, err := d.querier.FindBundleByTrustDomainID(ctx, pgID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -323,12 +323,12 @@ func (d *SQLDatastore) FindBundleByTrustDomainID(ctx context.Context, trustDomai
 		return nil, fmt.Errorf("failed looking up bundle for ID=%q: %w", trustDomainID, err)
 	}
 
-	r, err := m.ToEntity()
+	td, err := trustDomain.ToEntity()
 	if err != nil {
 		return nil, fmt.Errorf("failed converting model bundle to entity: %w", err)
 	}
 
-	return r, nil
+	return td, nil
 }
 
 func (d *SQLDatastore) ListBundles(ctx context.Context) ([]*entity.Bundle, error) {
@@ -373,12 +373,12 @@ func (d *SQLDatastore) CreateJoinToken(ctx context.Context, req *entity.JoinToke
 		ExpiresAt:     req.ExpiresAt,
 		TrustDomainID: pgID,
 	}
-	token, err := d.querier.CreateJoinToken(ctx, params)
+	joinToken, err := d.querier.CreateJoinToken(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating join token: %w", err)
 	}
 
-	return token.ToEntity(), nil
+	return joinToken.ToEntity(), nil
 }
 
 func (d *SQLDatastore) FindJoinTokensByID(ctx context.Context, joinTokenID uuid.UUID) (*entity.JoinToken, error) {
@@ -387,7 +387,7 @@ func (d *SQLDatastore) FindJoinTokensByID(ctx context.Context, joinTokenID uuid.
 		return nil, err
 	}
 
-	t, err := d.querier.FindJoinTokenByID(ctx, pgID)
+	joinToken, err := d.querier.FindJoinTokenByID(ctx, pgID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -395,7 +395,7 @@ func (d *SQLDatastore) FindJoinTokensByID(ctx context.Context, joinTokenID uuid.
 		return nil, fmt.Errorf("failed looking up join token with ID=%q: %w", joinTokenID, err)
 	}
 
-	return t.ToEntity(), nil
+	return joinToken.ToEntity(), nil
 }
 
 func (d *SQLDatastore) FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.JoinToken, error) {
@@ -448,12 +448,12 @@ func (d *SQLDatastore) UpdateJoinToken(ctx context.Context, joinTokenID uuid.UUI
 		},
 	}
 
-	t, err := d.querier.UpdateJoinToken(ctx, params)
+	jt, err := d.querier.UpdateJoinToken(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed updating join token with ID=%q, %w", joinTokenID, err)
 	}
 
-	return t.ToEntity(), nil
+	return jt.ToEntity(), nil
 }
 
 func (d *SQLDatastore) DeleteJoinToken(ctx context.Context, joinTokenID uuid.UUID) error {
@@ -470,7 +470,7 @@ func (d *SQLDatastore) DeleteJoinToken(ctx context.Context, joinTokenID uuid.UUI
 }
 
 func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*entity.JoinToken, error) {
-	t, err := d.querier.FindJoinToken(ctx, token)
+	joinToken, err := d.querier.FindJoinToken(ctx, token)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -478,7 +478,7 @@ func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*entity
 		return nil, fmt.Errorf("failed looking up join token %q: %w", token, err)
 	}
 
-	return t.ToEntity(), nil
+	return joinToken.ToEntity(), nil
 }
 
 func (d *SQLDatastore) CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error) {
@@ -551,7 +551,7 @@ func (d *SQLDatastore) FindRelationshipByID(ctx context.Context, relationshipID 
 		return nil, err
 	}
 
-	m, err := d.querier.FindRelationshipByID(ctx, pgID)
+	relationship, err := d.querier.FindRelationshipByID(ctx, pgID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -559,7 +559,7 @@ func (d *SQLDatastore) FindRelationshipByID(ctx context.Context, relationshipID 
 		return nil, fmt.Errorf("failed looking up relationship for ID=%q: %w", relationshipID, err)
 	}
 
-	response, err := m.ToEntity()
+	response, err := relationship.ToEntity()
 	if err != nil {
 		return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
 	}
@@ -611,14 +611,14 @@ func (d *SQLDatastore) ListRelationships(ctx context.Context) ([]*entity.Relatio
 	return result, nil
 }
 
-func (d *SQLDatastore) DeleteRelationship(ctx context.Context, id uuid.UUID) error {
-	pgID, err := uuidToPgType(id)
+func (d *SQLDatastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
+	pgID, err := uuidToPgType(relationshipID)
 	if err != nil {
 		return err
 	}
 
 	if err = d.querier.DeleteRelationship(ctx, pgID); err != nil {
-		return fmt.Errorf("failed deleting relationship ID=%q: %w", id, err)
+		return fmt.Errorf("failed deleting relationship ID=%q: %w", relationshipID, err)
 	}
 
 	return nil

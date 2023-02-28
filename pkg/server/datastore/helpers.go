@@ -10,31 +10,31 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-func (m TrustDomain) ToEntity() (*entity.TrustDomain, error) {
-	td, err := spiffeid.TrustDomainFromString(m.Name)
+func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
+	trustDomain, err := spiffeid.TrustDomainFromString(td.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	id := uuid.NullUUID{
-		UUID:  m.ID.Bytes,
+		UUID:  td.ID.Bytes,
 		Valid: true,
 	}
 
 	result := &entity.TrustDomain{
 		ID:               id,
-		Name:             td,
-		OnboardingBundle: m.OnboardingBundle,
-		CreatedAt:        m.CreatedAt,
-		UpdatedAt:        m.UpdatedAt,
+		Name:             trustDomain,
+		OnboardingBundle: td.OnboardingBundle,
+		CreatedAt:        td.CreatedAt,
+		UpdatedAt:        td.UpdatedAt,
 	}
 
-	if m.Description.Valid {
-		result.Description = m.Description.String
+	if td.Description.Valid {
+		result.Description = td.Description.String
 	}
 
-	if m.HarvesterSpiffeID.Valid {
-		id, err := spiffeid.FromStringf(m.HarvesterSpiffeID.String)
+	if td.HarvesterSpiffeID.Valid {
+		id, err := spiffeid.FromStringf(td.HarvesterSpiffeID.String)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert model to entity: %v", err)
 		}
@@ -44,20 +44,20 @@ func (m TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 	return result, nil
 }
 
-func (m Relationship) ToEntity() (*entity.Relationship, error) {
+func (r Relationship) ToEntity() (*entity.Relationship, error) {
 	id := uuid.NullUUID{
-		UUID:  m.ID.Bytes,
+		UUID:  r.ID.Bytes,
 		Valid: true,
 	}
 
 	return &entity.Relationship{
 		ID:                  id,
-		TrustDomainAID:      m.TrustDomainAID.Bytes,
-		TrustDomainBID:      m.TrustDomainBID.Bytes,
-		TrustDomainAConsent: m.TrustDomainAConsent,
-		TrustDomainBConsent: m.TrustDomainBConsent,
-		CreatedAt:           m.CreatedAt,
-		UpdatedAt:           m.UpdatedAt,
+		TrustDomainAID:      r.TrustDomainAID.Bytes,
+		TrustDomainBID:      r.TrustDomainBID.Bytes,
+		TrustDomainAConsent: r.TrustDomainAConsent,
+		TrustDomainBConsent: r.TrustDomainBConsent,
+		CreatedAt:           r.CreatedAt,
+		UpdatedAt:           r.UpdatedAt,
 	}, nil
 }
 
@@ -81,25 +81,25 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 	}, nil
 }
 
-func (t JoinToken) ToEntity() *entity.JoinToken {
+func (jt JoinToken) ToEntity() *entity.JoinToken {
 	id := uuid.NullUUID{
-		UUID:  t.ID.Bytes,
+		UUID:  jt.ID.Bytes,
 		Valid: true,
 	}
 
 	used := false
-	if t.Used.Valid {
-		used = t.Used.Bool
+	if jt.Used.Valid {
+		used = jt.Used.Bool
 	}
 
 	return &entity.JoinToken{
 		ID:            id,
-		Token:         t.Token,
-		ExpiresAt:     t.ExpiresAt,
+		Token:         jt.Token,
+		ExpiresAt:     jt.ExpiresAt,
 		Used:          used,
-		TrustDomainID: t.TrustDomainID.Bytes,
-		CreatedAt:     t.CreatedAt,
-		UpdatedAt:     t.UpdatedAt,
+		TrustDomainID: jt.TrustDomainID.Bytes,
+		CreatedAt:     jt.CreatedAt,
+		UpdatedAt:     jt.UpdatedAt,
 	}
 }
 

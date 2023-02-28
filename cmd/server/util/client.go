@@ -113,7 +113,7 @@ func (c serverClient) CreateRelationship(rel *entity.Relationship) error {
 
 	r, err := c.client.Post(createRelationshipURL, contentType, bytes.NewReader(relBytes))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create relationship: %v", err)
 	}
 	defer r.Body.Close()
 
