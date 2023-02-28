@@ -41,7 +41,7 @@ func TestCreateTrustDomain(t *testing.T) {
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 := createTrustDomain(t, ctx, ds, req1)
+	td1 := createTrustDomain(ctx, t, ds, req1)
 	assert.Equal(t, req1.Name, td1.Name)
 	require.NotNil(t, td1.ID)
 	require.NotNil(t, td1.CreatedAt)
@@ -60,7 +60,7 @@ func TestUpdateTrustDomain(t *testing.T) {
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 := createTrustDomain(t, ctx, ds, req1)
+	td1 := createTrustDomain(ctx, t, ds, req1)
 
 	td1.Description = "updated_description"
 	td1.HarvesterSpiffeID = spiffeid.RequireFromString("spiffe://domain/test")
@@ -87,12 +87,12 @@ func TestTrustFindDomainByName(t *testing.T) {
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 := createTrustDomain(t, ctx, ds, req1)
+	td1 := createTrustDomain(ctx, t, ds, req1)
 
 	req2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 := createTrustDomain(t, ctx, ds, req2)
+	td2 := createTrustDomain(ctx, t, ds, req2)
 
 	stored1, err := ds.FindTrustDomainByName(ctx, td1.Name)
 	require.NoError(t, err)
@@ -110,12 +110,12 @@ func TestDeleteTrustDomain(t *testing.T) {
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 := createTrustDomain(t, ctx, ds, req1)
+	td1 := createTrustDomain(ctx, t, ds, req1)
 
 	req2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 := createTrustDomain(t, ctx, ds, req2)
+	td2 := createTrustDomain(ctx, t, ds, req2)
 
 	err := ds.DeleteTrustDomain(ctx, td1.ID.UUID)
 	require.NoError(t, err)
@@ -139,12 +139,12 @@ func TestListTrustDomains(t *testing.T) {
 	req1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 := createTrustDomain(t, ctx, ds, req1)
+	td1 := createTrustDomain(ctx, t, ds, req1)
 
 	req2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 := createTrustDomain(t, ctx, ds, req2)
+	td2 := createTrustDomain(ctx, t, ds, req2)
 
 	list, err := ds.ListTrustDomains(ctx)
 	require.NoError(t, err)
@@ -189,12 +189,12 @@ func TestCreateRelationship(t *testing.T) {
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 = createTrustDomain(t, ctx, ds, td1)
+	td1 = createTrustDomain(ctx, t, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 = createTrustDomain(t, ctx, ds, td2)
+	td2 = createTrustDomain(ctx, t, ds, td2)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
@@ -202,7 +202,7 @@ func TestCreateRelationship(t *testing.T) {
 		TrustDomainBID: td2.ID.UUID,
 	}
 
-	relationship1 := createRelationship(t, ctx, ds, req1)
+	relationship1 := createRelationship(ctx, t, ds, req1)
 	require.NotNil(t, relationship1.ID)
 	require.NotNil(t, relationship1.CreatedAt)
 	require.NotNil(t, relationship1.UpdatedAt)
@@ -224,12 +224,12 @@ func TestUpdateRelationship(t *testing.T) {
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 = createTrustDomain(t, ctx, ds, td1)
+	td1 = createTrustDomain(ctx, t, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 = createTrustDomain(t, ctx, ds, td2)
+	td2 = createTrustDomain(ctx, t, ds, td2)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
@@ -237,7 +237,7 @@ func TestUpdateRelationship(t *testing.T) {
 		TrustDomainBID: td2.ID.UUID,
 	}
 
-	relationship1 := createRelationship(t, ctx, ds, req1)
+	relationship1 := createRelationship(ctx, t, ds, req1)
 
 	relationship1.TrustDomainAConsent = true
 	relationship1.TrustDomainBConsent = true
@@ -262,17 +262,17 @@ func TestFindRelationshipByTrustDomain(t *testing.T) {
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 = createTrustDomain(t, ctx, ds, td1)
+	td1 = createTrustDomain(ctx, t, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 = createTrustDomain(t, ctx, ds, td2)
+	td2 = createTrustDomain(ctx, t, ds, td2)
 
 	td3 := &entity.TrustDomain{
 		Name: spiffeTD3,
 	}
-	td3 = createTrustDomain(t, ctx, ds, td3)
+	td3 = createTrustDomain(ctx, t, ds, td3)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
@@ -280,14 +280,14 @@ func TestFindRelationshipByTrustDomain(t *testing.T) {
 		TrustDomainBID: td2.ID.UUID,
 	}
 
-	relationship1 := createRelationship(t, ctx, ds, req1)
+	relationship1 := createRelationship(ctx, t, ds, req1)
 
 	// Create relationship TrustDomain1 -- TrustDomain3
 	req2 := &entity.Relationship{
 		TrustDomainAID: td1.ID.UUID,
 		TrustDomainBID: td3.ID.UUID,
 	}
-	relationship2 := createRelationship(t, ctx, ds, req2)
+	relationship2 := createRelationship(ctx, t, ds, req2)
 
 	// Find relationships by TrustDomainID
 	relationships, err := ds.FindRelationshipsByTrustDomainID(ctx, td1.ID.UUID)
@@ -311,17 +311,17 @@ func TestDeleteRelationship(t *testing.T) {
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 = createTrustDomain(t, ctx, ds, td1)
+	td1 = createTrustDomain(ctx, t, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 = createTrustDomain(t, ctx, ds, td2)
+	td2 = createTrustDomain(ctx, t, ds, td2)
 
 	td3 := &entity.TrustDomain{
 		Name: spiffeTD3,
 	}
-	td3 = createTrustDomain(t, ctx, ds, td3)
+	td3 = createTrustDomain(ctx, t, ds, td3)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
@@ -329,14 +329,14 @@ func TestDeleteRelationship(t *testing.T) {
 		TrustDomainBID: td2.ID.UUID,
 	}
 
-	relationship1 := createRelationship(t, ctx, ds, req1)
+	relationship1 := createRelationship(ctx, t, ds, req1)
 
 	// Create relationship TrustDomain1 -- TrustDomain3
 	req2 := &entity.Relationship{
 		TrustDomainAID: td1.ID.UUID,
 		TrustDomainBID: td3.ID.UUID,
 	}
-	relationship2 := createRelationship(t, ctx, ds, req2)
+	relationship2 := createRelationship(ctx, t, ds, req2)
 
 	// Delete relationships
 	err := ds.DeleteRelationship(ctx, relationship1.ID.UUID)
@@ -361,17 +361,17 @@ func TestListRelationships(t *testing.T) {
 	td1 := &entity.TrustDomain{
 		Name: spiffeTD1,
 	}
-	td1 = createTrustDomain(t, ctx, ds, td1)
+	td1 = createTrustDomain(ctx, t, ds, td1)
 
 	td2 := &entity.TrustDomain{
 		Name: spiffeTD2,
 	}
-	td2 = createTrustDomain(t, ctx, ds, td2)
+	td2 = createTrustDomain(ctx, t, ds, td2)
 
 	td3 := &entity.TrustDomain{
 		Name: spiffeTD3,
 	}
-	td3 = createTrustDomain(t, ctx, ds, td3)
+	td3 = createTrustDomain(ctx, t, ds, td3)
 
 	// Create relationship TrustDomain1 -- TrustDomain2
 	req1 := &entity.Relationship{
@@ -379,14 +379,14 @@ func TestListRelationships(t *testing.T) {
 		TrustDomainBID: td2.ID.UUID,
 	}
 
-	relationship1 := createRelationship(t, ctx, ds, req1)
+	relationship1 := createRelationship(ctx, t, ds, req1)
 
 	// Create relationship TrustDomain1 -- TrustDomain3
 	req2 := &entity.Relationship{
 		TrustDomainAID: td1.ID.UUID,
 		TrustDomainBID: td3.ID.UUID,
 	}
-	relationship2 := createRelationship(t, ctx, ds, req2)
+	relationship2 := createRelationship(ctx, t, ds, req2)
 
 	relationships, err := ds.ListRelationships(ctx)
 	require.NoError(t, err)
@@ -447,7 +447,7 @@ func TestRelationshipForeignKeysConstraints(t *testing.T) {
 	assert.Equal(t, pgerrcode.ForeignKeyViolation, errCode, "Foreign key violation error was expected")
 }
 
-func createTrustDomain(t *testing.T, ctx context.Context, ds *datastore.SQLDatastore, req *entity.TrustDomain) *entity.TrustDomain {
+func createTrustDomain(ctx context.Context, t *testing.T, ds *datastore.SQLDatastore, req *entity.TrustDomain) *entity.TrustDomain {
 	td1, err := ds.CreateOrUpdateTrustDomain(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, td1.ID)
@@ -455,7 +455,7 @@ func createTrustDomain(t *testing.T, ctx context.Context, ds *datastore.SQLDatas
 	return td1
 }
 
-func createRelationship(t *testing.T, ctx context.Context, ds *datastore.SQLDatastore, req *entity.Relationship) *entity.Relationship {
+func createRelationship(ctx context.Context, t *testing.T, ds *datastore.SQLDatastore, req *entity.Relationship) *entity.Relationship {
 	td1, err := ds.CreateOrUpdateRelationship(ctx, req)
 	require.NoError(t, err)
 	require.NotNil(t, td1.ID)
@@ -858,14 +858,14 @@ func startDB(tb testing.TB) string {
 	require.NoError(tb, err)
 
 	hostAndPort := resource.GetHostPort("5432/tcp")
-	databaseUrl := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", user, password, hostAndPort, dbname)
+	databaseURL := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", user, password, hostAndPort, dbname)
 
-	tb.Logf("Connecting to a test database on url: %s", databaseUrl)
+	tb.Logf("Connecting to a test database on url: %s", databaseURL)
 
 	// wait until db in container is ready using exponential backoff-retry
 	pool.MaxWait = 60 * time.Second
 	if err = pool.Retry(func() error {
-		db, err := sql.Open("postgres", databaseUrl)
+		db, err := sql.Open("postgres", databaseURL)
 		if err != nil {
 			return err
 		}
@@ -886,5 +886,5 @@ func startDB(tb testing.TB) string {
 		require.NoError(tb, err)
 	})
 
-	return databaseUrl
+	return databaseURL
 }

@@ -25,52 +25,52 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	authenticatedTD, err := e.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	body, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
 		return err
 	}
 
 	harvesterReq := common.PostBundleRequest{}
 	err = json.Unmarshal(body, &harvesterReq)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
 		return err
 	}
 
 	if harvesterReq.TrustDomainName != authenticatedTD.Name {
 		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request: {%s}", harvesterReq.TrustDomainID, token.TrustDomainID)
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	bundle, err := spiffebundle.Parse(authenticatedTD.Name, harvesterReq.Bundle.Data)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to parse bundle: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to parse bundle: %v", err))
 		return err
 	}
 
 	x509b, err := bundle.X509Bundle().Marshal()
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to marshal bundle: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to marshal bundle: %v", err))
 		return err
 	}
 
@@ -78,13 +78,13 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 
 	if !bytes.Equal(harvesterReq.Digest, digest) {
 		err := errors.New("calculated digest does not match received digest")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	currentStoredBundle, err := e.Datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
 	if err != nil {
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
@@ -93,7 +93,7 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			Data: harvesterReq.Bundle.Data,
 		})
 		if err != nil {
-			e.handleTcpError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
+			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
 			return err
 		}
 
@@ -105,7 +105,7 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 			TrustDomainID: authenticatedTD.ID.UUID,
 		})
 		if err != nil {
-			e.handleTcpError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
+			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
 			return err
 		}
 
@@ -121,33 +121,33 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing join token")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		e.handleTcpError(ctx, err.Error())
+		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
 	harvesterTrustDomain, err := e.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
 		return err
 	}
 
 	body, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to read body: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
 		return err
 	}
 
 	receivedHarvesterState := common.SyncBundleRequest{}
 	err = json.Unmarshal(body, &receivedHarvesterState)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
 		return err
 	}
 
@@ -155,13 +155,13 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 
 	_, foundSelf := receivedHarvesterState.State[harvesterTrustDomain.Name]
 	if foundSelf {
-		e.handleTcpError(ctx, "bad request: harvester cannot federate with itself")
+		e.handleTCPError(ctx, "bad request: harvester cannot federate with itself")
 		return err
 	}
 
 	relationships, err := e.Datastore.FindRelationshipsByTrustDomainID(ctx.Request().Context(), harvesterTrustDomain.ID.UUID)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
 		return err
 	}
 
@@ -174,7 +174,7 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 
 	federatedBundles, federatedBundlesDigests, err := e.getCurrentFederatedBundles(ctx.Request().Context(), federatedTDs)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
 		return err
 	}
 
@@ -185,7 +185,7 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 
 	bundlesUpdates, err := e.getFederatedBundlesUpdates(ctx.Request().Context(), harvesterBundleDigests, federatedBundles)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
 		return err
 	}
 
@@ -196,13 +196,13 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to marshal response: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to marshal response: %v", err))
 		return err
 	}
 
 	_, err = ctx.Response().Write(responseBytes)
 	if err != nil {
-		e.handleTcpError(ctx, fmt.Sprintf("failed to write response: %v", err))
+		e.handleTCPError(ctx, fmt.Sprintf("failed to write response: %v", err))
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (e *Endpoints) getCurrentFederatedBundles(ctx context.Context, federatedTDs
 	return bundles, bundlesDigests, nil
 }
 
-func (e *Endpoints) handleTcpError(ctx echo.Context, errMsg string) {
+func (e *Endpoints) handleTCPError(ctx echo.Context, errMsg string) {
 	e.Logger.Errorf(errMsg)
 	_, err := ctx.Response().Write([]byte(errMsg))
 	if err != nil {
