@@ -17,17 +17,19 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
+const tokenKey = "token"
+
 func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	e.Logger.Debug("Receiving post bundle request")
 
-	t, ok := ctx.Get("token").(*entity.JoinToken)
+	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
 		e.handleTcpError(ctx, err.Error())
 		return err
 	}
 
-	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), t.Token)
+	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
 		e.handleTcpError(ctx, err.Error())
@@ -116,14 +118,14 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	e.Logger.Debug("Receiving sync request")
 
-	t, ok := ctx.Get("token").(*entity.JoinToken)
+	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing join token")
 		e.handleTcpError(ctx, err.Error())
 		return err
 	}
 
-	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), t.Token)
+	token, err := e.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
 		e.handleTcpError(ctx, err.Error())

@@ -183,8 +183,8 @@ func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (e *Endpoints) populateTrustDomainNames(ctx context.Context, rels []*entity.Relationship) ([]*entity.Relationship, error) {
-	for _, r := range rels {
+func (e *Endpoints) populateTrustDomainNames(ctx context.Context, relationships []*entity.Relationship) ([]*entity.Relationship, error) {
+	for _, r := range relationships {
 		tda, err := e.Datastore.FindTrustDomainByID(ctx, r.TrustDomainAID)
 		if err != nil {
 			return nil, err
@@ -197,7 +197,7 @@ func (e *Endpoints) populateTrustDomainNames(ctx context.Context, rels []*entity
 		}
 		r.TrustDomainBName = tdb.Name
 	}
-	return rels, nil
+	return relationships, nil
 }
 
 func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request) {
