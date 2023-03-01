@@ -475,7 +475,7 @@ func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*entity
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up join token %q: %w", token, err)
+		return nil, fmt.Errorf("failed looking up join token: %w", err)
 	}
 
 	return joinToken.ToEntity(), nil

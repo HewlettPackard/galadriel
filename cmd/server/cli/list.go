@@ -8,8 +8,8 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list <trustDomains | relationships>",
-	Short: "Lists trustDomains and relationships",
+	Use:   "list <trustdomains | relationships>",
+	Short: "Lists trust domains and relationships",
 }
 
 var listTrustDomainCmd = &cobra.Command{

@@ -17,7 +17,7 @@ var createCmd = &cobra.Command{
 var createTrustDomainCmd = &cobra.Command{
 	Use:   "trustdomain",
 	Args:  cobra.ExactArgs(0),
-	Short: "Creates a new trust domain for the given trust domain.",
+	Short: "Creates a new trust domain",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		td, err := cmd.Flags().GetString("trustDomain")
@@ -36,7 +36,7 @@ var createTrustDomainCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Trust Domain created for trust domain: %q\n", trustDomain.String())
+		fmt.Printf("Trust Domain created: %q\n", trustDomain.String())
 
 		return nil
 	},

@@ -29,4 +29,4 @@ The `greeter` client fetches its SVID from the SPIRE Agent serving `two.org`, an
 
 ## Cleanup
 
-Run `x-cleanup.sh` to remove from the system all the SPIRE bundle created by this demo.
+Run `x-cleanup.sh` to remove from the system all the SPIRE data created by this demo.

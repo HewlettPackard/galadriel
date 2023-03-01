@@ -168,7 +168,7 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	federatedTDs := getFederatedTrustDomains(relationships, harvesterTrustDomain.ID.UUID)
 
 	if len(federatedTDs) == 0 {
-		e.Logger.Info("No federated trust domains yet")
+		e.Logger.Debug("No federated trust domains yet")
 		return nil
 	}
 
@@ -179,7 +179,7 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 	}
 
 	if len(federatedBundles) == 0 {
-		e.Logger.Info("No federated bundles yet")
+		e.Logger.Debug("No federated bundles yet")
 		return nil
 	}
 
