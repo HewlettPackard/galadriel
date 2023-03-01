@@ -17,5 +17,8 @@ type Config struct {
 	// Directory to store runtime data
 	DataDir string
 
+	// DB Connection string
+	DBConnString string
+
 	Logger logrus.FieldLogger
 }

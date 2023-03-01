@@ -26,6 +26,7 @@ type serverConfig struct {
 	ListenPort    int    `hcl:"listen_port"`
 	SocketPath    string `hcl:"socket_path"`
 	LogLevel      string `hcl:"log_level"`
+	DBConnString  string `hcl:"db_conn_string"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
@@ -63,6 +64,8 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 
 	sc.LocalAddress = socketAddr
 	sc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServer)
+
+	sc.DBConnString = c.Server.DBConnString
 
 	return sc, nil
 }

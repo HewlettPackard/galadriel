@@ -2,319 +2,624 @@ package datastore
 
 import (
 	"context"
-	"errors"
+	"database/sql"
 	"fmt"
-	"sync"
-	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-type DataStore interface {
-	CreateMember(ctx context.Context, m *common.Member) (*Member, error)
-	UpdateMember(ctx context.Context, trustDomain string, m *common.Member) (*common.Member, error)
-	GetMember(ctx context.Context, trustDomain string) (*common.Member, error)
-	ListMembers(ctx context.Context) ([]*common.Member, error)
-
-	CreateRelationship(ctx context.Context, r *common.Relationship) (*common.Relationship, error)
-	GetRelationships(ctx context.Context, trustDomain string) ([]*common.Relationship, error)
-
-	GenerateAccessToken(ctx context.Context, t *common.AccessToken, trustDomain string) (*common.AccessToken, error)
-	GetAccessToken(ctx context.Context, token string) (*common.AccessToken, error)
-	ListRelationships(ctx context.Context) ([]*common.Relationship, error)
+type Datastore interface {
+	CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error)
+	DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UUID) error
+	ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error)
+	FindTrustDomainByID(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error)
+	FindTrustDomainByName(ctx context.Context, trustDomain spiffeid.TrustDomain) (*entity.TrustDomain, error)
+	CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle) (*entity.Bundle, error)
+	FindBundleByID(ctx context.Context, bundleID uuid.UUID) (*entity.Bundle, error)
+	FindBundleByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) (*entity.Bundle, error)
+	ListBundles(ctx context.Context) ([]*entity.Bundle, error)
+	DeleteBundle(ctx context.Context, bundleID uuid.UUID) error
+	CreateJoinToken(ctx context.Context, req *entity.JoinToken) (*entity.JoinToken, error)
+	FindJoinTokensByID(ctx context.Context, joinTokenID uuid.UUID) (*entity.JoinToken, error)
+	FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.JoinToken, error)
+	ListJoinTokens(ctx context.Context) ([]*entity.JoinToken, error)
+	UpdateJoinToken(ctx context.Context, joinTokenID uuid.UUID, used bool) (*entity.JoinToken, error)
+	DeleteJoinToken(ctx context.Context, joinTokenID uuid.UUID) error
+	FindJoinToken(ctx context.Context, token string) (*entity.JoinToken, error)
+	CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error)
+	FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error)
+	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error)
+	ListRelationships(ctx context.Context) ([]*entity.Relationship, error)
+	DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error
 }
 
-type AccessToken struct {
-	Token  string
-	Expiry time.Time
-	Member *Member
+// SQLDatastore is a SQL database accessor that provides convenient methods
+// to perform CRUD operations for Galadriel entities.
+type SQLDatastore struct {
+	logger  logrus.FieldLogger
+	db      *sql.DB
+	querier Querier
 }
 
-type Member struct {
-	ID uuid.UUID
-
-	Name         string
-	TrustDomain  string
-	TrustBundle  []byte
-	BundleDigest []byte
-}
-
-type Relationship struct {
-	ID uuid.UUID
-
-	MemberA *Member
-	MemberB *Member
-}
-
-// TODO: use until an actual DataStore implementation is added.
-
-type MemStore struct {
-	members      map[string]*Member // trust_domain (e.g. 'example.org') -> member
-	relationship []*Relationship
-	tokens       map[string]*AccessToken // token uuid string -> access token
-
-	mu sync.RWMutex
-}
-
-func NewMemStore() DataStore {
-	return &MemStore{
-		members: make(map[string]*Member),
-		tokens:  make(map[string]*AccessToken),
-		mu:      sync.RWMutex{},
-	}
-}
-
-func (s *MemStore) CreateMember(_ context.Context, member *common.Member) (*Member, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exist := s.members[member.TrustDomain.String()]; exist {
-		return nil, fmt.Errorf("member already exists: %s", member.TrustDomain)
-	}
-
-	m := &Member{
-		ID:          uuid.New(),
-		Name:        member.Name,
-		TrustDomain: member.TrustDomain.String(),
-	}
-
-	s.members[m.TrustDomain] = m
-
-	return m, nil
-}
-
-func (s *MemStore) UpdateMember(_ context.Context, trustDomain string, member *common.Member) (*common.Member, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if member == nil {
-		return nil, errors.New("failed to updated member: no member data given")
-	}
-
-	m, ok := s.members[trustDomain]
-	if !ok {
-		return nil, errors.New("failed updating member: trust domain not found: " + trustDomain)
-	}
-
-	if len(member.Bundle) != 0 {
-		m.TrustBundle = member.Bundle
-	}
-
-	if len(member.BundleDigest) != 0 {
-		m.BundleDigest = member.BundleDigest
-	}
-
-	return &common.Member{
-		ID:          member.ID,
-		Name:        member.Name,
-		TrustBundle: member.TrustBundle,
-	}, nil
-}
-
-func (s *MemStore) GetMember(_ context.Context, trustDomain string) (*common.Member, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	m, ok := s.members[trustDomain]
-	if !ok {
-		return nil, errors.New("failed getting member: trust domain not found: " + trustDomain)
-	}
-
-	td, err := spiffeid.TrustDomainFromString(m.TrustDomain)
+// NewSQLDatastore creates a new instance of a Datastore object that connects to a Postgres database
+// parsing the connString.
+// The connString can be a URL, e.g, "postgresql://host...", or a DSN, e.g., "host= user= password= dbname= port=".
+func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastore, error) {
+	c, err := pgx.ParseConfig(connString)
 	if err != nil {
-		return nil, fmt.Errorf("invalid trust domain: %v", err)
+		return nil, fmt.Errorf("failed to parse Postgres Connection URL: %w", err)
 	}
 
-	return &common.Member{
-		ID:   m.ID,
-		Name: m.Name,
-		TrustBundle: common.TrustBundle{
-			TrustDomain:  td,
-			Bundle:       m.TrustBundle,
-			BundleDigest: m.BundleDigest,
-		},
+	db := stdlib.OpenDB(*c)
+
+	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
+	if err = validateAndMigrateSchema(db); err != nil {
+		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
+	}
+
+	return &SQLDatastore{
+		logger:  logger,
+		db:      db,
+		querier: New(db),
 	}, nil
 }
 
-func (s *MemStore) ListMembers(ctx context.Context) ([]*common.Member, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var members []*common.Member
-	for _, m := range s.members {
-		td, err := spiffeid.TrustDomainFromString(m.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-
-		members = append(members, &common.Member{
-			ID:          m.ID,
-			Name:        m.Name,
-			TrustBundle: common.TrustBundle{TrustDomain: td},
-		})
-	}
-
-	return members, nil
+func (d *SQLDatastore) Close() error {
+	return d.db.Close()
 }
 
-func (s *MemStore) CreateRelationship(_ context.Context, rel *common.Relationship) (*common.Relationship, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if rel.MemberA.TrustDomain.Compare(rel.MemberB.TrustDomain) == 0 {
-		return nil, fmt.Errorf("cannot create relationship: trust domain members are the same: %s", rel.MemberA.TrustDomain)
+// CreateOrUpdateTrustDomain creates or updates the given TrustDomain in the underlying datastore, based on
+// whether the given entity has an ID, in which case, it is updated.
+func (d *SQLDatastore) CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error) {
+	if req.Name.String() == "" {
+		return nil, errors.New("trustDomain trust domain is missing")
 	}
 
-	if _, ok := s.members[rel.MemberA.TrustDomain.String()]; !ok {
-		return nil, fmt.Errorf("member not found for trust domain: %s", rel.MemberA.TrustDomain)
+	var trustDomain *TrustDomain
+	var err error
+	if req.ID.Valid {
+		trustDomain, err = d.updateTrustDomain(ctx, req)
+	} else {
+		trustDomain, err = d.createTrustDomain(ctx, req)
 	}
-	if _, ok := s.members[rel.MemberB.TrustDomain.String()]; !ok {
-		return nil, fmt.Errorf("member not found for trust domain: %s", rel.MemberB.TrustDomain)
-	}
-	r := &Relationship{
-		ID:      uuid.New(),
-		MemberA: s.members[rel.MemberA.TrustDomain.String()],
-		MemberB: s.members[rel.MemberB.TrustDomain.String()],
+	if err != nil {
+		return nil, err
 	}
 
-	s.relationship = append(s.relationship, r)
-
-	rel.ID = r.ID
-	return rel, nil
-}
-
-func (s *MemStore) GetRelationships(_ context.Context, trustDomain string) ([]*common.Relationship, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	var response []*common.Relationship
-
-	for _, r := range s.relationship {
-		if r.MemberA.TrustDomain != trustDomain && r.MemberB.TrustDomain != trustDomain {
-			continue
-		}
-		_, ok := s.members[r.MemberA.TrustDomain]
-		if !ok {
-			return nil, errors.New("failed getting relationship: memberA not found")
-		}
-		_, ok = s.members[r.MemberB.TrustDomain]
-		if !ok {
-			return nil, errors.New("failed getting relationship: memberB not found")
-		}
-		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-
-		response = append(response, &common.Relationship{
-			ID: r.ID,
-			MemberA: &common.Member{
-				ID:   r.MemberA.ID,
-				Name: r.MemberA.Name,
-				TrustBundle: common.TrustBundle{
-					TrustDomain:  tdA,
-					Bundle:       r.MemberA.TrustBundle,
-					BundleDigest: r.MemberA.BundleDigest,
-				},
-			},
-			MemberB: &common.Member{
-				ID:   r.MemberB.ID,
-				Name: r.MemberB.Name,
-				TrustBundle: common.TrustBundle{
-					TrustDomain:  tdB,
-					Bundle:       r.MemberB.TrustBundle,
-					BundleDigest: r.MemberB.BundleDigest,
-				},
-			},
-		})
+	response, err := trustDomain.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting trustDomain model to entity: %w", err)
 	}
 
 	return response, nil
 }
 
-func (s *MemStore) ListRelationships(ctx context.Context) ([]*common.Relationship, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (d *SQLDatastore) createTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
 
-	var rels []*common.Relationship
-	for _, r := range s.relationship {
-		tdA, err := spiffeid.TrustDomainFromString(r.MemberA.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
+	params := CreateTrustDomainParams{
+		Name: req.Name.String(),
+	}
+	if req.Description != "" {
+		params.Description = sql.NullString{
+			String: req.Description,
+			Valid:  true,
 		}
-		tdB, err := spiffeid.TrustDomainFromString(r.MemberB.TrustDomain)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trust domain: %v", err)
-		}
-		rels = append(rels, &common.Relationship{
-			ID: r.ID,
-			MemberA: &common.Member{
-				ID:   r.MemberA.ID,
-				Name: r.MemberA.Name,
-				TrustBundle: common.TrustBundle{
-					TrustDomain:  tdA,
-					Bundle:       r.MemberA.TrustBundle,
-					BundleDigest: r.MemberA.BundleDigest,
-				},
-			},
-			MemberB: &common.Member{
-				ID:   r.MemberB.ID,
-				Name: r.MemberB.Name,
-				TrustBundle: common.TrustBundle{
-					TrustDomain:  tdB,
-					Bundle:       r.MemberB.TrustBundle,
-					BundleDigest: r.MemberB.BundleDigest,
-				},
-			},
-		})
 	}
 
-	return rels, nil
-}
-
-func (s *MemStore) GenerateAccessToken(_ context.Context, token *common.AccessToken, trustDomain string) (*common.AccessToken, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	member := s.members[trustDomain]
-	if member == nil {
-		return nil, fmt.Errorf("failed to find member for the trust domain: %s", trustDomain)
-	}
-
-	at := &AccessToken{
-		Token:  token.Token,
-		Expiry: token.Expiry,
-		Member: member,
-	}
-
-	s.tokens[at.Token] = at
-
-	token.MemberID = member.ID
-	return token, nil
-}
-
-func (s *MemStore) GetAccessToken(_ context.Context, token string) (*common.AccessToken, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	at, ok := s.tokens[token]
-	if !ok {
-		return nil, errors.New("failed to find token")
-	}
-
-	td, err := spiffeid.TrustDomainFromString(at.Member.TrustDomain)
+	td, err := d.querier.CreateTrustDomain(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("invalid trust domain: %v", err)
+		return nil, fmt.Errorf("failed creating new trust domain: %w", err)
 	}
-	return &common.AccessToken{
-		MemberID:    at.Member.ID,
-		TrustDomain: td,
-		Token:       at.Token,
-		Expiry:      at.Expiry,
-	}, nil
+	return &td, nil
+}
+
+func (d *SQLDatastore) updateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := UpdateTrustDomainParams{
+		ID:               pgID,
+		OnboardingBundle: req.OnboardingBundle,
+	}
+
+	if req.Description != "" {
+		params.Description = sql.NullString{
+			String: req.Description,
+			Valid:  true,
+		}
+	}
+
+	if !req.HarvesterSpiffeID.IsZero() {
+		params.HarvesterSpiffeID = sql.NullString{
+			String: req.HarvesterSpiffeID.String(),
+			Valid:  true,
+		}
+	}
+
+	td, err := d.querier.UpdateTrustDomain(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating trust domain: %w", err)
+	}
+	return &td, nil
+}
+
+func (d *SQLDatastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UUID) error {
+	pgID, err := uuidToPgType(trustDomainID)
+	if err != nil {
+		return err
+	}
+
+	if err = d.querier.DeleteTrustDomain(ctx, pgID); err != nil {
+		return fmt.Errorf("failed deleting trust domain with ID=%q: %w", trustDomainID, err)
+	}
+
+	return nil
+}
+
+func (d *SQLDatastore) ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error) {
+	trustDomains, err := d.querier.ListTrustDomains(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting trust domain list: %w", err)
+	}
+
+	result := make([]*entity.TrustDomain, len(trustDomains))
+	for i, m := range trustDomains {
+		r, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting model trust domain to entity: %v", err)
+		}
+		result[i] = r
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) FindTrustDomainByID(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error) {
+	pgID, err := uuidToPgType(trustDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := d.querier.FindTrustDomainByID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up trust domain for ID=%q: %w", trustDomainID, err)
+	}
+
+	r, err := m.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting model trust domain to entity: %w", err)
+	}
+
+	return r, nil
+}
+
+func (d *SQLDatastore) FindTrustDomainByName(ctx context.Context, name spiffeid.TrustDomain) (*entity.TrustDomain, error) {
+	trustDomain, err := d.querier.FindTrustDomainByName(ctx, name.String())
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up trust domain for Trust Domain=%q: %w", name, err)
+	}
+
+	r, err := trustDomain.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting model trust domain to entity: %w", err)
+	}
+
+	return r, nil
+}
+
+func (d *SQLDatastore) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle) (*entity.Bundle, error) {
+	var bundle *Bundle
+	var err error
+	if req.ID.Valid {
+		bundle, err = d.updateBundle(ctx, req)
+	} else {
+		bundle, err = d.createBundle(ctx, req)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := bundle.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting trust domain model to entity: %w", err)
+	}
+
+	return response, nil
+}
+
+func (d *SQLDatastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
+	pgTrustDomainID, err := uuidToPgType(req.TrustDomainID)
+	if err != nil {
+		return nil, err
+	}
+	params := CreateBundleParams{
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
+		DigestAlgorithm:    req.DigestAlgorithm,
+		SignatureAlgorithm: req.SignatureAlgorithm,
+		SigningCert:        req.SigningCert,
+		TrustDomainID:      pgTrustDomainID,
+	}
+
+	bundle, err := d.querier.CreateBundle(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new bundle: %w", err)
+	}
+
+	return &bundle, nil
+}
+
+func (d *SQLDatastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+	params := UpdateBundleParams{
+		ID:                 pgID,
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
+		DigestAlgorithm:    req.DigestAlgorithm,
+		SignatureAlgorithm: req.SignatureAlgorithm,
+		SigningCert:        req.SigningCert,
+	}
+
+	bundle, err := d.querier.UpdateBundle(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating bundle: %w", err)
+	}
+
+	return &bundle, nil
+}
+
+func (d *SQLDatastore) FindBundleByID(ctx context.Context, bundleID uuid.UUID) (*entity.Bundle, error) {
+	pgID, err := uuidToPgType(bundleID)
+	if err != nil {
+		return nil, err
+	}
+
+	bundle, err := d.querier.FindBundleByID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up bundle with ID=%q: %w", bundleID, err)
+	}
+
+	b, err := bundle.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting model bundle to entity: %w", err)
+	}
+
+	return b, nil
+}
+
+func (d *SQLDatastore) FindBundleByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) (*entity.Bundle, error) {
+	pgID, err := uuidToPgType(trustDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	trustDomain, err := d.querier.FindBundleByTrustDomainID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up bundle for ID=%q: %w", trustDomainID, err)
+	}
+
+	td, err := trustDomain.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting model bundle to entity: %w", err)
+	}
+
+	return td, nil
+}
+
+func (d *SQLDatastore) ListBundles(ctx context.Context) ([]*entity.Bundle, error) {
+	bundles, err := d.querier.ListBundles(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting bundle list: %w", err)
+	}
+
+	result := make([]*entity.Bundle, len(bundles))
+	for i, m := range bundles {
+		r, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting model bundle to entity: %w", err)
+		}
+		result[i] = r
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) DeleteBundle(ctx context.Context, bundleID uuid.UUID) error {
+	pgID, err := uuidToPgType(bundleID)
+	if err != nil {
+		return err
+	}
+
+	if err = d.querier.DeleteBundle(ctx, pgID); err != nil {
+		return fmt.Errorf("failed deleting bundle with ID=%q: %w", bundleID, err)
+	}
+
+	return nil
+}
+
+func (d *SQLDatastore) CreateJoinToken(ctx context.Context, req *entity.JoinToken) (*entity.JoinToken, error) {
+	pgID, err := uuidToPgType(req.TrustDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := CreateJoinTokenParams{
+		Token:         req.Token,
+		ExpiresAt:     req.ExpiresAt,
+		TrustDomainID: pgID,
+	}
+	joinToken, err := d.querier.CreateJoinToken(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating join token: %w", err)
+	}
+
+	return joinToken.ToEntity(), nil
+}
+
+func (d *SQLDatastore) FindJoinTokensByID(ctx context.Context, joinTokenID uuid.UUID) (*entity.JoinToken, error) {
+	pgID, err := uuidToPgType(joinTokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	joinToken, err := d.querier.FindJoinTokenByID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up join token with ID=%q: %w", joinTokenID, err)
+	}
+
+	return joinToken.ToEntity(), nil
+}
+
+func (d *SQLDatastore) FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.JoinToken, error) {
+	pgID, err := uuidToPgType(trustDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens, err := d.querier.FindJoinTokensByTrustDomainID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up join token for Name ID=%q: %w", trustDomainID, err)
+	}
+
+	result := make([]*entity.JoinToken, len(tokens))
+	for i, t := range tokens {
+		result[i] = t.ToEntity()
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) ListJoinTokens(ctx context.Context) ([]*entity.JoinToken, error) {
+	tokens, err := d.querier.ListJoinTokens(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed looking up join tokens: %w", err)
+	}
+
+	result := make([]*entity.JoinToken, len(tokens))
+	for i, t := range tokens {
+		result[i] = t.ToEntity()
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) UpdateJoinToken(ctx context.Context, joinTokenID uuid.UUID, used bool) (*entity.JoinToken, error) {
+	pgID, err := uuidToPgType(joinTokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := UpdateJoinTokenParams{
+		ID: pgID,
+		Used: sql.NullBool{
+			Bool:  used,
+			Valid: true,
+		},
+	}
+
+	jt, err := d.querier.UpdateJoinToken(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating join token with ID=%q, %w", joinTokenID, err)
+	}
+
+	return jt.ToEntity(), nil
+}
+
+func (d *SQLDatastore) DeleteJoinToken(ctx context.Context, joinTokenID uuid.UUID) error {
+	pgID, err := uuidToPgType(joinTokenID)
+	if err != nil {
+		return err
+	}
+
+	if err = d.querier.DeleteJoinToken(ctx, pgID); err != nil {
+		return fmt.Errorf("failed deleting join token with ID=%q, %w", joinTokenID, err)
+	}
+
+	return nil
+}
+
+func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*entity.JoinToken, error) {
+	joinToken, err := d.querier.FindJoinToken(ctx, token)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up join token: %w", err)
+	}
+
+	return joinToken.ToEntity(), nil
+}
+
+func (d *SQLDatastore) CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error) {
+	var relationship *Relationship
+	var err error
+	if req.ID.Valid {
+		relationship, err = d.updateRelationship(ctx, req)
+	} else {
+		relationship, err = d.createRelationship(ctx, req)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := relationship.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+	}
+
+	return response, nil
+}
+
+func (d *SQLDatastore) createRelationship(ctx context.Context, req *entity.Relationship) (*Relationship, error) {
+	pgTrustDomainAID, err := uuidToPgType(req.TrustDomainAID)
+	if err != nil {
+		return nil, err
+	}
+
+	pgTrustDomainBID, err := uuidToPgType(req.TrustDomainBID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := CreateRelationshipParams{
+		TrustDomainAID: pgTrustDomainAID,
+		TrustDomainBID: pgTrustDomainBID,
+	}
+
+	relationship, err := d.querier.CreateRelationship(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating new relationship: %w", err)
+	}
+
+	return &relationship, nil
+}
+
+func (d *SQLDatastore) updateRelationship(ctx context.Context, req *entity.Relationship) (*Relationship, error) {
+	pgID, err := uuidToPgType(req.ID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := UpdateRelationshipParams{
+		ID:                  pgID,
+		TrustDomainAConsent: req.TrustDomainAConsent,
+		TrustDomainBConsent: req.TrustDomainBConsent,
+	}
+
+	relationship, err := d.querier.UpdateRelationship(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating relationship: %w", err)
+	}
+
+	return &relationship, nil
+}
+
+func (d *SQLDatastore) FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
+	pgID, err := uuidToPgType(relationshipID)
+	if err != nil {
+		return nil, err
+	}
+
+	relationship, err := d.querier.FindRelationshipByID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up relationship for ID=%q: %w", relationshipID, err)
+	}
+
+	response, err := relationship.ToEntity()
+	if err != nil {
+		return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+	}
+
+	return response, nil
+}
+
+func (d *SQLDatastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+	pgID, err := uuidToPgType(trustDomainID)
+	if err != nil {
+		return nil, err
+	}
+
+	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, pgID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("failed looking up relationships for TrustDomainID %q: %w", trustDomainID, err)
+	}
+
+	result := make([]*entity.Relationship, len(relationships))
+	for i, m := range relationships {
+		ent, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+		}
+		result[i] = ent
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
+	relationships, err := d.querier.ListRelationships(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed looking up relationships: %w", err)
+	}
+
+	result := make([]*entity.Relationship, len(relationships))
+	for i, m := range relationships {
+		ent, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+		}
+		result[i] = ent
+	}
+
+	return result, nil
+}
+
+func (d *SQLDatastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
+	pgID, err := uuidToPgType(relationshipID)
+	if err != nil {
+		return err
+	}
+
+	if err = d.querier.DeleteRelationship(ctx, pgID); err != nil {
+		return fmt.Errorf("failed deleting relationship ID=%q: %w", relationshipID, err)
+	}
+
+	return nil
 }
