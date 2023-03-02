@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spf13/cobra"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create <member | relationship>",
-	Short: "Allows creation of members and relationships",
+	Use:   "create <trustdomain| relationship>",
+	Short: "Allows creation of trust domains and relationships",
 }
 
-var createMemberCmd = &cobra.Command{
-	Use:   "member",
+var createTrustDomainCmd = &cobra.Command{
+	Use:   "trustdomain",
 	Args:  cobra.ExactArgs(0),
-	Short: "Creates a new member for the given trust domain.",
+	Short: "Creates a new trust domain",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		td, err := cmd.Flags().GetString("trustDomain")
@@ -32,11 +32,11 @@ var createMemberCmd = &cobra.Command{
 
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateMember(&common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain}}); err != nil {
+		if err := c.CreateTrustDomain(&entity.TrustDomain{Name: trustDomain}); err != nil {
 			return err
 		}
 
-		fmt.Printf("Member created for trust domain: %q\n", trustDomain.String())
+		fmt.Printf("Trust Domain created: %q\n", trustDomain.String())
 
 		return nil
 	},
@@ -69,9 +69,9 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		if err := c.CreateRelationship(&common.Relationship{
-			MemberA: &common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain1}},
-			MemberB: &common.Member{TrustBundle: common.TrustBundle{TrustDomain: trustDomain2}},
+		if err := c.CreateRelationship(&entity.Relationship{
+			TrustDomainAName: trustDomain1,
+			TrustDomainBName: trustDomain2,
 		}); err != nil {
 			return err
 		}
@@ -83,12 +83,12 @@ var createRelationshipCmd = &cobra.Command{
 
 func init() {
 	createCmd.AddCommand(createRelationshipCmd)
-	createCmd.AddCommand(createMemberCmd)
+	createCmd.AddCommand(createTrustDomainCmd)
 
-	createMemberCmd.PersistentFlags().StringP("trustDomain", "t", "", "The trust domain represented by the member.")
+	createTrustDomainCmd.PersistentFlags().StringP("trustDomain", "t", "", "The trust domain name.")
 
-	createRelationshipCmd.PersistentFlags().StringP("trustDomainA", "a", "", "A trust domain to participate in a relationship.")
-	createRelationshipCmd.PersistentFlags().StringP("trustDomainB", "b", "", "A trust domain to participate in a relationship.")
+	createRelationshipCmd.PersistentFlags().StringP("trustDomainA", "a", "", "A trust domain name to participate in a relationship.")
+	createRelationshipCmd.PersistentFlags().StringP("trustDomainB", "b", "", "A trust domain name to participate in a relationship.")
 
 	RootCmd.AddCommand(createCmd)
 }

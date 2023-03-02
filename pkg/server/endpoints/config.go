@@ -3,7 +3,6 @@ package endpoints
 import (
 	"net"
 
-	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,8 +14,8 @@ type Config struct {
 	// LocalAddress is the local address to bind the listener to.
 	LocalAddress net.Addr
 
-	// Plugin catalog
-	Catalog catalog.Catalog
+	// Postgres connection string
+	DatastoreConnString string
 
 	Logger logrus.FieldLogger
 }

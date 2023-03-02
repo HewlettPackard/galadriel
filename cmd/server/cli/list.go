@@ -8,29 +8,29 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list <members | relationships>",
-	Short: "Lists members and relationships",
+	Use:   "list <trustdomains | relationships>",
+	Short: "Lists trust domains and relationships",
 }
 
-var listMembersCmd = &cobra.Command{
-	Use:   "members",
+var listTrustDomainCmd = &cobra.Command{
+	Use:   "trustdomains",
 	Args:  cobra.ExactArgs(0),
-	Short: "Lists all the members.",
+	Short: "Lists all the Trust Domains.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := util.NewServerClient(defaultSocketPath)
-		members, err := c.ListMembers()
+		trustDomains, err := c.ListTrustDomains()
 		if err != nil {
 			return err
 		}
 
-		if len(members) == 0 {
-			fmt.Println("No members found")
+		if len(trustDomains) == 0 {
+			fmt.Println("No trust domains found")
 			return nil
 		}
 
-		for _, m := range members {
-			fmt.Printf("ID: %s\n", m.ID)
-			fmt.Printf("Trust Domain: %s\n", m.TrustDomain)
+		for _, m := range trustDomains {
+			fmt.Printf("ID: %s\n", m.ID.UUID)
+			fmt.Printf("Trust Domain: %s\n", m.Name)
 			fmt.Println()
 		}
 
@@ -55,9 +55,9 @@ var listRelationshipsCmd = &cobra.Command{
 		}
 
 		for _, r := range rels {
-			fmt.Printf("ID: %s\n", r.ID)
-			fmt.Printf("Trust Domain A: %s\n", r.MemberA.TrustDomain.String())
-			fmt.Printf("Trust Domain B: %s\n", r.MemberB.TrustDomain.String())
+			fmt.Printf("ID: %s\n", r.ID.UUID)
+			fmt.Printf("Trust Domain A: %s\n", r.TrustDomainAName.String())
+			fmt.Printf("Trust Domain B: %s\n", r.TrustDomainBName.String())
 			fmt.Println()
 		}
 
@@ -66,7 +66,7 @@ var listRelationshipsCmd = &cobra.Command{
 }
 
 func init() {
-	listCmd.AddCommand(listMembersCmd)
+	listCmd.AddCommand(listTrustDomainCmd)
 	listCmd.AddCommand(listRelationshipsCmd)
 
 	RootCmd.AddCommand(listCmd)

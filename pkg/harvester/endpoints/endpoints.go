@@ -29,10 +29,12 @@ func New(c Config) (*Endpoints, error) {
 	return &Endpoints{
 		TCPAddress:   c.TCPAddress,
 		LocalAddress: c.LocalAddress,
+		Logger:       c.Logger,
 	}, nil
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 	e.Logger.Fatal("not implemented")
+
 	return nil
 }

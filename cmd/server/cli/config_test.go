@@ -23,6 +23,7 @@ func TestNewServerConfig(t *testing.T) {
 		ListenPort:    8000,
 		SocketPath:    "/example",
 		LogLevel:      "INFO",
+		DBConnString:  "postgresql://postgres:postgres@localhost:5432/galadriel",
 	}}
 
 	sc, err := NewServerConfig(&config)
@@ -46,13 +47,14 @@ func TestNew(t *testing.T) {
 		{
 			name: "ok",
 			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "INFO"}`)),
+				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "INFO" db_conn_string = "postgresql://postgres:postgres@localhost:5432/galadriel"}`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: "127.0.0.1",
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
 					LogLevel:      "INFO",
+					DBConnString:  "postgresql://postgres:postgres@localhost:5432/galadriel",
 				},
 			},
 		},

@@ -6,7 +6,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 )
 
@@ -29,13 +28,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) run(ctx context.Context) error {
-	cat, err := catalog.Load(ctx, catalog.Config{Logger: s.config.Logger})
-	if err != nil {
-		return err
-	}
-	defer cat.Close()
-
-	endpointsServer, err := s.newEndpointsServer(cat)
+	endpointsServer, err := s.newEndpointsServer()
 	if err != nil {
 		return err
 	}
@@ -55,12 +48,12 @@ func (s *Server) run(ctx context.Context) error {
 	return err
 }
 
-func (s *Server) newEndpointsServer(cat catalog.Catalog) (endpoints.Server, error) {
+func (s *Server) newEndpointsServer() (endpoints.Server, error) {
 	config := &endpoints.Config{
-		TCPAddress:   s.config.TCPAddress,
-		LocalAddress: s.config.LocalAddress,
-		Catalog:      cat,
-		Logger:       s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		TCPAddress:          s.config.TCPAddress,
+		LocalAddress:        s.config.LocalAddress,
+		DatastoreConnString: s.config.DBConnString,
+		Logger:              s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 	}
 
 	return endpoints.New(config)
