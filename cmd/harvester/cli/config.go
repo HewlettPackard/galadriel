@@ -16,6 +16,7 @@ import (
 const (
 	defaultSpireSocketPath       = "/tmp/spire-server/private/api.sock"
 	defaultBundleUpdatesInterval = "30s"
+	defaultLogLevel              = "INFO"
 )
 
 type Config struct {
@@ -93,6 +94,6 @@ func (c *Config) setDefaults() {
 	}
 
 	if c.Harvester.LogLevel == "" {
-		c.Harvester.LogLevel = "INFO"
+		c.Harvester.LogLevel = defaultLogLevel
 	}
 }

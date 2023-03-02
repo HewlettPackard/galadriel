@@ -15,6 +15,9 @@ import (
 
 const (
 	defaultSocketPath = "/tmp/galadriel-server/api.sock"
+	defaultPort       = 8085
+	defaultAddress    = "0.0.0.0"
+	defaultLogLevel   = "INFO"
 )
 
 type Config struct {
@@ -88,11 +91,11 @@ func newConfig(configBytes []byte) (*Config, error) {
 
 func (c *Config) setDefaults() {
 	if c.Server.ListenAddress == "" {
-		c.Server.ListenAddress = "0.0.0.0"
+		c.Server.ListenAddress = defaultAddress
 	}
 
 	if c.Server.ListenPort == 0 {
-		c.Server.ListenPort = 8085
+		c.Server.ListenPort = defaultPort
 	}
 
 	if c.Server.SocketPath == "" {
@@ -100,6 +103,6 @@ func (c *Config) setDefaults() {
 	}
 
 	if c.Server.LogLevel == "" {
-		c.Server.LogLevel = "INFO"
+		c.Server.LogLevel = defaultLogLevel
 	}
 }
