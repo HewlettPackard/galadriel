@@ -22,7 +22,7 @@ type Config struct {
 	SpireAddress net.Addr
 
 	// Access token for connecting to Galadriel Server
-	AccessToken string
+	JoinToken string
 
 	// How often to check for bundle rotation
 	BundleUpdatesInterval time.Duration
