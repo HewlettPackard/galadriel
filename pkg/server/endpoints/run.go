@@ -23,7 +23,7 @@ type Server interface {
 type Endpoints struct {
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
-	DataStore  datastore.DataStore
+	Datastore  datastore.Datastore
 	Logger     logrus.FieldLogger
 }
 
@@ -31,10 +31,16 @@ func New(c *Config) (*Endpoints, error) {
 	if err := util.PrepareLocalAddr(c.LocalAddress); err != nil {
 		return nil, err
 	}
+
+	ds, err := datastore.NewSQLDatastore(c.Logger, c.DatastoreConnString)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Endpoints{
 		TCPAddress: c.TCPAddress,
 		LocalAddr:  c.LocalAddress,
-		DataStore:  c.Catalog.GetDataStore(),
+		Datastore:  ds,
 		Logger:     c.Logger,
 	}, nil
 }
@@ -113,8 +119,8 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 }
 
 func (e *Endpoints) addHandlers() {
-	http.HandleFunc("/createMember", e.createMemberHandler)
-	http.HandleFunc("/listMembers", e.listMembersHandler)
+	http.HandleFunc("/createTrustDomain", e.createTrustDomainHandler)
+	http.HandleFunc("/listTrustDomains", e.listTrustDomainsHandler)
 	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
 	http.HandleFunc("/listRelationships", e.listRelationshipsHandler)
 	http.HandleFunc("/generateToken", e.generateTokenHandler)
