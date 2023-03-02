@@ -63,10 +63,10 @@ func TestNew(t *testing.T) {
 			config: bytes.NewBuffer([]byte(`server { }`)),
 			expected: &Config{
 				Server: &serverConfig{
-					ListenAddress: "0.0.0.0",
-					ListenPort:    8085,
+					ListenAddress: defaultAddress,
+					ListenPort:    defaultPort,
 					SocketPath:    defaultSocketPath,
-					LogLevel:      "INFO",
+					LogLevel:      defaultLogLevel,
 				},
 			},
 		},
