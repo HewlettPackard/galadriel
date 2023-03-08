@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spiffe/go-spiffe/v2 v2.1.2
-	github.com/spiffe/spire-api-sdk v1.5.5
+	github.com/spiffe/spire-api-sdk v1.6.1
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.7.0
 	google.golang.org/grpc v1.53.0
