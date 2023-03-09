@@ -26,6 +26,7 @@ type Config struct {
 type harvesterConfig struct {
 	SpireSocketPath       string `hcl:"spire_socket_path"`
 	ServerAddress         string `hcl:"server_address"`
+	RootCAPath            string `hcl:"root_ca_path"`
 	BundleUpdatesInterval string `hcl:"bundle_updates_interval"`
 	LogLevel              string `hcl:"log_level"`
 }
@@ -62,6 +63,7 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 	hc.SpireAddress = spireAddr
 	hc.ServerAddress = c.Harvester.ServerAddress
 	hc.BundleUpdatesInterval = buInt
+	hc.RootCAPath = c.Harvester.RootCAPath
 
 	hc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
 
@@ -77,6 +79,10 @@ func newConfig(configBytes []byte) (*Config, error) {
 
 	if config.Harvester == nil {
 		return nil, errors.New("harvester section is empty")
+	}
+
+	if config.Harvester.RootCAPath == "" {
+		return nil, errors.New("root certificate authority path is empty")
 	}
 
 	config.setDefaults()

@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/labstack/echo/v4"
-
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 )
 
@@ -50,7 +48,7 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	e.Logger.Printf("Created trustDomain for trust domain: %s", trustDomainReq.Name)
+	e.Logger.Printf("Created trustDomain for trust domain: %s", m.Name.String())
 
 	trustDomainBytes, err := json.Marshal(m)
 	if err != nil {
@@ -257,25 +255,6 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		e.handleError(w, errMsg)
 		return
 	}
-}
-
-func (e *Endpoints) onboardHandler(c echo.Context) error {
-	e.Logger.Info("Harvester connected")
-	return nil
-}
-
-func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) {
-	t, err := e.Datastore.FindJoinToken(ctx.Request().Context(), token)
-	if err != nil {
-		e.Logger.Errorf("Invalid Token: %s\n", token)
-		return false, err
-	}
-
-	e.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
-
-	ctx.Set("token", t)
-
-	return true, nil
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {

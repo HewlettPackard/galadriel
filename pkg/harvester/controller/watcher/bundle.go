@@ -18,6 +18,8 @@ import (
 
 var logger = logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterController)
 
+// BuildSelfBundleWatcher builds a watcher loop that periodically update the Galadriel Server
+// with the latest root trust bundle from the domain (SPIRE Server) associated with this Harvester.
 func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) util.RunnableTask {
 	return func(ctx context.Context) error {
 		t := time.NewTicker(interval)
@@ -52,6 +54,8 @@ func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServe
 	}
 }
 
+// BuildFederatedBundlesWatcher builds a watcher loop that periodically fetches the Galadriel Server
+// for updates of any federation relationships this harvester is part of.
 func BuildFederatedBundlesWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) util.RunnableTask {
 	return func(ctx context.Context) error {
 		t := time.NewTicker(interval)

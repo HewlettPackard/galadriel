@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"time"
 
@@ -28,16 +29,24 @@ type HarvesterController struct {
 type Config struct {
 	ServerAddress         string
 	SpireSocketPath       net.Addr
-	AccessToken           string
+	RootCAPath            string
+	JoinToken             string
 	BundleUpdatesInterval time.Duration
 	Logger                logrus.FieldLogger
 }
 
 func NewHarvesterController(ctx context.Context, config *Config) (*HarvesterController, error) {
 	sc := spire.NewLocalSpireServer(ctx, config.SpireSocketPath)
-	gc, err := client.NewGaladrielServerClient(config.ServerAddress, config.AccessToken)
+	gc, err := client.NewGaladrielServerClient(config.ServerAddress, config.JoinToken, config.RootCAPath)
 	if err != nil {
 		return nil, err
+	}
+
+	// Authenticates with join token
+	// TODO: Attempt to authenticate with SVID if missing token
+	err = gc.Connect(ctx, config.JoinToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to establish connection with Galadriel Server: %w", err)
 	}
 
 	return &HarvesterController{

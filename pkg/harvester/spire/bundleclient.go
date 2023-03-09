@@ -41,7 +41,7 @@ func (c bundleClient) GetBundle(ctx context.Context) (*spiffebundle.Bundle, erro
 	return spiffeBundle, nil
 }
 
-// ListFederatedBunles retrieves all the bundles the server knows about
+// ListFederatedBundles retrieves all the bundles the server knows about
 func (c bundleClient) ListFederatedBundles(ctx context.Context) (*ListFederatedBundlesResponse, error) {
 	var out ListFederatedBundlesResponse
 	var pageToken string

@@ -19,6 +19,25 @@ import (
 
 const tokenKey = "token"
 
+func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) {
+	t, err := e.Datastore.FindJoinToken(ctx.Request().Context(), token)
+	if err != nil {
+		e.Logger.Errorf("Invalid Token: %s\n", token)
+		return false, err
+	}
+
+	e.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
+
+	ctx.Set("token", t)
+
+	return true, nil
+}
+
+func (e *Endpoints) onboardHandler(ctx echo.Context) error {
+	e.Logger.Info("Harvester connected")
+	return nil
+}
+
 func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	e.Logger.Debug("Receiving post bundle request")
 
@@ -88,28 +107,36 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 		return err
 	}
 
-	if harvesterReq.Bundle != nil && currentStoredBundle != nil && !bytes.Equal(harvesterReq.Bundle.Digest, currentStoredBundle.Digest) {
+	if harvesterReq.Bundle != nil &&
+		currentStoredBundle != nil &&
+		!bytes.Equal(harvesterReq.Bundle.Digest, currentStoredBundle.Digest) {
+		// bundle update
 		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
-			Data: harvesterReq.Bundle.Data,
+			ID:            currentStoredBundle.ID,
+			TrustDomainID: currentStoredBundle.TrustDomainID,
+
+			Data:   harvesterReq.Bundle.Data,
+			Digest: harvesterReq.Digest,
 		})
 		if err != nil {
-			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
+			e.handleTCPError(ctx, fmt.Sprintf("failed to update bundle: %v", err))
 			return err
 		}
 
-		e.Logger.Infof("Trust domain %s has been successfully updated", authenticatedTD.Name)
+		e.Logger.Infof("Bundle for Trust domain %s has been successfully updated", authenticatedTD.Name.String())
 	} else if currentStoredBundle == nil {
+		// bundle create
 		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
 			Data:          harvesterReq.Bundle.Data,
 			Digest:        harvesterReq.Bundle.Digest,
 			TrustDomainID: authenticatedTD.ID.UUID,
 		})
 		if err != nil {
-			e.handleTCPError(ctx, fmt.Sprintf("failed to update trustDomain: %v", err))
+			e.handleTCPError(ctx, fmt.Sprintf("failed to create bundle: %v", err))
 			return err
 		}
 
-		e.Logger.Debugf("Trust domain %s has been successfully updated", harvesterReq.TrustDomainName)
+		e.Logger.Debugf("Bundle for Trust domain %s has been successfully created", authenticatedTD.Name.String())
 	}
 
 	return nil
@@ -178,20 +205,18 @@ func (e *Endpoints) syncFederatedBundleHandler(ctx echo.Context) error {
 		return err
 	}
 
+	response := common.SyncBundleResponse{}
+
 	if len(federatedBundles) == 0 {
 		e.Logger.Debug("No federated bundles yet")
-		return nil
-	}
-
-	bundlesUpdates, err := e.getFederatedBundlesUpdates(ctx.Request().Context(), harvesterBundleDigests, federatedBundles)
-	if err != nil {
-		e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
-		return err
-	}
-
-	response := common.SyncBundleResponse{
-		Updates: bundlesUpdates,
-		State:   federatedBundlesDigests,
+	} else {
+		bundlesUpdates, err := e.getFederatedBundlesUpdates(ctx.Request().Context(), harvesterBundleDigests, federatedBundles)
+		if err != nil {
+			e.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
+			return err
+		}
+		response.Updates = bundlesUpdates
+		response.State = federatedBundlesDigests
 	}
 
 	responseBytes, err := json.Marshal(response)
@@ -273,6 +298,8 @@ func (e *Endpoints) getCurrentFederatedBundles(ctx context.Context, federatedTDs
 
 func (e *Endpoints) handleTCPError(ctx echo.Context, errMsg string) {
 	e.Logger.Errorf(errMsg)
+	// TODO: appropriate status code handling
+	ctx.Response().Status = 500
 	_, err := ctx.Response().Write([]byte(errMsg))
 	if err != nil {
 		e.Logger.Errorf("Failed to write error response: %v", err)

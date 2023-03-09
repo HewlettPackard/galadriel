@@ -47,11 +47,13 @@ func TestNew(t *testing.T) {
 		{
 			name: "ok",
 			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "INFO" db_conn_string = "postgresql://postgres:postgres@localhost:5432/galadriel"}`)),
+				`server { listen_address = "127.0.0.1" listen_port = 2222 cert_path = "dev/dummy-server.pem" cert_key_path = "dev/dummy-server-key.pem" socket_path = "/tmp/api.sock" log_level = "INFO" db_conn_string = "postgresql://postgres:postgres@localhost:5432/galadriel"}`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: "127.0.0.1",
 					ListenPort:    2222,
+					CertPath:      "dev/dummy-server.pem",
+					CertKeyPath:   "dev/dummy-server-key.pem",
 					SocketPath:    "/tmp/api.sock",
 					LogLevel:      "INFO",
 					DBConnString:  "postgresql://postgres:postgres@localhost:5432/galadriel",
@@ -60,11 +62,13 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name:   "defaults",
-			config: bytes.NewBuffer([]byte(`server { }`)),
+			config: bytes.NewBuffer([]byte(`server { cert_path = "dev/dummy-server.pem" cert_key_path = "dev/dummy-server-key.pem" }`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: defaultAddress,
 					ListenPort:    defaultPort,
+					CertPath:      "dev/dummy-server.pem",
+					CertKeyPath:   "dev/dummy-server-key.pem",
 					SocketPath:    defaultSocketPath,
 					LogLevel:      defaultLogLevel,
 				},
@@ -102,8 +106,8 @@ func TestNew(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.expected, serverConfig)
 			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, serverConfig)
 		})
 	}
 }

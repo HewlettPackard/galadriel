@@ -6,7 +6,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
 )
 
@@ -31,20 +30,11 @@ func (h *Harvester) Run(ctx context.Context) error {
 		return errors.New("token is required to connect the Harvester to the Galadriel Server")
 	}
 
-	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.JoinToken)
-	if err != nil {
-		return err
-	}
-
-	err = galadrielClient.Connect(ctx, h.config.JoinToken)
-	if err != nil {
-		return err
-	}
-
 	config := &controller.Config{
 		ServerAddress:         h.config.ServerAddress,
+		RootCAPath:            h.config.RootCAPath,
 		SpireSocketPath:       h.config.SpireAddress,
-		AccessToken:           h.config.JoinToken,
+		JoinToken:             h.config.JoinToken,
 		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
 		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
 	}

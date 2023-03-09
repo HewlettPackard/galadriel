@@ -43,6 +43,8 @@ func (s *Server) run(ctx context.Context) error {
 func (s *Server) newEndpointsServer() (endpoints.Server, error) {
 	config := &endpoints.Config{
 		TCPAddress:          s.config.TCPAddress,
+		CertPath:            s.config.CertPath,
+		CertKeyPath:         s.config.CertKeyPath,
 		LocalAddress:        s.config.LocalAddress,
 		DatastoreConnString: s.config.DBConnString,
 		Logger:              s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),

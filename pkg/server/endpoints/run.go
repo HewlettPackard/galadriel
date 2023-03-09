@@ -22,10 +22,12 @@ type Server interface {
 }
 
 type Endpoints struct {
-	TCPAddress *net.TCPAddr
-	LocalAddr  net.Addr
-	Datastore  datastore.Datastore
-	Logger     logrus.FieldLogger
+	TCPAddress  *net.TCPAddr
+	CertPath    string
+	CertKeyPath string
+	LocalAddr   net.Addr
+	Datastore   datastore.Datastore
+	Logger      logrus.FieldLogger
 }
 
 func New(c *Config) (*Endpoints, error) {
@@ -39,10 +41,12 @@ func New(c *Config) (*Endpoints, error) {
 	}
 
 	return &Endpoints{
-		TCPAddress: c.TCPAddress,
-		LocalAddr:  c.LocalAddress,
-		Datastore:  ds,
-		Logger:     c.Logger,
+		TCPAddress:  c.TCPAddress,
+		CertPath:    c.CertPath,
+		CertKeyPath: c.CertKeyPath,
+		LocalAddr:   c.LocalAddress,
+		Datastore:   ds,
+		Logger:      c.Logger,
 	}, nil
 }
 
@@ -69,10 +73,10 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		return e.validateToken(c, key)
 	}))
 
-	e.Logger.Infof("Starting TCP Server on %s", e.TCPAddress.String())
+	e.Logger.Infof("Starting secure TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
-		errChan <- server.Start(e.TCPAddress.String())
+		errChan <- server.StartTLS(e.TCPAddress.String(), e.CertPath, e.CertKeyPath)
 	}()
 
 	var err error
@@ -128,7 +132,7 @@ func (e *Endpoints) addHandlers() {
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	server.CONNECT("/onboard", e.onboardHandler)
+	server.POST("/onboard", e.onboardHandler)
 	server.POST("/bundle", e.postBundleHandler)
 	server.POST("/bundle/sync", e.syncFederatedBundleHandler)
 }

@@ -18,6 +18,9 @@ type Config struct {
 	// Address of Galadriel server
 	ServerAddress string
 
+	// Root CA cert path for Galadriel's server certificate
+	RootCAPath string
+
 	// Address of SPIRE Server
 	SpireAddress net.Addr
 

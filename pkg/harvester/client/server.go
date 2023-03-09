@@ -3,10 +3,13 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
@@ -35,10 +38,25 @@ type client struct {
 	logger  logrus.FieldLogger
 }
 
-func NewGaladrielServerClient(address, token string) (GaladrielServerClient, error) {
+func NewGaladrielServerClient(address, token, rootCAPath string) (GaladrielServerClient, error) {
+	// Load the root CA certificate.
+	caCert, err := os.ReadFile(rootCAPath)
+	if err != nil {
+		return nil, fmt.Errorf("error loading certificate: %w", err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
 	return &client{
-		c:       *http.DefaultClient,
-		address: "http://" + address,
+		c: http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					MinVersion: tls.VersionTLS12,
+					RootCAs:    caCertPool,
+				},
+			},
+		},
+		address: "https://" + address,
 		token:   token,
 		logger:  logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
 	}, nil
@@ -46,7 +64,8 @@ func NewGaladrielServerClient(address, token string) (GaladrielServerClient, err
 
 func (c *client) Connect(ctx context.Context, token string) error {
 	url := c.address + onboardPath
-	req, err := http.NewRequestWithContext(ctx, http.MethodConnect, url, nil)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
 		return err
 	}

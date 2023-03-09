@@ -15,9 +15,9 @@
 
 ### Minimum Viable Product (MVP)
 - **Status**: In Progress
-- **Goal**: Have a minimal product for early evaluation, that is is API based, and implements the security and core principles identified in the [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true).
+- **Goal**: Have a minimal product for early evaluation, that is API based, and implements the security and core principles identified in the [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true).
 - **Result**:
-    - Server and Harvester APIs are well defined and documented.
+    - Server and Harvester APIs are well-defined and documented.
     - Harvester is securely introduced to the Server.
     - One or more production-ready database systems are available to be used as backend storage.
     - Multiple organizations can share the same Galadriel Server instance without data leak risks.

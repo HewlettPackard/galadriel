@@ -27,6 +27,8 @@ type Config struct {
 type serverConfig struct {
 	ListenAddress string `hcl:"listen_address"`
 	ListenPort    int    `hcl:"listen_port"`
+	CertPath      string `hcl:"cert_path"`
+	CertKeyPath   string `hcl:"cert_key_path"`
 	SocketPath    string `hcl:"socket_path"`
 	LogLevel      string `hcl:"log_level"`
 	DBConnString  string `hcl:"db_conn_string"`
@@ -59,6 +61,8 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 	}
 
 	sc.TCPAddress = tcpAddr
+	sc.CertPath = c.Server.CertPath
+	sc.CertKeyPath = c.Server.CertKeyPath
 
 	socketAddr, err := util.GetUnixAddrWithAbsPath(c.Server.SocketPath)
 	if err != nil {
@@ -82,6 +86,10 @@ func newConfig(configBytes []byte) (*Config, error) {
 
 	if config.Server == nil {
 		return nil, errors.New("server section is empty")
+	}
+
+	if config.Server.CertPath == "" || config.Server.CertKeyPath == "" {
+		return nil, errors.New("server certificate or key paths are empty")
 	}
 
 	config.setDefaults()
