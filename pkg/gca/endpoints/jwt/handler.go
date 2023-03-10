@@ -88,7 +88,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(newToken))
+	if _, err := w.Write([]byte(newToken)); err != nil {
+		h.Logger.Errorf("Error writing token in HTTP response: %w", err)
+	}
 }
 
 func (h *Handler) isTokenExpired(claims map[string]any) bool {
