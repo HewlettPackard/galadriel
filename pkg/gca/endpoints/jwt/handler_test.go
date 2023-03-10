@@ -19,20 +19,12 @@ import (
 )
 
 func TestServeHTTP(t *testing.T) {
+	CA, err, h := createHandler(t)
+
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	clk := clock.NewFake()
-	caConfig := &ca.Config{
-		RootCertFile: "../testdata/root_cert.pem",
-		RootKeyFile:  "../testdata/root_key.pem",
-		Clock:        clk,
-	}
-	CA, err := ca.New(caConfig)
-	require.NoError(t, err)
-
 	params := ca.JWTParams{
 		Subject:  spiffeid.RequireFromString("spiffe://example/test"),
 		Audience: []string{jwtAudience},
@@ -42,13 +34,6 @@ func TestServeHTTP(t *testing.T) {
 	require.NoError(t, err)
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	logger, _ := test.NewNullLogger()
-	h := Handler{
-		CA:          CA,
-		Logger:      logger,
-		JWTTokenTTL: time.Hour,
-		Clock:       clk,
-	}
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.ServeHTTP)
@@ -73,19 +58,7 @@ func TestServeHTTP(t *testing.T) {
 }
 
 func TestServeHTTPExpiredToken(t *testing.T) {
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	clk := clock.NewFake()
-	caConfig := &ca.Config{
-		RootCertFile: "../testdata/root_cert.pem",
-		RootKeyFile:  "../testdata/root_key.pem",
-		Clock:        clk,
-	}
-	CA, err := ca.New(caConfig)
-	require.NoError(t, err)
+	CA, err, h := createHandler(t)
 
 	params := ca.JWTParams{
 		Subject:  spiffeid.RequireFromString("spiffe://example/test"),
@@ -95,14 +68,11 @@ func TestServeHTTPExpiredToken(t *testing.T) {
 	token, err := CA.SignJWT(context.Background(), params)
 	require.NoError(t, err)
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	logger, _ := test.NewNullLogger()
-	h := Handler{
-		CA:          CA,
-		Logger:      logger,
-		JWTTokenTTL: time.Hour,
-		Clock:       clk,
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.ServeHTTP)
@@ -116,19 +86,12 @@ func TestServeHTTPExpiredToken(t *testing.T) {
 }
 
 func TestServeHTTPInvalidAudience(t *testing.T) {
+	CA, err, h := createHandler(t)
+
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	clk := clock.NewFake()
-	caConfig := &ca.Config{
-		RootCertFile: "../testdata/root_cert.pem",
-		RootKeyFile:  "../testdata/root_key.pem",
-		Clock:        clk,
-	}
-	CA, err := ca.New(caConfig)
-	require.NoError(t, err)
 
 	params := ca.JWTParams{
 		Subject:  spiffeid.RequireFromString("spiffe://example/test"),
@@ -139,13 +102,6 @@ func TestServeHTTPInvalidAudience(t *testing.T) {
 	require.NoError(t, err)
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	logger, _ := test.NewNullLogger()
-	h := Handler{
-		CA:          CA,
-		Logger:      logger,
-		JWTTokenTTL: time.Hour,
-		Clock:       clk,
-	}
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(h.ServeHTTP)
@@ -156,4 +112,24 @@ func TestServeHTTPInvalidAudience(t *testing.T) {
 
 	message := strings.Replace(rr.Body.String(), "\n", "", -1)
 	assert.Equal(t, "Invalid JWT token audience", message)
+}
+
+func createHandler(t *testing.T) (*ca.CA, error, Handler) {
+	clk := clock.NewFake()
+	caConfig := &ca.Config{
+		RootCertFile: "../testdata/root_cert.pem",
+		RootKeyFile:  "../testdata/root_key.pem",
+		Clock:        clk,
+	}
+	CA, err := ca.New(caConfig)
+	require.NoError(t, err)
+
+	logger, _ := test.NewNullLogger()
+	h := Handler{
+		CA:          CA,
+		Logger:      logger,
+		JWTTokenTTL: time.Hour,
+		Clock:       clk,
+	}
+	return CA, err, h
 }
