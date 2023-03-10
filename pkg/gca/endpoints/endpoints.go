@@ -179,8 +179,8 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	os.Remove(e.LocalAddr.String())
 
+	// UDS API handlers
 	mux := http.NewServeMux()
-	mux.HandleFunc("example", e.exampleHandler)
 	server := &http.Server{
 		Handler: mux,
 	}
@@ -238,10 +238,6 @@ func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, er
 		return nil, err
 	}
 	return &certificate, nil
-}
-
-func (e *Endpoints) exampleHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("this is an example response"))
 }
 
 func (e *Endpoints) triggerListeningHook() {
