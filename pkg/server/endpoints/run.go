@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -50,11 +51,11 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 		e.runTCPServer,
 		e.runUDSServer,
 	)
-	if err != nil {
-		return err
+	if errors.Is(err, context.Canceled) {
+		err = nil
 	}
 
-	return nil
+	return err
 }
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {

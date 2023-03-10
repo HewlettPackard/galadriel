@@ -118,7 +118,7 @@ space := $(null)
 .PHONY: build
 
 ## Compiles all Galadriel binaries.
-build: bin/galadriel-harvester bin/galadriel-server
+build: bin/galadriel-harvester bin/galadriel-server bin/galadriel-ca
 
 # This is the master template for compiling Go binaries
 define binary_rule
@@ -132,6 +132,7 @@ endef
 # the binary_rule template above
 $(eval $(call binary_rule,bin/galadriel-harvester,cmd/harvester/main.go))
 $(eval $(call binary_rule,bin/galadriel-server,cmd/server/main.go))
+$(eval $(call binary_rule,bin/galadriel-ca,cmd/gca/main.go))
 
 bin/:
 	@mkdir -p $@
