@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
+	"github.com/HewlettPackard/galadriel/test/certs"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -180,10 +181,13 @@ func createToken(t *testing.T, CA *ca.CA, ttl time.Duration, audience string) st
 
 func createCA(t *testing.T) *ca.CA {
 	clk := clock.NewFake()
+	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
 	caConfig := &ca.Config{
-		RootCertFile: "../testdata/root_cert.pem",
-		RootKeyFile:  "../testdata/root_key.pem",
-		Clock:        clk,
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
 	}
 	CA, err := ca.New(caConfig)
 	require.NoError(t, err)

@@ -8,7 +8,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
@@ -16,11 +15,6 @@ import (
 	"github.com/go-jose/go-jose/v3/cryptosigner"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
-)
-
-var (
-	maxBigInt64 = getMaxBigInt64()
-	one         = big.NewInt(1)
 )
 
 // NotBeforeTolerance adds a margin to the NotBefore in case there is a clock drift across the servers
@@ -41,30 +35,20 @@ type CA struct {
 }
 
 type Config struct {
-	RootCertFile string
-	RootKeyFile  string
-	Clock        clock.Clock
+	RootCert *x509.Certificate
+	RootKey  crypto.PrivateKey
+	Clock    clock.Clock
 }
 
 func New(c *Config) (*CA, error) {
-	cert, err := cryptoutil.LoadCertificate(c.RootCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed loading CA root certificate: %w", err)
-	}
-
-	key, err := cryptoutil.LoadRSAPrivateKey(c.RootKeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed loading CA root private: %w", err)
-	}
-
-	signer, err := signerFromPrivateKey(key)
+	signer, err := signerFromPrivateKey(c.RootKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signer from private key: %w", err)
 	}
 
 	x509CA := &X509CA{
-		Certificate: cert,
-		Signer:      signer,
+		CACertificate: c.RootCert,
+		Signer:        signer,
 	}
 
 	kid, err := generateRandomKeyID()
@@ -86,8 +70,7 @@ func New(c *Config) (*CA, error) {
 }
 
 type X509CA struct {
-	// CA certificate.
-	Certificate *x509.Certificate
+	CACertificate *x509.Certificate
 
 	// Signer is an interface for an opaque private key
 	// that can be used for signing operations
@@ -125,7 +108,7 @@ func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificatePar
 		return nil, fmt.Errorf("failed to create template for GCA certificate: %w", err)
 	}
 
-	cert, err := cryptoutil.CreateCertificate(template, ca.x509CA.Certificate, params.PublicKey, ca.x509CA.Signer)
+	cert, err := cryptoutil.CreateCertificate(template, ca.x509CA.CACertificate, params.PublicKey, ca.x509CA.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign GCA certificate: %w", err)
 	}
@@ -172,7 +155,7 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 }
 
 func (ca *CA) createX509Template(params X509CertificateParams) (*x509.Certificate, error) {
-	serial, err := newSerialNumber()
+	serial, err := cryptoutil.NewSerialNumber()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create X509 Template: %w", err)
 	}
@@ -207,19 +190,6 @@ func signerFromPrivateKey(privateKey crypto.PrivateKey) (crypto.Signer, error) {
 		return nil, fmt.Errorf("expected crypto.Signer; got %T", privateKey)
 	}
 	return signer, nil
-}
-
-func newSerialNumber() (*big.Int, error) {
-	s, err := rand.Int(rand.Reader, maxBigInt64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create random number: %w", err)
-	}
-
-	return s.Add(s, one), nil
-}
-
-func getMaxBigInt64() *big.Int {
-	return new(big.Int).SetInt64(1<<63 - 1)
 }
 
 func generateRandomKeyID() (string, error) {

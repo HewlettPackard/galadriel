@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
@@ -67,6 +68,8 @@ type Endpoints struct {
 	Clock      clock.Clock
 	config     *Config
 
+	certsStore *tlsCertSource
+
 	hooks struct {
 		// test hook used to indicate that is listening on TCP
 		tcpListening chan struct{}
@@ -101,7 +104,20 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 }
 
 type tlsCertSource struct {
+	mu   sync.RWMutex
 	cert *tls.Certificate
+}
+
+func (t *tlsCertSource) setCert(cert *tls.Certificate) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cert = cert
+}
+
+func (t *tlsCertSource) getCert() *tls.Certificate {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.cert
 }
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
@@ -111,11 +127,12 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	certStore := tlsCertSource{cert: cert}
+
+	e.certsStore = &tlsCertSource{cert: cert}
 
 	tlsConfig := &tls.Config{
 		GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return certStore.cert, nil
+			return e.certsStore.getCert(), nil
 		},
 	}
 
@@ -151,21 +168,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	ticker := time.NewTicker(certRotationInterval)
 	defer ticker.Stop()
 
-	go func() {
-		e.Logger.Info("Starting GCA certificate rotator")
-		select {
-		case <-ticker.C:
-			e.Logger.Info("Rotating GCA Certificate")
-			cert, err := e.getTLSCertificate(ctx)
-			if err != nil {
-				errChan <- fmt.Errorf("failed to rotate GCA certificate: %w", err)
-			}
-			certStore.cert = cert
-		case <-ctx.Done():
-			e.Logger.Info("Stopped GCA Certificate rotator")
-			return
-		}
-	}()
+	go e.tlsCertificateWatcher(ctx, ticker, errChan)
 
 	select {
 	case err = <-errChan:
@@ -178,6 +181,24 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		e.Logger.Info("TCP GCA stopped")
 		return nil
 	}
+}
+
+func (e *Endpoints) tlsCertificateWatcher(ctx context.Context, ticker *time.Ticker, errChan chan error) {
+	func() {
+		e.Logger.Info("Starting GCA certificate rotator")
+		select {
+		case <-ticker.C:
+			e.Logger.Info("Rotating GCA CACertificate")
+			cert, err := e.getTLSCertificate(ctx)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to rotate GCA certificate: %w", err)
+			}
+			e.certsStore.setCert(cert)
+		case <-ctx.Done():
+			e.Logger.Info("Stopped GCA CACertificate rotator")
+			return
+		}
+	}()
 }
 
 func (e *Endpoints) runUDSServer(ctx context.Context) error {

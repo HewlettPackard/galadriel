@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/test/certs"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/stretchr/testify/assert"
@@ -15,42 +16,32 @@ import (
 )
 
 func TestNewCA(t *testing.T) {
+	clk := clock.NewFake()
+	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
 	// success
 	config := &Config{
-		RootCertFile: "testdata/root_cert.pem",
-		RootKeyFile:  "testdata/root_key.pem",
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
 	}
 
 	ca, err := New(config)
 	require.NoError(t, err)
 	require.NotNil(t, ca)
-
-	// fail to load root cert
-	config = &Config{
-		RootCertFile: "testdata/emtpy.pem",
-		RootKeyFile:  "testdata/root_key.pem",
-	}
-
-	ca, err = New(config)
-	require.Nil(t, ca)
-	assert.ErrorContains(t, err, "failed loading CA root certificate")
-
-	// fail to load root key
-	config = &Config{
-		RootCertFile: "testdata/root_cert.pem",
-		RootKeyFile:  "testdata/empty.pem",
-	}
-
-	ca, err = New(config)
-	require.Nil(t, ca)
-	assert.ErrorContains(t, err, "failed loading CA root private")
+	assert.Equal(t, config.Clock, ca.clock)
 }
 
 func TestSignX509Certificate(t *testing.T) {
+	clk := clock.NewFake()
+	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
 	config := &Config{
-		RootCertFile: "testdata/root_cert.pem",
-		RootKeyFile:  "testdata/root_key.pem",
-		Clock:        clock.NewFake(),
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
 	}
 
 	ca, _ := New(config)
@@ -92,10 +83,14 @@ func TestSignX509Certificate(t *testing.T) {
 }
 
 func TestSignJWT(t *testing.T) {
+	clk := clock.NewFake()
+	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
 	config := &Config{
-		RootCertFile: "testdata/root_cert.pem",
-		RootKeyFile:  "testdata/root_key.pem",
-		Clock:        clock.NewFake(),
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
 	}
 
 	oneMinute := 1 * time.Minute

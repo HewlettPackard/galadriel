@@ -128,13 +128,11 @@ func (h *Handler) isTokenExpired(claims map[string]any) bool {
 }
 
 func containsAudience(aud []any, expected string) bool {
-	found := false
 	for _, a := range aud {
 		if a == expected {
-			found = true
-			break
+			return true
 		}
 	}
 
-	return found
+	return false
 }

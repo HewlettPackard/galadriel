@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
-	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/test/certs"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -22,7 +22,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	config := newEndpointTestConfig(t)
+	config, _ := newEndpointTestConfig(t)
 
 	endpoint, err := New(config)
 	require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestListenAndServe(t *testing.T) {
-	config := newEndpointTestConfig(t)
+	config, caCert := newEndpointTestConfig(t)
 
 	endpoints, err := New(config)
 	require.NoError(t, err)
@@ -55,10 +55,10 @@ func TestListenAndServe(t *testing.T) {
 
 	waitForListening(t, endpoints, errCh)
 
+	// create RootCertPool for TLS Client using the caCert from the GCA endpoints
 	rootCa := x509.NewCertPool()
-	cert, err := cryptoutil.LoadCertificate("testdata/root_cert.pem")
 	require.NoError(t, err)
-	rootCa.AddCert(cert)
+	rootCa.AddCert(caCert)
 
 	tlsConfig := &tls.Config{
 		RootCAs:    rootCa,
@@ -112,7 +112,7 @@ func createToken(t *testing.T, CA ca.ServerCA) string {
 	return token
 }
 
-func newEndpointTestConfig(t *testing.T) *Config {
+func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
 	// used to generate a TCP address with a random port
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{})
 	require.NoError(t, err)
@@ -125,10 +125,13 @@ func newEndpointTestConfig(t *testing.T) *Config {
 	logger, _ := test.NewNullLogger()
 
 	clk := clock.New()
+	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
 	caConfig := &ca.Config{
-		RootCertFile: "testdata/root_cert.pem",
-		RootKeyFile:  "testdata/root_key.pem",
-		Clock:        clk,
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
 	}
 	CA, err := ca.New(caConfig)
 	require.NoError(t, err)
@@ -141,7 +144,7 @@ func newEndpointTestConfig(t *testing.T) *Config {
 		Clock:        clk,
 	}
 
-	return config
+	return config, caCert
 }
 
 func waitForListening(t *testing.T, e *Endpoints, errCh chan error) {

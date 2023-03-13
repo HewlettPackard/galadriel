@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/gca/endpoints"
@@ -49,10 +50,19 @@ type GCA struct {
 
 // NewGCA creates a new Galadriel CA GCA with the given configuration.
 func NewGCA(config *Config) (*GCA, error) {
+	cert, err := cryptoutil.LoadCertificate(config.RootCertPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed loading CA root certificate: %w", err)
+	}
+	key, err := cryptoutil.LoadRSAPrivateKey(config.RootKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed loading CA root private: %w", err)
+	}
+
 	CA, err := ca.New(&ca.Config{
-		RootCertFile: config.RootCertPath,
-		RootKeyFile:  config.RootKeyPath,
-		Clock:        clk,
+		RootCert: cert,
+		RootKey:  key,
+		Clock:    clk,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed creating GCA CA: %w", err)
