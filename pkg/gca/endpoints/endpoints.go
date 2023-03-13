@@ -159,11 +159,10 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	e.Logger.Infof("Starting TCP GCA on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
+		e.triggerListeningHook()
 		// certificate and key are embedded in the TLS config
 		errChan <- server.ListenAndServeTLS("", "")
 	}()
-
-	e.triggerListeningHook()
 
 	go e.tlsCertificateRotator(ctx, errChan)
 
