@@ -40,35 +40,6 @@ type Config struct {
 	Clock    clock.Clock
 }
 
-func New(c *Config) (*CA, error) {
-	signer, err := signerFromPrivateKey(c.RootKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create signer from private key: %w", err)
-	}
-
-	x509CA := &X509CA{
-		CACertificate: c.RootCert,
-		Signer:        signer,
-	}
-
-	kid, err := generateRandomKeyID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random kid: %w", err)
-	}
-
-	jwtCA := &JWTCA{
-		Signer: signer,
-		Kid:    kid,
-	}
-
-	return &CA{
-		x509CA:    x509CA,
-		jwtCA:     jwtCA,
-		clock:     c.Clock,
-		PublicKey: signer.Public(),
-	}, err
-}
-
 type X509CA struct {
 	CACertificate *x509.Certificate
 
@@ -96,6 +67,35 @@ type JWTParams struct {
 	Subject  string
 	Audience []string
 	TTL      time.Duration
+}
+
+func New(c *Config) (*CA, error) {
+	signer, err := signerFromPrivateKey(c.RootKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create signer from private key: %w", err)
+	}
+
+	x509CA := &X509CA{
+		CACertificate: c.RootCert,
+		Signer:        signer,
+	}
+
+	kid, err := generateRandomKeyID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random kid: %w", err)
+	}
+
+	jwtCA := &JWTCA{
+		Signer: signer,
+		Kid:    kid,
+	}
+
+	return &CA{
+		x509CA:    x509CA,
+		jwtCA:     jwtCA,
+		clock:     c.Clock,
+		PublicKey: signer.Public(),
+	}, err
 }
 
 func (ca *CA) GetPublicKey() crypto.PublicKey {
