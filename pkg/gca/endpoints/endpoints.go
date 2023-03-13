@@ -165,7 +165,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	e.triggerListeningHook()
 
-	go e.tlsCertificateWatcher(ctx, errChan)
+	go e.tlsCertificateRotator(ctx, errChan)
 
 	select {
 	case err = <-errChan:
@@ -215,7 +215,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) tlsCertificateWatcher(ctx context.Context, errChan chan error) {
+func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan error) {
 	e.Logger.Info("Starting GCA certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
