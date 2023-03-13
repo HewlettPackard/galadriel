@@ -165,11 +165,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	e.triggerListeningHook()
 
-	// Start a ticker that rotates the certificate every default interval
-	ticker := time.NewTicker(certRotationInterval)
-	defer ticker.Stop()
-
-	go e.tlsCertificateWatcher(ctx, ticker, errChan)
+	go e.tlsCertificateWatcher(ctx, errChan)
 
 	select {
 	case err = <-errChan:
@@ -182,24 +178,6 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		e.Logger.Info("TCP GCA stopped")
 		return nil
 	}
-}
-
-func (e *Endpoints) tlsCertificateWatcher(ctx context.Context, ticker *time.Ticker, errChan chan error) {
-	func() {
-		e.Logger.Info("Starting GCA certificate rotator")
-		select {
-		case <-ticker.C:
-			e.Logger.Info("Rotating GCA CACertificate")
-			cert, err := e.getTLSCertificate(ctx)
-			if err != nil {
-				errChan <- fmt.Errorf("failed to rotate GCA certificate: %w", err)
-			}
-			e.certsStore.setCert(cert)
-		case <-ctx.Done():
-			e.Logger.Info("Stopped GCA CACertificate rotator")
-			return
-		}
-	}()
 }
 
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
@@ -234,6 +212,28 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 		e.Logger.Info("UDS GCA stopped")
 
 		return nil
+	}
+}
+
+func (e *Endpoints) tlsCertificateWatcher(ctx context.Context, errChan chan error) {
+	e.Logger.Info("Starting GCA certificate rotator")
+
+	// Start a ticker that rotates the certificate every default interval
+	ticker := time.NewTicker(certRotationInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			e.Logger.Info("Rotating GCA CACertificate")
+			cert, err := e.getTLSCertificate(ctx)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to rotate GCA certificate: %w", err)
+			}
+			e.certsStore.setCert(cert)
+		case <-ctx.Done():
+			e.Logger.Info("Stopped GCA CACertificate rotator")
+			return
+		}
 	}
 }
 
