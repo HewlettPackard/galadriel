@@ -16,7 +16,6 @@ import (
 	"github.com/go-jose/go-jose/v3/cryptosigner"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 var (
@@ -111,7 +110,7 @@ type X509CertificateParams struct {
 }
 
 type JWTParams struct {
-	Subject  spiffeid.ID
+	Subject  string
 	Audience []string
 	TTL      time.Duration
 }
@@ -139,7 +138,7 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 	now := ca.clock.Now()
 
 	claims := map[string]interface{}{
-		"sub": params.Subject.String(),
+		"sub": params.Subject,
 		"exp": jwt.NewNumericDate(expiresAt),
 		"aud": params.Audience,
 		"iat": jwt.NewNumericDate(now),

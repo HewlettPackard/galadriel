@@ -121,13 +121,17 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	// TCP API handlers
 	mux := http.NewServeMux()
-	jwtHandler := jwt.Handler{
+
+	jwtHandler, err := jwt.NewHandler(&jwt.Config{
 		CA:          e.CA,
 		Logger:      e.Logger,
 		JWTTokenTTL: e.config.JWTTokenTTL,
 		Clock:       e.Clock,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to build JWT handler")
 	}
-	mux.Handle("/jwt", &jwtHandler)
+	mux.Handle("/jwt", jwtHandler)
 
 	server := &http.Server{
 		Addr:      e.TCPAddress.String(),

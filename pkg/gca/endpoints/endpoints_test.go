@@ -17,7 +17,6 @@ import (
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -103,7 +102,7 @@ func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
 
 func createToken(t *testing.T, CA ca.ServerCA) string {
 	params := ca.JWTParams{
-		Subject:  spiffeid.RequireFromString("spiffe://example/test"),
+		Subject:  "domain.test",
 		Audience: []string{"galadriel-ca"},
 		TTL:      time.Hour,
 	}

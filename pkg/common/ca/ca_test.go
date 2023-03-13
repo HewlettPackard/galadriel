@@ -10,7 +10,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,7 +103,7 @@ func TestSignJWT(t *testing.T) {
 	ca, _ := New(config)
 
 	params := JWTParams{
-		Subject:  spiffeid.RequireFromString("spiffe://example/test"),
+		Subject:  "domain.test",
 		Audience: []string{"aud1", "aud2"},
 		TTL:      oneMinute,
 	}
@@ -123,7 +122,7 @@ func TestSignJWT(t *testing.T) {
 	claims := make(map[string]any)
 	err = parsed.Claims(publicKey, &claims)
 	require.NoError(t, err)
-	assert.Equal(t, claims["sub"], "spiffe://example/test")
+	assert.Equal(t, claims["sub"], "domain.test")
 	assert.Contains(t, claims["aud"], "aud1")
 	assert.Contains(t, claims["aud"], "aud2")
 	assert.Equal(t, claims["exp"], oneMinute.Seconds())
