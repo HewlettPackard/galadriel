@@ -159,6 +159,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	e.Logger.Infof("Starting TCP GCA on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
+		// certificate and key are embedded in the TLS config
 		errChan <- server.ListenAndServeTLS("", "")
 	}()
 
