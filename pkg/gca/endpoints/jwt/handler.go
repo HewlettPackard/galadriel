@@ -10,6 +10,7 @@ import (
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 const (
@@ -95,9 +96,16 @@ func NewHandler(c *Config) (http.Handler, error) {
 
 		sub := claims["sub"].(string)
 
+		// A valid SPIFFE trust domain name is expected
+		subject, err := spiffeid.TrustDomainFromString(sub)
+		if err != nil {
+			http.Error(w, "invalid JWT token subject", http.StatusBadRequest)
+			return
+		}
+
 		// params for the new JWT token
 		params := ca.JWTParams{
-			Subject:  sub,
+			Subject:  subject,
 			Audience: []string{GCAAudience},
 			TTL:      handler.JWTTokenTTL,
 		}

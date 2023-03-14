@@ -15,6 +15,7 @@ import (
 	"github.com/go-jose/go-jose/v3/cryptosigner"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 // NotBeforeTolerance adds a margin to the NotBefore in case there is a clock drift across the servers
@@ -64,7 +65,7 @@ type X509CertificateParams struct {
 }
 
 type JWTParams struct {
-	Subject  string
+	Subject  spiffeid.TrustDomain
 	Audience []string
 	TTL      time.Duration
 }

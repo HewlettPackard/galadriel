@@ -1,4 +1,4 @@
-package certs
+package certtest
 
 import (
 	"crypto"

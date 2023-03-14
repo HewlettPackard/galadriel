@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
-	"github.com/HewlettPackard/galadriel/test/certs"
+	"github.com/HewlettPackard/galadriel/test/certtest"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,7 +103,7 @@ func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
 
 func createToken(t *testing.T, CA ca.ServerCA) string {
 	params := ca.JWTParams{
-		Subject:  "domain.test",
+		Subject:  spiffeid.RequireTrustDomainFromString("domain.test"),
 		Audience: []string{"galadriel-ca"},
 		TTL:      time.Hour,
 	}
@@ -125,7 +126,7 @@ func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
 	logger, _ := test.NewNullLogger()
 
 	clk := clock.New()
-	caCert, caKey, err := certs.CreateTestCACertificate(clk)
+	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 
 	caConfig := &ca.Config{
