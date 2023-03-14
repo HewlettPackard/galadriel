@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
@@ -28,6 +29,8 @@ type ServerCA interface {
 }
 
 type CA struct {
+	mu sync.RWMutex
+
 	PublicKey crypto.PublicKey
 
 	x509CA *X509CA
@@ -104,12 +107,14 @@ func New(c *Config) (*CA, error) {
 }
 
 func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error) {
+	x509CA := ca.getX509CA()
+
 	template, err := ca.createX509Template(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create template for GCA certificate: %w", err)
 	}
 
-	cert, err := cryptoutil.CreateCertificate(template, ca.x509CA.CACertificate, params.PublicKey, ca.x509CA.Signer)
+	cert, err := cryptoutil.CreateCertificate(template, x509CA.CACertificate, params.PublicKey, x509CA.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign GCA certificate: %w", err)
 	}
@@ -118,6 +123,8 @@ func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificatePar
 }
 
 func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
+	jwtCA := ca.getJWTCA()
+
 	expiresAt := ca.clock.Now().Add(params.TTL)
 	now := ca.clock.Now()
 
@@ -128,7 +135,7 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 		"iat": jwt.NewNumericDate(now),
 	}
 
-	alg, err := cryptoutil.JoseAlgorithmFromPublicKey(ca.jwtCA.Signer.Public())
+	alg, err := cryptoutil.JoseAlgorithmFromPublicKey(jwtCA.Signer.Public())
 	if err != nil {
 		return "", fmt.Errorf("failed to determine JWT key algorithm: %w", err)
 	}
@@ -153,6 +160,18 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func (ca *CA) getX509CA() *X509CA {
+	ca.mu.RLock()
+	defer ca.mu.RUnlock()
+	return ca.x509CA
+}
+
+func (ca *CA) getJWTCA() *JWTCA {
+	ca.mu.RLock()
+	defer ca.mu.RUnlock()
+	return ca.jwtCA
 }
 
 func (ca *CA) createX509Template(params X509CertificateParams) (*x509.Certificate, error) {
