@@ -32,6 +32,8 @@ const (
 
 	GaladrielServer = "galadriel_server"
 	GaladrielCA     = "galadriel_ca"
+	JWTHandler      = "jwt_handler"
+	ServerCA        = "server_ca"
 
 	// SubsystemName declares a field for some subsystem name (an API, module...)
 	SubsystemName = "subsystem_name"

@@ -15,6 +15,7 @@ import (
 	"github.com/go-jose/go-jose/v3/cryptosigner"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/jmhodges/clock"
+	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -32,12 +33,15 @@ type CA struct {
 	x509CA *X509CA
 	jwtCA  *JWTCA
 	clock  clock.Clock
+
+	Logger logrus.FieldLogger
 }
 
 type Config struct {
 	RootCert *x509.Certificate
 	RootKey  crypto.PrivateKey
 	Clock    clock.Clock
+	Logger   logrus.FieldLogger
 }
 
 type X509CA struct {
@@ -92,6 +96,7 @@ func New(c *Config) (*CA, error) {
 
 	return &CA{
 		PublicKey: signer.Public(),
+		Logger:    c.Logger,
 		x509CA:    x509CA,
 		jwtCA:     jwtCA,
 		clock:     c.Clock,

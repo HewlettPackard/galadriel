@@ -87,7 +87,7 @@ func NewHandler(c *Config) (http.Handler, error) {
 
 		newToken, err := handler.CA.SignJWT(r.Context(), params)
 		if err != nil {
-			handler.Logger.Errorf("Failed to generate JWT token: %w", err)
+			handler.Logger.WithError(err).Error("Failed to generate JWT token")
 			http.Error(w, "error generating new token", http.StatusInternalServerError)
 			return
 		}

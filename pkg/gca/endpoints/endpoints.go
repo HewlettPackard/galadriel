@@ -14,6 +14,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/gca/endpoints/jwt"
 	"github.com/jmhodges/clock"
@@ -141,7 +142,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	jwtHandler, err := jwt.NewHandler(&jwt.Config{
 		CA:          e.CA,
-		Logger:      e.Logger,
+		Logger:      e.Logger.WithField(telemetry.SubsystemName, telemetry.JWTHandler),
 		JWTTokenTTL: e.config.JWTTokenTTL,
 		Clock:       e.Clock,
 	})
@@ -156,7 +157,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		TLSConfig: tlsConfig,
 	}
 
-	e.Logger.Infof("Starting TCP GCA on %s", e.TCPAddress.String())
+	e.Logger.Infof("Starting GCA TCP endpoint listening on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
 		e.triggerListeningHook()
@@ -168,13 +169,16 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Logger.WithError(err).Error("TCP GCA stopped prematurely")
+		e.Logger.WithError(err).Error("GCA TCP endpoint stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping TCP GCA")
-		server.Close()
+		e.Logger.Info("Stopping GCA TCP endpoint")
+		err = server.Close()
+		if err != nil {
+			e.Logger.WithError(err).Error("Error closing GCA TCP endpoint")
+		}
 		<-errChan
-		e.Logger.Info("TCP GCA stopped")
+		e.Logger.Info("GCA TCP endpoint stopped")
 		return nil
 	}
 }
@@ -194,7 +198,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.Logger.Infof("Starting UDS GCA on %s", e.LocalAddr.String())
+	e.Logger.Infof("Starting GCA UDS endpoint listening on %s", e.LocalAddr.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Serve(l)
@@ -202,20 +206,23 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Logger.WithError(err).Error("Local GCA stopped prematurely")
+		e.Logger.WithError(err).Error("Local GCA UDS endpoint stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping UDS GCA")
-		server.Close()
+		e.Logger.Info("Stopping GCA UDS endpoint")
+		err = server.Close()
+		if err != nil {
+			e.Logger.WithError(err).Error("Error closing GCA UDS endpoint")
+		}
 		<-errChan
-		e.Logger.Info("UDS GCA stopped")
+		e.Logger.Info("GCA UDS endpoint stopped")
 
 		return nil
 	}
 }
 
 func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan error) {
-	e.Logger.Info("Starting GCA certificate rotator")
+	e.Logger.Info("Starting GCA TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
 	ticker := time.NewTicker(certRotationInterval)
@@ -223,14 +230,14 @@ func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan erro
 	for {
 		select {
 		case <-ticker.C:
-			e.Logger.Info("Rotating GCA CACertificate")
+			e.Logger.Info("Rotating GCA TLS certificate")
 			cert, err := e.getTLSCertificate(ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to rotate GCA certificate: %w", err)
+				errChan <- fmt.Errorf("failed to rotate GCA TLS certificate: %w", err)
 			}
 			e.certsStore.setCert(cert)
 		case <-ctx.Done():
-			e.Logger.Info("Stopped GCA CACertificate rotator")
+			e.Logger.Info("Stopped GCA TLS certificate rotator")
 			return
 		}
 	}

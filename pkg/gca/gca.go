@@ -63,6 +63,7 @@ func NewGCA(config *Config) (*GCA, error) {
 		RootCert: cert,
 		RootKey:  key,
 		Clock:    clk,
+		Logger:   config.Logger.WithField(telemetry.SubsystemName, telemetry.ServerCA),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed creating GCA CA: %w", err)
