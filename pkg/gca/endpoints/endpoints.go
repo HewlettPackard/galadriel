@@ -52,7 +52,7 @@ type Config struct {
 	Logger logrus.FieldLogger
 
 	// CA is used for signing X.509 certificates and JWTs
-	CA ca.ServerCA
+	CA *ca.CA
 
 	JWTTokenTTL time.Duration
 	X509CertTTL time.Duration
@@ -61,7 +61,7 @@ type Config struct {
 }
 
 type Endpoints struct {
-	CA         ca.ServerCA
+	CA         *ca.CA
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
 	Logger     logrus.FieldLogger

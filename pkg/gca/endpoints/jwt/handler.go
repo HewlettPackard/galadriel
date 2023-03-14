@@ -23,14 +23,14 @@ const (
 )
 
 type Handler struct {
-	CA          ca.ServerCA
+	CA          *ca.CA
 	Logger      logrus.FieldLogger
 	JWTTokenTTL time.Duration
 	Clock       clock.Clock
 }
 
 type Config struct {
-	CA          ca.ServerCA
+	CA          *ca.CA
 	Logger      logrus.FieldLogger
 	JWTTokenTTL time.Duration
 	Clock       clock.Clock
@@ -72,7 +72,7 @@ func NewHandler(c *Config) (http.Handler, error) {
 		}
 
 		claims := make(map[string]any)
-		err = authToken.Claims(handler.CA.GetSigner().Public(), &claims)
+		err = authToken.Claims(handler.CA.PublicKey, &claims)
 		if err != nil {
 			http.Error(w, "error decoding JWT claims", http.StatusBadRequest)
 			return

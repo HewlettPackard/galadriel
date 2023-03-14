@@ -24,13 +24,10 @@ const NotBeforeTolerance = -30 * time.Second
 type ServerCA interface {
 	SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error)
 	SignJWT(ctx context.Context, params JWTParams) (string, error)
-	GetSigner() crypto.Signer
 }
 
 type CA struct {
-	// Signer is an interface for an opaque private key
-	// that can be used for signing operations
-	signer crypto.Signer
+	PublicKey crypto.PublicKey
 
 	x509CA *X509CA
 	jwtCA  *JWTCA
@@ -45,11 +42,19 @@ type Config struct {
 
 type X509CA struct {
 	CACertificate *x509.Certificate
+
+	// Signer is an interface for an opaque private key
+	// that can be used for signing operations
+	Signer crypto.Signer
 }
 
 type JWTCA struct {
 	// Kid is the JWT 'kid' claim
 	Kid string
+
+	// Signer is an interface for an opaque private key
+	// that can be used for signing operations
+	Signer crypto.Signer
 }
 
 type X509CertificateParams struct {
@@ -72,6 +77,7 @@ func New(c *Config) (*CA, error) {
 
 	x509CA := &X509CA{
 		CACertificate: c.RootCert,
+		Signer:        signer,
 	}
 
 	kid, err := generateRandomKeyID()
@@ -80,19 +86,16 @@ func New(c *Config) (*CA, error) {
 	}
 
 	jwtCA := &JWTCA{
-		Kid: kid,
+		Kid:    kid,
+		Signer: signer,
 	}
 
 	return &CA{
-		x509CA: x509CA,
-		jwtCA:  jwtCA,
-		clock:  c.Clock,
-		signer: signer,
+		PublicKey: signer.Public(),
+		x509CA:    x509CA,
+		jwtCA:     jwtCA,
+		clock:     c.Clock,
 	}, err
-}
-
-func (ca *CA) GetSigner() crypto.Signer {
-	return ca.signer
 }
 
 func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error) {
@@ -101,7 +104,7 @@ func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificatePar
 		return nil, fmt.Errorf("failed to create template for GCA certificate: %w", err)
 	}
 
-	cert, err := cryptoutil.CreateCertificate(template, ca.x509CA.CACertificate, params.PublicKey, ca.signer)
+	cert, err := cryptoutil.CreateCertificate(template, ca.x509CA.CACertificate, params.PublicKey, ca.x509CA.Signer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign GCA certificate: %w", err)
 	}
@@ -120,7 +123,7 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 		"iat": jwt.NewNumericDate(now),
 	}
 
-	alg, err := cryptoutil.JoseAlgorithmFromPublicKey(ca.signer.Public())
+	alg, err := cryptoutil.JoseAlgorithmFromPublicKey(ca.jwtCA.Signer.Public())
 	if err != nil {
 		return "", fmt.Errorf("failed to determine JWT key algorithm: %w", err)
 	}
@@ -129,7 +132,7 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 		jose.SigningKey{
 			Algorithm: alg,
 			Key: jose.JSONWebKey{
-				Key:   cryptosigner.Opaque(ca.signer),
+				Key:   cryptosigner.Opaque(ca.jwtCA.Signer),
 				KeyID: ca.jwtCA.Kid,
 			},
 		},
