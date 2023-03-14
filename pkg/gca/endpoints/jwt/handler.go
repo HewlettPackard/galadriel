@@ -45,57 +45,31 @@ func NewHandler(c *Config) (http.Handler, error) {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handler.Logger.Debug("new JWT authToken requested")
+		handler.Logger.Debug("new JWT Token requested")
 
 		if r.Method != http.MethodGet {
 			http.Error(w, "method is not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		authHeader := r.Header.Get(AuthorizationHeader)
-		if authHeader == "" {
-			http.Error(w, "authorization header is missing", http.StatusBadRequest)
-			return
-		}
-		if !strings.HasPrefix(authHeader, Bearer) {
-			http.Error(w, "invalid authorization header format", http.StatusBadRequest)
-			return
-		}
-
-		// Extract the JWT from the header
-		bearerToken := strings.TrimPrefix(authHeader, Bearer)
-
-		authToken, err := jwt.ParseSigned(bearerToken)
-		if err != nil {
-			http.Error(w, "invalid JWT token", http.StatusBadRequest)
+		jwtToken, ok := getAuthJWTToken(w, r)
+		if !ok {
 			return
 		}
 
 		claims := make(map[string]any)
-		err = authToken.Claims(handler.CA.PublicKey, &claims)
+		// claims are decoded using the public of the CA, it fails if the token was signed using an unknown key.
+		err := jwtToken.Claims(handler.CA.PublicKey, &claims)
 		if err != nil {
 			http.Error(w, "error decoding JWT claims", http.StatusBadRequest)
 			return
 		}
 
-		if handler.isTokenExpired(claims) {
-			http.Error(w, "expired JWT token", http.StatusUnauthorized)
-			return
-		}
-
-		aud, ok := claims["aud"].([]any)
-		if !ok {
-			http.Error(w, "error decoding JWT audience", http.StatusBadRequest)
-			return
-		}
-
-		if !containsAudience(aud, GCAAudience) {
-			http.Error(w, "invalid JWT token audience", http.StatusUnauthorized)
+		if ok := handler.validateClaims(w, claims); !ok {
 			return
 		}
 
 		sub := claims["sub"].(string)
-
 		// A valid SPIFFE trust domain name is expected
 		subject, err := spiffeid.TrustDomainFromString(sub)
 		if err != nil {
@@ -105,6 +79,7 @@ func NewHandler(c *Config) (http.Handler, error) {
 
 		// params for the new JWT token
 		params := ca.JWTParams{
+			// the new JWT token has the same subject as the received token
 			Subject:  subject,
 			Audience: []string{GCAAudience},
 			TTL:      handler.JWTTokenTTL,
@@ -112,7 +87,8 @@ func NewHandler(c *Config) (http.Handler, error) {
 
 		newToken, err := handler.CA.SignJWT(r.Context(), params)
 		if err != nil {
-			http.Error(w, "error generating new token", http.StatusBadRequest)
+			handler.Logger.Errorf("Failed to generate JWT token: %w", err)
+			http.Error(w, "error generating new token", http.StatusInternalServerError)
 			return
 		}
 
@@ -120,6 +96,48 @@ func NewHandler(c *Config) (http.Handler, error) {
 			handler.Logger.Errorf("error writing token in HTTP response: %w", err)
 		}
 	}), nil
+}
+
+func getAuthJWTToken(w http.ResponseWriter, r *http.Request) (*jwt.JSONWebToken, bool) {
+	authHeader := r.Header.Get(AuthorizationHeader)
+	if authHeader == "" {
+		http.Error(w, "authorization header is missing", http.StatusBadRequest)
+		return nil, false
+	}
+	if !strings.HasPrefix(authHeader, Bearer) {
+		http.Error(w, "invalid authorization header format", http.StatusBadRequest)
+		return nil, false
+	}
+
+	// Extract the JWT from the header
+	bearerToken := strings.TrimPrefix(authHeader, Bearer)
+	jwtToken, err := jwt.ParseSigned(bearerToken)
+	if err != nil {
+		http.Error(w, "invalid JWT token", http.StatusBadRequest)
+		return nil, false
+	}
+
+	return jwtToken, true
+}
+
+func (h *Handler) validateClaims(w http.ResponseWriter, claims map[string]any) bool {
+	if h.isTokenExpired(claims) {
+		http.Error(w, "expired JWT token", http.StatusUnauthorized)
+		return false
+	}
+
+	aud, ok := claims["aud"].([]any)
+	if !ok {
+		http.Error(w, "error decoding JWT audience", http.StatusBadRequest)
+		return false
+	}
+
+	if !containsAudience(aud, GCAAudience) {
+		http.Error(w, "invalid JWT token audience", http.StatusUnauthorized)
+		return false
+	}
+
+	return true
 }
 
 func (h *Handler) isTokenExpired(claims map[string]any) bool {
