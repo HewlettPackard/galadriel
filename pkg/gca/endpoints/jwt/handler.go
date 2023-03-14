@@ -72,7 +72,7 @@ func NewHandler(c *Config) (http.Handler, error) {
 		}
 
 		claims := make(map[string]any)
-		err = authToken.Claims(handler.CA.GetPublicKey(), &claims)
+		err = authToken.Claims(handler.CA.GetSigner().Public(), &claims)
 		if err != nil {
 			http.Error(w, "error decoding JWT claims", http.StatusBadRequest)
 			return

@@ -117,7 +117,7 @@ func TestSignJWT(t *testing.T) {
 	require.NotNil(t, parsed)
 	assert.Equal(t, ca.jwtCA.Kid, parsed.Headers[0].KeyID)
 
-	publicKey := ca.jwtCA.Signer.Public()
+	publicKey := ca.GetSigner().Public()
 
 	claims := make(map[string]any)
 	err = parsed.Claims(publicKey, &claims)
