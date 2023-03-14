@@ -16,6 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	expectedKeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageKeyAgreement | x509.KeyUsageDigitalSignature
+)
+
+var (
+	expectedExtendedKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+)
+
 func TestNewCA(t *testing.T) {
 	clk := clock.NewFake()
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
@@ -73,14 +81,10 @@ func TestSignX509Certificate(t *testing.T) {
 	assert.Equal(t, publicKey, cert.PublicKey)
 	assert.False(t, cert.IsCA)
 	assert.True(t, cert.BasicConstraintsValid)
-	assert.Equal(t, config.Clock.Now().Add(-NotBeforeTolerance), cert.NotBefore)
+	assert.Equal(t, config.Clock.Now().Add(NotBeforeTolerance), cert.NotBefore)
 	assert.Equal(t, config.Clock.Now().Add(oneMinute), cert.NotAfter)
-	assert.Equal(t, cert.KeyUsage, x509.KeyUsageKeyEncipherment|
-		x509.KeyUsageKeyAgreement|
-		x509.KeyUsageDigitalSignature)
-	assert.Equal(t, cert.ExtKeyUsage, []x509.ExtKeyUsage{
-		x509.ExtKeyUsageServerAuth,
-		x509.ExtKeyUsageClientAuth})
+	assert.Equal(t, cert.KeyUsage, expectedKeyUsage)
+	assert.Equal(t, cert.ExtKeyUsage, expectedExtendedKeyUsage)
 }
 
 func TestSignJWT(t *testing.T) {

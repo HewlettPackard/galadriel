@@ -19,7 +19,7 @@ import (
 )
 
 // NotBeforeTolerance adds a margin to the NotBefore in case there is a clock drift across the servers
-const NotBeforeTolerance = 30 * time.Second
+const NotBeforeTolerance = -30 * time.Second
 
 type ServerCA interface {
 	SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error)
@@ -167,7 +167,7 @@ func (ca *CA) createX509Template(params X509CertificateParams) (*x509.Certificat
 			CommonName:   params.Subject.CommonName,
 			Organization: params.Subject.Organization,
 		},
-		NotBefore:             ca.clock.Now().Add(-NotBeforeTolerance),
+		NotBefore:             ca.clock.Now().Add(NotBeforeTolerance),
 		NotAfter:              ca.clock.Now().Add(params.TTL),
 		BasicConstraintsValid: true,
 		IsCA:                  false,
