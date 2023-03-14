@@ -1,8 +1,9 @@
 # Galadriel
+[![trivy](https://github.com/HewlettPackard/galadriel/actions/workflows/trivy.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/trivy.yml)
 [![CodeQL](https://github.com/HewlettPackard/galadriel/actions/workflows/codeql.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/codeql.yml)
 [![PR Build](https://github.com/HewlettPackard/galadriel/actions/workflows/pr_build.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/pr_build.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=HewlettPackard_galadriel&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=HewlettPackard_galadriel)
 [![Scorecards supply-chain security](https://github.com/HewlettPackard/galadriel/actions/workflows/scorecards.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/scorecards.yml)
-[![trivy](https://github.com/HewlettPackard/galadriel/actions/workflows/trivy.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/trivy.yml)
 
 ---
 
