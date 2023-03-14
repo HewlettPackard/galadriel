@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Certificate Authority - Harvester API
+  version: 1.0.11
+  description: Galadriel Certificate Authority - Harvester API specification
+  contact:
+    name: Github
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://localhost.swagger.io/api/v3
+paths:
+  /trust-domains/onboard:
+    post:
+      operationId: Onboard
+      summary: Onboards a new Harvester that manages a registered Trust Domain
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Onboard'
+      responses:
+        '201':
+          description: Successful operation. Returns a new access token to be used for authenticating the Trust Domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - join_token: []
+  /trust-domains/access-token:
+    post:
+      operationId: CreateAccessToken
+      summary: Generates an access token for a given Trust Domain
+      tags:
+        - Authentication
+      responses:
+        '201':
+          description: Successful operation. Returns a new access token to be used for authenticating the Trust Domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+        default:
+          $ref: '#/components/responses/Default'
+  /trust-domains/signing-certificates:
+    post:
+      tags:
+        - Certificate
+      requestBody:
+        description: Request to get a signing certificate
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificateSigningRequest'
+      responses:
+        '200':
+          description: Successful operation. Returns a new signing certificate signed by the CA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SigningCertificate'
+        default:
+          $ref: '#/components/responses/Default'
+components:
+  schemas:
+    TrustBundle:
+      type: string
+      format: byte
+      description: Base64-encoded X.509 Trust Bundle in PEM format
+      example: >-
+        <Add example here>
+    SVID:
+      description: Base64-encoded X.509 SVID in PEM format
+      type: string
+      format: byte
+      example: >-
+        <Add example here>
+    TrustDomain:
+      description: SPIRE Trust Domain
+      type: string
+      format: string
+      maxLength: 2048
+      example: prod.company.com
+    AccessToken:
+      description: A successful Harvester authentication
+      type: object
+      required:
+        - access_token
+      properties:
+        access_token:
+          description: JWT for authentication
+          type: string
+          format: jwt
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+      additionalProperties: false
+    Onboard:
+      description: Harvester onboarding data
+      type: object
+      properties:
+        trust_domain:
+          $ref: '#/components/schemas/TrustDomain'
+        # TODO: do we want to include them now?
+        # harvester_svid:
+        #   $ref: '#/components/schemas/SVID'
+        # onboarding_trust_bundle:
+        #   $ref: '#/components/schemas/TrustBundle'
+      additionalProperties: false
+    CertificateSigningRequest:
+      description: 'Base64-encoded PKCS #10 Certificate Signing Request in PEM format'
+      required:
+        - csr
+      type: object
+      properties:
+        csr:
+          format: byte
+          type: string
+          example: <add base-64 encoded PEM example here>
+    SigningCertificate:
+      description: Base-64 encoded X.509 certificate in PEM format that can be used for signinig.
+      type: object
+      required:
+        - certificate
+      properties:
+        certificate:
+          format: byte
+          type: string
+          example: <add base-64 encoded PEM example here>
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          format: int64
+          maximum: 599
+          minimum: 100
+          type: integer
+          example: 500
+        message:
+          format: string
+          maxLength: 300
+          type: string
+          example: There was an internal error
+      additionalProperties: false
+    UUID:
+      type: string
+      format: uuid
+      maxLength: 36
+      pattern: ^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$
+      example: f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+  responses:
+    Default:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      description: API errors
+  securitySchemes:
+    harvester_auth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+    join_token:
+      scheme: bearer
+      bearerFormat: UUID
+      type: http
+security:
+  - harvester_auth: []
+tags:
+  - name: Authentication
+  - name: Certificate

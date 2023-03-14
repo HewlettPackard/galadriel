@@ -1,0 +1,262 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Server Admin API - OpenAPI 3.0
+  version: 1.0.11
+  description: Galadriel Server Management API specification.
+  contact:
+    name: Github
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://localhost.swagger.io/api/v3
+paths:
+  /trust-domains:
+    get:
+      operationId: ListTrustDomains
+      summary: Retrieves all Trust Domains
+      tags:
+        - Trust Domain
+      responses:
+        '200':
+          description: Successfull operation. Returns all Trust Domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
+    post:
+      tags:
+        - Trust Domain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrustDomainRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustDomain'
+          description: Trust Domain successfully created. Returns newly created Trust Domain
+        default:
+          $ref: '#/components/responses/Default'
+      operationId: CreateTrustDomain
+      summary: Creates a new Trust Domain
+  /trust-domains/{trustDomainName}:
+    get:
+      operationId: GetTrustDomain
+      summary: Retrieves a Trust Domain by name
+      tags:
+        - Trust Domain
+      parameters:
+        - name: trustDomainName
+          description: Trust Domain name
+          schema:
+            $ref: '#/components/schemas/TrustDomainName'
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successful operation. Returns the Trust Domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
+    put:
+      operationId: UpdateTrustDomain
+      summary: Updates a Trust Domain
+      tags:
+        - Trust Domain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrustDomainRequest'
+        required: false
+      parameters:
+        - name: trustDomainName
+          description: Trust Domain name
+          schema:
+            $ref: '#/components/schemas/TrustDomainName'
+          in: path
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustDomain'
+          description: Successful operation. Returns the updated Trust Domain
+        default:
+          $ref: '#/components/responses/Default'
+    delete:
+      operationId: DeleteTrustDomain
+      summary: Deletes a Trust Domain
+      tags:
+        - Trust Domain
+      parameters:
+        - name: trustDomainName
+          description: Trust Domain name
+          schema:
+            $ref: '#/components/schemas/TrustDomainName'
+          in: path
+          required: true
+      responses:
+        '204':
+          description: The Trust Domain has been successfully deleted
+        default:
+          $ref: '#/components/responses/Default'
+  /trust-domains/{trustDomainName}/join-tokens:
+    get:
+      operationId: GetJoinTokens
+      summary: Retrieves all join tokens for a given Trust Domain
+      tags:
+        - Join Token
+      parameters:
+        - name: trustDomainName
+          description: Trust Domain Name
+          schema:
+            $ref: '#/components/schemas/TrustDomainName'
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successfull operation. Returns all join tokens for the Trust Domain
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinToken'
+        default:
+          $ref: '#/components/responses/Default'
+    post:
+      operationId: CreateJoinToken
+      summary: Generates a new join joken for a Trust Domain
+      tags:
+        - Join Token
+      parameters:
+        - name: trustDomainName
+          description: Trust Domain Name
+          schema:
+            $ref: '#/components/schemas/TrustDomainName'
+          in: path
+          required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinToken'
+          description: The join token was successfully created. Returns the join token.
+        default:
+          $ref: '#/components/responses/Default'
+components:
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+      maxLength: 36
+      pattern: ^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$
+      example: f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+    TrustDomainName:
+      type: string
+      format: string
+      maxLength: 2048
+      example: "prod.company.com"
+    JoinToken:
+      description: Join token bound to a Trust Domain
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        trust_domain_name:
+          $ref: '#/components/schemas/TrustDomainName'
+        token:
+          $ref: '#/components/schemas/UUID'
+        expires_at:
+          type: string
+          format: date-time
+          example: '2021-01-30T08:30:00Z'
+        used:
+          type: boolean
+          example: false
+    TrustDomainRequest:
+      description: User-defined Trust Domain
+      required:
+        - name
+      type: object
+      properties:
+        description:
+          format: string
+          maxLength: 200
+          type: string
+          example: Production environment
+        name:
+          $ref: '#/components/schemas/TrustDomainName'
+      additionalProperties: false
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          format: int64
+          maximum: 599
+          minimum: 100
+          type: integer
+          example: 500
+        message:
+          format: string
+          maxLength: 300
+          type: string
+          example: There was an internal error
+    TrustDomain:
+      description: SPIFFE Trust Domain
+      required:
+        - id
+        - name
+        - created_at
+        - update_at
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        description:
+          format: string
+          maxLength: 200
+          type: string
+          example: Production environment
+        name:
+          $ref: '#/components/schemas/TrustDomainName'
+        created_at:
+          format: date-time
+          maxLength: 21
+          type: string
+          example: '2021-01-30T08:30:00Z'
+        updated_at:
+          format: date-time
+          maxLength: 21
+          type: string
+          example: '2021-01-30T08:30:00Z'
+      additionalProperties: false
+  responses:
+    Default:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      description: API errors
+tags:
+  - name: Trust Domain
+  - name: Join Token
