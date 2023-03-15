@@ -34,6 +34,10 @@ func TestHandler(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, time.Hour)
+	req, err := http.NewRequest("GET", server.URL, nil)
+	require.NoError(t, err)
+
 	testCases := []struct {
 		name         string
 		errorMessage string
@@ -44,7 +48,6 @@ func TestHandler(t *testing.T) {
 			name:       "success",
 			statusCode: http.StatusOK,
 			call: func(server *httptest.Server) (*http.Response, error) {
-				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req := buildRequest(t, CA, server.URL, token)
 				resp := doRequest(t, req)
 				return resp, nil
@@ -66,8 +69,6 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusBadRequest,
 			errorMessage: "authorization header is missing\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
 				resp := doRequest(t, req)
 				return resp, nil
 			},
@@ -77,12 +78,7 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusBadRequest,
 			errorMessage: "invalid authorization header format\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
-
-				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Wrong %s", token))
-
 				resp := doRequest(t, req)
 				return resp, nil
 			},
@@ -92,11 +88,7 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusBadRequest,
 			errorMessage: "error decoding JWT claims\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
-
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", "not-a-token"))
-
 				resp := doRequest(t, req)
 				return resp, nil
 			},
@@ -106,9 +98,6 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusUnauthorized,
 			errorMessage: "expired JWT token\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
-
 				minuteAgo := -1 * time.Minute
 				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, minuteAgo)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -122,9 +111,6 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusUnauthorized,
 			errorMessage: "invalid JWT token audience\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
-
 				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{"other-audience"}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -137,9 +123,6 @@ func TestHandler(t *testing.T) {
 			statusCode:   http.StatusBadRequest,
 			errorMessage: "invalid JWT token subject\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req, err := http.NewRequest("GET", server.URL, nil)
-				require.NoError(t, err)
-
 				token := jwttest.CreateToken(t, clk, signer, "unix:/not-a-domain-name", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
