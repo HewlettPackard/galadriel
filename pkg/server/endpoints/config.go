@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -8,14 +9,11 @@ import (
 
 // Config represents the configuration of the Galadriel Server Endpoints
 type Config struct {
+	// CA is used for signing X.509 certificates
+	CA *ca.CA
+
 	// TPCAddr is the address to bind the TCP listener to.
 	TCPAddress *net.TCPAddr
-
-	// CertPath for server's TCP endpoint certificate.
-	CertPath string
-
-	// CertKeyPath for server's TCP endpoint certificate key.
-	CertKeyPath string
 
 	// LocalAddress is the local address to bind the listener to.
 	LocalAddress net.Addr

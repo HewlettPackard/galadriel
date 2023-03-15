@@ -2,16 +2,36 @@ package endpoints
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509/pkix"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/common/ca"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"net"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	// TTL of the Galadriel Server certificate
+	certTTL = 2 * time.Hour
+
+	// serverName is used as Common Name and DNSName in the Galadriel Server certificate
+	serverName   = "galadriel-server"
+	organization = "galadriel"
+)
+
+var (
+	// Rotation interval of the Galadriel Server certificate
+	certRotationInterval = certTTL / 2
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -22,12 +42,23 @@ type Server interface {
 }
 
 type Endpoints struct {
-	TCPAddress  *net.TCPAddr
-	CertPath    string
-	CertKeyPath string
-	LocalAddr   net.Addr
-	Datastore   datastore.Datastore
-	Logger      logrus.FieldLogger
+	CA         *ca.CA
+	TCPAddress *net.TCPAddr
+	LocalAddr  net.Addr
+	Datastore  datastore.Datastore
+	Logger     logrus.FieldLogger
+
+	certsStore *tlsCertSource
+
+	hooks struct {
+		// test hook used to indicate that is listening on TCP
+		tcpListening chan struct{}
+	}
+}
+
+type tlsCertSource struct {
+	mu   sync.RWMutex
+	cert *tls.Certificate
 }
 
 func New(c *Config) (*Endpoints, error) {
@@ -41,12 +72,11 @@ func New(c *Config) (*Endpoints, error) {
 	}
 
 	return &Endpoints{
-		TCPAddress:  c.TCPAddress,
-		CertPath:    c.CertPath,
-		CertKeyPath: c.CertKeyPath,
-		LocalAddr:   c.LocalAddress,
-		Datastore:   ds,
-		Logger:      c.Logger,
+		CA:         c.CA,
+		TCPAddress: c.TCPAddress,
+		LocalAddr:  c.LocalAddress,
+		Datastore:  ds,
+		Logger:     c.Logger,
 	}, nil
 }
 
@@ -63,30 +93,49 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 }
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
-	server := echo.New()
-	server.HideBanner = true
-	server.HidePort = true
+	s := echo.New()
+	s.HideBanner = true
+	s.HidePort = true
 
-	e.addTCPHandlers(server)
+	e.addTCPHandlers(s)
 
-	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
+	s.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
 		return e.validateToken(c, key)
 	}))
+
+	cert, err := e.getTLSCertificate(ctx)
+	if err != nil {
+		return err
+	}
+
+	e.certsStore = &tlsCertSource{cert: cert}
+
+	tlsConfig := &tls.Config{
+		GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return e.certsStore.getCert(), nil
+		},
+	}
+
+	s.TLSServer.TLSConfig = tlsConfig
+	l, err := net.Listen("tcp", e.TCPAddress.String())
+	tlsListener := tls.NewListener(l, tlsConfig)
 
 	e.Logger.Infof("Starting secure TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
-		errChan <- server.StartTLS(e.TCPAddress.String(), e.CertPath, e.CertKeyPath)
+		// certificate and key are embedded in the listener TLS config
+		errChan <- s.Server.Serve(tlsListener)
 	}()
 
-	var err error
+	go e.tlsCertificateRotator(ctx, errChan)
+
 	select {
 	case err = <-errChan:
 		e.Logger.WithError(err).Error("TCP Server stopped prematurely")
 		return err
 	case <-ctx.Done():
 		e.Logger.Info("Stopping TCP Server")
-		server.Close()
+		s.Close()
 		<-errChan
 		e.Logger.Info("TCP Server stopped")
 		return nil
@@ -135,4 +184,73 @@ func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 	server.POST("/onboard", e.onboardHandler)
 	server.POST("/bundle", e.postBundleHandler)
 	server.POST("/bundle/sync", e.syncFederatedBundleHandler)
+}
+
+func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, error) {
+	privateKey, err := cryptoutil.CreateRSAKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create private key: %w", err)
+	}
+
+	params := ca.X509CertificateParams{
+		PublicKey: privateKey.Public(),
+		TTL:       certTTL,
+		Subject: pkix.Name{
+			CommonName:   serverName,
+			Organization: []string{organization},
+		},
+	}
+	cert, err := e.CA.SignX509Certificate(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	certPEM := cryptoutil.EncodeCertificate(cert)
+	keyPEM := cryptoutil.EncodeRSAPrivateKey(privateKey)
+
+	certificate, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, err
+	}
+	return &certificate, nil
+}
+
+func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan error) {
+	e.Logger.Info("Starting GS TLS certificate rotator")
+
+	// Start a ticker that rotates the certificate every default interval
+	ticker := time.NewTicker(certRotationInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			e.Logger.Info("Rotating GS TLS certificate")
+			cert, err := e.getTLSCertificate(ctx)
+			if err != nil {
+				errChan <- fmt.Errorf("failed to rotate GCA TLS certificate: %w", err)
+			}
+			e.certsStore.setCert(cert)
+		case <-ctx.Done():
+			e.Logger.Info("Stopped GS TLS certificate rotator")
+			return
+		}
+	}
+}
+
+func (e *Endpoints) triggerListeningHook() {
+	if e.hooks.tcpListening != nil {
+		e.hooks.tcpListening <- struct{}{}
+	}
+}
+
+func (t *tlsCertSource) setCert(cert *tls.Certificate) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cert = cert
+}
+
+func (t *tlsCertSource) getCert() *tls.Certificate {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.cert
 }

@@ -26,7 +26,7 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			s := server.New(config)
+			s, err := server.New(config)
 
 			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()

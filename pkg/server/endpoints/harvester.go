@@ -28,7 +28,7 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 
 	e.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
 
-	ctx.Set("token", t)
+	ctx.Set(tokenKey, t)
 
 	return true, nil
 }
