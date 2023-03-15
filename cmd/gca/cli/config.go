@@ -58,8 +58,8 @@ func ParseConfig(config io.Reader) (*Config, error) {
 func NewGCAConfig(c *Config) (*gca.Config, error) {
 	sc := &gca.Config{}
 
-	addrPort := fmt.Sprintf("%s:%d", c.GCA.ListenAddress, c.GCA.ListenPort)
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addrPort)
+	addr := fmt.Sprintf("%s:%d", c.GCA.ListenAddress, c.GCA.ListenPort)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve TCP address: %w", err)
 	}

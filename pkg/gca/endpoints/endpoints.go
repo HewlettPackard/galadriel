@@ -157,7 +157,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		TLSConfig: tlsConfig,
 	}
 
-	e.Logger.Infof("Starting GCA TCP endpoint listening on %s", e.TCPAddress.String())
+	e.Logger.Infof("Starting secure GCA TCP endpoint listening on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
 		e.triggerListeningHook()

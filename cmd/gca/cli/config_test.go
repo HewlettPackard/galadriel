@@ -41,8 +41,8 @@ func TestNewGCAConfig(t *testing.T) {
 	assert.Equal(t, strings.ToLower(config.GCA.LogLevel), logrus.GetLevel().String())
 	assert.Equal(t, config.GCA.RootCertPath, sc.RootCertPath)
 	assert.Equal(t, config.GCA.RootKeyPath, sc.RootKeyPath)
-	assert.Equal(t, time.Duration(18000000000000), sc.X509CertTTL)
-	assert.Equal(t, time.Duration(36000000000000), sc.JWTCertTTL)
+	assert.Equal(t, 5*time.Hour, sc.X509CertTTL)
+	assert.Equal(t, 10*time.Hour, sc.JWTCertTTL)
 }
 
 func TestNew(t *testing.T) {
