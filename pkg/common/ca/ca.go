@@ -3,18 +3,14 @@ package ca
 import (
 	"context"
 	"crypto"
-	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/cryptosigner"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -56,9 +52,6 @@ type X509CA struct {
 }
 
 type JWTCA struct {
-	// Kid is the JWT 'kid' claim
-	Kid string
-
 	// Signer is an interface for an opaque private key
 	// that can be used for signing operations
 	Signer crypto.Signer
@@ -71,6 +64,7 @@ type X509CertificateParams struct {
 }
 
 type JWTParams struct {
+	Issuer   string
 	Subject  spiffeid.TrustDomain
 	Audience []string
 	TTL      time.Duration
@@ -87,13 +81,7 @@ func New(c *Config) (*CA, error) {
 		Signer:        signer,
 	}
 
-	kid, err := generateRandomKeyID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random kid: %w", err)
-	}
-
 	jwtCA := &JWTCA{
-		Kid:    kid,
 		Signer: signer,
 	}
 
@@ -128,35 +116,18 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 	expiresAt := ca.clock.Now().Add(params.TTL)
 	now := ca.clock.Now()
 
-	claims := map[string]interface{}{
-		"sub": params.Subject,
-		"exp": jwt.NewNumericDate(expiresAt),
-		"aud": params.Audience,
-		"iat": jwt.NewNumericDate(now),
+	claims := jwt.RegisteredClaims{
+		Issuer:    params.Issuer,
+		Subject:   params.Subject.String(),
+		Audience:  params.Audience,
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
 
-	alg, err := cryptoutil.JoseAlgorithmFromPublicKey(jwtCA.Signer.Public())
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	signedToken, err := token.SignedString(jwtCA.Signer)
 	if err != nil {
-		return "", fmt.Errorf("failed to determine JWT key algorithm: %w", err)
-	}
-
-	jwtSigner, err := jose.NewSigner(
-		jose.SigningKey{
-			Algorithm: alg,
-			Key: jose.JSONWebKey{
-				Key:   cryptosigner.Opaque(ca.jwtCA.Signer),
-				KeyID: ca.jwtCA.Kid,
-			},
-		},
-		new(jose.SignerOptions).WithType("JWT"),
-	)
-	if err != nil {
-		return "", fmt.Errorf("failed to configure JWT signer: %w", err)
-	}
-
-	signedToken, err := jwt.Signed(jwtSigner).Claims(claims).CompactSerialize()
-	if err != nil {
-		return "", fmt.Errorf("failed to sign JWT SVID: %w", err)
+		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
 
 	return signedToken, nil
@@ -210,17 +181,4 @@ func signerFromPrivateKey(privateKey crypto.PrivateKey) (crypto.Signer, error) {
 		return nil, fmt.Errorf("expected crypto.Signer; got %T", privateKey)
 	}
 	return signer, nil
-}
-
-func generateRandomKeyID() (string, error) {
-	// Generate 32 random bytes
-	keyIDBytes := make([]byte, 32)
-	_, err := rand.Read(keyIDBytes)
-	if err != nil {
-		return "", err
-	}
-
-	// Encode the bytes as a base64 string
-	keyID := base64.RawURLEncoding.EncodeToString(keyIDBytes)
-	return keyID, nil
 }

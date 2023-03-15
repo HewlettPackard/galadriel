@@ -9,7 +9,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/test/certtest"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmhodges/clock"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
@@ -103,8 +103,9 @@ func TestSignJWT(t *testing.T) {
 	ca, _ := New(config)
 
 	params := JWTParams{
-		Subject:  spiffeid.RequireTrustDomainFromString("domain.test"),
-		Audience: []string{"aud1", "aud2"},
+		Issuer:   "test-issuer",
+		Subject:  spiffeid.RequireTrustDomainFromString("test-domain"),
+		Audience: []string{"test-audience-1", "test-audience-2"},
 		TTL:      oneMinute,
 	}
 
@@ -112,19 +113,17 @@ func TestSignJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token)
 
-	parsed, err := jwt.ParseSigned(token)
+	claims := &jwt.RegisteredClaims{}
+	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return ca.PublicKey, nil }, jwt.WithoutClaimsValidation())
+
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
-	assert.Equal(t, ca.jwtCA.Kid, parsed.Headers[0].KeyID)
 
-	publicKey := ca.PublicKey
-
-	claims := make(map[string]any)
-	err = parsed.Claims(publicKey, &claims)
 	require.NoError(t, err)
-	assert.Equal(t, claims["sub"], "domain.test")
-	assert.Contains(t, claims["aud"], "aud1")
-	assert.Contains(t, claims["aud"], "aud2")
-	assert.Equal(t, claims["exp"], oneMinute.Seconds())
-	assert.Equal(t, claims["iat"], float64(0))
+	assert.Equal(t, claims.Issuer, "test-issuer")
+	assert.Equal(t, claims.Subject, "test-domain")
+	assert.Contains(t, claims.Audience, "test-audience-1")
+	assert.Contains(t, claims.Audience, "test-audience-2")
+	assert.Equal(t, claims.IssuedAt.Time.Unix(), clk.Now().Unix())
+	assert.Equal(t, claims.ExpiresAt.Time.Unix(), clk.Now().Add(oneMinute).Unix())
 }

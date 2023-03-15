@@ -14,7 +14,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/test/certtest"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -96,13 +96,14 @@ func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
 	require.NotNil(t, body)
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
-	parsed, err := jwt.ParseSigned(string(body))
+	parsed, err := jwt.Parse(string(body), func(t *jwt.Token) (interface{}, error) { return config.CA.PublicKey, nil })
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
 }
 
 func createToken(t *testing.T, CA ca.ServerCA) string {
 	params := ca.JWTParams{
+		Issuer:   "test-ca",
 		Subject:  spiffeid.RequireTrustDomainFromString("domain.test"),
 		Audience: []string{"galadriel-ca"},
 		TTL:      time.Hour,
@@ -143,6 +144,8 @@ func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
 		Logger:       logger,
 		CA:           CA,
 		Clock:        clk,
+		JWTTokenTTL:  time.Hour,
+		X509CertTTL:  time.Hour,
 	}
 
 	return config, caCert

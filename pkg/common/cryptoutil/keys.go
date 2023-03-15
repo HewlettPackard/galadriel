@@ -9,9 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-
-	"github.com/go-jose/go-jose/v3"
-	"github.com/zeebo/errs"
 )
 
 func CreateRSAKey() (*rsa.PrivateKey, error) {
@@ -61,15 +58,4 @@ func EncodeRSAPrivateKey(privateKey *rsa.PrivateKey) []byte {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
-}
-
-func JoseAlgorithmFromPublicKey(publicKey interface{}) (jose.SignatureAlgorithm, error) {
-	var alg jose.SignatureAlgorithm
-	switch publicKey := publicKey.(type) {
-	case *rsa.PublicKey:
-		alg = jose.RS256
-	default:
-		return "", errs.New("unable to determine signature algorithm for public key type %T", publicKey)
-	}
-	return alg, nil
 }

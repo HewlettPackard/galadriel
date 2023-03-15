@@ -48,8 +48,8 @@ type GCA struct {
 	CA     *ca.CA
 }
 
-// NewGCA creates a new Galadriel CA GCA with the given configuration.
-func NewGCA(config *Config) (*GCA, error) {
+// New creates a new Galadriel CA GCA with the given configuration.
+func New(config *Config) (*GCA, error) {
 	cert, err := cryptoutil.LoadCertificate(config.RootCertPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed loading CA root certificate: %w", err)

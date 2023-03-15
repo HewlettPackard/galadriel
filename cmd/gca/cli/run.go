@@ -33,7 +33,7 @@ func NewRunCmd() *cobra.Command {
 				return err
 			}
 
-			s, err := gca.NewGCA(config)
+			s, err := gca.New(config)
 			if err != nil {
 				return err
 			}

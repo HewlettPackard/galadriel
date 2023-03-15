@@ -12,7 +12,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/test/certtest"
 	"github.com/HewlettPackard/galadriel/test/jwttest"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ import (
 
 func TestHandler(t *testing.T) {
 	logger, _ := test.NewNullLogger()
-	clk := clock.NewFake()
+	clk := clock.New()
 
 	CA, signer := createCA(t)
 	handler, err := NewHandler(&Config{
@@ -30,8 +30,6 @@ func TestHandler(t *testing.T) {
 		Clock:       clk,
 	})
 	require.NoError(t, err)
-
-	kid := jwttest.GenerateRandomKeyID(t)
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -46,7 +44,7 @@ func TestHandler(t *testing.T) {
 			name:       "success",
 			statusCode: http.StatusOK,
 			call: func(server *httptest.Server) (*http.Response, error) {
-				token := jwttest.CreateToken(t, clk, signer, kid, "domain.test", []string{GCAAudience}, time.Hour)
+				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req := buildRequest(t, CA, server.URL, token)
 				resp := doRequest(t, req)
 				return resp, nil
@@ -82,7 +80,7 @@ func TestHandler(t *testing.T) {
 				req, err := http.NewRequest("GET", server.URL, nil)
 				require.NoError(t, err)
 
-				token := jwttest.CreateToken(t, clk, signer, kid, "domain.test", []string{GCAAudience}, time.Hour)
+				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Wrong %s", token))
 
 				resp := doRequest(t, req)
@@ -92,7 +90,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:         "invalid token",
 			statusCode:   http.StatusBadRequest,
-			errorMessage: "invalid JWT token\n",
+			errorMessage: "error decoding JWT claims\n",
 			call: func(server *httptest.Server) (*http.Response, error) {
 				req, err := http.NewRequest("GET", server.URL, nil)
 				require.NoError(t, err)
@@ -112,7 +110,7 @@ func TestHandler(t *testing.T) {
 				require.NoError(t, err)
 
 				minuteAgo := -1 * time.Minute
-				token := jwttest.CreateToken(t, clk, signer, kid, "domain.test", []string{GCAAudience}, minuteAgo)
+				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{GCAAudience}, minuteAgo)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 				resp := doRequest(t, req)
@@ -127,7 +125,7 @@ func TestHandler(t *testing.T) {
 				req, err := http.NewRequest("GET", server.URL, nil)
 				require.NoError(t, err)
 
-				token := jwttest.CreateToken(t, clk, signer, kid, "domain.test", []string{"other-audience"}, time.Hour)
+				token := jwttest.CreateToken(t, clk, signer, "domain.test", GCAIssuer, []string{"other-audience"}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 				resp := doRequest(t, req)
@@ -142,7 +140,7 @@ func TestHandler(t *testing.T) {
 				req, err := http.NewRequest("GET", server.URL, nil)
 				require.NoError(t, err)
 
-				token := jwttest.CreateToken(t, clk, signer, kid, "unix:/not-a-domain-name", []string{GCAAudience}, time.Hour)
+				token := jwttest.CreateToken(t, clk, signer, "unix:/not-a-domain-name", GCAIssuer, []string{GCAAudience}, time.Hour)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 				resp := doRequest(t, req)
@@ -163,7 +161,8 @@ func TestHandler(t *testing.T) {
 
 			switch {
 			case res.StatusCode == http.StatusOK:
-				_, err = jwt.ParseSigned(string(actual))
+				claims := &jwt.RegisteredClaims{}
+				_, err := jwt.ParseWithClaims(string(actual), claims, func(token *jwt.Token) (interface{}, error) { return CA.PublicKey, nil }, jwt.WithoutClaimsValidation())
 				require.NoError(t, err)
 			default:
 				require.Equal(t, testCase.statusCode, res.StatusCode)
