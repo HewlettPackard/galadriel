@@ -118,11 +118,15 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	s.TLSServer.TLSConfig = tlsConfig
 	l, err := net.Listen("tcp", e.TCPAddress.String())
+	if err != nil {
+		return err
+	}
 	tlsListener := tls.NewListener(l, tlsConfig)
 
 	e.Logger.Infof("Starting secure TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
 	go func() {
+		e.triggerListeningHook()
 		// certificate and key are embedded in the listener TLS config
 		errChan <- s.Server.Serve(tlsListener)
 	}()
