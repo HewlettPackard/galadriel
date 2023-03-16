@@ -1,4 +1,4 @@
-package ca
+package ca_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/test/certtest"
 	"github.com/golang-jwt/jwt/v4"
@@ -30,16 +31,15 @@ func TestNewCA(t *testing.T) {
 	require.NoError(t, err)
 
 	// success
-	config := &Config{
+	config := &ca.Config{
 		RootCert: caCert,
 		RootKey:  caKey,
 		Clock:    clk,
 	}
 
-	ca, err := New(config)
+	CA, err := ca.New(config)
 	require.NoError(t, err)
-	require.NotNil(t, ca)
-	assert.Equal(t, config.Clock, ca.clock)
+	require.NotNil(t, CA)
 }
 
 func TestSignX509Certificate(t *testing.T) {
@@ -47,13 +47,13 @@ func TestSignX509Certificate(t *testing.T) {
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 
-	config := &Config{
+	config := &ca.Config{
 		RootCert: caCert,
 		RootKey:  caKey,
 		Clock:    clk,
 	}
 
-	ca, _ := New(config)
+	serverCA, _ := ca.New(config)
 
 	key, err := cryptoutil.CreateRSAKey()
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestSignX509Certificate(t *testing.T) {
 
 	oneMinute := 1 * time.Minute
 
-	params := X509CertificateParams{
+	params := ca.X509CertificateParams{
 		PublicKey: publicKey,
 		TTL:       oneMinute,
 		Subject: pkix.Name{
@@ -70,7 +70,7 @@ func TestSignX509Certificate(t *testing.T) {
 		},
 	}
 
-	cert, err := ca.SignX509Certificate(context.Background(), params)
+	cert, err := serverCA.SignX509Certificate(context.Background(), params)
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
@@ -81,7 +81,7 @@ func TestSignX509Certificate(t *testing.T) {
 	assert.Equal(t, publicKey, cert.PublicKey)
 	assert.False(t, cert.IsCA)
 	assert.True(t, cert.BasicConstraintsValid)
-	assert.Equal(t, config.Clock.Now().Add(NotBeforeTolerance), cert.NotBefore)
+	assert.Equal(t, config.Clock.Now().Add(ca.NotBeforeTolerance), cert.NotBefore)
 	assert.Equal(t, config.Clock.Now().Add(oneMinute), cert.NotAfter)
 	assert.Equal(t, cert.KeyUsage, expectedKeyUsage)
 	assert.Equal(t, cert.ExtKeyUsage, expectedExtendedKeyUsage)
@@ -92,7 +92,7 @@ func TestSignJWT(t *testing.T) {
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 
-	config := &Config{
+	config := &ca.Config{
 		RootCert: caCert,
 		RootKey:  caKey,
 		Clock:    clk,
@@ -100,21 +100,21 @@ func TestSignJWT(t *testing.T) {
 
 	oneMinute := 1 * time.Minute
 
-	ca, _ := New(config)
+	serverCA, _ := ca.New(config)
 
-	params := JWTParams{
+	params := ca.JWTParams{
 		Issuer:   "test-issuer",
 		Subject:  spiffeid.RequireTrustDomainFromString("test-domain"),
 		Audience: []string{"test-audience-1", "test-audience-2"},
 		TTL:      oneMinute,
 	}
 
-	token, err := ca.SignJWT(context.Background(), params)
+	token, err := serverCA.SignJWT(context.Background(), params)
 	require.NoError(t, err)
 	require.NotNil(t, token)
 
 	claims := &jwt.RegisteredClaims{}
-	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return ca.PublicKey, nil }, jwt.WithoutClaimsValidation())
+	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey, nil }, jwt.WithoutClaimsValidation())
 
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
