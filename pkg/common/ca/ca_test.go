@@ -74,6 +74,10 @@ func TestSignX509Certificate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
+	// check the cert was signed by the CA
+	err = cert.CheckSignatureFrom(caCert)
+	require.NoError(t, err)
+
 	assert.NotNil(t, cert.SerialNumber)
 	assert.Equal(t, []string{"test-org"}, cert.Subject.Organization)
 	assert.Equal(t, "test-name", cert.Subject.CommonName)
@@ -88,7 +92,7 @@ func TestSignX509Certificate(t *testing.T) {
 }
 
 func TestSignJWT(t *testing.T) {
-	clk := clock.NewFake()
+	clk := clock.New()
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 
@@ -114,7 +118,7 @@ func TestSignJWT(t *testing.T) {
 	require.NotNil(t, token)
 
 	claims := &jwt.RegisteredClaims{}
-	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey, nil }, jwt.WithoutClaimsValidation())
+	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey, nil })
 
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
