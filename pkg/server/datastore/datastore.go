@@ -3,9 +3,12 @@ package datastore
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 
+	commondata "github.com/HewlettPackard/galadriel/pkg/common/datastore"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -13,6 +16,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
+
+// to be used for migration of data schema.
+//
+//go:embed migrations/*.sql
+var fs embed.FS
 
 type Datastore interface {
 	CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error)
@@ -47,6 +55,12 @@ type SQLDatastore struct {
 	querier Querier
 }
 
+// Constants for Migration
+// When a
+const currentDBVersion = 1
+
+const scheme = "postgresql"
+
 // NewSQLDatastore creates a new instance of a Datastore object that connects to a Postgres database
 // parsing the connString.
 // The connString can be a URL, e.g, "postgresql://host...", or a DSN, e.g., "host= user= password= dbname= port=".
@@ -58,9 +72,16 @@ func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastor
 
 	db := stdlib.OpenDB(*c)
 
-	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(db); err != nil {
-		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
+	// validate schema and perform migrations
+	// When a new migration is created, this version should be updated in order to force
+	// the migrations to run when starting up the app.
+	sourceInstance, err := iofs.New(fs, "migrations")
+	if err != nil {
+		return nil, err
+	}
+	err = commondata.ValidateAndMigrateSchema(db, currentDBVersion, scheme, sourceInstance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate or migrate CA schema: %w", err)
 	}
 
 	return &SQLDatastore{
