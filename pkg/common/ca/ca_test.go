@@ -33,7 +33,9 @@ func TestNewCA(t *testing.T) {
 }
 
 func TestSignX509Certificate(t *testing.T) {
-	config := newCAConfig(t, clock.NewFake())
+	clk := clock.NewFake()
+
+	config := newCAConfig(t, clk)
 	serverCA, err := ca.New(config)
 	require.NoError(t, err)
 
@@ -41,11 +43,9 @@ func TestSignX509Certificate(t *testing.T) {
 	require.NoError(t, err)
 	publicKey := key.Public()
 
-	oneMinute := 1 * time.Minute
-
 	params := ca.X509CertificateParams{
 		PublicKey: publicKey,
-		TTL:       oneMinute,
+		TTL:       time.Minute,
 		Subject: pkix.Name{
 			Organization: []string{"test-org"},
 			CommonName:   "test-name",
@@ -61,30 +61,31 @@ func TestSignX509Certificate(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, cert.SerialNumber)
-	assert.Equal(t, []string{"test-org"}, cert.Subject.Organization)
-	assert.Equal(t, "test-name", cert.Subject.CommonName)
-	assert.Contains(t, cert.DNSNames, "test-name")
+	assert.Equal(t, params.Subject.Organization, cert.Subject.Organization)
+	assert.Equal(t, params.Subject.CommonName, cert.Subject.CommonName)
+	assert.Contains(t, cert.DNSNames, params.Subject.CommonName)
 	assert.Equal(t, publicKey, cert.PublicKey)
 	assert.False(t, cert.IsCA)
 	assert.True(t, cert.BasicConstraintsValid)
-	assert.Equal(t, config.Clock.Now().Add(ca.NotBeforeTolerance), cert.NotBefore)
-	assert.Equal(t, config.Clock.Now().Add(oneMinute), cert.NotAfter)
+	assert.Equal(t, clk.Now().Add(ca.NotBeforeTolerance), cert.NotBefore)
+	assert.Equal(t, clk.Now().Add(params.TTL), cert.NotAfter)
 	assert.Equal(t, cert.KeyUsage, expectedKeyUsage)
 	assert.Equal(t, cert.ExtKeyUsage, expectedExtendedKeyUsage)
 }
 
 func TestSignJWT(t *testing.T) {
-	config := newCAConfig(t, clock.New())
+	clk := clock.NewFake()
+	clk.Set(time.Now())
+
+	config := newCAConfig(t, clk)
 	serverCA, err := ca.New(config)
 	require.NoError(t, err)
-
-	oneMinute := 1 * time.Minute
 
 	params := ca.JWTParams{
 		Issuer:   "test-issuer",
 		Subject:  spiffeid.RequireTrustDomainFromString("test-domain"),
 		Audience: []string{"test-audience-1", "test-audience-2"},
-		TTL:      oneMinute,
+		TTL:      time.Minute,
 	}
 
 	token, err := serverCA.SignJWT(params)
@@ -97,13 +98,55 @@ func TestSignJWT(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
 
+	c := &ca.Claims{
+		RegisteredClaims: claims,
+	}
+	assertClaims(t, params, c, config.Clock)
+}
+
+func TestSignJWTWithCustomClaims(t *testing.T) {
+	clk := clock.NewFake()
+	clk.Set(time.Now())
+
+	config := newCAConfig(t, clk)
+	serverCA, err := ca.New(config)
 	require.NoError(t, err)
-	assert.Equal(t, claims.Issuer, "test-issuer")
-	assert.Equal(t, claims.Subject, "test-domain")
-	assert.Contains(t, claims.Audience, "test-audience-1")
-	assert.Contains(t, claims.Audience, "test-audience-2")
-	assert.Equal(t, claims.IssuedAt.Time.Unix(), config.Clock.Now().Unix())
-	assert.Equal(t, claims.ExpiresAt.Time.Unix(), config.Clock.Now().Add(oneMinute).Unix())
+
+	customClaims := &ca.CustomClaims{
+		FederatesWith: "other.test",
+	}
+
+	params := ca.JWTParams{
+		Issuer:       "test-issuer",
+		Subject:      spiffeid.RequireTrustDomainFromString("test-domain"),
+		Audience:     []string{"test-audience-1", "test-audience-2"},
+		TTL:          1 * time.Minute,
+		CustomClaims: customClaims,
+	}
+
+	token, err := serverCA.SignJWT(params)
+	require.NoError(t, err)
+	require.NotNil(t, token)
+
+	claims := &ca.Claims{}
+	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil })
+
+	require.NoError(t, err)
+	require.NotNil(t, parsed)
+
+	assertClaims(t, params, claims, config.Clock)
+	assert.Equal(t, params.CustomClaims.FederatesWith, claims.FederatesWith)
+}
+
+func assertClaims(t *testing.T, params ca.JWTParams, claims *ca.Claims, clk clock.Clock) {
+	assert.Equal(t, params.Issuer, claims.Issuer)
+	assert.Equal(t, params.Subject.String(), claims.Subject)
+	assert.Equal(t, clk.Now().Unix(), claims.IssuedAt.Time.Unix())
+	assert.Equal(t, clk.Now().Add(params.TTL).Unix(), claims.ExpiresAt.Time.Unix())
+	assert.Equal(t, len(params.Audience), len(claims.Audience))
+	for _, a := range params.Audience {
+		assert.Contains(t, claims.Audience, a)
+	}
 }
 
 func TestPublicKey(t *testing.T) {
@@ -118,7 +161,6 @@ func newCAConfig(t *testing.T, clk clock.Clock) *ca.Config {
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 
-	// success
 	config := &ca.Config{
 		RootCert: caCert,
 		RootKey:  caKey,

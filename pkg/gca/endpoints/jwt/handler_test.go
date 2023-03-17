@@ -20,7 +20,8 @@ import (
 
 func TestHandler(t *testing.T) {
 	logger, _ := test.NewNullLogger()
-	clk := clock.New()
+	clk := clock.NewFake()
+	clk.Set(time.Now())
 
 	serverCA, signer := createCA(t)
 	handler, err := NewHandler(&Config{

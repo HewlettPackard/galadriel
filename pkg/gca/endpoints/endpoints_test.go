@@ -126,7 +126,9 @@ func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
 	localAddr := &net.UnixAddr{Net: "unix", Name: filepath.Join(tempDir, "sockets")}
 	logger, _ := test.NewNullLogger()
 
-	clk := clock.New()
+	clk := clock.NewFake()
+	clk.Set(time.Now())
+
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)
 

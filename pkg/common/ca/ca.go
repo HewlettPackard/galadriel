@@ -67,6 +67,18 @@ type JWTParams struct {
 	Subject  spiffeid.TrustDomain
 	Audience []string
 	TTL      time.Duration
+	*CustomClaims
+}
+
+// CustomClaims represents known claims used in Galadriel
+type CustomClaims struct {
+	FederatesWith string `json:"federates_with"`
+}
+
+// Claims holds both the RegisteredClaims and the CustomClaims
+type Claims struct {
+	*jwt.RegisteredClaims
+	*CustomClaims
 }
 
 func New(c *Config) (*CA, error) {
@@ -115,12 +127,17 @@ func (ca *CA) SignJWT(params JWTParams) (string, error) {
 	expiresAt := ca.clock.Now().Add(params.TTL)
 	now := ca.clock.Now()
 
-	claims := jwt.RegisteredClaims{
+	registeredClaims := jwt.RegisteredClaims{
 		Issuer:    params.Issuer,
 		Subject:   params.Subject.String(),
 		Audience:  params.Audience,
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
+	}
+
+	claims := Claims{
+		&registeredClaims,
+		params.CustomClaims,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
