@@ -75,7 +75,6 @@ oapi_codegen_version = 1.11.0
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
 server_sqlc_config_file = $(DIR)/pkg/server/datastore/sqlc.yaml
-gca_sqlc_config_file = $(DIR)/pkg/server/datastore/sqlc.yaml
 
 sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
 sqlc_bin = $(sqlc_dir)/sqlc
