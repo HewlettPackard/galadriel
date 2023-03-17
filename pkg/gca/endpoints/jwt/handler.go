@@ -24,14 +24,14 @@ const (
 )
 
 type Handler struct {
-	CA          *ca.CA
-	Logger      logrus.FieldLogger
-	JWTTokenTTL time.Duration
-	Clock       clock.Clock
+	serverCA    ca.ServerCA
+	logger      logrus.FieldLogger
+	jwtTokenTTL time.Duration
+	clock       clock.Clock
 }
 
 type Config struct {
-	CA          *ca.CA
+	ServerCA    ca.ServerCA
 	Logger      logrus.FieldLogger
 	JWTTokenTTL time.Duration
 	Clock       clock.Clock
@@ -39,10 +39,10 @@ type Config struct {
 
 func NewHandler(c *Config) (http.Handler, error) {
 	handler := &Handler{
-		CA:          c.CA,
-		Logger:      c.Logger,
-		JWTTokenTTL: c.JWTTokenTTL,
-		Clock:       c.Clock,
+		serverCA:    c.ServerCA,
+		logger:      c.Logger,
+		jwtTokenTTL: c.JWTTokenTTL,
+		clock:       c.Clock,
 	}
 
 	return handleFunc(handler), nil
@@ -50,7 +50,7 @@ func NewHandler(c *Config) (http.Handler, error) {
 
 func handleFunc(handler *Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handler.Logger.Debug("new JWT Token requested")
+		handler.logger.Debug("new JWT Token requested")
 
 		if r.Method != http.MethodGet {
 			http.Error(w, "method is not allowed", http.StatusMethodNotAllowed)
@@ -81,18 +81,18 @@ func handleFunc(handler *Handler) http.HandlerFunc {
 			// the new JWT token has the same subject as the received token
 			Subject:  subject,
 			Audience: []string{GCAAudience},
-			TTL:      handler.JWTTokenTTL,
+			TTL:      handler.jwtTokenTTL,
 		}
 
-		newToken, err := handler.CA.SignJWT(r.Context(), params)
+		newToken, err := handler.serverCA.SignJWT(params)
 		if err != nil {
-			handler.Logger.WithError(err).Error("Failed to generate JWT token")
+			handler.logger.WithError(err).Error("Failed to generate JWT token")
 			http.Error(w, "error generating new token", http.StatusInternalServerError)
 			return
 		}
 
 		if _, err := w.Write([]byte(newToken)); err != nil {
-			handler.Logger.Errorf("error writing token in HTTP response: %w", err)
+			handler.logger.Errorf("error writing token in HTTP response: %w", err)
 		}
 	}
 }
@@ -112,7 +112,7 @@ func (h *Handler) getAuthJWTToken(w http.ResponseWriter, r *http.Request) (*jwt.
 	bearerToken := strings.TrimPrefix(authHeader, Bearer)
 	claims := &jwt.RegisteredClaims{}
 
-	jwtToken, err := jwt.ParseWithClaims(bearerToken, claims, func(t *jwt.Token) (any, error) { return h.CA.PublicKey, nil })
+	jwtToken, err := jwt.ParseWithClaims(bearerToken, claims, func(t *jwt.Token) (any, error) { return h.serverCA.PublicKey(), nil })
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			http.Error(w, "expired JWT token", http.StatusUnauthorized)

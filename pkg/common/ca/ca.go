@@ -1,7 +1,6 @@
 package ca
 
 import (
-	"context"
 	"crypto"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -20,18 +19,18 @@ import (
 const NotBeforeTolerance = -30 * time.Second
 
 type ServerCA interface {
-	SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error)
-	SignJWT(ctx context.Context, params JWTParams) (string, error)
+	SignX509Certificate(params X509CertificateParams) (*x509.Certificate, error)
+	SignJWT(params JWTParams) (string, error)
+	PublicKey() crypto.PublicKey
 }
 
 type CA struct {
 	mu sync.RWMutex
 
-	PublicKey crypto.PublicKey
-
-	x509CA *X509CA
-	jwtCA  *JWTCA
-	clock  clock.Clock
+	publicKey crypto.PublicKey
+	x509CA    *X509CA
+	jwtCA     *JWTCA
+	clock     clock.Clock
 
 	Logger logrus.FieldLogger
 }
@@ -86,7 +85,7 @@ func New(c *Config) (*CA, error) {
 	}
 
 	return &CA{
-		PublicKey: signer.Public(),
+		publicKey: signer.Public(),
 		Logger:    c.Logger,
 		x509CA:    x509CA,
 		jwtCA:     jwtCA,
@@ -94,7 +93,7 @@ func New(c *Config) (*CA, error) {
 	}, err
 }
 
-func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificateParams) (*x509.Certificate, error) {
+func (ca *CA) SignX509Certificate(params X509CertificateParams) (*x509.Certificate, error) {
 	x509CA := ca.getX509CA()
 
 	template, err := ca.createX509Template(params)
@@ -110,7 +109,7 @@ func (ca *CA) SignX509Certificate(ctx context.Context, params X509CertificatePar
 	return cert, nil
 }
 
-func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
+func (ca *CA) SignJWT(params JWTParams) (string, error) {
 	jwtCA := ca.getJWTCA()
 
 	expiresAt := ca.clock.Now().Add(params.TTL)
@@ -131,6 +130,10 @@ func (ca *CA) SignJWT(ctx context.Context, params JWTParams) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func (ca *CA) PublicKey() crypto.PublicKey {
+	return ca.publicKey
 }
 
 func (ca *CA) getX509CA() *X509CA {

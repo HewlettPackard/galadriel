@@ -16,47 +16,47 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Clock used for time operations that allows to use a Fake for testing
+// clock used for time operations that allows to use a Fake for testing
 var clk = clock.New()
 
-// Config conveys the configuration for the Galadriel CA.
+// Config conveys the configuration for the Galadriel serverCA.
 type Config struct {
-	// Address of the Galadriel CA
+	// Address of the Galadriel serverCA
 	TCPAddress *net.TCPAddr
 
-	// Address of the Galadriel CA to be reached locally
+	// Address of the Galadriel serverCA to be reached locally
 	LocalAddress net.Addr
 
-	// Path to the Galadriel CA Root Cert File
+	// Path to the Galadriel serverCA Root Cert File
 	RootCertPath string
 
-	// Path to the Galadriel CA Private Key File
+	// Path to the Galadriel serverCA Private Key File
 	RootKeyPath string
 
 	Logger logrus.FieldLogger
 
-	// JWTTokenTTL of the X509 certificates provided by this GCA
+	// jwtTokenTTL of the X509 certificates provided by this GCA
 	X509CertTTL time.Duration
 
-	// JWTTokenTTL of the JWT tokens provided by this GCA
+	// jwtTokenTTL of the JWT tokens provided by this GCA
 	JWTCertTTL time.Duration
 }
 
-// GCA is a struct that represents a Galadriel CA.
+// GCA is a struct that represents a Galadriel serverCA.
 type GCA struct {
-	config *Config
-	CA     *ca.CA
+	config   *Config
+	serverCA ca.ServerCA
 }
 
-// New creates a new Galadriel CA GCA with the given configuration.
+// New creates a new Galadriel serverCA GCA with the given configuration.
 func New(config *Config) (*GCA, error) {
 	cert, err := cryptoutil.LoadCertificate(config.RootCertPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed loading CA root certificate: %w", err)
+		return nil, fmt.Errorf("failed loading serverCA root certificate: %w", err)
 	}
 	key, err := cryptoutil.LoadRSAPrivateKey(config.RootKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed loading CA root private: %w", err)
+		return nil, fmt.Errorf("failed loading serverCA root private: %w", err)
 	}
 
 	CA, err := ca.New(&ca.Config{
@@ -66,12 +66,12 @@ func New(config *Config) (*GCA, error) {
 		Logger:   config.Logger.WithField(telemetry.SubsystemName, telemetry.ServerCA),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed creating GCA CA: %w", err)
+		return nil, fmt.Errorf("failed creating GCA serverCA: %w", err)
 	}
 
 	return &GCA{
-		config: config,
-		CA:     CA,
+		config:   config,
+		serverCA: CA,
 	}, nil
 }
 
@@ -101,7 +101,7 @@ func (g *GCA) newEndpointsServer() (endpoints.Server, error) {
 		TCPAddress:   g.config.TCPAddress,
 		LocalAddress: g.config.LocalAddress,
 		Logger:       g.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		CA:           g.CA,
+		ServerCA:     g.serverCA,
 		JWTTokenTTL:  g.config.JWTCertTTL,
 		X509CertTTL:  g.config.X509CertTTL,
 		Clock:        clk,

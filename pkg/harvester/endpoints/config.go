@@ -11,7 +11,7 @@ type Config struct {
 	// TPCAddr is the address to bind the TCP listener to.
 	TCPAddress *net.TCPAddr
 
-	// LocalAddr is the local address to bind the listener to.
+	// localAddr is the local address to bind the listener to.
 	LocalAddress net.Addr
 
 	Logger logrus.FieldLogger

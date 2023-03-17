@@ -22,9 +22,9 @@ func TestHandler(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 	clk := clock.New()
 
-	CA, signer := createCA(t)
+	serverCA, signer := createCA(t)
 	handler, err := NewHandler(&Config{
-		CA:          CA,
+		ServerCA:    serverCA,
 		Logger:      logger,
 		JWTTokenTTL: 100,
 		Clock:       clk,
@@ -48,7 +48,7 @@ func TestHandler(t *testing.T) {
 			name:       "success",
 			statusCode: http.StatusOK,
 			call: func(server *httptest.Server) (*http.Response, error) {
-				req := buildRequest(t, CA, server.URL, token)
+				req := buildRequest(t, server.URL, token)
 				resp := doRequest(t, req)
 				return resp, nil
 			},
@@ -145,7 +145,7 @@ func TestHandler(t *testing.T) {
 			switch {
 			case res.StatusCode == http.StatusOK:
 				claims := &jwt.RegisteredClaims{}
-				_, err := jwt.ParseWithClaims(string(actual), claims, func(token *jwt.Token) (interface{}, error) { return CA.PublicKey, nil }, jwt.WithoutClaimsValidation())
+				_, err := jwt.ParseWithClaims(string(actual), claims, func(token *jwt.Token) (interface{}, error) { return signer.Public(), nil }, jwt.WithoutClaimsValidation())
 				require.NoError(t, err)
 			default:
 				require.Equal(t, testCase.statusCode, res.StatusCode)
@@ -162,14 +162,14 @@ func doRequest(t *testing.T, req *http.Request) *http.Response {
 	return resp
 }
 
-func buildRequest(t *testing.T, CA *ca.CA, serverURL string, token string) *http.Request {
+func buildRequest(t *testing.T, serverURL string, token string) *http.Request {
 	req, err := http.NewRequest("GET", serverURL, nil)
 	require.NoError(t, err)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	return req
 }
 
-func createCA(t *testing.T) (*ca.CA, crypto.Signer) {
+func createCA(t *testing.T) (ca.ServerCA, crypto.Signer) {
 	clk := clock.NewFake()
 	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
 	require.NoError(t, err)

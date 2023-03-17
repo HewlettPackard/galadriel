@@ -22,16 +22,16 @@ import (
 )
 
 const (
-	// TTL of the Galadriel CA certificate
+	// TTL of the Galadriel serverCA certificate
 	certTTL = 2 * time.Hour
 
-	// serverName is used as Common Name and DNSName in the Galadriel CA certificate
+	// serverName is used as Common Name and DNSName in the Galadriel serverCA certificate
 	serverName   = "galadriel-ca"
 	organization = "galadriel"
 )
 
 var (
-	// Rotation interval of the Galadriel CA certificate
+	// Rotation interval of the Galadriel serverCA certificate
 	certRotationInterval = certTTL / 2
 )
 
@@ -42,7 +42,7 @@ type Server interface {
 	ListenAndServe(ctx context.Context) error
 }
 
-// Config represents the configuration of the Galadriel CA Endpoints
+// Config represents the configuration of the Galadriel ServerCA Endpoints
 type Config struct {
 	// TPCAddr is the address to bind the TCP listener to.
 	TCPAddress *net.TCPAddr
@@ -52,8 +52,8 @@ type Config struct {
 
 	Logger logrus.FieldLogger
 
-	// CA is used for signing X.509 certificates and JWTs
-	CA *ca.CA
+	// ServerCA is used for signing X.509 certificates and JWTs
+	ServerCA ca.ServerCA
 
 	JWTTokenTTL time.Duration
 	X509CertTTL time.Duration
@@ -62,11 +62,11 @@ type Config struct {
 }
 
 type Endpoints struct {
-	CA         *ca.CA
-	TCPAddress *net.TCPAddr
-	LocalAddr  net.Addr
-	Logger     logrus.FieldLogger
-	Clock      clock.Clock
+	serverCA   ca.ServerCA
+	tcpAddress *net.TCPAddr
+	localAddr  net.Addr
+	logger     logrus.FieldLogger
+	clock      clock.Clock
 	config     *Config
 
 	certsStore *tlsCertSource
@@ -83,11 +83,11 @@ func New(c *Config) (*Endpoints, error) {
 	}
 
 	return &Endpoints{
-		CA:         c.CA,
-		TCPAddress: c.TCPAddress,
-		LocalAddr:  c.LocalAddress,
-		Logger:     c.Logger,
-		Clock:      c.Clock,
+		serverCA:   c.ServerCA,
+		tcpAddress: c.TCPAddress,
+		localAddr:  c.LocalAddress,
+		logger:     c.Logger,
+		clock:      c.Clock,
 		config:     c,
 	}, nil
 }
@@ -141,10 +141,10 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	mux := http.NewServeMux()
 
 	jwtHandler, err := jwt.NewHandler(&jwt.Config{
-		CA:          e.CA,
-		Logger:      e.Logger.WithField(telemetry.SubsystemName, telemetry.JWTHandler),
+		ServerCA:    e.serverCA,
+		Logger:      e.logger.WithField(telemetry.SubsystemName, telemetry.JWTHandler),
 		JWTTokenTTL: e.config.JWTTokenTTL,
-		Clock:       e.Clock,
+		Clock:       e.clock,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to build JWT handler")
@@ -152,12 +152,12 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	mux.Handle("/jwt", jwtHandler)
 
 	server := &http.Server{
-		Addr:      e.TCPAddress.String(),
+		Addr:      e.tcpAddress.String(),
 		Handler:   mux,
 		TLSConfig: tlsConfig,
 	}
 
-	e.Logger.Infof("Starting secure GCA TCP endpoint listening on %s", e.TCPAddress.String())
+	e.logger.Infof("Starting secure GCA TCP endpoint listening on %s", e.tcpAddress.String())
 	errChan := make(chan error)
 	go func() {
 		e.triggerListeningHook()
@@ -169,22 +169,22 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Logger.WithError(err).Error("GCA TCP endpoint stopped prematurely")
+		e.logger.WithError(err).Error("GCA TCP endpoint stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping GCA TCP endpoint")
+		e.logger.Info("Stopping GCA TCP endpoint")
 		err = server.Close()
 		if err != nil {
-			e.Logger.WithError(err).Error("Error closing GCA TCP endpoint")
+			e.logger.WithError(err).Error("Error closing GCA TCP endpoint")
 		}
 		<-errChan
-		e.Logger.Info("GCA TCP endpoint stopped")
+		e.logger.Info("GCA TCP endpoint stopped")
 		return nil
 	}
 }
 
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
-	os.Remove(e.LocalAddr.String())
+	os.Remove(e.localAddr.String())
 
 	// UDS API handlers
 	mux := http.NewServeMux()
@@ -192,13 +192,13 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 		Handler: mux,
 	}
 
-	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
+	l, err := net.Listen(e.localAddr.Network(), e.localAddr.String())
 	if err != nil {
 		return fmt.Errorf("error tcpListening on uds: %w", err)
 	}
 	defer l.Close()
 
-	e.Logger.Infof("Starting GCA UDS endpoint listening on %s", e.LocalAddr.String())
+	e.logger.Infof("Starting GCA UDS endpoint listening on %s", e.localAddr.String())
 	errChan := make(chan error)
 	go func() {
 		errChan <- server.Serve(l)
@@ -206,23 +206,23 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 	select {
 	case err = <-errChan:
-		e.Logger.WithError(err).Error("Local GCA UDS endpoint stopped prematurely")
+		e.logger.WithError(err).Error("Local GCA UDS endpoint stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping GCA UDS endpoint")
+		e.logger.Info("Stopping GCA UDS endpoint")
 		err = server.Close()
 		if err != nil {
-			e.Logger.WithError(err).Error("Error closing GCA UDS endpoint")
+			e.logger.WithError(err).Error("Error closing GCA UDS endpoint")
 		}
 		<-errChan
-		e.Logger.Info("GCA UDS endpoint stopped")
+		e.logger.Info("GCA UDS endpoint stopped")
 
 		return nil
 	}
 }
 
 func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan error) {
-	e.Logger.Info("Starting GCA TLS certificate rotator")
+	e.logger.Info("Starting GCA TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
 	ticker := time.NewTicker(certRotationInterval)
@@ -230,14 +230,14 @@ func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan erro
 	for {
 		select {
 		case <-ticker.C:
-			e.Logger.Info("Rotating GCA TLS certificate")
+			e.logger.Info("Rotating GCA TLS certificate")
 			cert, err := e.getTLSCertificate(ctx)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to rotate GCA TLS certificate: %w", err)
 			}
 			e.certsStore.setCert(cert)
 		case <-ctx.Done():
-			e.Logger.Info("Stopped GCA TLS certificate rotator")
+			e.logger.Info("Stopped GCA TLS certificate rotator")
 			return
 		}
 	}
@@ -257,7 +257,7 @@ func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, er
 			Organization: []string{organization},
 		},
 	}
-	cert, err := e.CA.SignX509Certificate(ctx, params)
+	cert, err := e.serverCA.SignX509Certificate(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create certificate: %w", err)
 	}

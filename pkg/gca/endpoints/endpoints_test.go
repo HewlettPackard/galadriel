@@ -29,10 +29,10 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, endpoint)
 
-	assert.Equal(t, endpoint.CA, config.CA)
-	assert.Equal(t, endpoint.TCPAddress, config.TCPAddress)
-	assert.Equal(t, endpoint.LocalAddr, config.LocalAddress)
-	assert.Equal(t, endpoint.Logger, config.Logger)
+	assert.Equal(t, endpoint.serverCA, config.ServerCA)
+	assert.Equal(t, endpoint.tcpAddress, config.TCPAddress)
+	assert.Equal(t, endpoint.localAddr, config.LocalAddress)
+	assert.Equal(t, endpoint.logger, config.Logger)
 }
 
 func TestListenAndServe(t *testing.T) {
@@ -84,7 +84,7 @@ func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
 		t.Fatalf("failed to create request: %v", err)
 	}
 
-	token := createToken(t, config.CA)
+	token := createToken(t, config.ServerCA)
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	response, err := client.Do(request)
@@ -96,7 +96,7 @@ func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
 	require.NotNil(t, body)
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
-	parsed, err := jwt.Parse(string(body), func(t *jwt.Token) (interface{}, error) { return config.CA.PublicKey, nil })
+	parsed, err := jwt.Parse(string(body), func(t *jwt.Token) (interface{}, error) { return config.ServerCA.PublicKey(), nil })
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
 }
@@ -108,7 +108,7 @@ func createToken(t *testing.T, CA ca.ServerCA) string {
 		Audience: []string{"galadriel-ca"},
 		TTL:      time.Hour,
 	}
-	token, err := CA.SignJWT(context.Background(), params)
+	token, err := CA.SignJWT(params)
 	require.NoError(t, err)
 
 	return token
@@ -142,7 +142,7 @@ func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
 		TCPAddress:   tcpAddr,
 		LocalAddress: localAddr,
 		Logger:       logger,
-		CA:           CA,
+		ServerCA:     CA,
 		Clock:        clk,
 		JWTTokenTTL:  time.Hour,
 		X509CertTTL:  time.Hour,

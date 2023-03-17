@@ -16,8 +16,8 @@ const defaultConfigPath = "conf/gca/gca.conf"
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
-		Short: "Runs the Galadriel CA",
-		Long:  "Run this command to start the Galadriel CA",
+		Short: "Runs the Galadriel serverCA",
+		Long:  "Run this command to start the Galadriel serverCA",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configPath, err := cmd.Flags().GetString("config")

@@ -1,7 +1,6 @@
 package ca_test
 
 import (
-	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"testing"
@@ -26,16 +25,7 @@ var (
 )
 
 func TestNewCA(t *testing.T) {
-	clk := clock.NewFake()
-	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
-	require.NoError(t, err)
-
-	// success
-	config := &ca.Config{
-		RootCert: caCert,
-		RootKey:  caKey,
-		Clock:    clk,
-	}
+	config := newCAConfig(t, clock.NewFake())
 
 	CA, err := ca.New(config)
 	require.NoError(t, err)
@@ -43,17 +33,9 @@ func TestNewCA(t *testing.T) {
 }
 
 func TestSignX509Certificate(t *testing.T) {
-	clk := clock.NewFake()
-	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
+	config := newCAConfig(t, clock.NewFake())
+	serverCA, err := ca.New(config)
 	require.NoError(t, err)
-
-	config := &ca.Config{
-		RootCert: caCert,
-		RootKey:  caKey,
-		Clock:    clk,
-	}
-
-	serverCA, _ := ca.New(config)
 
 	key, err := cryptoutil.CreateRSAKey()
 	require.NoError(t, err)
@@ -70,12 +52,12 @@ func TestSignX509Certificate(t *testing.T) {
 		},
 	}
 
-	cert, err := serverCA.SignX509Certificate(context.Background(), params)
+	cert, err := serverCA.SignX509Certificate(params)
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
-	// check the cert was signed by the CA
-	err = cert.CheckSignatureFrom(caCert)
+	// check the cert was signed by the serverCA
+	err = cert.CheckSignatureFrom(config.RootCert)
 	require.NoError(t, err)
 
 	assert.NotNil(t, cert.SerialNumber)
@@ -92,19 +74,11 @@ func TestSignX509Certificate(t *testing.T) {
 }
 
 func TestSignJWT(t *testing.T) {
-	clk := clock.New()
-	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
+	config := newCAConfig(t, clock.New())
+	serverCA, err := ca.New(config)
 	require.NoError(t, err)
 
-	config := &ca.Config{
-		RootCert: caCert,
-		RootKey:  caKey,
-		Clock:    clk,
-	}
-
 	oneMinute := 1 * time.Minute
-
-	serverCA, _ := ca.New(config)
 
 	params := ca.JWTParams{
 		Issuer:   "test-issuer",
@@ -113,12 +87,12 @@ func TestSignJWT(t *testing.T) {
 		TTL:      oneMinute,
 	}
 
-	token, err := serverCA.SignJWT(context.Background(), params)
+	token, err := serverCA.SignJWT(params)
 	require.NoError(t, err)
 	require.NotNil(t, token)
 
 	claims := &jwt.RegisteredClaims{}
-	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey, nil })
+	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil })
 
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
@@ -128,6 +102,28 @@ func TestSignJWT(t *testing.T) {
 	assert.Equal(t, claims.Subject, "test-domain")
 	assert.Contains(t, claims.Audience, "test-audience-1")
 	assert.Contains(t, claims.Audience, "test-audience-2")
-	assert.Equal(t, claims.IssuedAt.Time.Unix(), clk.Now().Unix())
-	assert.Equal(t, claims.ExpiresAt.Time.Unix(), clk.Now().Add(oneMinute).Unix())
+	assert.Equal(t, claims.IssuedAt.Time.Unix(), config.Clock.Now().Unix())
+	assert.Equal(t, claims.ExpiresAt.Time.Unix(), config.Clock.Now().Add(oneMinute).Unix())
+}
+
+func TestPublicKey(t *testing.T) {
+	config := newCAConfig(t, clock.NewFake())
+	serverCA, err := ca.New(config)
+	require.NoError(t, err)
+
+	assert.Equal(t, config.RootCert.PublicKey, serverCA.PublicKey())
+}
+
+func newCAConfig(t *testing.T, clk clock.Clock) *ca.Config {
+	caCert, caKey, err := certtest.CreateTestCACertificate(clk)
+	require.NoError(t, err)
+
+	// success
+	config := &ca.Config{
+		RootCert: caCert,
+		RootKey:  caKey,
+		Clock:    clk,
+	}
+
+	return config
 }
