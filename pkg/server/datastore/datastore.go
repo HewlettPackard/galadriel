@@ -81,7 +81,7 @@ func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastor
 	}
 	err = commondata.ValidateAndMigrateSchema(db, currentDBVersion, scheme, sourceInstance)
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate or migrate CA schema: %w", err)
+		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
 	return &SQLDatastore{

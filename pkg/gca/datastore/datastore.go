@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// to be used for migration of data schema.
+// to be used for migration of data schema
 //
 //go:embed migrations/*.sql
 var fs embed.FS
@@ -51,7 +51,7 @@ type SQLDatastore struct {
 }
 
 // Constants for Migration
-// When a
+
 const currentDBVersion = 1
 
 const scheme = "postgresql"
@@ -62,15 +62,15 @@ const scheme = "postgresql"
 //	url in the format of postgres://user:secret@localhost:port/db?sslmode=disable
 //	DNS string user=postgres password=secret host=localhost port=5432 database=db sslmode=disable
 
-func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastore, error) {
+func NewSQLDatastore(logger logrus.FieldLogger, cString string) (*SQLDatastore, error) {
 
 	// validate connection string structure
-	c, err := pgx.ParseConfig(connString)
+	conf, err := pgx.ParseConfig(cString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse CA Postgres connection string: %w", err)
+		return nil, fmt.Errorf("failed to parse GCA Postgres connection string: %w", err)
 	}
 
-	db := stdlib.OpenDB(*c)
+	db := stdlib.OpenDB(*conf)
 	// validate schema and perform migrations
 	// When a new migration is created, this version should be updated in order to force
 	// the migrations to run when starting up the app.
@@ -80,7 +80,7 @@ func NewSQLDatastore(logger logrus.FieldLogger, connString string) (*SQLDatastor
 	}
 	err = commondata.ValidateAndMigrateSchema(db, currentDBVersion, scheme, sourceInstance)
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate or migrate CA schema: %w", err)
+		return nil, fmt.Errorf("failed to validate or migrate GCA schema: %w", err)
 	}
 
 	return &SQLDatastore{
@@ -114,12 +114,12 @@ func (d *SQLDatastore) CreateTrustDomain(ctx context.Context, req *api.TrustDoma
 
 	td, err := d.querier.CreateTrustDomain(ctx, tdParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a new trust domain: %w", err)
+		return nil, fmt.Errorf("failed to create a new GCA trust domain: %w", err)
 	}
 
 	response, err := td.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to trust domain api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -154,12 +154,12 @@ func (d *SQLDatastore) UpdateTrustDomain(ctx context.Context, req *api.TrustDoma
 
 	td, err := d.querier.UpdateTrustDomain(ctx, tdParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update trust domain: %w", err)
+		return nil, fmt.Errorf("failed to update GCA trust domain: %w", err)
 	}
 
 	response, err := td.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to trust domain api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -175,7 +175,7 @@ func (d *SQLDatastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid
 
 	err = d.querier.DeleteTrustDomain(ctx, pgID)
 	if err != nil {
-		return fmt.Errorf("failed to delete trust domain: %w", err)
+		return fmt.Errorf("failed deleting GCA trust domain: %w", err)
 	}
 	return nil
 }
@@ -194,12 +194,12 @@ func (d *SQLDatastore) FindTrustDomainByID(ctx context.Context, trustDomainID uu
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up trust domain for ID=%q: %w", trustDomainID, err)
+		return nil, fmt.Errorf("failed looking up GCA trust domain for ID=%q: %w", trustDomainID, err)
 	}
 
 	response, err := td.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to trust domain api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -208,7 +208,7 @@ func (d *SQLDatastore) FindTrustDomainByName(ctx context.Context, trustDomainNam
 
 	// validate name
 	if trustDomainName == "" {
-		return nil, fmt.Errorf("failed to find trust domain by name, invalid trust domain name")
+		return nil, fmt.Errorf("failed finding GCA trust domain by name, invalid trust domain name")
 	}
 
 	td, err := d.querier.FindTrustDomainByName(ctx, trustDomainName)
@@ -216,12 +216,12 @@ func (d *SQLDatastore) FindTrustDomainByName(ctx context.Context, trustDomainNam
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up trust domain for ID=%q: %w", trustDomainName, err)
+		return nil, fmt.Errorf("failed looking up GCA trust domain for ID=%q: %w", trustDomainName, err)
 	}
 
 	response, err := td.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to trust domain api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -230,14 +230,14 @@ func (d *SQLDatastore) ListTrustDomains(ctx context.Context) ([]*api.TrustDomain
 
 	trustdomains, err := d.querier.ListTrustDomains(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list trust domains: %w", err)
+		return nil, fmt.Errorf("failed to list GCA trust domains: %w", err)
 	}
 
 	result := make([]*api.TrustDomain, len(trustdomains))
 	for i, td := range trustdomains {
 		convtd, err := td.ToEntity()
 		if err != nil {
-			return nil, fmt.Errorf("failed converting to trust domain api entity:%w", err)
+			return nil, err
 		}
 
 		result[i] = convtd
@@ -260,12 +260,12 @@ func (d *SQLDatastore) CreateJoinToken(ctx context.Context, req *api.JoinToken) 
 
 	jt, err := d.querier.CreateJoinToken(ctx, jtParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a new join token: %w", err)
+		return nil, fmt.Errorf("failed creating a new GCA join token: %w", err)
 	}
 
 	response, err := jt.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to join token api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -285,12 +285,12 @@ func (d *SQLDatastore) UpdateJoinToken(ctx context.Context, tokenID uuid.UUID, u
 
 	jt, err := d.querier.UpdateJoinToken(ctx, jtParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update join token: %w", err)
+		return nil, fmt.Errorf("failed updating GCA join token: %w", err)
 	}
 
 	response, err := jt.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to join token api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -309,12 +309,12 @@ func (d *SQLDatastore) FindJoinTokenByID(ctx context.Context, tokenID uuid.UUID)
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up join token for ID=%q: %w", tokenID, err)
+		return nil, fmt.Errorf("failed looking up GCA join token for ID=%q: %w", tokenID, err)
 	}
 
 	response, err := jt.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to join token api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -323,7 +323,7 @@ func (d *SQLDatastore) FindJoinTokenByTrustDomainName(ctx context.Context, trust
 
 	// validate name
 	if trustDomainName == "" {
-		return nil, fmt.Errorf("failed to list Join tokens by Trust Domains Name, invalid trust domain name")
+		return nil, fmt.Errorf("failed listing GCA Join tokens by Trust Domains Name, invalid trust domain name")
 	}
 
 	joinTokens, err := d.querier.FindJoinTokensByTrustDomainName(ctx, trustDomainName)
@@ -331,14 +331,14 @@ func (d *SQLDatastore) FindJoinTokenByTrustDomainName(ctx context.Context, trust
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up join token for trustdomain name=%q: %w", trustDomainName, err)
+		return nil, fmt.Errorf("failed looking up GCA join token for trustdomain name=%q: %w", trustDomainName, err)
 	}
 
 	result := make([]*api.JoinToken, len(joinTokens))
 	for i, jt := range joinTokens {
 		convljt, err := jt.ToEntity()
 		if err != nil {
-			return nil, fmt.Errorf("failed converting to join token api entity: %w", err)
+			return nil, err
 		}
 		result[i] = convljt
 	}
@@ -347,9 +347,9 @@ func (d *SQLDatastore) FindJoinTokenByTrustDomainName(ctx context.Context, trust
 
 func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*api.JoinToken, error) {
 	// convert uuid.UUID to pgtype.UUID
-	// validate name
+	// validate token
 	if token == "" {
-		return nil, fmt.Errorf("failed to list join tokens by token, invalid token")
+		return nil, fmt.Errorf("failed listing GCA join tokens by token, invalid token")
 	}
 
 	jt, err := d.querier.FindJoinToken(ctx, token)
@@ -357,12 +357,12 @@ func (d *SQLDatastore) FindJoinToken(ctx context.Context, token string) (*api.Jo
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
-		return nil, fmt.Errorf("failed looking up join token for token =%q: %w", token, err)
+		return nil, fmt.Errorf("failed looking up GCA join token for token =%q: %w", token, err)
 	}
 
 	response, err := jt.ToEntity()
 	if err != nil {
-		return nil, fmt.Errorf("failed convering to api join token api entity: %w", err)
+		return nil, err
 	}
 
 	return response, nil
@@ -377,14 +377,14 @@ func (d *SQLDatastore) FindJoinTokensByTrustDomainID(ctx context.Context, trustD
 
 	joinTokens, err := d.querier.FindJoinTokensByTrustDomainID(ctx, pgID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list join tokens by trust domain ID: %w", err)
+		return nil, fmt.Errorf("failed to list GCA join tokens by trust domain ID: %w", err)
 	}
 
 	result := make([]*api.JoinToken, len(joinTokens))
 	for i, jt := range joinTokens {
 		convljt, err := jt.ToEntity()
 		if err != nil {
-			return nil, fmt.Errorf("failed converting to  join token api entity: %w", err)
+			return nil, err
 		}
 		result[i] = convljt
 	}
@@ -395,14 +395,14 @@ func (d *SQLDatastore) ListJoinTokens(ctx context.Context) ([]*api.JoinToken, er
 
 	joinTokens, err := d.querier.ListJoinTokens(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list join tokens : %w", err)
+		return nil, fmt.Errorf("failed to list GCA join tokens : %w", err)
 	}
 
 	result := make([]*api.JoinToken, len(joinTokens))
 	for i, jt := range joinTokens {
 		convljt, err := jt.ToEntity()
 		if err != nil {
-			return nil, fmt.Errorf("failed converting to join token api entity: %w", err)
+			return nil, err
 		}
 		result[i] = convljt
 	}
@@ -420,7 +420,8 @@ func (d *SQLDatastore) DeleteJoinToken(ctx context.Context, tokenID uuid.UUID) e
 
 	err = d.querier.DeleteJoinToken(ctx, pgID)
 	if err != nil {
-		return fmt.Errorf("failed to delete join token: %w", err)
+		return fmt.Errorf("failed to delete GCA join token: %w", err)
 	}
+
 	return nil
 }
