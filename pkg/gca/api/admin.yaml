@@ -226,7 +226,7 @@ components:
         - id
         - name
         - created_at
-        - update_at
+        - updated_at
       type: object
       properties:
         id:
