@@ -489,11 +489,9 @@ func TestCRUDBundle(t *testing.T) {
 	// Create first Data - trustDomain-1
 	req1 := &entity.Bundle{
 		Data:               []byte{1, 2, 3},
-		Digest:             []byte{10, 20, 30},
 		Signature:          []byte{4, 2},
-		DigestAlgorithm:    "MD5",
-		SignatureAlgorithm: "RSA",
-		SigningCert:        []byte{50, 60},
+		SignatureAlgorithm: "SHA256WithRSA",
+		SigningCertificate: []byte{50, 60},
 		TrustDomainID:      td1.ID.UUID,
 	}
 
@@ -501,11 +499,9 @@ func TestCRUDBundle(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, b1)
 	assert.Equal(t, req1.Data, b1.Data)
-	assert.Equal(t, req1.Digest, b1.Digest)
 	assert.Equal(t, req1.Signature, b1.Signature)
-	assert.Equal(t, req1.DigestAlgorithm, b1.DigestAlgorithm)
 	assert.Equal(t, req1.SignatureAlgorithm, b1.SignatureAlgorithm)
-	assert.Equal(t, req1.SigningCert, b1.SigningCert)
+	assert.Equal(t, req1.SigningCertificate, b1.SigningCertificate)
 	assert.Equal(t, req1.TrustDomainID, b1.TrustDomainID)
 
 	// Look up bundle stored in DB and compare
@@ -516,11 +512,9 @@ func TestCRUDBundle(t *testing.T) {
 	// Create second Data -> trustDomain-2
 	req2 := &entity.Bundle{
 		Data:               []byte{10, 20, 30},
-		Digest:             []byte{100, 200, 30},
 		Signature:          []byte{40, 20},
-		DigestAlgorithm:    "MD6",
-		SignatureAlgorithm: "ECDSA",
-		SigningCert:        []byte{80, 90},
+		SignatureAlgorithm: "SHA256WithRSA",
+		SigningCertificate: []byte{80, 90},
 		TrustDomainID:      td2.ID.UUID,
 	}
 
@@ -528,11 +522,9 @@ func TestCRUDBundle(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, b1)
 	assert.Equal(t, req2.Data, b2.Data)
-	assert.Equal(t, req2.Digest, b2.Digest)
 	assert.Equal(t, req2.Signature, b2.Signature)
-	assert.Equal(t, req2.DigestAlgorithm, b2.DigestAlgorithm)
 	assert.Equal(t, req2.SignatureAlgorithm, b2.SignatureAlgorithm)
-	assert.Equal(t, req2.SigningCert, b2.SigningCert)
+	assert.Equal(t, req2.SigningCertificate, b2.SigningCertificate)
 	assert.Equal(t, req2.TrustDomainID, b2.TrustDomainID)
 
 	// Look up bundle stored in DB and compare
@@ -551,21 +543,17 @@ func TestCRUDBundle(t *testing.T) {
 
 	// Update Data
 	b1.Data = []byte{'a', 'b', 'c'}
-	b1.Digest = []byte{'c', 'd', 'e'}
 	b1.Signature = []byte{'f', 'g', 'h'}
-	b1.DigestAlgorithm = "other"
-	b1.SignatureAlgorithm = "other-alg"
-	b1.SigningCert = []byte{'f', 'g', 'h'}
+	b1.SignatureAlgorithm = "SHA512WithRSA"
+	b1.SigningCertificate = []byte{'f', 'g', 'h'}
 
 	updated, err := datastore.CreateOrUpdateBundle(ctx, b1)
 	require.NoError(t, err)
 	require.NotNil(t, updated)
 	assert.Equal(t, b1.Data, updated.Data)
-	assert.Equal(t, b1.Digest, updated.Digest)
 	assert.Equal(t, b1.Signature, updated.Signature)
-	assert.Equal(t, b1.DigestAlgorithm, updated.DigestAlgorithm)
 	assert.Equal(t, b1.SignatureAlgorithm, updated.SignatureAlgorithm)
-	assert.Equal(t, b1.SigningCert, updated.SigningCert)
+	assert.Equal(t, b1.SigningCertificate, updated.SigningCertificate)
 	assert.Equal(t, b1.TrustDomainID, updated.TrustDomainID)
 
 	// Look up bundle stored in DB and compare
@@ -618,11 +606,9 @@ func TestBundleUniqueTrustDomainConstraint(t *testing.T) {
 	// Create Data
 	b1 := &entity.Bundle{
 		Data:               []byte{1, 2, 3},
-		Digest:             []byte{10, 20, 30},
 		Signature:          []byte{4, 2},
-		DigestAlgorithm:    "MD5",
-		SignatureAlgorithm: "RSA",
-		SigningCert:        []byte{50, 60},
+		SignatureAlgorithm: "SHA512WithRSA",
+		SigningCertificate: []byte{50, 60},
 		TrustDomainID:      td1.ID.UUID,
 	}
 	b1, err = datastore.CreateOrUpdateBundle(ctx, b1)
@@ -632,11 +618,9 @@ func TestBundleUniqueTrustDomainConstraint(t *testing.T) {
 	// Create second Data associated to same trustDomain
 	b2 := &entity.Bundle{
 		Data:               []byte{10, 20, 30},
-		Digest:             []byte{100, 200, 30},
 		Signature:          []byte{40, 20},
-		DigestAlgorithm:    "MD6",
-		SignatureAlgorithm: "ECDSA",
-		SigningCert:        []byte{80, 90},
+		SignatureAlgorithm: "SHA512WithRSA",
+		SigningCertificate: []byte{80, 90},
 		TrustDomainID:      td1.ID.UUID,
 	}
 	b2, err = datastore.CreateOrUpdateBundle(ctx, b2)

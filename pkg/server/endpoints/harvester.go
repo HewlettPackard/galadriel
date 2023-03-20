@@ -13,7 +13,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -62,33 +61,13 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 		return err
 	}
 
-	bundle, err := spiffebundle.Parse(authenticatedTD.Name, harvesterReq.Bundle.Data)
-	if err != nil {
-		e.handleTCPError(ctx, fmt.Sprintf("failed to parse bundle: %v", err))
-		return err
-	}
-
-	x509b, err := bundle.X509Bundle().Marshal()
-	if err != nil {
-		e.handleTCPError(ctx, fmt.Sprintf("failed to marshal bundle: %v", err))
-		return err
-	}
-
-	digest := util.GetDigest(x509b)
-
-	if !bytes.Equal(harvesterReq.Digest, digest) {
-		err := errors.New("calculated digest does not match received digest")
-		e.handleTCPError(ctx, err.Error())
-		return err
-	}
-
 	currentStoredBundle, err := e.Datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
 	if err != nil {
 		e.handleTCPError(ctx, err.Error())
 		return err
 	}
 
-	if harvesterReq.Bundle != nil && currentStoredBundle != nil && !bytes.Equal(harvesterReq.Bundle.Digest, currentStoredBundle.Digest) {
+	if harvesterReq.Bundle != nil && currentStoredBundle != nil {
 		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
 			Data: harvesterReq.Bundle.Data,
 		})
@@ -101,7 +80,6 @@ func (e *Endpoints) postBundleHandler(ctx echo.Context) error {
 	} else if currentStoredBundle == nil {
 		_, err := e.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), &entity.Bundle{
 			Data:          harvesterReq.Bundle.Data,
-			Digest:        harvesterReq.Bundle.Digest,
 			TrustDomainID: authenticatedTD.ID.UUID,
 		})
 		if err != nil {
@@ -234,7 +212,7 @@ func (e *Endpoints) getFederatedBundlesUpdates(ctx context.Context, harvesterBun
 			return nil, err
 		}
 
-		serverDigest := b.Digest
+		serverDigest := util.GetDigest(b.Data)
 		harvesterDigest := harvesterBundlesDigests[td.Name]
 
 		// If the bundle digest received from a federated trust domain of the calling harvester is not the same as the
@@ -264,7 +242,7 @@ func (e *Endpoints) getCurrentFederatedBundles(ctx context.Context, federatedTDs
 
 		if b != nil {
 			bundles = append(bundles, b)
-			bundlesDigests[td.Name] = b.Digest
+			bundlesDigests[td.Name] = util.GetDigest(b.Data)
 		}
 	}
 

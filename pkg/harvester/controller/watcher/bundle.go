@@ -120,14 +120,8 @@ func buildPostBundleRequest(b *spiffebundle.Bundle) (*common.PostBundleRequest, 
 		return nil, fmt.Errorf("failed to marshal X.509 bundle: %v", err)
 	}
 
-	x509b, err := b.X509Bundle().Marshal()
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal X.509 bundle: %v", err)
-	}
-
 	ent := entity.Bundle{
 		Data:            bundle,
-		Digest:          util.GetDigest(x509b),
 		TrustDomainName: b.TrustDomain(),
 		CreatedAt:       time.Time{},
 		UpdatedAt:       time.Time{},

@@ -7,7 +7,7 @@ Type-safe code from SQL is generated using [sqlc](https://github.com/kyleconroy/
 When there is a change in the schema or in the queries, the DB code should be re-generated:
 
 ```
-sqlc generate
+make generate-sql-server
 ```
 
 This regenerates the files `models.go`, `db.go`, `querier.go`, and files ending in `.sql.go`.
