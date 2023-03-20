@@ -2,7 +2,6 @@ openapi: 3.0.3
 info:
   title: Galadriel Certificate Authority - Harvester API
   version: 1.0.11
-  description: Galadriel Certificate Authority - Harvester API specification
   contact:
     name: Github
     url: https://github.com/HewlettPackard/galadriel
@@ -35,7 +34,7 @@ paths:
           $ref: '#/components/responses/Default'
       security:
         - join_token: []
-  /trust-domains/access-token:
+  /trust-domains/access-tokens:
     post:
       operationId: CreateAccessToken
       summary: Generates an access token for a given Trust Domain
@@ -72,18 +71,6 @@ paths:
           $ref: '#/components/responses/Default'
 components:
   schemas:
-    TrustBundle:
-      type: string
-      format: byte
-      description: Base64-encoded X.509 Trust Bundle in PEM format
-      example: >-
-        <Add example here>
-    SVID:
-      description: Base64-encoded X.509 SVID in PEM format
-      type: string
-      format: byte
-      example: >-
-        <Add example here>
     TrustDomain:
       description: SPIRE Trust Domain
       type: string
@@ -108,11 +95,6 @@ components:
       properties:
         trust_domain:
           $ref: '#/components/schemas/TrustDomain'
-        # TODO: do we want to include them now?
-        # harvester_svid:
-        #   $ref: '#/components/schemas/SVID'
-        # onboarding_trust_bundle:
-        #   $ref: '#/components/schemas/TrustBundle'
       additionalProperties: false
     CertificateSigningRequest:
       description: 'Base64-encoded PKCS #10 Certificate Signing Request in PEM format'

@@ -1,8 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Galadriel Server Admin API - OpenAPI 3.0
+  title: Galadriel Certificate Authority - Admin API
   version: 1.0.11
-  description: Galadriel Server Management API specification.
   contact:
     name: Github
     url: https://github.com/HewlettPackard/galadriel
@@ -30,6 +29,8 @@ paths:
         default:
           $ref: '#/components/responses/Default'
     post:
+      operationId: CreateTrustDomain
+      summary: Creates a new Trust Domain
       tags:
         - Trust Domain
       requestBody:
@@ -47,8 +48,6 @@ paths:
           description: Trust Domain successfully created. Returns newly created Trust Domain
         default:
           $ref: '#/components/responses/Default'
-      operationId: CreateTrustDomain
-      summary: Creates a new Trust Domain
   /trust-domains/{trustDomainName}:
     get:
       operationId: GetTrustDomain
@@ -81,7 +80,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TrustDomainRequest'
-        required: false
+        required: true
       parameters:
         - name: trustDomainName
           description: Trust Domain name
