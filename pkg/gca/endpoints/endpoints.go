@@ -14,9 +14,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/gca/endpoints/jwt"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus"
 )
@@ -139,17 +137,6 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 
 	// TCP API handlers
 	mux := http.NewServeMux()
-
-	jwtHandler, err := jwt.NewHandler(&jwt.Config{
-		ServerCA:    e.serverCA,
-		Logger:      e.logger.WithField(telemetry.SubsystemName, telemetry.JWTHandler),
-		JWTTokenTTL: e.config.JWTTokenTTL,
-		Clock:       e.clock,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to build JWT handler")
-	}
-	mux.Handle("/jwt", jwtHandler)
 
 	server := &http.Server{
 		Addr:      e.tcpAddress.String(),

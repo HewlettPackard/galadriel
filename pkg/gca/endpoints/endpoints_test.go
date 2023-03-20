@@ -2,22 +2,16 @@ package endpoints
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
-	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/ca"
 	"github.com/HewlettPackard/galadriel/test/certtest"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +30,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestListenAndServe(t *testing.T) {
-	config, caCert := newEndpointTestConfig(t)
+	config, _ := newEndpointTestConfig(t)
 
 	endpoints, err := New(config)
 	require.NoError(t, err)
@@ -55,63 +49,6 @@ func TestListenAndServe(t *testing.T) {
 	}()
 
 	waitForListening(t, endpoints, errCh)
-
-	// create RootCertPool for TLS Client using the caCert from the GCA endpoints
-	rootCa := x509.NewCertPool()
-	require.NoError(t, err)
-	rootCa.AddCert(caCert)
-
-	tlsConfig := &tls.Config{
-		RootCAs:    rootCa,
-		ServerName: serverName,
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
-	// Test CALL TCP APIS
-	testCallJWTURL(t, client, config)
-}
-
-func testCallJWTURL(t *testing.T, client *http.Client, config *Config) {
-	addr := config.TCPAddress.String()
-	url := fmt.Sprintf("https://%s/%s", addr, "jwt")
-	request, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		t.Fatalf("failed to create request: %v", err)
-	}
-
-	token := createToken(t, config.ServerCA)
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	response, err := client.Do(request)
-	require.NoError(t, err)
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
-	require.NoError(t, err)
-	require.NotNil(t, body)
-
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	parsed, err := jwt.Parse(string(body), func(t *jwt.Token) (interface{}, error) { return config.ServerCA.PublicKey(), nil })
-	require.NoError(t, err)
-	require.NotNil(t, parsed)
-}
-
-func createToken(t *testing.T, CA ca.ServerCA) string {
-	params := ca.JWTParams{
-		Issuer:   "test-ca",
-		Subject:  spiffeid.RequireTrustDomainFromString("domain.test"),
-		Audience: []string{"galadriel-ca"},
-		TTL:      time.Hour,
-	}
-	token, err := CA.SignJWT(params)
-	require.NoError(t, err)
-
-	return token
 }
 
 func newEndpointTestConfig(t *testing.T) (*Config, *x509.Certificate) {
