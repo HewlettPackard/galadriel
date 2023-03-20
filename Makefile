@@ -74,10 +74,11 @@ go_path := PATH="$(go_bin_dir):$(PATH)"
 oapi_codegen_version = 1.11.0
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
+server_sqlc_config_file = $(DIR)/pkg/server/datastore/sqlc.yaml
+
 sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
 sqlc_bin = $(sqlc_dir)/sqlc
-sqlc_version = 1.16.0
-sqlc_config_file = $(DIR)/db/sqlc.yaml
+sqlc_version = 1.17.0
 ifeq ($(os1),windows)
 	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_windows_amd64.zip
 else ifeq ($(os1),darwin)
@@ -204,7 +205,7 @@ help:
 ### Code generation ####
 .PHONY: generate generatesql
 
-generate: generatesql
+generate-sqlc-server: install-sqlc run-sqlc-server
 
-generatesql:
-	$(sqlc_bin) generate --file $(sqlc_config_file)
+run-sqlc-server:
+	$(sqlc_bin) generate --file $(server_sqlc_config_file)

@@ -46,11 +46,9 @@ type JoinToken struct {
 type Bundle struct {
 	ID                 uuid.NullUUID
 	Data               []byte               `json:"bundle"`
-	Digest             []byte               `json:"bundle_digest"`
 	Signature          []byte               `json:"signature"`
-	DigestAlgorithm    string               `json:"digest_algorithm"`
 	SignatureAlgorithm string               `json:"signature_algorithm"`
-	SigningCert        []byte               `json:"signing_cert"`
+	SigningCertificate []byte               `json:"signing_certificate"`
 	TrustDomainID      uuid.UUID            `json:"trust_domain_id"`
 	TrustDomainName    spiffeid.TrustDomain `json:"trust_domain_name"`
 	CreatedAt          time.Time            `json:"created_at"`

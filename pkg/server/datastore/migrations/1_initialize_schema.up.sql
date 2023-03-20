@@ -30,11 +30,9 @@ CREATE TABLE IF NOT EXISTS bundles
     id                  UUID PRIMARY KEY                  DEFAULT gen_random_uuid(),
     trust_domain_id     UUID                     NOT NULL UNIQUE,
     data                BYTEA                    NOT NULL,
-    digest              BYTEA                    NOT NULL,
     signature           BYTEA,
-    digest_algorithm    TEXT,
     signature_algorithm TEXT,
-    signing_cert        BYTEA,
+    signing_certificate BYTEA,
     created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

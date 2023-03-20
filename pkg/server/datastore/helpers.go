@@ -70,11 +70,9 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 	return &entity.Bundle{
 		ID:                 id,
 		Data:               b.Data,
-		Digest:             b.Digest,
 		Signature:          b.Signature,
-		DigestAlgorithm:    b.DigestAlgorithm,
-		SignatureAlgorithm: b.SignatureAlgorithm,
-		SigningCert:        b.SigningCert,
+		SignatureAlgorithm: b.SignatureAlgorithm.String,
+		SigningCertificate: b.SigningCertificate,
 		TrustDomainID:      b.TrustDomainID.Bytes,
 		CreatedAt:          b.CreatedAt,
 		UpdatedAt:          b.UpdatedAt,
@@ -87,16 +85,11 @@ func (jt JoinToken) ToEntity() *entity.JoinToken {
 		Valid: true,
 	}
 
-	used := false
-	if jt.Used.Valid {
-		used = jt.Used.Bool
-	}
-
 	return &entity.JoinToken{
 		ID:            id,
 		Token:         jt.Token,
 		ExpiresAt:     jt.ExpiresAt,
-		Used:          used,
+		Used:          jt.Used,
 		TrustDomainID: jt.TrustDomainID.Bytes,
 		CreatedAt:     jt.CreatedAt,
 		UpdatedAt:     jt.UpdatedAt,

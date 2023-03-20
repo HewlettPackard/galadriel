@@ -247,12 +247,13 @@ func (d *SQLDatastore) createBundle(ctx context.Context, req *entity.Bundle) (*B
 		return nil, err
 	}
 	params := CreateBundleParams{
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		DigestAlgorithm:    req.DigestAlgorithm,
-		SignatureAlgorithm: req.SignatureAlgorithm,
-		SigningCert:        req.SigningCert,
+		Data:      req.Data,
+		Signature: req.Signature,
+		SignatureAlgorithm: sql.NullString{
+			String: req.SignatureAlgorithm,
+			Valid:  true,
+		},
+		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      pgTrustDomainID,
 	}
 
@@ -270,13 +271,14 @@ func (d *SQLDatastore) updateBundle(ctx context.Context, req *entity.Bundle) (*B
 		return nil, err
 	}
 	params := UpdateBundleParams{
-		ID:                 pgID,
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		DigestAlgorithm:    req.DigestAlgorithm,
-		SignatureAlgorithm: req.SignatureAlgorithm,
-		SigningCert:        req.SigningCert,
+		ID:        pgID,
+		Data:      req.Data,
+		Signature: req.Signature,
+		SignatureAlgorithm: sql.NullString{
+			String: req.SignatureAlgorithm,
+			Valid:  true,
+		},
+		SigningCertificate: req.SigningCertificate,
 	}
 
 	bundle, err := d.querier.UpdateBundle(ctx, params)
@@ -441,11 +443,8 @@ func (d *SQLDatastore) UpdateJoinToken(ctx context.Context, joinTokenID uuid.UUI
 	}
 
 	params := UpdateJoinTokenParams{
-		ID: pgID,
-		Used: sql.NullBool{
-			Bool:  used,
-			Valid: true,
-		},
+		ID:   pgID,
+		Used: used,
 	}
 
 	jt, err := d.querier.UpdateJoinToken(ctx, params)
