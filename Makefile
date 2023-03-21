@@ -207,7 +207,6 @@ help:
 
 generate-sqlc-server: install-sqlc run-sqlc-server
 
-
 run-sqlc-server:
 	$(sqlc_bin) generate --file $(server_sqlc_config_file)
 
