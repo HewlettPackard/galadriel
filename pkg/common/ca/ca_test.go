@@ -93,7 +93,8 @@ func TestSignJWT(t *testing.T) {
 	require.NotNil(t, token)
 
 	claims := &jwt.RegisteredClaims{}
-	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil })
+	getServerPublicKey := func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil }
+	parsed, err := jwt.ParseWithClaims(token, claims, getServerPublicKey)
 
 	require.NoError(t, err)
 	require.NotNil(t, parsed)
@@ -129,7 +130,8 @@ func TestSignJWTWithCustomClaims(t *testing.T) {
 	require.NotNil(t, token)
 
 	claims := &ca.Claims{}
-	parsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil })
+	getServerPublicKey := func(token *jwt.Token) (interface{}, error) { return serverCA.PublicKey(), nil }
+	parsed, err := jwt.ParseWithClaims(token, claims, getServerPublicKey)
 
 	require.NoError(t, err)
 	require.NotNil(t, parsed)

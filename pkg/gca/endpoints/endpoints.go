@@ -120,8 +120,6 @@ func (t *tlsCertSource) getCert() *tls.Certificate {
 }
 
 func (e *Endpoints) runTCPServer(ctx context.Context) error {
-	var err error
-
 	cert, err := e.getTLSCertificate(ctx)
 	if err != nil {
 		return err
@@ -152,7 +150,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		errChan <- server.ListenAndServeTLS("", "")
 	}()
 
-	go e.tlsCertificateRotator(ctx, errChan)
+	go e.startTLSCertificateRotation(ctx, errChan)
 
 	select {
 	case err = <-errChan:
@@ -208,7 +206,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) tlsCertificateRotator(ctx context.Context, errChan chan error) {
+func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan chan error) {
 	e.logger.Info("Starting GCA TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval

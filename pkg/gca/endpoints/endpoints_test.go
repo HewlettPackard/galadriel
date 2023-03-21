@@ -23,10 +23,10 @@ func TestNew(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, endpoint)
 
-	assert.Equal(t, endpoint.serverCA, config.ServerCA)
-	assert.Equal(t, endpoint.tcpAddress, config.TCPAddress)
-	assert.Equal(t, endpoint.localAddr, config.LocalAddress)
-	assert.Equal(t, endpoint.logger, config.Logger)
+	assert.Equal(t, config.ServerCA, endpoint.serverCA)
+	assert.Equal(t, config.TCPAddress, endpoint.tcpAddress)
+	assert.Equal(t, config.LocalAddress, endpoint.localAddr)
+	assert.Equal(t, config.Logger, endpoint.logger)
 }
 
 func TestListenAndServe(t *testing.T) {
