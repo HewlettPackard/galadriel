@@ -139,11 +139,12 @@ paths:
         - name: status
           in: query
           schema:
-            type: array
-            items:
-              type: string
-          style: form
-          explode: false
+            type: string
+            enum: [accepted, denied, pending]
+        - name: trustDomainName
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: relationship status from a Trust Domain perspective
       responses:
         '200':

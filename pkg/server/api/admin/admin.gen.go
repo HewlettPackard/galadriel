@@ -22,8 +22,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Defines values for GetRelationshipsParamsStatus.
 const (
-	Harvester_authScopes = "harvester_auth.Scopes"
+	Approved GetRelationshipsParamsStatus = "approved"
+	Denied   GetRelationshipsParamsStatus = "denied"
+	Pending  GetRelationshipsParamsStatus = "pending"
 )
 
 // JoinTokenResult defines model for JoinTokenResult.
@@ -39,12 +42,8 @@ type RelationshipRequest struct {
 
 // TrustDomainPut defines model for TrustDomainPut.
 type TrustDomainPut struct {
-	Description       *string                      `json:"description,omitempty"`
-	HarvesterSpiffeId externalRef0.SPIFFEID        `json:"harvester_spiffe_id"`
-	Name              externalRef0.TrustDomainName `json:"name"`
-
-	// OnboardingBundle Base-64 encoded Trust Bundle in PEM format
-	OnboardingBundle *externalRef0.TrustBundle `json:"onboarding_bundle,omitempty"`
+	Description *string                      `json:"description,omitempty"`
+	Name        externalRef0.TrustDomainName `json:"name"`
 }
 
 // Default defines model for Default.
@@ -53,8 +52,14 @@ type Default = externalRef0.ApiError
 // GetRelationshipsParams defines parameters for GetRelationships.
 type GetRelationshipsParams struct {
 	// Status relationship status from a Trust Domain perspective
-	Status *[]string `form:"status,omitempty" json:"status,omitempty"`
+	Status *GetRelationshipsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// TrustDomainName TrustDomain
+	TrustDomainName *externalRef0.TrustDomainName `form:"trustDomainName,omitempty" json:"trustDomainName,omitempty"`
 }
+
+// GetRelationshipsParamsStatus defines parameters for GetRelationships.
+type GetRelationshipsParamsStatus string
 
 // PutRelationshipsJSONRequestBody defines body for PutRelationships for application/json ContentType.
 type PutRelationshipsJSONRequestBody = RelationshipRequest
@@ -162,8 +167,8 @@ type ClientInterface interface {
 
 	PutTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetTrustDomainTrustDomainNameJoinToken request
-	GetTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostTrustDomainTrustDomainNameJoinToken request
+	PostTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -274,8 +279,8 @@ func (c *Client) PutTrustDomainTrustDomainName(ctx context.Context, trustDomainN
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTrustDomainTrustDomainNameJoinTokenRequest(c.Server, trustDomainName)
+func (c *Client) PostTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostTrustDomainTrustDomainNameJoinTokenRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +314,23 @@ func NewGetRelationshipsRequest(server string, params *GetRelationshipsParams) (
 
 	if params.Status != nil {
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.TrustDomainName != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "trustDomainName", runtime.ParamLocationQuery, *params.TrustDomainName); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 			return nil, err
@@ -528,8 +549,8 @@ func NewPutTrustDomainTrustDomainNameRequestWithBody(server string, trustDomainN
 	return req, nil
 }
 
-// NewGetTrustDomainTrustDomainNameJoinTokenRequest generates requests for GetTrustDomainTrustDomainNameJoinToken
-func NewGetTrustDomainTrustDomainNameJoinTokenRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+// NewPostTrustDomainTrustDomainNameJoinTokenRequest generates requests for PostTrustDomainTrustDomainNameJoinToken
+func NewPostTrustDomainTrustDomainNameJoinTokenRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -554,7 +575,7 @@ func NewGetTrustDomainTrustDomainNameJoinTokenRequest(server string, trustDomain
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -629,8 +650,8 @@ type ClientWithResponsesInterface interface {
 
 	PutTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error)
 
-	// GetTrustDomainTrustDomainNameJoinToken request
-	GetTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainTrustDomainNameJoinTokenResponse, error)
+	// PostTrustDomainTrustDomainNameJoinToken request
+	PostTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error)
 }
 
 type GetRelationshipsResponse struct {
@@ -771,7 +792,7 @@ func (r PutTrustDomainTrustDomainNameResponse) StatusCode() int {
 	return 0
 }
 
-type GetTrustDomainTrustDomainNameJoinTokenResponse struct {
+type PostTrustDomainTrustDomainNameJoinTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *JoinTokenResult
@@ -779,7 +800,7 @@ type GetTrustDomainTrustDomainNameJoinTokenResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetTrustDomainTrustDomainNameJoinTokenResponse) Status() string {
+func (r PostTrustDomainTrustDomainNameJoinTokenResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -787,7 +808,7 @@ func (r GetTrustDomainTrustDomainNameJoinTokenResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetTrustDomainTrustDomainNameJoinTokenResponse) StatusCode() int {
+func (r PostTrustDomainTrustDomainNameJoinTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -872,13 +893,13 @@ func (c *ClientWithResponses) PutTrustDomainTrustDomainNameWithResponse(ctx cont
 	return ParsePutTrustDomainTrustDomainNameResponse(rsp)
 }
 
-// GetTrustDomainTrustDomainNameJoinTokenWithResponse request returning *GetTrustDomainTrustDomainNameJoinTokenResponse
-func (c *ClientWithResponses) GetTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainTrustDomainNameJoinTokenResponse, error) {
-	rsp, err := c.GetTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName, reqEditors...)
+// PostTrustDomainTrustDomainNameJoinTokenWithResponse request returning *PostTrustDomainTrustDomainNameJoinTokenResponse
+func (c *ClientWithResponses) PostTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error) {
+	rsp, err := c.PostTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetTrustDomainTrustDomainNameJoinTokenResponse(rsp)
+	return ParsePostTrustDomainTrustDomainNameJoinTokenResponse(rsp)
 }
 
 // ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
@@ -1079,15 +1100,15 @@ func ParsePutTrustDomainTrustDomainNameResponse(rsp *http.Response) (*PutTrustDo
 	return response, nil
 }
 
-// ParseGetTrustDomainTrustDomainNameJoinTokenResponse parses an HTTP response from a GetTrustDomainTrustDomainNameJoinTokenWithResponse call
-func ParseGetTrustDomainTrustDomainNameJoinTokenResponse(rsp *http.Response) (*GetTrustDomainTrustDomainNameJoinTokenResponse, error) {
+// ParsePostTrustDomainTrustDomainNameJoinTokenResponse parses an HTTP response from a PostTrustDomainTrustDomainNameJoinTokenWithResponse call
+func ParsePostTrustDomainTrustDomainNameJoinTokenResponse(rsp *http.Response) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetTrustDomainTrustDomainNameJoinTokenResponse{
+	response := &PostTrustDomainTrustDomainNameJoinTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1114,7 +1135,7 @@ func ParseGetTrustDomainTrustDomainNameJoinTokenResponse(rsp *http.Response) (*G
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Get relationships based on filters
+	// Get relationships
 	// (GET /relationships)
 	GetRelationships(ctx echo.Context, params GetRelationshipsParams) error
 	// Create a relationship request between two Trust Domains
@@ -1133,8 +1154,8 @@ type ServerInterface interface {
 	// (PUT /trust-domain/{trustDomainName})
 	PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName externalRef0.UUID) error
 	// Get a join token for a specific Trust Domain
-	// (GET /trust-domain/{trustDomainName}/join-token)
-	GetTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// (POST /trust-domain/{trustDomainName}/join-token)
+	PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1146,15 +1167,20 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
 	var err error
 
-	ctx.Set(Harvester_authScopes, []string{""})
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetRelationshipsParams
 	// ------------- Optional query parameter "status" -------------
 
-	err = runtime.BindQueryParameter("form", false, false, "status", ctx.QueryParams(), &params.Status)
+	err = runtime.BindQueryParameter("form", true, false, "status", ctx.QueryParams(), &params.Status)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter status: %s", err))
+	}
+
+	// ------------- Optional query parameter "trustDomainName" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "trustDomainName", ctx.QueryParams(), &params.TrustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -1165,8 +1191,6 @@ func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
 // PutRelationships converts echo context to params.
 func (w *ServerInterfaceWrapper) PutRelationships(ctx echo.Context) error {
 	var err error
-
-	ctx.Set(Harvester_authScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PutRelationships(ctx)
@@ -1184,8 +1208,6 @@ func (w *ServerInterfaceWrapper) GetRelationshipsRelationshipID(ctx echo.Context
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipID: %s", err))
 	}
 
-	ctx.Set(Harvester_authScopes, []string{""})
-
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetRelationshipsRelationshipID(ctx, relationshipID)
 	return err
@@ -1194,8 +1216,6 @@ func (w *ServerInterfaceWrapper) GetRelationshipsRelationshipID(ctx echo.Context
 // PutTrustDomain converts echo context to params.
 func (w *ServerInterfaceWrapper) PutTrustDomain(ctx echo.Context) error {
 	var err error
-
-	ctx.Set(Harvester_authScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PutTrustDomain(ctx)
@@ -1213,8 +1233,6 @@ func (w *ServerInterfaceWrapper) GetTrustDomainTrustDomainName(ctx echo.Context)
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
 	}
 
-	ctx.Set(Harvester_authScopes, []string{""})
-
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetTrustDomainTrustDomainName(ctx, trustDomainName)
 	return err
@@ -1231,15 +1249,13 @@ func (w *ServerInterfaceWrapper) PutTrustDomainTrustDomainName(ctx echo.Context)
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
 	}
 
-	ctx.Set(Harvester_authScopes, []string{""})
-
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PutTrustDomainTrustDomainName(ctx, trustDomainName)
 	return err
 }
 
-// GetTrustDomainTrustDomainNameJoinToken converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTrustDomainTrustDomainNameJoinToken(ctx echo.Context) error {
+// PostTrustDomainTrustDomainNameJoinToken converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "trustDomainName" -------------
 	var trustDomainName externalRef0.TrustDomainName
@@ -1250,7 +1266,7 @@ func (w *ServerInterfaceWrapper) GetTrustDomainTrustDomainNameJoinToken(ctx echo
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName)
+	err = w.Handler.PostTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName)
 	return err
 }
 
@@ -1288,77 +1304,38 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
 	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainTrustDomainName)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainTrustDomainName)
-	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetTrustDomainTrustDomainNameJoinToken)
+	router.POST(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.PostTrustDomainTrustDomainNameJoinToken)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"50+vAm6cff50/p8AAAD///o1bDZzKgAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
