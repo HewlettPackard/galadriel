@@ -35,8 +35,6 @@ components:
         - name
         - created_at
         - updated_at
-        - onboarding_bundle
-        - harvester_spiffe_id
       properties:
         id:
           $ref: '#/components/schemas/UUID'

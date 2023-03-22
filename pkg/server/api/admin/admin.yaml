@@ -99,8 +99,7 @@ paths:
           schema:
             type: string
             enum: [approved, denied, pending]
-            default: pending
-          description: relationship status from a Trust Domain perspective
+          description: relationship status from a Trust Domain perspective,
         - name: trustDomainName
           in: query
           schema:
@@ -115,7 +114,6 @@ paths:
                 type: array
                 items:
                   $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
-                maxItems: 100
         default:
           $ref: '#/components/responses/Default'
     put:
