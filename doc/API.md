@@ -8,7 +8,7 @@
 ## Galadriel Server APIs
 
 - [Harvester API](../pkg/server/api/harvester/harvester.yaml)
-- [Management API](../pkg/server/api/management/management.yaml)
+- [Admin API](../pkg/server/api/admin/admin.yaml)
 
 
 ## Generating code boilerplate from specs
@@ -27,8 +27,8 @@ Current Version: 1.12.4
 
     Example: 
     
-    2.1 While in the [management](../pkg/server/api/management/) directory, run the following command:
-    - `oapi-codegen -config management.cfg.yaml management.yaml`
+    2.1 While in the [admin](../pkg/server/api/admin/) directory, run the following command:
+    - `oapi-codegen -config admin.cfg.yaml admin.yaml`
 
 ## Generating code boilerplate using script
 

@@ -24,7 +24,6 @@ components:
       example: "trust.domain.com"
     BundleDigest:
       type: string
-      format: byte
       example: f0456d7aed088e791e4610c3c2ad63afe46e2e777988fdbc9270f15ec9711b42
     TrustBundle:
       $ref: '#/components/schemas/Certificate'
@@ -168,7 +167,6 @@ components:
         -----END CERTIFICATE-----
     Signature:
       type: string
-      format: byte
       example: aG6ZX3aZf+6tg/yRDZdRSNtM39lzZWNyZXRJZD1JYW1TZWNyZXRJZCZjdXJyZW50VGltZVN0YW1wPTE1NzEyMTUwOTUmZXhwaXJlVGltZT0xODg2NTc1MDk1JnJhbmRvbT0yMjA2MjU=
   securitySchemes:
     harvester_auth:
