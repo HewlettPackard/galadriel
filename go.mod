@@ -16,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
-	github.com/spiffe/go-spiffe/v2 v2.1.3
+	github.com/spiffe/go-spiffe/v2 v2.1.4
 	github.com/spiffe/spire-api-sdk v1.6.1
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.7.0
@@ -66,7 +66,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
-	github.com/opencontainers/runc v1.1.2 // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
