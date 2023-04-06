@@ -1,30 +1,27 @@
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
 name: release
 
 on:
-  push:
-    # run only against tags
-    tags: ['v[0-9].[0-9]+.[0-9]+']
+  pull_request: {}
 
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
 
 jobs:
 
   goreleaser:
     runs-on: ubuntu-22.04
-
-    permissions:
-      contents: write  # for goreleaser/goreleaser-action to create a GitHub release
     
     outputs:  
       hashes: ${{ steps.hash.outputs.hashes }}
 
     steps:
       
-      - name: Harden Runner
-        uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518 # v2.1.0
-        with:
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+      # - name: Harden Runner
+      #   uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518 # v2.1.0
+      #   with:
+      #     egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
       
       - name: Download syft
         uses: anchore/sbom-action/download-syft@06e109483e6aa305a2b2395eabae554e51530e1d # v0.13.1
@@ -40,27 +37,24 @@ jobs:
           go-version: '1.19'
           cache: true
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+      # - name: Import GPG key
+      #   id: import_gpg
+      #   uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
+      #   with:
+      #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      #     passphrase: ${{ secrets.PASSPHRASE }}
+      
+      - name: Download GoReleaser
+        run: go install github.com/goreleaser/goreleaser@latest
 
       - name: Run GoReleaser
-        id: run-goreleaser
-        uses: goreleaser/goreleaser-action@8f67e590f2d095516493f017008adc464e63adb1 # v4.1.0
+        uses: testifysec/witness-run-action@main
         with:
-          # either 'goreleaser' (default) or 'goreleaser-pro'
-          distribution: goreleaser
-          version: latest
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-        #   # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
-        #   # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-
+          enable-sigstore: true
+          enable-archivista: true
+          trace: true
+          step: "build"
+          command: goreleaser release --snapshot --clean --skip-publish
       - name: Generate subject
         id: hash
         env:
