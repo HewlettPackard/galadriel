@@ -54,7 +54,7 @@ jobs:
         run: echo $PWD
 
       - name: Run GoReleaser
-        uses: testifysec/witness-run-action@bug-fix
+        uses: testifysec/witness-run-action@bug_fix
         with:
           enable-sigstore: true
           enable-archivista: true
