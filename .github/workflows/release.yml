@@ -6,11 +6,8 @@ name: release
 
 on:
   push:
-    # run only against tags
-    tags: ['v[0-9].[0-9]+.[0-9]+']
-
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+    branches:
+      - '*'  #temp
 
 jobs:
 
@@ -60,7 +57,7 @@ jobs:
           enable-sigstore: true
           enable-archivista: true
           step: "build"
-          command: goreleaser release --rm-dist
+          command: goreleaser release --rm-dist --skip-publish
 
       - name: Generate subject
         id: hash
