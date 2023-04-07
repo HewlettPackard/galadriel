@@ -12,9 +12,6 @@ jobs:
 
   goreleaser:
     runs-on: ubuntu-22.04
-
-    permissions:
-      contents: write  # for goreleaser/goreleaser-action to create a GitHub release
     
     outputs:  
       hashes: ${{ steps.hash.outputs.hashes }}
