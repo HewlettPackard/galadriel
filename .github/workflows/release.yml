@@ -65,6 +65,8 @@ jobs:
         run: ./.github/workflows/scripts/getHashes.sh
         shell: bash
 
+        
+
   provenance:
     needs: [goreleaser]
     permissions:
