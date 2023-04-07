@@ -54,7 +54,7 @@ jobs:
         run: goreleaser release --rm-dist --skip-publish
 
       - name: Run GoReleaser
-        uses: testifysec/witness-run-action@bug_fix
+        uses: testifysec/witness-run-action@main
         with:
           enable-sigstore: true
           enable-archivista: true
