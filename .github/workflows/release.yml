@@ -5,9 +5,8 @@ permissions:
 name: release
 
 on:
-  push:
-    branches:
-      - '*'  #temp
+  pull_request: {}
+
 
 jobs:
 
