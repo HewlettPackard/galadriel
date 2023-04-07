@@ -50,6 +50,9 @@ jobs:
       - name: Download GoReleaser
         run: go install github.com/goreleaser/goreleaser@latest
 
+      - name: Echo PWD
+        run: echo $PWD
+
       - name: Run GoReleaser
         uses: testifysec/witness-run-action@v0.1
         with:
