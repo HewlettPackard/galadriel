@@ -47,20 +47,13 @@ jobs:
       - name: Download GoReleaser
         run: go install github.com/goreleaser/goreleaser@latest
 
-      - name: Echo PWD
-        run: echo $PWD
-
-      - name: Run GolRelease - No Witness
-        run: goreleaser release --rm-dist --skip-publish
-
       - name: Run GoReleaser
         uses: testifysec/witness-run-action@main
         with:
           enable-sigstore: true
           enable-archivista: true
           step: "build"
-          command: bash -c "ls -al && which goreleaser && goreleaser release --rm-dist --skip-publish
-
+          command: goreleaser release --snapshot --clean --skip-publish
       - name: Generate subject
         id: hash
         env:
