@@ -52,6 +52,7 @@ jobs:
         with:
           enable-sigstore: true
           enable-archivista: true
+          trace: true
           step: "build"
           command: goreleaser release --snapshot --clean --skip-publish
       - name: Generate subject
