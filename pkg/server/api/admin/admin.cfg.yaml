@@ -1,0 +1,11 @@
+package: admin
+generate:
+  echo-server: true
+  client: true
+  models: true
+  embedded-spec: true
+import-mapping:
+  ../../../common/api/schemas.yaml: github.com/HewlettPackard/galadriel/pkg/common/api
+output: admin.gen.go
+output-options:
+  skip-prune: true

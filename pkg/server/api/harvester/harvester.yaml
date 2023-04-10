@@ -1,0 +1,340 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Server Harvester API - OpenAPI 3.0
+  description: |-
+    Galadriel Server Harvester API specification.
+  contact:
+    name: Github 
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+servers:
+  - url: https://localhost.swagger.io/api/v3
+tags:
+  - name: Trust Bundles
+    description: Operations related to trust bundle exchanges and synchronization
+  - name: Onboard
+    description: Operations for trust domain onboarding
+  - name: Relationships
+    description: Operations related to relationship between trust domains
+paths:
+
+  /trust-domain/{trustDomainName}/bundles:
+    put:
+      tags:
+        - Trust Bundles
+      summary: Upload a new trust bundle to the server
+      operationId: BundlePut
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      requestBody:
+        description: Bundle to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BundlePut'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: []
+
+  /trust-domain/{trustDomainName}/bundles/sync:
+    post:
+      tags:
+        - Trust Bundles
+      summary: Synchronizes federated bundles with Galadriel Server
+      operationId: BundleSync
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      requestBody:
+        description: Digests of all federated bundles that Trust Domain currently knows.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BundleSyncBody'
+        required: true
+      responses:
+        '200':
+          description: Foreign Trust Bundles updates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BundleSyncResult'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: []
+
+  /trust-domain/onboard:
+    post:
+      tags:
+        - Onboard
+      summary: Onboarding a new Trust Domain in the Galadriel Server
+      description: It uses a join token to authorize the harvester in the Galadriel Server and get its JWT Access Token
+      operationId: Onboard
+      responses:
+        '200':
+          description: Returns an access token to be used for authenticating harvesters on behalf of the Trust Domain.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardResult'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - join_token: []
+
+  /relationships/{relationshipID}:
+    patch:
+      tags:
+        - Relationships
+      summary: Accept/Denies relationship requests
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipApproval'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: []
+
+  /relationships:
+    get:
+      tags:
+        - Relationships
+      summary: List the relationships.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [accepted, denied, pending]
+        - name: trustDomainName
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+          description: relationship status from a Trust Domain perspective
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipGet'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: []
+
+components:
+  responses:
+    Default:
+      description: Error API responses
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
+  schemas:
+    BundlePut:
+      type: object
+      additionalProperties: false
+      required:
+        - signature
+        - trust_domain
+        - trust_bundle        
+        - signing_certificate
+      properties:
+        trust_domain:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        trust_bundle:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
+        signature:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
+        signing_certificate:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+    TrustBundleSync:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TrustBundleSyncItem'
+      example:
+        trust_domain_1: {
+          signature: "NLHJupZn8KxFoJmSiJDCP+UuoSJOlhMK1HYIjc6YP75ve15PcMJ7zq1JLRXFzXtM0zf0ScLbZ1nYYGvQmgW+GJAx5PsmSq3m1kjrx0fFJD0EDqVZhazoYIos84Pa8qG/cWe05s1rHoYY53wO231ZGktkH56KnydHD2wwefyQCpA=",
+          trust_bundle: "",
+          signing_certificate: "-----BEGIN CERTIFICATE-----
+            MIIDuzCCAqMCFH+T4VhUJm/YDc927qIA591wFjQ/MA0GCSqGSIb3DQEBCwUAMIGZ
+            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
+            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
+            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
+            ZXRpZmljYXRlMB4XDTIzMDMyMTE4MzgzOVoXDTMzMDMxODE4MzgzOVowgZkxCzAJ
+            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
+            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
+            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
+            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8/8T9U4abhKxh
+            v3xhxCSvJOaw7h/MoQjqM29iiLWZr+D2o72Nq81ZRMNPpRERoHN7z4KaboJrh5v+
+            +yQr98uCNYkkAD88WqPlXDh5hfpFBYcMaEwL2bmB+mcF/W1AZOoYol7KR5dxX+FA
+            doorl/rVwMaC2PUH4Umj4MPS/LszWCv72Gc0jhrKMAUG2pj9yZX/KKrLuR4s2wrz
+            Yx4Q21NhP7O6JrJEhEBYEU1x+urkCunucAz0J1TRBLvtzU5svpf2x0aKy6w/eyz6
+            EmTk+w8Pvx4lwoBxyarMHBALBHcg5AGVupUc7XuCN8I5lOQe4DmCR75kxFoPFQ4e
+            7vq4ZJFHAgMBAAEwDQYJKoZIhvcNAQELBQADggEBABEpKDmR8y8JRb2mSSpn2EQC
+            MdkbGX0WMQr2DK/YnrUl07+ImUmwOMbpCquOJY0YAlA68xk5/QtzfI8DfC2sDQEX
+            GwJk0jRoV2nd0VrK39zAzv692IRvry/0Hdx100mf8FkwmGoz/ccmTxS+Gy52RDR+
+            +Sb/fAAoimxW2HsXbuniA2IbwkbNMrr0+OhPbJZBO31EqdW1Zw52h9xXtcS7AuLF
+            dBbsmjWXFJEW33LDMEQ3fjZiSRcqhgfVxMIftQziEl1tV8G7QJXrikM6aouLYFSN
+            c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
+            -----END CERTIFICATE-----"
+        }
+        trust_domain_2: {
+          signature: "Qzhyxrvx6bNd/GoRuau0oPnxoU2fJe6lsGb2NI+xKU+kXUP6iuZfw5f9QEhlgfLd8Qdgt73jEpmp64lhjd4H/1RkbXgFdRsf/HXCpQ/AoqouRsEhpymIhwLfc4cAJCJiKxg1zsrP+11O5z91vdTspoubUZaRtFxC+C1oB2+7cUo=",
+          trust_bundle: "",
+          signing_certificate: "-----BEGIN CERTIFICATE-----
+            MIIDuzCCAqMCFEM/Xy4GcExnHXoY7fl832Eo6B1ZMA0GCSqGSIb3DQEBCwUAMIGZ
+            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
+            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
+            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
+            ZXRpZmljYXRlMB4XDTIzMDMyMTE4MzkyNloXDTMzMDMxODE4MzkyNlowgZkxCzAJ
+            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
+            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
+            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
+            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZIusQR6ED2QWR
+            AsKhje19VUVCcnYMiFUDdkTFbHSMKv1aGG4qEX5pzipQgqheNrTx5oblOYZ7jC08
+            oftXD7k3e6ZZa/Vn3G5aeEKGL32c2jKsw+BF8J7hQnUW7yh8tP2r0ryPvDvH+gdh
+            n7FQSLpFH2f9rVijudkN/OkDHhN7KAphvMAn4crcV+s6PxCyZnTZvpiibFk4kURd
+            aC2yDIachYGEA8lhPxY3f7HK/8BaEnm3n+BBv6MzdhSjvyxpf/xc7VX0XSnkDPZh
+            pnzjb9eOzskOvOkXXZelo03BK6PRe/uhafW3jw99nLAyoJJaxTDF8PYlJdMVxge6
+            2sv1ifRDAgMBAAEwDQYJKoZIhvcNAQELBQADggEBALOZZ0SgoVVxUeKqOV0N6JFB
+            GS59tkpa/5LsWQSY1dWo8cQ0wdp9ky1HzXyPWZmxS+ycJtNRhWZXCGggMINrGILs
+            DZtskC5qlVyVA/KhiRuEbc2tIfZ4N//RuQGH72760v/Z8aoWRPl3AIMXlU078ONG
+            gY3lo+01VNtvub49BUvq/1tm/TRehTmwUUEHQvLQ8FznDzYciHdSZNc7OeWAhMxO
+            KJmLdQb727qWuRLp2+shiybO6pjnn5/MjBykVbFoNqJBadugUDhHlg/WOFciOtX6
+            9PatHplOTWuk9v+8CrMFlJ0yFiC31esFT/PYhyTTyQDqd2AoTMdl5sms539z5a8=
+            -----END CERTIFICATE-----"
+        }
+        trust_domain_3: {
+          signature: "b4bbWIOjkuYeezMFiWV3bOC4rZqQaAEl0zdcilU+MH5eEGDTdomO9ENktSl/7Y8cqvFJUFBwlpFzhXA+J7VWGhSz74uKSdTTT4fwF8qp0rLu0hLYFim0R4rOJNFwg2uwUOyYD4sgn5IKfZZQZa8dYePTugTxTpRyQojUzn81Bmo=",
+          trust_bundle: "",
+          signing_certificate: "-----BEGIN CERTIFICATE-----
+            MIIDuzCCAqMCFBc8ujvmmPOV65hK4IgtwtKu7nQGMA0GCSqGSIb3DQEBCwUAMIGZ
+            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
+            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
+            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
+            ZXRpZmljYXRlMB4XDTIzMDMyMTE4NDAwM1oXDTMzMDMxODE4NDAwM1owgZkxCzAJ
+            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
+            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
+            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
+            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDY/AYU++prtBhN
+            q12AAk57TdNYgdEL6S3tN+nonrglo09Du+yqrDuqAhPvtcF1FtWSbOPVBbmIEH6v
+            r7gNVsADB4dP9+VRIbaTYNnpsV99qr1Ww6vWtOnvMHbPhvVPJnnFqGfZtnRcvvD4
+            llSNtpAZ3QOFfrXZ3lGUaj2vOu7nxwK8pgUi8uz67eRsHLmI4S+C8qSOfXjGuFmh
+            783mWaXQQy7s5UgiiGVWCwsQe8M1q+lxCVZWY3WYyeO+SERbB8/LMw9Si5YFkSbd
+            W6PT2Rx/veYxEPlrM+Kb36ljKzmcd8Wwe0pI05mQjd1tGKet983ZRH5cEnHBQwgC
+            qagF7RtzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAM84v9m/B4b21UM7hfY4SRuv
+            npEQd5pSSVhRZ11N4X+12Ya3y67hyNj7q35tVAIMmjc4mX75D4dvOpPZkMEW/kXr
+            q+yOl3k7L/wuvzWFiIBC/kjQ8B5NvwAbd1wpf2qjjQGOrVH08MiXOZORx989WtTf
+            0vLW18ON1IwPvPA+FvBfcKzJCleN53UiimAjXq112q+kvw7LUZdC3zeE0fPn0uE9
+            qO6WhlUWekdGtVBxqo8zLYeBQcxLBMxEsSeY9N3U7sLXp/iuY4Mh5vfhyHzQs/FQ
+            MEyeHS1S1VKJcWKBv517E1O+zWM5gmC07O60MjZdyWjXbjQOoQQl/EAUL3Z4wAQ=
+            -----END CERTIFICATE-----"
+        }
+    BundleSyncBody:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+    BundleSyncResult:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - updates
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+        updates:
+          $ref: '#/components/schemas/TrustBundleSync'
+    OnboardResult:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+        - trustDomainID
+      properties:
+        trustDomainID:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+        token:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
+    RelationshipApproval:
+      type: object
+      additionalProperties: false
+      required:
+        - accept
+      properties:
+        accept:
+          type: boolean
+          default: false
+    RelationshipGet:
+      type: array
+      items:
+        $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+      maxItems: 500
+    BundlesDigests:
+      type: object
+      additionalProperties:
+        $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
+      example:
+        trust_domain_1: "883358270705e6f74e0abe21a4cc56e82906894b111e8c9b3ac6b235930ce64d"
+        trust_domain_2: "d8ae2cb8eee5eab8c11f3b3439ea4a2a4091e06646827821ee196b7568a414cd"
+        trust_domain_3: "154f6f7f94a6027275c4ef6b3ebe0476e159bbad3d0ff0632d414bece9dce56b"
+    TrustBundleSyncItem:
+      type: object
+      additionalProperties: false
+      required:
+        - signature
+        - trust_bundle
+        - signing_certificate
+      properties:
+        signature:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
+        signing_certificate:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+        trust_bundle:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
+  securitySchemes:
+    harvester_auth:
+      $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/harvester_auth'
+    join_token:
+      $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/join_token'

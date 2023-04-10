@@ -71,7 +71,7 @@ endif
 
 go_path := PATH="$(go_bin_dir):$(PATH)"
 
-oapi_codegen_version = 1.11.0
+oapi_codegen_version = 1.12.4
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
 server_sqlc_config_file = $(DIR)/pkg/server/datastore/sqlc.yaml
@@ -200,12 +200,18 @@ help:
 	@echo "  $(cyan)all$(reset)                                   - build all Galadriel binaries, and run unit tests"
 	@echo
 	@echo "$(bold)Code generation:$(reset)"
-	@echo "  $(cyan)generate$(reset)                              - generate datastore sql code"
+	@echo "  $(cyan)generate$(reset)                              - generate datastore sql and api boileplate code"
 
 ### Code generation ####
-.PHONY: generate generatesql
+.PHONY: generate-sqlc-server generete-spec
 
 generate-sqlc-server: install-sqlc run-sqlc-server
 
 run-sqlc-server:
 	$(sqlc_bin) generate --file $(server_sqlc_config_file)
+
+generate-spec:
+	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v$(oapi_codegen_version)
+	cd ./pkg/common/api; $(GOPATH)/bin/oapi-codegen -config schemas.cfg.yaml schemas.yaml
+	cd ./pkg/server/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
+	cd ./pkg/server/api/harvester; $(GOPATH)/bin/oapi-codegen -config harvester.cfg.yaml harvester.yaml
