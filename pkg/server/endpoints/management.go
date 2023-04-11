@@ -8,8 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+
 	"github.com/labstack/echo/v4"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 )
@@ -17,21 +20,22 @@ import (
 func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	body, err := io.ReadAll(r.Body)
+	var trustDomainReq api.TrustDomain
+	err := fromJSBody(r, &trustDomainReq)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed reading request body: %v", err)
-		e.handleError(w, errMsg)
+		e.handleError(w, err.Error())
 		return
 	}
 
-	var trustDomainReq entity.TrustDomain
-	if err = json.Unmarshal(body, &trustDomainReq); err != nil {
-		errMsg := fmt.Sprintf("failed unmarshalling request: %v", err)
-		e.handleError(w, errMsg)
+	// We may want to do some stuff before translating
+	// So, thats why not encapsulating translate in json parsing
+	dbTD, err := translate(trustDomainReq)
+	if err != nil {
+		e.handleError(w, err.Error())
 		return
 	}
 
-	td, err := e.Datastore.FindTrustDomainByName(ctx, trustDomainReq.Name)
+	td, err := e.Datastore.FindTrustDomainByName(ctx, dbTD.Name)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed looking up trust domain: %v", err)
 		e.handleError(w, errMsg)
@@ -43,7 +47,7 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	m, err := e.Datastore.CreateOrUpdateTrustDomain(ctx, &trustDomainReq)
+	m, err := e.Datastore.CreateOrUpdateTrustDomain(ctx, dbTD)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed creating trustDomain: %v", err)
 		e.handleError(w, errMsg)
@@ -52,20 +56,12 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 
 	e.Logger.Printf("Created trustDomain for trust domain: %s", trustDomainReq.Name)
 
-	trustDomainBytes, err := json.Marshal(m)
+	err = writeAsJSInResponse(w, m)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed marshalling trustDomain entity: %v", err)
+		errMsg := fmt.Sprintf("trustDomain entity - %v", err.Error())
 		e.handleError(w, errMsg)
 		return
 	}
-
-	_, err = w.Write(trustDomainBytes)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed writing response: %v", err)
-		e.handleError(w, errMsg)
-		return
-	}
-
 }
 
 func (e *Endpoints) listTrustDomainsHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,20 +74,12 @@ func (e *Endpoints) listTrustDomainsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	trustDomainsBytes, err := json.Marshal(ms)
+	err = writeAsJSInResponse(w, ms)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed marshalling trustDomains entities: %v", err)
+		errMsg := fmt.Sprintf("trustDomains - %v", err.Error())
 		e.handleError(w, errMsg)
 		return
 	}
-
-	_, err = w.Write(trustDomainsBytes)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed writing response: %v", err)
-		e.handleError(w, errMsg)
-		return
-	}
-
 }
 
 func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Request) {
@@ -136,16 +124,9 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 
 	e.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
-	relBytes, err := json.Marshal(rel)
+	err = writeAsJSInResponse(w, rel)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed marshalling trustDomainship entity: %v", err)
-		e.handleError(w, errMsg)
-		return
-	}
-
-	_, err = w.Write(relBytes)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed writing response: %v", err)
+		errMsg := fmt.Sprintf("relationships - %v", err.Error())
 		e.handleError(w, errMsg)
 		return
 	}
@@ -168,16 +149,9 @@ func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	relsBytes, err := json.Marshal(rels)
+	err = writeAsJSInResponse(w, rels)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed marshalling relationships entities: %v", err)
-		e.handleError(w, errMsg)
-		return
-	}
-
-	_, err = w.Write(relsBytes)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed writing response: %v", err)
+		errMsg := fmt.Sprintf("relationships entities - %v", err.Error())
 		e.handleError(w, errMsg)
 		return
 	}
@@ -210,14 +184,21 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var trustDomain entity.TrustDomain
+	var trustDomain api.TrustDomain
 	if err = json.Unmarshal(body, &trustDomain); err != nil {
 		errMsg := fmt.Sprintf("failed unmarshalling request: %v", err)
 		e.handleError(w, errMsg)
 		return
 	}
 
-	tdID, err := e.Datastore.FindTrustDomainByName(ctx, trustDomain.Name)
+	tdName, err := spiffeid.TrustDomainFromString(trustDomain.Name)
+	if err != nil {
+		errMsg := fmt.Sprintf("malformed trust domain name: %v", err)
+		e.handleError(w, errMsg)
+		return
+	}
+
+	tdID, err := e.Datastore.FindTrustDomainByName(ctx, tdName)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not find trust domain name: %v", err)
 		e.handleError(w, errMsg)
@@ -230,6 +211,7 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		e.handleError(w, errMsg)
 		return
 	}
+
 	newToken := &entity.JoinToken{
 		TrustDomainID: tdID.ID.UUID,
 		Token:         token,
@@ -244,16 +226,9 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	tokenBytes, err := json.Marshal(at)
+	err = writeAsJSInResponse(w, at)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed marshalling access token entity: %v", err)
-		e.handleError(w, errMsg)
-		return
-	}
-
-	_, err = w.Write(tokenBytes)
-	if err != nil {
-		errMsg := fmt.Sprintf("failed writing response: %v", err)
+		errMsg := fmt.Sprintf("access token - %v", err.Error())
 		e.handleError(w, errMsg)
 		return
 	}
@@ -276,6 +251,66 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 	ctx.Set("token", t)
 
 	return true, nil
+}
+
+/*
+fromJSBody parses json bytes into a struct
+r: Request that contains the json bytes to be parsed into 'in'
+in: Reference(pointer) to the interface to be full filled
+*/
+func fromJSBody(r *http.Request, in interface{}) error {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("failed reading request body: %v", err)
+	}
+
+	if err = json.Unmarshal(body, in); err != nil {
+		return fmt.Errorf("failed unmarshalling request: %v", err)
+	}
+
+	return nil
+}
+
+/*
+writeAsJSInResponse parses a struct into a json and writes in the response
+w: The response writer to be full filled with the struct response bytes
+out: A pointer to the interface to be writed in the response
+*/
+func writeAsJSInResponse(w http.ResponseWriter, out interface{}) error {
+	outBytes, err := json.Marshal(out)
+	if err != nil {
+		return fmt.Errorf("failed marshalling : %v", err)
+	}
+
+	_, err = w.Write(outBytes)
+	if err != nil {
+		return fmt.Errorf("failed writing response: %v", err)
+	}
+
+	return nil
+}
+
+/*
+translate maps the API models into the Database models performing some check guarantees
+td: The api Trust Domain structure
+*/
+func translate(td api.TrustDomain) (*entity.TrustDomain, error) {
+	harvesterSpiffeID, err := spiffeid.FromString(*td.HarvesterSpiffeId)
+	if err != nil {
+		return nil, ErrWrongSPIFFEID{cause: err}
+	}
+
+	tdName, err := spiffeid.TrustDomainFromString(td.Name)
+	if err != nil {
+		return nil, ErrWrongTrustDomain{cause: err}
+	}
+
+	return &entity.TrustDomain{
+		Name:              tdName,
+		CreatedAt:         td.CreatedAt,
+		UpdatedAt:         td.UpdatedAt,
+		HarvesterSpiffeID: harvesterSpiffeID,
+	}, nil
 }
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {

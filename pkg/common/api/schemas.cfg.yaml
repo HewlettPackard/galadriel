@@ -1,4 +1,4 @@
-package: common
+package: api
 generate:
   echo-server: false
   client: false
