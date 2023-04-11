@@ -10,6 +10,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/google/uuid"
 
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -305,10 +306,28 @@ func translate(td api.TrustDomain) (*entity.TrustDomain, error) {
 		return nil, ErrWrongTrustDomain{cause: err}
 	}
 
+	description := ""
+	if td.Description != nil {
+		description = *td.Description
+	}
+
+	onboardingBundle := []byte{}
+	if td.OnboardingBundle != nil {
+		onboardingBundle = []byte(*td.OnboardingBundle)
+	}
+
+	uuid := uuid.NullUUID{
+		UUID:  td.Id,
+		Valid: true,
+	}
+
 	return &entity.TrustDomain{
+		ID:                uuid,
 		Name:              tdName,
 		CreatedAt:         td.CreatedAt,
 		UpdatedAt:         td.UpdatedAt,
+		Description:       description,
+		OnboardingBundle:  onboardingBundle,
 		HarvesterSpiffeID: harvesterSpiffeID,
 	}, nil
 }
