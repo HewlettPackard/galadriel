@@ -47,7 +47,7 @@ jobs:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
         run: |
-          witness run -s commit -a git --fulcio=https://v1.fulcio.sigstore.dev --fulcio-oidc-client-id=https://oauth2.sigstore.dev/auth --fulcio-oidc-issuer=sigstore --enable-archivista --timestamp-servers https://freetsa.org/tsr -o /dev/null -a sarif -- docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
+          witness run -s commit -a github -a git --fulcio=https://v1.fulcio.sigstore.dev --fulcio-oidc-client-id=https://oauth2.sigstore.dev/auth --fulcio-oidc-issuer=sigstore --enable-archivista --timestamp-servers https://freetsa.org/tsr -o /dev/null -a sarif -- docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
 
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
