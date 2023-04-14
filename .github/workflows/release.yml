@@ -58,7 +58,60 @@ jobs:
           trace: true
           step: "build"
           command: goreleaser release --clean
-          
+
+      - name: Install KO
+        run: go install github.com/google/ko/cmd/ko@latest
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Server
+        uses: testifysec/witness-run-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: true
+          step: "build"
+          attestations: "environment git github oci"
+          command: ko build --tarball server.tar --tags=ghcr.io/${{ github.repository }}:${{ github.sha }} --platform=all --sbom-dir . ./cmd/server
+
+      - name: Build Harvestor
+        uses: testifysec/witness-run-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: true
+          step: "build"
+          attestations: "environment git github oci"
+          command: ko build --tarball harvestor.tar --tags=ghcr.io/${{ github.repository }}:${{ github.sha }} --sbom-dir . --platform=all ./cmd/harvestor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       - name: Generate subject
         id: hash
         env:
