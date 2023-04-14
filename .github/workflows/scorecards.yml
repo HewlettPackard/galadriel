@@ -36,18 +36,27 @@ jobs:
           persist-credentials: false
 
       - name: Scorecard
-        uses: testifysec/witness-run-action@fix-output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
-        with:
-          enable-sigstore: true
-          enable-archivista: true
-          trace: true
-          step: "scorecard"
-          attestations: "environment git github sarif"
-          command: docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
+        run: |
+          bash <(curl -s https://raw.githubusercontent.com/testifysec/witness/main/install-witness.sh)
+          witness run -s commit -a git --fulcio=https://v1.fulcio.sigstore.dev --fulcio-oidc-client-id=https://oauth2.sigstore.dev/auth --fulcio-oidc-issuer=sigstore --enable-archivista --timestamp-servers https://freetsa.org/tsr -o /dev/null -a sarif -- docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
+
+      # - name: Scorecard
+      #   uses: testifysec/witness-run-action@fix-output
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      #     KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      #   with:
+      #     enable-sigstore: true
+      #     enable-archivista: true
+      #     trace: true
+      #     step: "scorecard"
+      #     attestations: "environment git github sarif"
+      #     command: docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
 
       # - name: "Run analysis"
       #   env:
