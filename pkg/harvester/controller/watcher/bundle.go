@@ -38,6 +38,8 @@ func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServe
 					break
 				}
 
+				// TODO: sign bundle
+
 				if err = server.PostBundle(ctx, req); err != nil {
 					logger.Errorf("Failed to push X.509 bundle: %v", err)
 					break
@@ -81,6 +83,8 @@ func BuildFederatedBundlesWatcher(interval time.Duration, server client.Galadrie
 					logger.Debug("No new federated bundles to set")
 					break
 				}
+
+				// TODO: verify bundles
 
 				logger.Infof("Setting %d new federated bundle(s)", len(bundles))
 				if _, err = spire.SetFederatedBundles(ctx, bundles); err != nil {

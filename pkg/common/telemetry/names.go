@@ -32,6 +32,7 @@ const (
 	CA                  = "ca"
 	ManagerCA           = "manager_ca"
 	DiskX509CA          = "disk_x509_ca"
+	HarvesterSigningCA  = "signing_ca"
 
 	// SubsystemName declares a field for some subsystem name (an API, module...)
 	SubsystemName = "subsystem_name"

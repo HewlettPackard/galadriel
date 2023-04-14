@@ -3,6 +3,7 @@ module github.com/HewlettPackard/galadriel
 go 1.19
 
 require (
+	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
