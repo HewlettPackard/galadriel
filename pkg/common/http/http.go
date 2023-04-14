@@ -30,6 +30,15 @@ func HandleError(w http.ResponseWriter, errMsg string) error {
 	return nil
 }
 
+func HandleTCPError(ctx echo.Context, err error) error {
+	_, err = ctx.Response().Write([]byte(err.Error()))
+	if err != nil {
+		return fmt.Errorf("failed to write error response: %v", err)
+	}
+
+	return nil
+}
+
 /*
 WriteAsJSInResponse parses a struct into a json and writes in the response
 w: The response writer to be full filled with the struct response bytes

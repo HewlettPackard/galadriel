@@ -63,21 +63,21 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
 	token, err := h.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
 	authenticatedTD, err := h.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
@@ -95,13 +95,13 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 
 	if authenticatedTD.Name.String() != req.TrustDomain {
 		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
 	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
 	if err != nil {
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
@@ -115,22 +115,21 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	}
 	res, err := h.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), bundle)
 	if err != nil {
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
 	if err = chttp.WriteResponse(ctx, res); err != nil {
-		h.handleTCPError(ctx, err.Error())
+		h.handleTCPError(ctx, err)
 		return err
 	}
 
 	return nil
 }
 
-func (h *HarvesterAPIHandlers) handleTCPError(ctx echo.Context, errMsg string) {
-	h.Logger.Errorf(errMsg)
-	_, err := ctx.Response().Write([]byte(errMsg))
-	if err != nil {
-		h.Logger.Errorf("Failed to write error response: %v", err)
+func (h *HarvesterAPIHandlers) handleTCPError(ctx echo.Context, err error) {
+	h.Logger.Errorf(err.Error())
+	if err := chttp.HandleTCPError(ctx, err); err != nil {
+		h.Logger.Errorf(err.Error())
 	}
 }

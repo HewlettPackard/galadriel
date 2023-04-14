@@ -256,5 +256,8 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
 	errMsg = util.LogSanitize(errMsg)
-
+	e.Logger.Errorf(errMsg)
+	if err := chttp.HandleError(w, errMsg); err != nil {
+		e.Logger.Errorf(err.Error())
+	}
 }
