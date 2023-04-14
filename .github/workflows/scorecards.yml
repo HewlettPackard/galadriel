@@ -35,6 +35,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Debug
+        run: |
+          ls -la
+
       - name: Scorecard
         uses: testifysec/witness-run-action@fix-output
         env:
@@ -52,7 +56,6 @@ jobs:
       - name: Debug
         run: |
           file --mime-type results.sarif
-          cat results.sarif
           ls -la
 
       # - name: "Run analysis"
