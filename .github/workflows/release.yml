@@ -109,7 +109,7 @@ jobs:
           trace: true
           step: "build"
           attestations: "environment git github oci"
-          command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvestor
+          command: ko build --tarball harestor.tar --sbom-dir . ./cmd/harvester
 
   #     - name: Generate subject
   #       id: hash
