@@ -35,10 +35,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Debug
-        run: |
-          ls -la
-
       - name: Scorecard
         uses: testifysec/witness-run-action@fix-output
         env:
@@ -52,11 +48,7 @@ jobs:
           step: "scorecard"
           attestations: "environment git github sarif"
           command: |
-            docker run -v $PWD:/repo -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif ; cat results.sarif ; ls -la
-      - name: Debug
-        run: |
-          file --mime-type results.sarif
-          ls -la
+            docker run -v $PWD:/repo -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
 
       # - name: "Run analysis"
       #   env:
