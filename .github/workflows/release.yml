@@ -45,7 +45,7 @@ jobs:
       #     passphrase: ${{ secrets.PASSPHRASE }}
       
       - name: Download GoReleaser
-        run: go install github.com/goreleaser/goreleaser@latest
+        run: go install github.com/goreleaser/goreleaser@v1.17.1
 
       - name: Run GoReleaser
         uses: testifysec/witness-run-action@v0.1.1
@@ -63,7 +63,8 @@ jobs:
         uses: imjasonh/setup-ko@v0.6
         env:
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
-      - env:
+      - name: Login to GHCR
+        env:
           AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
         run: |
           echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
