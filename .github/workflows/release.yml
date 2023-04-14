@@ -84,7 +84,7 @@ jobs:
           echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
       - name: Build Server
-        uses: testifysec/witness-run-action@v0.1.1
+        uses: testifysec/witness-run-action@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
@@ -98,7 +98,7 @@ jobs:
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
 
       - name: Build Harvestor
-        uses: testifysec/witness-run-action@v0.1.1
+        uses: testifysec/witness-run-action@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
