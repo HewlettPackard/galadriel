@@ -58,6 +58,7 @@ jobs:
           trace: true
           step: "build"
           command: goreleaser release --clean
+          
       - name: Generate subject
         id: hash
         env:
