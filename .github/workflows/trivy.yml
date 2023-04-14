@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      id-token: write # This is required for requesting the JWT
 
     steps:
       - name: Harden Runner
@@ -30,9 +31,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install trivy -y
 
-      - name: Run Trivy vulnerability scanner
-        run: |
-          trivy fs --format 'template' --template '@/contrib/sarif.tpl' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
+      - name: Run Trivy vulnerability scanner with Witness
+        uses: testifysec/witness-run-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          attestations: environment git github sarif
+          trace: true
+          step: "scan"
+          command: trivy fs --format 'sarif' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@ff3337ee1b38c9bcf43046bde6450e50c5e88ebb # v2.1.28
