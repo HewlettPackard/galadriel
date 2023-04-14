@@ -10,11 +10,11 @@ on:
 
 jobs:
 
-  release:
+  release-binaries:
     runs-on: "ubuntu-22.04"
     
-    outputs:  
-      hashes: ${{ steps.hash.outputs.hashes }}
+    # outputs:  
+    #   hashes: ${{ steps.hash.outputs.hashes }}
 
     steps:
       
@@ -59,6 +59,13 @@ jobs:
           step: "build"
           command: goreleaser release --clean --snapshot
 
+  release-docker:
+    runs-on: "ubuntu-22.04"
+    
+    # outputs:  
+    #   hashes: ${{ steps.hash.outputs.hashes }}
+    
+    steps:
       - name: Setup KO
         uses: imjasonh/setup-ko@v0.6
         env:
