@@ -57,7 +57,7 @@ jobs:
           enable-archivista: true
           trace: true
           step: "build"
-          command: goreleaser release --clean
+          command: goreleaser release --clean --snapshot
 
       - name: Install KO
         run: go install github.com/google/ko/cmd/ko@latest
