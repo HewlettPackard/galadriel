@@ -66,7 +66,7 @@ jobs:
       - env:
           AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
         run: |
-          echo "${AUTH_TOKEN}" | ko login https://ghcr.io --username colek42 --password-stdin
+          echo "${AUTH_TOKEN}" | ko login ghcr.io --username colek42 --password-stdin
           ko build ./cmd/server
 
       - name: Build Server
