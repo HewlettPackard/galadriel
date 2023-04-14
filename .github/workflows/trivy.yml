@@ -32,7 +32,7 @@ jobs:
           sudo apt-get install trivy -y
 
       - name: Run Trivy vulnerability scanner with Witness
-        uses: testifysec/witness-run-action@main
+        uses: testifysec/witness-run-action@v0.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
@@ -40,7 +40,6 @@ jobs:
           enable-sigstore: true
           enable-archivista: true
           attestations: environment git github sarif
-          trace: true
           step: "scan"
           command: trivy fs --format 'sarif' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
 
