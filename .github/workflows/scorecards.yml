@@ -47,8 +47,7 @@ jobs:
           trace: true
           step: "scorecard"
           attestations: "environment git github sarif"
-          command: |
-            docker run -v $PWD:/repo -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
+          command: docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard-policy.yml --format=sarif > results.sarif
 
       # - name: "Run analysis"
       #   env:
