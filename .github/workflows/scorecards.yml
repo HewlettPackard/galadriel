@@ -35,7 +35,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build Server
+      - name: Scorecard
         uses: testifysec/witness-run-action@fix-output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,7 +56,12 @@ jobs:
             --repo=$GITHUB_REPOSITORY \
             --show-details \
             --policy /repo/.github/workflows/scorecard-policy.yml/scorecard-policy.yml \
-            --format=sarif > /repo/results.sarif
+            --format=sarif > results.sarif
+
+      - name: Debug
+        run: |
+          cat results.sarif
+
 
 
       # - name: "Run analysis"
