@@ -36,21 +36,28 @@ jobs:
           persist-credentials: false
 
       - name: "Run analysis"
-        uses: ossf/scorecard-action@e38b1902ae4f44df626f11ba0734b14fb91f8f86 # v2.1.2
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          # (Optional) Read-only PAT token. Uncomment the `repo_token` line below if:
-          # - you want to enable the Branch-Protection check on a *public* repository, or
-          # - you are installing Scorecards on a *private* repository
-          # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action#authentication-with-pat.
-          # repo_token: ${{ secrets.SCORECARD_READ_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard:stable --repo=$GITHUB_REPOSITORY --show-details --format=sarif > results.sarif
 
-          # Publish the results for public repositories to enable scorecard badges. For more details, see
-          # https://github.com/ossf/scorecard-action#publishing-results. 
-          # For private repositories, `publish_results` will automatically be set to `false`, regardless 
-          # of the value entered here.
-          publish_results: true
+
+      # - name: "Run analysis"
+      #   uses: ossf/scorecard-action@e38b1902ae4f44df626f11ba0734b14fb91f8f86 # v2.1.2
+      #   with:
+      #     results_file: results.sarif
+      #     results_format: sarif
+      #     # (Optional) Read-only PAT token. Uncomment the `repo_token` line below if:
+      #     # - you want to enable the Branch-Protection check on a *public* repository, or
+      #     # - you are installing Scorecards on a *private* repository
+      #     # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action#authentication-with-pat.
+      #     # repo_token: ${{ secrets.SCORECARD_READ_TOKEN }}
+
+      #     # Publish the results for public repositories to enable scorecard badges. For more details, see
+      #     # https://github.com/ossf/scorecard-action#publishing-results. 
+      #     # For private repositories, `publish_results` will automatically be set to `false`, regardless 
+      #     # of the value entered here.
+      #     publish_results: true
 
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
