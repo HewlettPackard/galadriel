@@ -103,6 +103,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+          
         with:
           enable-sigstore: true
           enable-archivista: true
