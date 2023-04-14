@@ -40,8 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLE_SARIF: true
         run: |
-          docker run -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard:v4.10.5 --repo=$GITHUB_REPOSITORY --show-details  > results.sarif
-          cat results.sarif
+          docker run -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard:v4.10.5 --repo=$GITHUB_REPOSITORY --show-details --format=json > results2.sarif
+          cat results2.sarif
 
 
       # - name: "Run analysis"
