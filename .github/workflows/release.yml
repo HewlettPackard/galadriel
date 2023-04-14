@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  goreleaser:
+  release:
     runs-on: ubuntu-22.04
     
     outputs:  
@@ -74,7 +74,7 @@ jobs:
           trace: true
           step: "build"
           attestations: "environment git github oci"
-          command: ko build --tarball server.tar --tags=ghcr.io/${{ github.repository }}:${{ github.sha }} --sbom-dir . ./cmd/server
+          command: ko build --tarball server.tar --sbom-dir . ./cmd/server
 
       - name: Build Harvestor
         uses: testifysec/witness-run-action@v0.1.1
@@ -88,7 +88,7 @@ jobs:
           trace: true
           step: "build"
           attestations: "environment git github oci"
-          command: ko build --tarball harvestor.tar --tags=ghcr.io/${{ github.repository }}:${{ github.sha }} --sbom-dir . ./cmd/harvestor
+          command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvestor
 
   #     - name: Generate subject
   #       id: hash
