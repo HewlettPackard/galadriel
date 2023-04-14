@@ -39,6 +39,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with: # Grab the latest version
           repo: testifysec/witness
+          tag: v0.1.13-rc1
 
       - name: Scorecard
         env:
