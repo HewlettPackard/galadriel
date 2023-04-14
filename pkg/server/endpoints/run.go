@@ -11,6 +11,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
+
+	harvesterAPI "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -127,7 +129,17 @@ func (e *Endpoints) addHandlers() {
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	server.CONNECT("/onboard", e.onboardHandler)
-	server.POST("/bundle", e.postBundleHandler)
-	server.POST("/bundle/sync", e.syncFederatedBundleHandler)
+	sw := harvesterAPI.ServerInterfaceWrapper{
+		Handler: e,
+	}
+
+	// Relationships
+	server.GET("/relationships", sw.GetRelationships)
+	server.PATCH("/relationships/:relationshipID", sw.PatchRelationshipsRelationshipID)
+
+	// Trust Domain
+	server.POST("/trust-domain/onboard", sw.Onboard)
+
+	server.POST("/trust-domain/:trustDomainName/sync", sw.BundleSync)
+	server.PUT("/trust-domain/:trustDomainName/bundles", sw.BundlePut)
 }

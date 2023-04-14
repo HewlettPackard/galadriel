@@ -14,6 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+
+	commonAPI "github.com/HewlettPackard/galadriel/pkg/common/api"
+	harvesterAPI "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
 const tokenKey = "token"
@@ -255,4 +258,34 @@ func (e *Endpoints) handleTCPError(ctx echo.Context, errMsg string) {
 	if err != nil {
 		e.Logger.Errorf("Failed to write error response: %v", err)
 	}
+}
+
+// List the relationships.
+// (GET /relationships)
+func (e *Endpoints) GetRelationships(ctx echo.Context, params harvesterAPI.GetRelationshipsParams) error {
+	return nil
+}
+
+// Accept/Denies relationship requests
+// (PATCH /relationships/{relationshipID})
+func (e *Endpoints) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID commonAPI.UUID) error {
+	return nil
+}
+
+// Onboarding a new Trust Domain in the Galadriel Server
+// (POST /trust-domain/onboard)
+func (e *Endpoints) Onboard(ctx echo.Context) error {
+	return nil
+}
+
+// Upload a new trust bundle to the server
+// (PUT /trust-domain/{trustDomainName}/bundles)
+func (e *Endpoints) BundlePut(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+	return nil
+}
+
+// Synchronizes federated bundles with Galadriel Server
+// (POST /trust-domain/{trustDomainName}/bundles/sync)
+func (e *Endpoints) BundleSync(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+	return nil
 }
