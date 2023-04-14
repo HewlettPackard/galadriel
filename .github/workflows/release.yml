@@ -61,6 +61,13 @@ jobs:
 
       - name: Setup KO
         uses: imjasonh/setup-ko@v0.6
+        env:
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      - env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          echo "${AUTH_TOKEN}" | ko login https://ghcr.io/github.com/testifysec/galadriel --username colek42 --password-stdin
+          ko build ./cmd/server
 
       - name: Build Server
         uses: testifysec/witness-run-action@v0.1.1
