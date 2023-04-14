@@ -44,41 +44,40 @@ jobs:
       #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
       #     passphrase: ${{ secrets.PASSPHRASE }}
       
-      # - name: Download GoReleaser
-      #   run: go install github.com/goreleaser/goreleaser@latest
+      - name: Download GoReleaser
+        run: go install github.com/goreleaser/goreleaser@latest
 
-      # - name: Run GoReleaser
-      #   uses: testifysec/witness-run-action@v0.1.1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-      #   with:
-      #     enable-sigstore: true
-      #     enable-archivista: true
-      #     trace: true
-      #     step: "build"
-      #     command: goreleaser release --clean --snapshot
+      - name: Run GoReleaser
+        uses: testifysec/witness-run-action@v0.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: true
+          step: "build"
+          command: goreleaser release --clean --snapshot
 
       - name: Setup KO
         uses: imjasonh/setup-ko@v0.6
-      #   env:
-      #     KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
-      # - env:
-      #     AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
-      #   run: |
-      #     echo "${AUTH_TOKEN}" | ko login ghcr.io --username colek42 --password-stdin
-      #     ko build ./cmd/server
+        env:
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      - env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
       - name: Build Server
         uses: testifysec/witness-run-action@v0.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          # KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
         with:
           enable-sigstore: true
           enable-archivista: true
-          # trace: true
+          trace: true
           step: "build"
           attestations: "environment git github oci"
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
@@ -88,14 +87,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          # KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
         with:
           enable-sigstore: true
           enable-archivista: true
-          # trace: true
+          trace: true
           step: "build"
           attestations: "environment git github oci"
-          #disables sbom generation on fork
           command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvestor
 
   #     - name: Generate subject
