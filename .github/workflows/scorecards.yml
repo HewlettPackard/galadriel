@@ -35,12 +35,28 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Run analysis"
+      - name: Build Server
+        uses: testifysec/witness-run-action@fix-output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENABLE_SARIF: true
-        run: |
-          docker run -v $PWD/.github/workflows/scorecard-policy.yml:/scorecard-policy.yml -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /scorecard-policy.yml --format=sarif > results.sarif
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: true
+          step: "scorecard"
+          attestations: "environment git github sarif"
+          command: |
+            docker run -v $PWD/.github/workflows/scorecard-policy.yml:/scorecard-policy.yml -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /scorecard-policy.yml --format=sarif > results.sarif
+
+
+      # - name: "Run analysis"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     ENABLE_SARIF: true
+      #   run: |
+      #     docker run -v $PWD/.github/workflows/scorecard-policy.yml:/scorecard-policy.yml -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy /scorecard-policy.yml --format=sarif > results.sarif
       # - name: "Run analysis"
       #   uses: ossf/scorecard-action@e38b1902ae4f44df626f11ba0734b14fb91f8f86 # v2.1.2
       #   with:
