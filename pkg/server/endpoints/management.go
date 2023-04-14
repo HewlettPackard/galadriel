@@ -10,7 +10,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/google/uuid"
+	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -22,7 +22,7 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var trustDomainReq api.TrustDomain
-	err := fromJSBody(r, &trustDomainReq)
+	err := chttp.FromJSBody(r, &trustDomainReq)
 	if err != nil {
 		e.handleError(w, err.Error())
 		return
@@ -30,7 +30,7 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 
 	// We may want to do some stuff before translating
 	// So, thats why not encapsulating translate in json parsing
-	dbTD, err := translate(trustDomainReq)
+	dbTD, err := trustDomainReq.ToEntity()
 	if err != nil {
 		e.handleError(w, err.Error())
 		return
@@ -57,7 +57,7 @@ func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Requ
 
 	e.Logger.Printf("Created trustDomain for trust domain: %s", trustDomainReq.Name)
 
-	err = writeAsJSInResponse(w, m)
+	err = chttp.WriteAsJSInResponse(w, m)
 	if err != nil {
 		errMsg := fmt.Sprintf("trustDomain entity - %v", err.Error())
 		e.handleError(w, errMsg)
@@ -75,7 +75,7 @@ func (e *Endpoints) listTrustDomainsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = writeAsJSInResponse(w, ms)
+	err = chttp.WriteAsJSInResponse(w, ms)
 	if err != nil {
 		errMsg := fmt.Sprintf("trustDomains - %v", err.Error())
 		e.handleError(w, errMsg)
@@ -125,7 +125,7 @@ func (e *Endpoints) createRelationshipHandler(w http.ResponseWriter, r *http.Req
 
 	e.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
-	err = writeAsJSInResponse(w, rel)
+	err = chttp.WriteAsJSInResponse(w, rel)
 	if err != nil {
 		errMsg := fmt.Sprintf("relationships - %v", err.Error())
 		e.handleError(w, errMsg)
@@ -150,7 +150,7 @@ func (e *Endpoints) listRelationshipsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = writeAsJSInResponse(w, rels)
+	err = chttp.WriteAsJSInResponse(w, rels)
 	if err != nil {
 		errMsg := fmt.Sprintf("relationships entities - %v", err.Error())
 		e.handleError(w, errMsg)
@@ -227,7 +227,7 @@ func (e *Endpoints) generateTokenHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = writeAsJSInResponse(w, at)
+	err = chttp.WriteAsJSInResponse(w, at)
 	if err != nil {
 		errMsg := fmt.Sprintf("access token - %v", err.Error())
 		e.handleError(w, errMsg)
@@ -254,99 +254,7 @@ func (e *Endpoints) validateToken(ctx echo.Context, token string) (bool, error) 
 	return true, nil
 }
 
-/*
-fromJSBody parses json bytes into a struct
-r: Request that contains the json bytes to be parsed into 'in'
-in: Reference(pointer) to the interface to be full filled
-*/
-func fromJSBody(r *http.Request, in interface{}) error {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return fmt.Errorf("failed reading request body: %v", err)
-	}
-
-	if err = json.Unmarshal(body, in); err != nil {
-		return fmt.Errorf("failed unmarshalling request: %v", err)
-	}
-
-	return nil
-}
-
-/*
-writeAsJSInResponse parses a struct into a json and writes in the response
-w: The response writer to be full filled with the struct response bytes
-out: A pointer to the interface to be writed in the response
-*/
-func writeAsJSInResponse(w http.ResponseWriter, out interface{}) error {
-	outBytes, err := json.Marshal(out)
-	if err != nil {
-		return fmt.Errorf("failed marshalling : %v", err)
-	}
-
-	_, err = w.Write(outBytes)
-	if err != nil {
-		return fmt.Errorf("failed writing response: %v", err)
-	}
-
-	return nil
-}
-
-/*
-translate maps the API models into the Database models performing some check guarantees
-td: The api Trust Domain structure
-*/
-func translate(td api.TrustDomain) (*entity.TrustDomain, error) {
-	harvesterSpiffeID, err := spiffeid.FromString(*td.HarvesterSpiffeId)
-	if err != nil {
-		return nil, ErrWrongSPIFFEID{cause: err}
-	}
-
-	tdName, err := spiffeid.TrustDomainFromString(td.Name)
-	if err != nil {
-		return nil, ErrWrongTrustDomain{cause: err}
-	}
-
-	description := ""
-	if td.Description != nil {
-		description = *td.Description
-	}
-
-	onboardingBundle := []byte{}
-	if td.OnboardingBundle != nil {
-		onboardingBundle = []byte(*td.OnboardingBundle)
-	}
-
-	uuid := uuid.NullUUID{
-		UUID:  td.Id,
-		Valid: true,
-	}
-
-	return &entity.TrustDomain{
-		ID:                uuid,
-		Name:              tdName,
-		CreatedAt:         td.CreatedAt,
-		UpdatedAt:         td.UpdatedAt,
-		Description:       description,
-		OnboardingBundle:  onboardingBundle,
-		HarvesterSpiffeID: harvesterSpiffeID,
-	}, nil
-}
-
 func (e *Endpoints) handleError(w http.ResponseWriter, errMsg string) {
 	errMsg = util.LogSanitize(errMsg)
-	e.Logger.Errorf(errMsg)
 
-	errBytes := []byte(errMsg)
-	w.WriteHeader(500)
-	_, err := w.Write(errBytes)
-	if err != nil {
-		e.Logger.Errorf("Failed to write error response: %v", err)
-	}
-
-	encoder := json.NewEncoder(w)
-	encoder.SetEscapeHTML(true)
-	err = encoder.Encode(errBytes)
-	if err != nil {
-		e.Logger.Errorf("Failed to write error response: %v", err)
-	}
 }

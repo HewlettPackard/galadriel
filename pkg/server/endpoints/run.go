@@ -12,6 +12,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+
 	harvesterAPI "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
@@ -129,17 +131,9 @@ func (e *Endpoints) addHandlers() {
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	sw := harvesterAPI.ServerInterfaceWrapper{
-		Handler: e,
-	}
-
-	// Relationships
-	server.GET("/relationships", sw.GetRelationships)
-	server.PATCH("/relationships/:relationshipID", sw.PatchRelationshipsRelationshipID)
-
-	// Trust Domain
-	server.POST("/trust-domain/onboard", sw.Onboard)
-
-	server.POST("/trust-domain/:trustDomainName/sync", sw.BundleSync)
-	server.PUT("/trust-domain/:trustDomainName/bundles", sw.BundlePut)
+	harvesterAPI.RegisterHandlers(server,
+		&HarvesterAPIHandlers{
+			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		},
+	)
 }

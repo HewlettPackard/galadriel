@@ -1,4 +1,4 @@
-package endpoints
+package http
 
 import (
 	"bytes"
@@ -54,7 +54,7 @@ func TestFromJSBody(t *testing.T) {
 		assert.Nil(t, err)
 
 		td := entity.TrustDomain{ID: uuid.NullUUID{}}
-		err = fromJSBody(&request, &td)
+		err = FromJSBody(&request, &td)
 		assert.Nil(t, err)
 
 		fakeTD, err := FakeTrustDomain()
