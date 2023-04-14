@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         run: |
-          trivy fs --scan-type 'fs' --scan-ref '.' --format 'template' --template '@/contrib/sarif.tpl' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
+          trivy fs --format 'template' --template '@/contrib/sarif.tpl' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@ff3337ee1b38c9bcf43046bde6450e50c5e88ebb # v2.1.28
