@@ -44,8 +44,8 @@ jobs:
       #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
       #     passphrase: ${{ secrets.PASSPHRASE }}
       
-      - name: Download GoReleaser
-        run: go install github.com/goreleaser/goreleaser@latest
+      # - name: Download GoReleaser
+      #   run: go install github.com/goreleaser/goreleaser@latest
 
       # - name: Run GoReleaser
       #   uses: testifysec/witness-run-action@v0.1.1
