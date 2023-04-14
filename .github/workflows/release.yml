@@ -84,7 +84,7 @@ jobs:
           echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
       - name: Build Server
-        uses: testifysec/witness-run-action@main
+        uses: testifysec/witness-run-action@fix-output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
