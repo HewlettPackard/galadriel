@@ -40,6 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLE_SARIF: true
         run: |
+          ls -al
+          echo $PWD
           docker run -e ENABLE_SARIF=true -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=$GITHUB_REPOSITORY --show-details --policy .github/workflows/scorecard-policy.yml --format=sarif > results.sarif
 
 
