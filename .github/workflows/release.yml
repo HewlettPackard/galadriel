@@ -11,7 +11,7 @@ on:
 jobs:
 
   release:
-    runs-on: ubuntu-22.04
+    runs-on: "ubuntu-22.04"
     
     outputs:  
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -67,11 +67,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}
         with:
           enable-sigstore: true
           enable-archivista: true
-          trace: true
+          # trace: true
           step: "build"
           attestations: "environment git github oci"
           #disables sbom generation on fork
@@ -82,11 +81,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-          KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}
         with:
           enable-sigstore: true
           enable-archivista: true
-          trace: true
+          # trace: true
           step: "build"
           attestations: "environment git github oci"
           #disables sbom generation on fork
