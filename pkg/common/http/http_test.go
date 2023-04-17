@@ -53,13 +53,13 @@ func TestFromJSBody(t *testing.T) {
 		request, err := FakeRequest()
 		assert.Nil(t, err)
 
-		td := entity.TrustDomain{ID: uuid.NullUUID{}}
-		err = FromJSBody(&request, &td)
+		td := &entity.TrustDomain{ID: uuid.NullUUID{}}
+		td, err = FromJSBody(&request, td)
 		assert.Nil(t, err)
 
 		fakeTD, err := FakeTrustDomain()
 		assert.Nil(t, err)
 
-		assert.Equal(t, *fakeTD, td)
+		assert.Equal(t, *fakeTD, *td)
 	})
 }

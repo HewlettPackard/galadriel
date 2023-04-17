@@ -44,7 +44,7 @@ WriteAsJSInResponse parses a struct into a json and writes in the response
 w: The response writer to be full filled with the struct response bytes
 out: A pointer to the interface to be writed in the response
 */
-func WriteAsJSInResponse(w http.ResponseWriter, out interface{}) error {
+func WriteAsJSInResponse[T any](w http.ResponseWriter, out *T) error {
 	if out == nil {
 		return nil
 	}
@@ -63,7 +63,7 @@ func WriteAsJSInResponse(w http.ResponseWriter, out interface{}) error {
 }
 
 // Writes the response to the client
-func WriteResponse(ctx echo.Context, body interface{}) error {
+func WriteResponse[T any](ctx echo.Context, body *T) error {
 	if body == nil {
 		return nil
 	}
@@ -80,19 +80,19 @@ FromJSBody parses json bytes into a struct
 r: Request that contains the json bytes to be parsed into 'in'
 in: Reference(pointer) to the interface to be full filled
 */
-func FromJSBody(r *http.Request, in interface{}) error {
+func FromJSBody[T any](r *http.Request, in *T) (*T, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("failed reading request body: %v", err)
+		return nil, fmt.Errorf("failed reading request body: %v", err)
 	}
 
 	if err = json.Unmarshal(body, in); err != nil {
-		return fmt.Errorf("failed unmarshalling request: %v", err)
+		return nil, fmt.Errorf("failed unmarshalling request: %v", err)
 	}
 
-	return nil
+	return in, nil
 }
 
-func FromBody(ctx echo.Context, in interface{}) error {
+func FromBody[T any](ctx echo.Context, in *T) error {
 	return ctx.Bind(in)
 }

@@ -21,8 +21,8 @@ import (
 func (e *Endpoints) createTrustDomainHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var trustDomainReq api.TrustDomain
-	err := chttp.FromJSBody(r, &trustDomainReq)
+	var trustDomainReq *api.TrustDomain = &api.TrustDomain{}
+	trustDomainReq, err := chttp.FromJSBody(r, trustDomainReq)
 	if err != nil {
 		e.handleError(w, err.Error())
 		return
