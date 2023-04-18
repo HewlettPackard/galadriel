@@ -9,6 +9,7 @@
 *.swp
 *.log
 *.out
+.witness/policy.key
 
 # Test binary, built with `go test -c`
 *.test
