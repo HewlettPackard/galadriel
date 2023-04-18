@@ -52,7 +52,6 @@ jobs:
           tag: v0.1.13
 
 
-
       - name: Verify dist folder
         run: |-
           find ./dist -type f | while read FILE

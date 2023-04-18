@@ -3,11 +3,11 @@
 
 # ##Step Variables
 
-COMMIT=7b2dbf215fdf0d36e99eeb0e60f13f1bf2f2484622feb912df8a9e410ad30ce2
-SCORE=77429816a31defbb3b47d6ece96707b7c81f182b87c69b75f15224430a82bf15
+COMMIT=105125cad7632159e8ce181a3abe39dc68b09020b827ce2a80bed91528329460
+SCORE=c4942b9f6fe2b1cbbbefb066c1b2ebe65d2afaed2ffd162ddb98eabb50eb5fec
 SCAN=cf912f0774d6ec3792ea8d0bf495a847602cec2876d8edee1112c1dfa36117a1
-CONTAINER_BUILD=52097132a1c74e32ceac7c2f0b889d7489a121272d4ffb45e3bf8a5943b74c0b
-BINARY_BUILD=13a5275ba0dc2eef450ed73cea4e0f0478ff356febbcfbaeb34106f651d9e2a2
+CONTAINER_BUILD=fd31d8885ec158d551312d9d1b41b2cb67dd28696f7682d8d8a8012a019ea94f
+BINARY_BUILD=5b80eaf5161f1a896bb585d922e3d0c91ff1785cb09be9d77e9d6c8b7abbd843
 
 
 mkdir -p .witness
@@ -31,11 +31,11 @@ witness sign -f .witness/policy.json -k .witness/policy.key -o .witness/policy-s
 
 # Verify commit
 echo "Verifying by the commit"
-witness verify -s 74858372912956e65554bde585846522485d7de7 -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+witness verify -s 1e64684f8230fe662c384d0b1108ed6ec5ac36ee -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
 
 # Verify the container build by image ID
 echo "Verifying by the container imageID"
-witness verify -s 18fe3c392c293a63200fc700a3e7a62d07ae180aac2040a1132cb1827cf8f720 -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+witness verify -s 9efbee1c55fd477d97e8be2f625cdbf66ba5618c6797e7effdcfb56e56ef2adc -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
 
 # # Create policy for binary build
 policy-tool create -x $COMMIT -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE --constraint-emails colek42@gmail.com -x $SCORE -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -x $SCAN -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -x $BINARY_BUILD -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -t https://freetsa.org/files/cacert.pem > .witness/policy-bin.json
