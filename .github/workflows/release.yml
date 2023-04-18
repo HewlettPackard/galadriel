@@ -14,17 +14,8 @@ jobs:
 
   release-binaries:
     runs-on: "ubuntu-22.04"
-    
-    # outputs:  
-    #   hashes: ${{ steps.hash.outputs.hashes }}
 
     steps:
-      
-      # - name: Harden Runner
-      #   uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518 # v2.1.0
-      #   with:
-      #     egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-      
       - name: Download syft
         uses: anchore/sbom-action/download-syft@06e109483e6aa305a2b2395eabae554e51530e1d # v0.13.1
 
@@ -38,13 +29,6 @@ jobs:
         with:
           go-version: '1.19'
           cache: true
-
-      # - name: Import GPG key
-      #   id: import_gpg
-      #   uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
-      #   with:
-      #     gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-      #     passphrase: ${{ secrets.PASSPHRASE }}
       
       - name: Download GoReleaser
         run: go install github.com/goreleaser/goreleaser@v1.17.1
@@ -70,10 +54,7 @@ jobs:
 
   release-docker:
     runs-on: "ubuntu-22.04"
-    
-    # outputs:  
-    #   hashes: ${{ steps.hash.outputs.hashes }}
-    
+        
     steps:
 
       - name: Checkout
@@ -120,23 +101,3 @@ jobs:
           step: "build"
           attestations: "environment git github oci"
           command: ko build --tarball harestor.tar --sbom-dir . ./cmd/harvester
-
-  #     - name: Generate subject
-  #       id: hash
-  #       env:
-  #         ARTIFACTS: "${{ steps.run-goreleaser.outputs.artifacts }}"
-  #       run: ./.github/workflows/scripts/getHashes.sh
-  #       shell: bash
-
-        
-
-  # provenance:
-  #   needs: [goreleaser]
-  #   permissions:
-  #     actions: read # To read the workflow path.
-  #     id-token: write # To sign the provenance.
-  #     contents: write # To add assets to a release.
-  #   uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.4.0 # 68bad40844440577b33778c9f29077a3388838e9
-  #   with:
-  #     base64-subjects: "${{ needs.goreleaser.outputs.hashes }}"
-  #     upload-assets: true # upload to a new release

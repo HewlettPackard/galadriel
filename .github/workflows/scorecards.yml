@@ -28,20 +28,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Witness
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with: # Grab the latest version
-          repo: testifysec/witness
-          tag: v0.1.13
-
       - name: Scorecard
+        uses: testifysec/witness-run-action@fix-output
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
-        run: |
-          witness run -s=scorecard -a=sarif -a=git --fulcio=https://v1.fulcio.sigstore.dev --fulcio-oidc-client-id=https://oauth2.sigstore.dev/auth --fulcio-oidc-issuer=sigstore --enable-archivista --timestamp-servers=https://freetsa.org/tsr -o=/dev/null -- docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard.policy --format=sarif > results.sarif
-
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: false
+          step: "build"
+          attestations: "environment git sarif"
+          command:  docker run -v $PWD:/repo -e GITHUB_AUTH_TOKEN=$GITHUB_TOKEN -e ENABLE_SARIF=true gcr.io/openssf/scorecard@sha256:8201c5b7706459cac1d67484dda85cb2fe7ec7492f07012c0be99c12a96f4b8e --repo=github.com/testifysec/galadriel --show-details --policy /repo/.github/workflows/scorecard.policy --format=sarif > results.sarif
+        
       # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
       # format to the repository Actions tab.
       - name: "Upload artifact"
