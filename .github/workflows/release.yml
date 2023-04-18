@@ -100,4 +100,8 @@ jobs:
           trace: false
           step: "build"
           attestations: "environment git github oci"
-          command: ko build --tarball harestor.tar --sbom-dir . ./cmd/harvester
+          command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvester
+          artifacts: "harvestor.tar"
+
+      - name: Verify Container
+        run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
