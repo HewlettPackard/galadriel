@@ -29,6 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -101,7 +102,7 @@ jobs:
           enable-archivista: true
           trace: false
           step: "build"
-          attestations: "environment git github oci"
+          attestations: "git github oci"
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
 
       - name: Build Harvestor
