@@ -101,7 +101,12 @@ jobs:
           step: "build"
           attestations: "environment git github oci"
           command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvester
-          artifacts: "harvestor.tar"
+
+      - name: InstallWitness
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with: # Grab the latest version
+          repo: testifysec/witness
+          tag: v0.1.13
 
       - name: Verify Container
         run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
