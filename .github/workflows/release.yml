@@ -10,7 +10,7 @@ on:
       - cole/witness
 
 jobs:
-  release-binaries:
+  build-binaries:
     runs-on: "ubuntu-22.04"
 
     steps:
@@ -43,26 +43,6 @@ jobs:
           step: "build"
           command: goreleaser release --clean --snapshot
 
-      - name: InstallWitness
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with: # Grab the latest version
-          repo: testifysec/witness
-          tag: v0.1.13
-
-      - name: Verify dist folder
-        run: |-
-          find ./dist -type f | while read FILE
-          do
-            # Exclude config.yaml since it is common
-            if [[ $FILE == *"config.yaml"* ]]; then
-              continue
-            fi
-
-            # Run witness verify on the file
-            echo "Verifying $FILE"
-            witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
-          done
-
       - name: "Upload artifact"
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
@@ -70,7 +50,7 @@ jobs:
           path: dist/
           retention-days: 5
 
-  release-docker-server:
+  build-docker-server:
     runs-on: "ubuntu-22.04"
 
     steps:
@@ -103,16 +83,15 @@ jobs:
           attestations: "git github oci"
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
 
-      - name: InstallWitness
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with: # Grab the latest version
-          repo: testifysec/witness
-          tag: v0.1.13
+      - name: "Upload Server artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: server
+          path: server.tar
+          retention-days: 5
 
-      - name: Verify Server Container
-        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
 
-  release-docker-harvestor:
+  build-docker-harvestor:
     runs-on: "ubuntu-22.04"
 
     steps:
@@ -146,11 +125,77 @@ jobs:
           attestations: "git github oci"
           command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvester
 
+      - name: "Upload Harvestor artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: harvestor
+          path: harvestor.tar
+          retention-days: 5
+
+      - name: "Upload Signed Policy and Public Key"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: witness
+          path: |
+            .witness/policy-signed.json
+            .witness/policy-bin-signed.json
+            .witness/policy.pub
+          retention-days: 100
+
+
+  verify-artifacts:
+    needs: [build-binaries, build-docker-server, build-docker-harvestor]
+    runs-on: "ubuntu-22.04"
+
+    steps:
+
+      - name: Download Server artifact
+        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: server
+          path: .
+      
+      - name: Download Harvestor artifact
+        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: harvestor
+          path: .
+
+      - name: Download Signed Policy and Public Key
+        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: witness
+          path: .witness
+
+      - name: Download binaries
+        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: binaries
+          path: dist
+
+
       - name: InstallWitness
         uses: jaxxstorm/action-install-gh-release@v1.10.0
         with: # Grab the latest version
           repo: testifysec/witness
           tag: v0.1.13
 
+      - name: Verify Server Container
+        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+
       - name: Verify Harvestor Container
         run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+
+      - name: Verify dist folder
+        run: |-
+          find ./dist -type f | while read FILE
+          do
+            # Exclude config.yaml since it is common
+            if [[ $FILE == *"config.yaml"* ]]; then
+              continue
+            fi
+
+            # Run witness verify on the file
+            echo "Verifying $FILE"
+            witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
+          done
