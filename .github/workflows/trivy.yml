@@ -30,7 +30,7 @@ jobs:
           sudo apt-get install trivy -y
 
       - name: Run Trivy vulnerability scanner with Witness
-        uses: testifysec/witness-run-action@v0.1.1
+        uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}

@@ -32,7 +32,7 @@ jobs:
         run: go install github.com/goreleaser/goreleaser@v1.17.1
 
       - name: Run GoReleaser
-        uses: testifysec/witness-run-action@v0.1.1
+        uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
@@ -70,7 +70,7 @@ jobs:
           echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
       - name: Build Server
-        uses: testifysec/witness-run-action@fix-output
+        uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
@@ -111,7 +111,7 @@ jobs:
           echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
       - name: Build Harvestor
-        uses: testifysec/witness-run-action@main
+        uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
