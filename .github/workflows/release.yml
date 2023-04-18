@@ -143,7 +143,7 @@ jobs:
           enable-archivista: true
           trace: false
           step: "build"
-          attestations: "environment git github oci"
+          attestations: "git github oci"
           command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvester
 
       - name: InstallWitness
