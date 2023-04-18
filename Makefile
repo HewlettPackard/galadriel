@@ -148,6 +148,9 @@ docker-build-harvester:
 ## Builds all docker images.
 docker-build: docker-build-server docker-build-harvester
 
+copy-hook:
+	cp -f .githooks/post-commit .git/hooks/post-commit
+
 #------------------------------------------------------------------------
 # Document file
 #------------------------------------------------------------------------
@@ -183,3 +186,5 @@ help:
 		} \
 	} \
 { lastLine = $$0 }' $(MAKEFILE_LIST)
+
+
