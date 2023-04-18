@@ -1,11 +1,6 @@
 https://witness.dev/attestations/github/v0.1:
   - jwt.claims.aud
-  - jwt.claims.iss
-  - jwt.claims.repository
-  - jwt.claims.runner_environment
-  - ciconfigpath
-  - jwt.claims.repository_owner
-  - jwt.verifiedBy.jwksUrl
+
 
 
 
