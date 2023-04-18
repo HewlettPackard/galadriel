@@ -37,7 +37,7 @@ jobs:
         with:
           enable-sigstore: true
           enable-archivista: true
-          attestations: environment git github sarif
+          attestations: git github sarif
           step: "scan"
           command: trivy fs --format 'sarif' --output 'trivy-results.sarif' --severity 'MEDIUM,CRITICAL,HIGH' .
 
