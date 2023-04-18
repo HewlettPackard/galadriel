@@ -129,4 +129,3 @@ jobs:
             echo "Verifying $FILE"
             witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
           done
-        continue-on-error: true
