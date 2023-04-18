@@ -1,6 +1,6 @@
 permissions:
   id-token: write # This is required for requesting the JWT
-  contents: read  # This is required for actions/checkout
+  contents: read # This is required for actions/checkout
 
 name: release
 
@@ -9,9 +9,7 @@ on:
     branches:
       - cole/witness
 
-
 jobs:
-
   release-binaries:
     runs-on: "ubuntu-22.04"
 
@@ -27,9 +25,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
-          go-version: '1.19'
+          go-version: "1.19"
           cache: true
-      
+
       - name: Download GoReleaser
         run: go install github.com/goreleaser/goreleaser@v1.17.1
 
@@ -51,7 +49,6 @@ jobs:
           repo: testifysec/witness
           tag: v0.1.13
 
-
       - name: Verify dist folder
         run: |-
           find ./dist -type f | while read FILE
@@ -66,7 +63,6 @@ jobs:
             witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
           done
 
-
       - name: "Upload artifact"
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
@@ -74,16 +70,14 @@ jobs:
           path: dist/
           retention-days: 5
 
-  release-docker:
+  release-docker-server:
     runs-on: "ubuntu-22.04"
-        
-    steps:
 
+    steps:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           fetch-depth: 0
-
 
       - name: Setup KO
         uses: imjasonh/setup-ko@v0.6
@@ -109,13 +103,41 @@ jobs:
           attestations: "git github oci"
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
 
+      - name: InstallWitness
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with: # Grab the latest version
+          repo: testifysec/witness
+          tag: v0.1.13
+
+      - name: Verify Server Container
+        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+
+  release-docker-harvestor:
+    runs-on: "ubuntu-22.04"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup KO
+        uses: imjasonh/setup-ko@v0.6
+        env:
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      - name: Login to GHCR
+        env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
+
       - name: Build Harvestor
         uses: testifysec/witness-run-action@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
-          
+
         with:
           enable-sigstore: true
           enable-archivista: true
@@ -132,9 +154,3 @@ jobs:
 
       - name: Verify Harvestor Container
         run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
-        continue-on-error: true
-
-      - name: Verify Server Container
-        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
-        continue-on-error: true
-
