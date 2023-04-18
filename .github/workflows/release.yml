@@ -55,7 +55,7 @@ jobs:
         with:
           enable-sigstore: true
           enable-archivista: true
-          trace: true
+          trace: false
           step: "build"
           command: goreleaser release --clean --snapshot
 
@@ -99,7 +99,7 @@ jobs:
         with:
           enable-sigstore: true
           enable-archivista: true
-          trace: true
+          trace: false
           step: "build"
           attestations: "environment git github oci"
           command: ko build --tarball server.tar --sbom-dir . ./cmd/server
@@ -114,7 +114,7 @@ jobs:
         with:
           enable-sigstore: true
           enable-archivista: true
-          trace: true
+          trace: false
           step: "build"
           attestations: "environment git github oci"
           command: ko build --tarball harestor.tar --sbom-dir . ./cmd/harvester
