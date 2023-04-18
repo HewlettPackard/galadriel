@@ -150,25 +150,25 @@ jobs:
     steps:
 
       - name: Download Server artifact
-        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: server
           path: .
       
       - name: Download Harvestor artifact
-        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: harvestor
           path: .
 
       - name: Download Signed Policy and Public Key
-        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: witness
           path: .witness
 
       - name: Download binaries
-        uses: actions/download-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: binaries
           path: dist
