@@ -1,12 +1,10 @@
 name: Scorecards supply-chain security
+
 on:
-  # Only the default branch is supported.
-  branch_protection_rule:
-  schedule:
-    - cron: '0 8 * * *'
-  pull_request: {}
   push:
-    branches: [ "main" ]
+    branches:
+      - cole/witness
+
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -25,15 +23,10 @@ jobs:
       actions: read
     
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518
-        with:
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-
       - name: "Checkout code"
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Install Witness
         uses: jaxxstorm/action-install-gh-release@v1.10.0
