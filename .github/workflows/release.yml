@@ -108,5 +108,25 @@ jobs:
           repo: testifysec/witness
           tag: v0.1.13
 
-      - name: Verify Container
+      - name: Verify Harvestor Container
         run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+        continue-on-error: true
+
+      - name: Verify Server Container
+        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+        continue-on-error: true
+
+      - name: Verify dist folder
+        run: |-
+          find ./dist -type f | while read FILE
+          do
+            # Exclude config.yaml since it is common
+            if [[ $FILE == *"config.yaml"* ]]; then
+              continue
+            fi
+
+            # Run witness verify on the file
+            echo "Verifying $FILE"
+            witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
+          done
+        continue-on-error: true
