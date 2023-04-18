@@ -1,0 +1,16 @@
+https://witness.dev/attestations/github/v0.1:
+  - jwt.claims.aud
+  - jwt.claims.iss
+  - jwt.claims.repository
+  - jwt.claims.runner_environment
+  - ciconfigpath
+  - jwt.claims.repository_owner
+  - jwt.verifiedBy.jwksUrl
+
+
+
+# COMMIT=c5d150f01c8f0fb7152ec8ee0a1d890d9c006a307d5f55ed340aaa096d61598e
+# SCORE=71df3d92c453f688d25075bea2bf4e632674dfea211854f67923a0cc706d953a
+# TRIVY=58bd574fbb89bb0846d04e949e5aa4dcd0c02e76ebef9230665774a464a7e0e6
+# BUILD=62281f16adc269dbcc0e1fbb6f1ad46871dd38a544ef8c632485b7e5c35f0656
+# policy-tool create -x $SCORE -r root.pem -t intermediate.pem -x $TRIVY -r root.pem -t intermediate.pem -y sticky.yaml -x $BUILD -r root.pem -t intermediate.pem -y sticky.yaml

@@ -1,31 +1,19 @@
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
 name: release
 
 on:
   push:
-    # run only against tags
-    tags: ['v[0-9].[0-9]+.[0-9]+']
-
-permissions:  # added using https://github.com/step-security/secure-workflows
-  contents: read
+    branches:
+      - cole/witness
 
 jobs:
-
-  goreleaser:
-    runs-on: ubuntu-22.04
-
-    permissions:
-      contents: write  # for goreleaser/goreleaser-action to create a GitHub release
-    
-    outputs:  
-      hashes: ${{ steps.hash.outputs.hashes }}
+  build-binaries:
+    runs-on: "ubuntu-22.04"
 
     steps:
-      
-      - name: Harden Runner
-        uses: step-security/harden-runner@18bf8ad2ca49c14cbb28b91346d626ccfb00c518 # v2.1.0
-        with:
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-      
       - name: Download syft
         uses: anchore/sbom-action/download-syft@06e109483e6aa305a2b2395eabae554e51530e1d # v0.13.1
 
@@ -37,44 +25,177 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
-          go-version: '1.19'
+          go-version: "1.19"
           cache: true
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+      - name: Download GoReleaser
+        run: go install github.com/goreleaser/goreleaser@v1.17.1
 
       - name: Run GoReleaser
-        id: run-goreleaser
-        uses: goreleaser/goreleaser-action@8f67e590f2d095516493f017008adc464e63adb1 # v4.1.0
-        with:
-          # either 'goreleaser' (default) or 'goreleaser-pro'
-          distribution: goreleaser
-          version: latest
-          args: release --rm-dist
+        uses: testifysec/witness-run-action@v0.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-        #   # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
-        #   # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: false
+          step: "build"
+          command: goreleaser release --clean --snapshot
 
-      - name: Generate subject
-        id: hash
+      - name: "Upload artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: binaries
+          path: dist/
+          retention-days: 5
+
+  build-docker-server:
+    runs-on: "ubuntu-22.04"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup KO
+        uses: imjasonh/setup-ko@v0.6
         env:
-          ARTIFACTS: "${{ steps.run-goreleaser.outputs.artifacts }}"
-        run: ./.github/workflows/scripts/getHashes.sh
-        shell: bash
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      - name: Login to GHCR
+        env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
 
-  provenance:
-    needs: [goreleaser]
-    permissions:
-      actions: read # To read the workflow path.
-      id-token: write # To sign the provenance.
-      contents: write # To add assets to a release.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.4.0 # 68bad40844440577b33778c9f29077a3388838e9
-    with:
-      base64-subjects: "${{ needs.goreleaser.outputs.hashes }}"
-      upload-assets: true # upload to a new release
+      - name: Build Server
+        uses: testifysec/witness-run-action@v0.1.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: false
+          step: "build"
+          attestations: "git github oci"
+          command: ko build --tarball server.tar --sbom-dir . ./cmd/server
+
+      - name: "Upload Server artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: server
+          path: server.tar
+          retention-days: 5
+
+
+  build-docker-harvestor:
+    runs-on: "ubuntu-22.04"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup KO
+        uses: imjasonh/setup-ko@v0.6
+        env:
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+      - name: Login to GHCR
+        env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          echo "${AUTH_TOKEN}" | ko login ghcr.io --username dummy --password-stdin
+
+      - name: Build Harvestor
+        uses: testifysec/witness-run-action@v0.1.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          KO_DOCKER_REPO: ghcr.io/github.com/testifysec/galadriel
+
+        with:
+          enable-sigstore: true
+          enable-archivista: true
+          trace: false
+          step: "build"
+          attestations: "git github oci"
+          command: ko build --tarball harvestor.tar --sbom-dir . ./cmd/harvester
+
+      - name: "Upload Harvestor artifact"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: harvestor
+          path: harvestor.tar
+          retention-days: 5
+
+      - name: "Upload Signed Policy and Public Key"
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: witness
+          path: |
+            .witness/policy-signed.json
+            .witness/policy-bin-signed.json
+            .witness/policy.pub
+          retention-days: 100
+
+
+  verify-artifacts:
+    needs: [build-binaries, build-docker-server, build-docker-harvestor]
+    runs-on: "ubuntu-22.04"
+
+    steps:
+
+      - name: Download Server artifact
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: server
+          path: .
+      
+      - name: Download Harvestor artifact
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: harvestor
+          path: .
+
+      - name: Download Signed Policy and Public Key
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: witness
+          path: .witness
+
+      - name: Download binaries
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: binaries
+          path: dist
+
+
+      - name: InstallWitness
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with: # Grab the latest version
+          repo: testifysec/witness
+          tag: v0.1.13
+
+      - name: Verify Server Container
+        run: witness verify -f server.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+
+      - name: Verify Harvestor Container
+        run: witness verify -f harvestor.tar -p .witness/policy-signed.json -k .witness/policy.pub --enable-archivista
+
+      - name: Verify dist folder
+        run: |-
+          find ./dist -type f | while read FILE
+          do
+            # Exclude config.yaml since it is common
+            if [[ $FILE == *"config.yaml"* ]]; then
+              continue
+            fi
+
+            # Run witness verify on the file
+            echo "Verifying $FILE"
+            witness verify -f $FILE -p .witness/policy-bin-signed.json -k .witness/policy.pub --enable-archivista
+          done

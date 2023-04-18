@@ -1,0 +1,2 @@
+
+exec < /dev/tty && witness run -s commit -a git --fulcio=https://v1.fulcio.sigstore.dev --fulcio-oidc-client-id=https://oauth2.sigstore.dev/auth --fulcio-oidc-issuer=sigstore --enable-archivista --timestamp-servers https://freetsa.org/tsr -o /dev/null
