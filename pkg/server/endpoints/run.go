@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 
+	adminAPI "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	harvesterAPI "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
@@ -69,7 +69,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	e.addTCPHandlers(server)
 
 	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		return e.validateToken(c, key)
+		return true, nil
 	}))
 
 	e.Logger.Infof("Starting TCP Server on %s", e.TCPAddress.String())
@@ -93,7 +93,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 }
 
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
-	server := &http.Server{}
+	server := echo.New()
 
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
 	if err != nil {
@@ -101,12 +101,12 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.addHandlers()
+	e.addHandlers(server)
 
 	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
 	errChan := make(chan error)
 	go func() {
-		errChan <- server.Serve(l)
+		errChan <- server.Server.Serve(l)
 	}()
 
 	select {
@@ -122,12 +122,12 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) addHandlers() {
-	http.HandleFunc("/createTrustDomain", e.createTrustDomainHandler)
-	http.HandleFunc("/listTrustDomains", e.listTrustDomainsHandler)
-	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
-	http.HandleFunc("/listRelationships", e.listRelationshipsHandler)
-	http.HandleFunc("/generateToken", e.generateTokenHandler)
+func (e *Endpoints) addHandlers(server *echo.Echo) {
+	adminAPI.RegisterHandlers(server,
+		&AdminAPIHandlers{
+			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		},
+	)
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {

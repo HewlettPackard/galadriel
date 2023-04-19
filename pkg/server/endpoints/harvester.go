@@ -7,6 +7,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/http"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -128,7 +129,8 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 }
 
 func (h *HarvesterAPIHandlers) handleTCPError(ctx echo.Context, err error) {
-	h.Logger.Errorf(err.Error())
+	errMsg := util.LogSanitize(err.Error())
+	h.Logger.Errorf(errMsg)
 	if err := chttp.HandleTCPError(ctx, err); err != nil {
 		h.Logger.Errorf(err.Error())
 	}

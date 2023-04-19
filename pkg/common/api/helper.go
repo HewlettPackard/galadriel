@@ -43,3 +43,18 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 		HarvesterSpiffeID: harvesterSpiffeID,
 	}, nil
 }
+
+func TrusDomainFromEntity(entity *entity.TrustDomain) *TrustDomain {
+	onboardingBundle := string(entity.OnboardingBundle)
+	harvesterSpiffeID := entity.HarvesterSpiffeID.String()
+
+	return &TrustDomain{
+		Id:                entity.ID.UUID,
+		Name:              entity.Name.String(),
+		Description:       &entity.Description,
+		UpdatedAt:         entity.UpdatedAt,
+		CreatedAt:         entity.CreatedAt,
+		OnboardingBundle:  &onboardingBundle,
+		HarvesterSpiffeId: &harvesterSpiffeID,
+	}
+}

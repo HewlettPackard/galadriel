@@ -68,10 +68,18 @@ func WriteResponse[T any](ctx echo.Context, body *T) error {
 		return nil
 	}
 
+	return write(ctx, body)
+}
+
+// Writes the Array responses to the client
+func WriteArrayResponse[T any](ctx echo.Context, body []*T) error {
+	return write(ctx, body)
+}
+
+func write[T any](ctx echo.Context, body T) error {
 	if err := ctx.JSON(http.StatusOK, body); err != nil {
 		return fmt.Errorf("failed to write response body: %v", err)
 	}
-
 	return nil
 }
 
