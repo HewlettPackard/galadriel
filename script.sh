@@ -19,7 +19,7 @@ SIGSTORE_INTERMEDIATE=.witness/intermediate.pem
 ./get_certs.sh  && mv root.pem ${SIGSTORE_ROOT} && mv intermediate.pem ${SIGSTORE_INTERMEDIATE}
 
 # Create policy
-policy-tool create -x=$COMMIT -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE --constraint-emails colek42@gmail.com -x $SCORE -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -x $SCAN -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -y .witness/sticky.yaml -x $CONTAINER_BUILD -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -y .witness/sticky.yaml -t https://freetsa.org/files/cacert.pem > .witness/policy.json
+policy-tool create -x=$COMMIT -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE --constraint-emails colek42@gmail.com -x $SCORE -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -x $SCAN -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -y .witness/sticky.yaml -x $CONTAINER_BUILD -r $SIGSTORE_ROOT -i $SIGSTORE_INTERMEDIATE -y .witness/sticky.yaml -t https://freetsa.org/files/cacert.pem -e 2400h0m0s > .witness/policy.json
 
 # Create RSA public-private key pair for policy signing
 openssl genrsa -out .witness/policy.key 2048
