@@ -11,46 +11,46 @@ import (
 
 type TrustDomain struct {
 	ID                uuid.NullUUID
-	Name              spiffeid.TrustDomain `json:"name"`
-	Description       string               `json:"description"`
-	HarvesterSpiffeID spiffeid.ID          `json:"harvester_spiffe_id"`
-	OnboardingBundle  []byte               `json:"onboarding_bundle"`
-	CreatedAt         time.Time            `json:"created_at"`
-	UpdatedAt         time.Time            `json:"updated_at"`
+	Name              spiffeid.TrustDomain
+	Description       string
+	HarvesterSpiffeID spiffeid.ID
+	OnboardingBundle  []byte
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 type Relationship struct {
 	ID                  uuid.NullUUID
-	TrustDomainAID      uuid.UUID            `json:"trust_domain_a_id"`
-	TrustDomainBID      uuid.UUID            `json:"trust_domain_b_id"`
-	TrustDomainAName    spiffeid.TrustDomain `json:"trust_domain_a_name"`
-	TrustDomainBName    spiffeid.TrustDomain `json:"trust_domain_b_name"`
-	TrustDomainAConsent bool                 `json:"trust_domain_a_consent"`
-	TrustDomainBConsent bool                 `json:"trust_domain_b_consent"`
-	CreatedAt           time.Time            `json:"created_at"`
-	UpdatedAt           time.Time            `json:"updated_at"`
+	TrustDomainAID      uuid.UUID
+	TrustDomainBID      uuid.UUID
+	TrustDomainAName    spiffeid.TrustDomain
+	TrustDomainBName    spiffeid.TrustDomain
+	TrustDomainAConsent bool
+	TrustDomainBConsent bool
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 type JoinToken struct {
 	ID              uuid.NullUUID
 	Token           string
 	Used            bool
-	TrustDomainID   uuid.UUID            `json:"trust_domain_id"`
-	TrustDomainName spiffeid.TrustDomain `json:"trust_domain_name"`
-	ExpiresAt       time.Time            `json:"expires_at"`
-	CreatedAt       time.Time            `json:"created_at"`
-	UpdatedAt       time.Time            `json:"updated_at"`
+	TrustDomainID   uuid.UUID
+	TrustDomainName spiffeid.TrustDomain
+	ExpiresAt       time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Bundle represents a SPIFFE Trust bundle along with its digest.
 type Bundle struct {
 	ID                 uuid.NullUUID
-	Data               []byte               `json:"bundle"`
-	Signature          []byte               `json:"signature"`
-	SignatureAlgorithm string               `json:"signature_algorithm"`
-	SigningCertificate []byte               `json:"signing_certificate"`
-	TrustDomainID      uuid.UUID            `json:"trust_domain_id"`
-	TrustDomainName    spiffeid.TrustDomain `json:"trust_domain_name"`
-	CreatedAt          time.Time            `json:"created_at"`
-	UpdatedAt          time.Time            `json:"updated_at"`
+	Data               []byte
+	Signature          []byte
+	SignatureAlgorithm string
+	SigningCertificate []byte
+	TrustDomainID      uuid.UUID
+	TrustDomainName    spiffeid.TrustDomain
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }

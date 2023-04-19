@@ -48,7 +48,8 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.Get
 		return err
 	}
 
-	err = chttp.WriteArrayResponse(ctx, rels)
+	cRelationships := mapRelationships(rels)
+	err = chttp.WriteArrayResponse(ctx, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
 		h.handleError(ctx, err)
@@ -63,7 +64,7 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.Get
 func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	gctx := ctx.Request().Context()
 
-	reqBody := &adminAPI.RelationshipRequest{}
+	reqBody := &adminAPI.PutRelationshipsJSONRequestBody{}
 	err := chttp.FromBody(ctx, reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to read relationship put body: %v", err)
@@ -79,7 +80,8 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
-	err = chttp.WriteResponse(ctx, rel)
+	response := commonAPI.RelationshipFromEntity(rel)
+	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		h.handleError(ctx, err)
@@ -187,4 +189,15 @@ func (h AdminAPIHandlers) handleError(ctx echo.Context, err error) {
 	if err := chttp.HandleTCPError(ctx, err); err != nil {
 		h.Logger.Errorf(err.Error())
 	}
+}
+
+func mapRelationships(relationships []*entity.Relationship) []*commonAPI.Relationship {
+	cRelationships := []*commonAPI.Relationship{}
+
+	for _, r := range relationships {
+		cRelation := commonAPI.RelationshipFromEntity(r)
+		cRelationships = append(cRelationships, cRelation)
+	}
+
+	return cRelationships
 }

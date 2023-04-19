@@ -58,3 +58,15 @@ func TrusDomainFromEntity(entity *entity.TrustDomain) *TrustDomain {
 		HarvesterSpiffeId: &harvesterSpiffeID,
 	}
 }
+
+func RelationshipFromEntity(entity *entity.Relationship) *Relationship {
+	return &Relationship{
+		Id:                  entity.ID.UUID,
+		CreatedAt:           entity.CreatedAt,
+		UpdatedAt:           entity.UpdatedAt,
+		TrustDomainAId:      entity.TrustDomainAID,
+		TrustDomainBId:      entity.TrustDomainBID,
+		TrustDomainBConsent: entity.TrustDomainBConsent,
+		TrustDomainAConsent: entity.TrustDomainAConsent,
+	}
+}
