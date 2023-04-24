@@ -50,14 +50,9 @@ func New(c *Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
-	err := util.RunTasks(ctx,
-		e.runTCPServer,
-		e.runUDSServer,
-	)
-	if err != nil {
+	if err := util.RunTasks(ctx, e.runTCPServer, e.runUDSServer); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -67,10 +62,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server.HidePort = true
 
 	e.addTCPHandlers(server)
-
-	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		return true, nil
-	}))
+	e.addTCPMiddlewares(server)
 
 	e.Logger.Infof("Starting TCP Server on %s", e.TCPAddress.String())
 	errChan := make(chan error)
@@ -101,7 +93,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.addHandlers(server)
+	e.addUDSHandlers(server)
 
 	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
 	errChan := make(chan error)
@@ -122,7 +114,7 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) addHandlers(server *echo.Echo) {
+func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
 	adminAPI.RegisterHandlers(server,
 		&AdminAPIHandlers{
 			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
@@ -136,4 +128,13 @@ func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 		},
 	)
+}
+
+func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
+	authNMiddleware := AuthNMiddleware{
+		Logger:    e.Logger,
+		Datastore: e.Datastore,
+	}
+
+	server.Use(middleware.KeyAuth(authNMiddleware.AuthNF))
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/HewlettPackard/galadriel/pkg/common/http"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 
@@ -87,9 +86,9 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	}
 	// end authn
 
-	req := &harvesterAPI.BundlePut{}
+	req := &harvesterAPI.BundlePutJSONRequestBody{}
 
-	err = http.FromBody(ctx, req)
+	err = chttp.FromBody(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to read bundle put body: %v", err)
 	}
