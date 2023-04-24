@@ -109,7 +109,12 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 		return nil
 	}
 
-	bundle := req.ToEntity()
+	bundle, err := req.ToEntity()
+	if err != nil {
+		h.handleTCPError(ctx, err)
+		return err
+	}
+
 	if storedBundle != nil {
 		bundle.TrustDomainID = storedBundle.TrustDomainID
 	}
