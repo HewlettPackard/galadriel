@@ -26,16 +26,12 @@ const (
 
 // component
 const (
-	// Catalog functionality related to plugin catalog
-	Catalog = "catalog"
-
-	Endpoints = "endpoints"
-
-	MetricsServer       = "metrics_server"
+	Endpoints           = "endpoints"
 	HarvesterController = "harvester_controller"
-
-	GaladrielServer = "galadriel_server"
-	HTTPApi         = "http_api"
+	GaladrielServer     = "galadriel_server"
+	CA                  = "ca"
+	ManagerCA           = "manager_ca"
+	DiskX509CA          = "disk_x509_ca"
 
 	// SubsystemName declares a field for some subsystem name (an API, module...)
 	SubsystemName = "subsystem_name"

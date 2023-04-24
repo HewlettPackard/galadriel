@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -18,4 +19,6 @@ type Config struct {
 	DatastoreConnString string
 
 	Logger logrus.FieldLogger
+
+	Catalog catalog.Catalog
 }
