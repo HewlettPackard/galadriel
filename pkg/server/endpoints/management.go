@@ -137,7 +137,7 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 
 	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
 
-	response := commonAPI.TrusDomainFromEntity(m)
+	response := commonAPI.TrustDomainFromEntity(m)
 	err = chttp.WriteObjectResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("trustDomain entity - %v", err.Error())
