@@ -125,7 +125,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 		return err
 	}
 
-	if err = chttp.WriteObjectResponse(ctx, res); err != nil {
+	if err = chttp.WriteResponse(ctx, res); err != nil {
 		h.handleTCPError(ctx, err)
 		return err
 	}

@@ -20,37 +20,27 @@ func HandleTCPError(ctx echo.Context, err error) error {
 }
 
 /*
-WriteObjectResponse parses a struct into a json and writes in the response
+WriteResponse parses a struct into a json and writes in the response
 */
-func WriteObjectResponse[T any](ctx echo.Context, body *T) error {
+func WriteResponse(ctx echo.Context, body interface{}) error {
 	if body == nil {
-		return nil
+		return fmt.Errorf("missing body for writing in response")
 	}
 
-	return write(ctx, body)
-}
-
-/*
-WriteArrayResponse parses a slice of object into a json and writes in the response
-*/
-func WriteArrayResponse[T any](ctx echo.Context, body []*T) error {
-	if body == nil {
-		return nil
-	}
-
-	return write(ctx, body)
-}
-
-func write[T any](ctx echo.Context, body T) error {
 	if err := ctx.JSON(http.StatusOK, body); err != nil {
 		return fmt.Errorf("failed to write response body: %v", err)
 	}
+
 	return nil
 }
 
 /*
 FromBody parses json bytes into a struct
 */
-func FromBody[T any](ctx echo.Context, in *T) error {
+func FromBody(ctx echo.Context, in interface{}) error {
+	if in == nil {
+		return fmt.Errorf("missing reference for handling parsed data")
+	}
+
 	return ctx.Bind(in)
 }

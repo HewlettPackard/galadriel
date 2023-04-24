@@ -49,7 +49,7 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.Get
 	}
 
 	cRelationships := mapRelationships(rels)
-	err = chttp.WriteArrayResponse(ctx, cRelationships)
+	err = chttp.WriteResponse(ctx, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
 		h.handleError(ctx, err)
@@ -81,7 +81,7 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
 	response := commonAPI.RelationshipFromEntity(rel)
-	err = chttp.WriteObjectResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		h.handleError(ctx, err)
@@ -138,7 +138,7 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
 
 	response := commonAPI.TrustDomainFromEntity(m)
-	err = chttp.WriteObjectResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("trustDomain entity - %v", err.Error())
 		h.handleError(ctx, err)
