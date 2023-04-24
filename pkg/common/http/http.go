@@ -15,6 +15,7 @@ HandleError default error handler function over the application
 func HandleError(w http.ResponseWriter, errMsg string) error {
 	errBytes := []byte(errMsg)
 	w.WriteHeader(500)
+
 	_, err := w.Write(errBytes)
 	if err != nil {
 		return fmt.Errorf("failed to write error response: %v", err)
@@ -22,6 +23,7 @@ func HandleError(w http.ResponseWriter, errMsg string) error {
 
 	encoder := json.NewEncoder(w)
 	encoder.SetEscapeHTML(true)
+
 	err = encoder.Encode(errBytes)
 	if err != nil {
 		return fmt.Errorf("failed to write error response: %v", err)
@@ -63,7 +65,7 @@ func WriteAsJSInResponse[T any](w http.ResponseWriter, out *T) error {
 }
 
 // Writes the response to the client
-func WriteResponse[T any](ctx echo.Context, body *T) error {
+func WriteObjectResponse[T any](ctx echo.Context, body *T) error {
 	if body == nil {
 		return nil
 	}
@@ -73,6 +75,10 @@ func WriteResponse[T any](ctx echo.Context, body *T) error {
 
 // Writes the Array responses to the client
 func WriteArrayResponse[T any](ctx echo.Context, body []*T) error {
+	if body == nil {
+		return nil
+	}
+
 	return write(ctx, body)
 }
 

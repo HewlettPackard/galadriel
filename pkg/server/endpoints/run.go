@@ -131,10 +131,10 @@ func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
-	authNMiddleware := AuthNMiddleware{
+	authNMiddleware := AuthenthicationMD{
 		Logger:    e.Logger,
 		Datastore: e.Datastore,
 	}
 
-	server.Use(middleware.KeyAuth(authNMiddleware.AuthNF))
+	server.Use(middleware.KeyAuth(authNMiddleware.Authenticate))
 }

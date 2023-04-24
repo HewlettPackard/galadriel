@@ -58,6 +58,7 @@ func (h HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName commo
 // (PUT /trust-domain/{trustDomainName}/bundles)
 func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
 	h.Logger.Debug("Receiving post bundle request")
+	gctx := ctx.Request().Context()
 
 	// TODO: move authn out and replace with Access Token when implemented
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
@@ -67,14 +68,14 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 		return err
 	}
 
-	token, err := h.Datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
+	token, err := h.Datastore.FindJoinToken(gctx, jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
 		h.handleTCPError(ctx, err)
 		return err
 	}
 
-	authenticatedTD, err := h.Datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
+	authenticatedTD, err := h.Datastore.FindTrustDomainByID(gctx, token.TrustDomainID)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
 		h.handleTCPError(ctx, err)
@@ -87,7 +88,6 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	// end authn
 
 	req := &harvesterAPI.BundlePutJSONRequestBody{}
-
 	err = chttp.FromBody(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to read bundle put body: %v", err)
@@ -99,7 +99,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 		return err
 	}
 
-	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
+	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(gctx, authenticatedTD.ID.UUID)
 	if err != nil {
 		h.handleTCPError(ctx, err)
 		return err
@@ -113,13 +113,14 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	if storedBundle != nil {
 		bundle.TrustDomainID = storedBundle.TrustDomainID
 	}
-	res, err := h.Datastore.CreateOrUpdateBundle(ctx.Request().Context(), bundle)
+
+	res, err := h.Datastore.CreateOrUpdateBundle(gctx, bundle)
 	if err != nil {
 		h.handleTCPError(ctx, err)
 		return err
 	}
 
-	if err = chttp.WriteResponse(ctx, res); err != nil {
+	if err = chttp.WriteObjectResponse(ctx, res); err != nil {
 		h.handleTCPError(ctx, err)
 		return err
 	}

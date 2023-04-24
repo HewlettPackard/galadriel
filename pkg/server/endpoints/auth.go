@@ -6,14 +6,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AuthNMiddleware struct {
+type AuthenthicationMD struct {
 	Datastore datastore.Datastore
 	Logger    logrus.FieldLogger
 }
 
-func (m AuthNMiddleware) AuthNF(token string, ctx echo.Context) (bool, error) {
+func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, error) {
+	gctx := ctx.Request().Context()
+
 	// Any skip cases ?
-	t, err := m.Datastore.FindJoinToken(ctx.Request().Context(), token)
+	t, err := m.Datastore.FindJoinToken(gctx, token)
 	if err != nil {
 		m.Logger.Errorf("Invalid Token: %s\n", token)
 		return false, err
