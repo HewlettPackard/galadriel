@@ -66,6 +66,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	err = os.WriteFile(tempDir+"/root-ca.crt", pemCert, 0644)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/root-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
+	require.NoError(t, err)
 
 	// create intermediate CA signed by the Self-signed CA
 	intermediateCA, intermediateKey := CreateTestIntermediateCACertificate(t, clk, rootCA, rootKey, "intermediate-ca")
@@ -78,6 +79,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	err = os.WriteFile(tempDir+"/intermediate-ca.crt", pemCert, 0644)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/intermediate-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
+	require.NoError(t, err)
 
 	// create intermediate-CA-2 signed by the intermediate CA-1
 	intermediateCA2, intermediateKey2 := CreateTestIntermediateCACertificate(t, clk, intermediateCA, intermediateKey, "intermediate-ca-2")
@@ -90,6 +92,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	err = os.WriteFile(tempDir+"/intermediate-ca-2.crt", pemCert, 0644)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/intermediate-ca-2.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
+	require.NoError(t, err)
 
 	// create a other Self-signed CA
 	otherCA, otherKey := CreateTestSelfSignedCACertificate(t, clk)
