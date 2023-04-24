@@ -63,7 +63,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	require.True(t, ok)
 
 	// write the Root CA certificate to disk
-	err = os.WriteFile(tempDir+"/root-ca.crt", pemCert, 0644)
+	err = os.WriteFile(tempDir+"/root-ca.crt", pemCert, crtPerm)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/root-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
 	require.NoError(t, err)
@@ -76,7 +76,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	require.True(t, ok)
 
 	// write the intermediate CA certificate to disk
-	err = os.WriteFile(tempDir+"/intermediate-ca.crt", pemCert, 0644)
+	err = os.WriteFile(tempDir+"/intermediate-ca.crt", pemCert, crtPerm)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/intermediate-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
 	require.NoError(t, err)
@@ -89,7 +89,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	require.True(t, ok)
 
 	// write the intermediate CA certificate to disk
-	err = os.WriteFile(tempDir+"/intermediate-ca-2.crt", pemCert, 0644)
+	err = os.WriteFile(tempDir+"/intermediate-ca-2.crt", pemCert, crtPerm)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/intermediate-ca-2.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	require.True(t, ok)
 
 	// write the Root CA certificate to disk
-	err = os.WriteFile(tempDir+"/other-ca.crt", pemCert, 0644)
+	err = os.WriteFile(tempDir+"/other-ca.crt", pemCert, crtPerm)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/other-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
 	require.NoError(t, err)
