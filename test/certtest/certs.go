@@ -105,6 +105,7 @@ func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
 	err = os.WriteFile(tempDir+"/other-ca.crt", pemCert, 0644)
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/other-ca.key", cryptoutil.EncodeRSAPrivateKey(rsaKey), keyPerm)
+	require.NoError(t, err)
 
 	return tempDir
 }
