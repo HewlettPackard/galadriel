@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"errors"
+
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -22,8 +24,11 @@ func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, e
 		return false, err
 	}
 
-	m.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
+	if t == nil {
+		return false, errors.New("token not found")
+	}
 
+	m.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
 	ctx.Set("token", t)
 
 	return true, nil
