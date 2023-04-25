@@ -12,6 +12,7 @@ type AuthenthicationMD struct {
 }
 
 func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, error) {
+
 	gctx := ctx.Request().Context()
 
 	// Any skip cases ?
