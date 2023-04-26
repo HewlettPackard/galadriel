@@ -56,7 +56,7 @@ func (ca *X509CA) Configure(config *Config) error {
 		return errors.New("private key file path is required")
 	}
 
-	key, err := cryptoutil.LoadRSAPrivateKey(config.KeyFilePath)
+	key, err := cryptoutil.LoadPrivateKey(config.KeyFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to load private key: %v", err)
 	}

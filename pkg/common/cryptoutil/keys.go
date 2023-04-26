@@ -11,6 +11,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+)
+
+const (
+	rsaPrivateKeyType = "RSA PRIVATE KEY"
+	ecPrivateKeyType  = "EC PRIVATE KEY"
 )
 
 // KeyType represents the types of keys.
@@ -56,6 +62,34 @@ func (keyType KeyType) String() string {
 	}
 }
 
+// LoadPrivateKey loads a private key from file in PEM format.
+// The key can be either an RSA or EC private key.
+func LoadPrivateKey(path string) (crypto.PrivateKey, error) {
+	keyFile, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading private key: %w", err)
+	}
+
+	header := strings.Split(string(keyFile), "\n")[0]
+	if strings.Contains(header, rsaPrivateKeyType) {
+		key, err := ParseRSAPrivateKeyPEM(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing private key: %w", err)
+		}
+		return key, nil
+	}
+
+	if strings.Contains(header, ecPrivateKeyType) {
+		key, err := ParseECPrivateKeyPEM(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing private key: %w", err)
+		}
+		return key, nil
+	}
+
+	return nil, errors.New("private key format not supported")
+}
+
 // LoadRSAPrivateKey loads an RSA private key from a file.
 func LoadRSAPrivateKey(path string) (crypto.PrivateKey, error) {
 	keyFile, err := os.ReadFile(path)
@@ -64,6 +98,21 @@ func LoadRSAPrivateKey(path string) (crypto.PrivateKey, error) {
 	}
 
 	key, err := ParseRSAPrivateKeyPEM(keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing private key: %w", err)
+	}
+
+	return key, nil
+}
+
+// LoadECPrivateKey loads an EC private key from a file.
+func LoadECPrivateKey(path string) (crypto.PrivateKey, error) {
+	keyFile, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed reading private key: %w", err)
+	}
+
+	key, err := ParseECPrivateKeyPEM(keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing private key: %w", err)
 	}
@@ -94,7 +143,35 @@ func ParseRSAPrivateKeyPEM(pemBlocks []byte) (interface{}, error) {
 // EncodeRSAPrivateKey encodes an RSA private key in PEM format.
 func EncodeRSAPrivateKey(privateKey *rsa.PrivateKey) []byte {
 	return pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  rsaPrivateKeyType,
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	})
+}
+
+// ParseECPrivateKey parses an EC private key in PKCS #1, ASN.1 DER form.
+func ParseECPrivateKey(derBytes []byte) (crypto.PrivateKey, error) {
+	key, err := x509.ParseECPrivateKey(derBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing private key: %w", err)
+	}
+
+	return key, nil
+}
+
+// ParseECPrivateKeyPEM parses an RSA private key in PEM format.
+func ParseECPrivateKeyPEM(pemBlocks []byte) (interface{}, error) {
+	block, _ := pem.Decode(pemBlocks)
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block")
+	}
+
+	return ParseECPrivateKey(block.Bytes)
+}
+
+// EncodeECPrivateKey encodes an RSA private key in PEM format.
+func EncodeECPrivateKey(privateKey *rsa.PrivateKey) []byte {
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  ecPrivateKeyType,
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 }
