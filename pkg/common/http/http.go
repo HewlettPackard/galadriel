@@ -7,16 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-/*
-NewHTTPErr normalize the error to be handled by echo erro handler
-*/
-func NewHTTPErr(ctx echo.Context, err error, code int) error {
-	return echo.NewHTTPError(code, err.Error())
-}
-
-/*
-WriteResponse parses a struct into a json and writes in the response
-*/
+// WriteResponse parses a struct into a json and writes in the response
 func WriteResponse(ctx echo.Context, body interface{}) error {
 	if body == nil {
 		return errors.New("body is required")
@@ -29,9 +20,16 @@ func WriteResponse(ctx echo.Context, body interface{}) error {
 	return nil
 }
 
-/*
-FromBody parses json bytes into a struct
-*/
+// BodylessResponse wraps error echo body-less responses.
+func BodylessResponse(ctx echo.Context) error {
+	if err := ctx.NoContent(http.StatusOK); err != nil {
+		return fmt.Errorf("failed to respond without body: %v", err)
+	}
+
+	return nil
+}
+
+// FromBody parses json bytes into a struct
 func FromBody(ctx echo.Context, in interface{}) error {
 	if in == nil {
 		return fmt.Errorf("missing reference for handling parsed data")

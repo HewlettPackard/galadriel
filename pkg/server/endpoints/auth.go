@@ -8,36 +8,35 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AuthenthicationMD struct {
-	Datastore datastore.Datastore
-	Logger    logrus.FieldLogger
+type AuthenticationMiddleware struct {
+	datastore datastore.Datastore
+	logger    logrus.FieldLogger
 }
 
-func NewAuthenthicationMiddleware(l logrus.FieldLogger, ds datastore.Datastore) AuthenthicationMD {
-	return AuthenthicationMD{
-		Logger:    l,
-		Datastore: ds,
+func NewAuthenticationMiddleware(l logrus.FieldLogger, ds datastore.Datastore) *AuthenticationMiddleware {
+	return &AuthenticationMiddleware{
+		logger:    l,
+		datastore: ds,
 	}
 }
 
-func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, error) {
-	gctx := ctx.Request().Context()
+func (m AuthenticationMiddleware) Authenticate(token string, echoCtx echo.Context) (bool, error) {
+	ctx := echoCtx.Request().Context()
 
 	// Any skip cases ?
-	t, err := m.Datastore.FindJoinToken(gctx, token)
+	t, err := m.datastore.FindJoinToken(ctx, token)
 	if err != nil {
-		m.Logger.Errorf("Invalid Token: %s\n", token)
 		message := "Invalid authorization token"
 		return false, echo.NewHTTPError(http.StatusUnauthorized, message)
 	}
 
 	if t == nil {
 		message := "Token not found"
-		return false, echo.NewHTTPError(http.StatusForbidden, message)
+		return false, echo.NewHTTPError(http.StatusUnauthorized, message)
 	}
 
-	m.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
-	ctx.Set("token", t)
+	m.logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
+	echoCtx.Set("token", t)
 
 	return true, nil
 }

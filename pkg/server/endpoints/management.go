@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	commonAPI "github.com/HewlettPackard/galadriel/pkg/common/api"
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
-	adminAPI "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 
 	"github.com/sirupsen/logrus"
@@ -32,26 +32,26 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) AdminAPIH
 
 // Get relationships
 // (GET /relationships)
-func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.GetRelationshipsParams) error {
+func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRelationshipsParams) error {
 	gctx := ctx.Request().Context()
 
 	rels, err := h.Datastore.ListRelationships(gctx)
 	if err != nil {
 		err = fmt.Errorf("failed listing relationships: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	rels, err = h.populateTrustDomainNames(gctx, rels)
 	if err != nil {
 		err = fmt.Errorf("failed populating relationships entities: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	cRelationships := mapRelationships(rels)
 	err = chttp.WriteResponse(ctx, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -62,27 +62,27 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.Get
 func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	gctx := ctx.Request().Context()
 
-	reqBody := &adminAPI.PutRelationshipsJSONRequestBody{}
+	reqBody := &admin.PutRelationshipsJSONRequestBody{}
 	err := chttp.FromBody(ctx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
+		return h.HandleAndLog(err, http.StatusBadRequest)
 	}
 
 	eRelationship := reqBody.ToEntity()
 	rel, err := h.Datastore.CreateOrUpdateRelationship(gctx, eRelationship)
 	if err != nil {
 		err = fmt.Errorf("failed creating relationship: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
-	response := commonAPI.RelationshipFromEntity(rel)
+	response := api.RelationshipFromEntity(rel)
 	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -90,7 +90,7 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 
 // Get a specific relationship
 // (GET /relationships/{relationshipID})
-func (h AdminAPIHandlers) GetRelationshipsRelationshipID(ctx echo.Context, relationshipID commonAPI.UUID) error {
+func (h AdminAPIHandlers) GetRelationshipsRelationshipID(ctx echo.Context, relationshipID api.UUID) error {
 	return nil
 }
 
@@ -100,40 +100,40 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	// Getting golang context
 	gctx := ctx.Request().Context()
 
-	reqBody := &adminAPI.PutTrustDomainJSONRequestBody{}
+	reqBody := &admin.PutTrustDomainJSONRequestBody{}
 	err := chttp.FromBody(ctx, reqBody)
 	if err != nil {
-		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
+		return h.HandleAndLog(err, http.StatusBadRequest)
 	}
 
 	dbTD, err := reqBody.ToEntity()
 	if err != nil {
-		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
+		return h.HandleAndLog(err, http.StatusBadRequest)
 	}
 
 	td, err := h.Datastore.FindTrustDomainByName(gctx, dbTD.Name)
 	if err != nil {
 		err = fmt.Errorf("failed looking up trust domain: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 	if td != nil {
 		err = fmt.Errorf("trust domain already exists: %q", dbTD.Name)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	m, err := h.Datastore.CreateOrUpdateTrustDomain(gctx, dbTD)
 	if err != nil {
 		err = fmt.Errorf("failed creating trustDomain: %v", err)
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
 
-	response := commonAPI.TrustDomainFromEntity(m)
+	response := api.TrustDomainFromEntity(m)
 	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("trustDomain entity - %v", err.Error())
-		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -141,19 +141,19 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 
 // Get a specific trust domain
 // (GET /trust-domain/{trustDomainName})
-func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	return nil
 }
 
 // Update a specific trust domain
 // (PUT /trust-domain/{trustDomainName})
-func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName commonAPI.UUID) error {
+func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName api.UUID) error {
 	return nil
 }
 
 // Get a join token for a specific Trust Domain
 // (POST /trust-domain/{trustDomainName}/join-token)
-func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	return nil
 }
 
@@ -174,19 +174,19 @@ func (h AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relation
 	return relationships, nil
 }
 
-func (h AdminAPIHandlers) HandleAndLog(ctx echo.Context, err error, code int) error {
-	errMsg := util.LogSanitize(err.Error())
-	h.Logger.Errorf(errMsg)
-	return chttp.NewHTTPErr(ctx, err, code)
-}
-
-func mapRelationships(relationships []*entity.Relationship) []*commonAPI.Relationship {
-	cRelationships := []*commonAPI.Relationship{}
+func mapRelationships(relationships []*entity.Relationship) []*api.Relationship {
+	cRelationships := []*api.Relationship{}
 
 	for _, r := range relationships {
-		cRelation := commonAPI.RelationshipFromEntity(r)
+		cRelation := api.RelationshipFromEntity(r)
 		cRelationships = append(cRelationships, cRelation)
 	}
 
 	return cRelationships
+}
+
+func (h AdminAPIHandlers) HandleAndLog(err error, code int) error {
+	errMsg := util.LogSanitize(err.Error())
+	h.Logger.Errorf(errMsg)
+	return echo.NewHTTPError(code, err.Error())
 }

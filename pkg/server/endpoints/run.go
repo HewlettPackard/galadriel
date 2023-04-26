@@ -126,6 +126,6 @@ func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
 	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	authNMiddleware := NewAuthenthicationMiddleware(logger, e.Datastore)
+	authNMiddleware := NewAuthenticationMiddleware(logger, e.Datastore)
 	server.Use(middleware.KeyAuth(authNMiddleware.Authenticate))
 }
