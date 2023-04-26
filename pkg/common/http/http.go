@@ -19,7 +19,7 @@ WriteResponse parses a struct into a json and writes in the response
 */
 func WriteResponse(ctx echo.Context, body interface{}) error {
 	if body == nil {
-		return fmt.Errorf("missing body for writing in response")
+		return errors.New("body is required")
 	}
 
 	if err := ctx.JSON(http.StatusOK, body); err != nil {
