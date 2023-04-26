@@ -8,15 +8,10 @@ import (
 )
 
 /*
-HandleError default error handler function over the application
+NewHTTPErr normalize the error to be handled by echo erro handler
 */
-func HandleTCPError(ctx echo.Context, err error) error {
-	_, err = ctx.Response().Write([]byte(err.Error()))
-	if err != nil {
-		return fmt.Errorf("failed to write error response: %v", err)
-	}
-
-	return nil
+func NewHTTPErr(ctx echo.Context, err error, code int) error {
+	return echo.NewHTTPError(code, err.Error())
 }
 
 /*

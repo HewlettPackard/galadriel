@@ -1,7 +1,7 @@
 package endpoints
 
 import (
-	"errors"
+	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
@@ -13,19 +13,27 @@ type AuthenthicationMD struct {
 	Logger    logrus.FieldLogger
 }
 
-func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, error) {
+func NewAuthenthicationMiddleware(l logrus.FieldLogger, ds datastore.Datastore) AuthenthicationMD {
+	return AuthenthicationMD{
+		Logger:    l,
+		Datastore: ds,
+	}
+}
 
+func (m AuthenthicationMD) Authenticate(token string, ctx echo.Context) (bool, error) {
 	gctx := ctx.Request().Context()
 
 	// Any skip cases ?
 	t, err := m.Datastore.FindJoinToken(gctx, token)
 	if err != nil {
 		m.Logger.Errorf("Invalid Token: %s\n", token)
-		return false, err
+		message := "Invalid authorization token"
+		return false, echo.NewHTTPError(http.StatusUnauthorized, message)
 	}
 
 	if t == nil {
-		return false, errors.New("token not found")
+		message := "Token not found"
+		return false, echo.NewHTTPError(http.StatusForbidden, message)
 	}
 
 	m.Logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)

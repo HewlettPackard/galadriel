@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	commonAPI "github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
@@ -37,23 +38,20 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params adminAPI.Get
 	rels, err := h.Datastore.ListRelationships(gctx)
 	if err != nil {
 		err = fmt.Errorf("failed listing relationships: %v", err)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	rels, err = h.populateTrustDomainNames(gctx, rels)
 	if err != nil {
 		err = fmt.Errorf("failed populating relationships entities: %v", err)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	cRelationships := mapRelationships(rels)
 	err = chttp.WriteResponse(ctx, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -67,15 +65,15 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	reqBody := &adminAPI.PutRelationshipsJSONRequestBody{}
 	err := chttp.FromBody(ctx, reqBody)
 	if err != nil {
-		return fmt.Errorf("failed to read relationship put body: %v", err)
+		err := fmt.Errorf("failed to read relationship put body: %v", err)
+		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
 	}
 
 	eRelationship := reqBody.ToEntity()
 	rel, err := h.Datastore.CreateOrUpdateRelationship(gctx, eRelationship)
 	if err != nil {
 		err = fmt.Errorf("failed creating relationship: %v", err)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
@@ -84,8 +82,7 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -106,33 +103,28 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	reqBody := &adminAPI.PutTrustDomainJSONRequestBody{}
 	err := chttp.FromBody(ctx, reqBody)
 	if err != nil {
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
 	}
 
 	dbTD, err := reqBody.ToEntity()
 	if err != nil {
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
 	}
 
 	td, err := h.Datastore.FindTrustDomainByName(gctx, dbTD.Name)
 	if err != nil {
 		err = fmt.Errorf("failed looking up trust domain: %v", err)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 	if td != nil {
 		err = fmt.Errorf("trust domain already exists: %q", dbTD.Name)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	m, err := h.Datastore.CreateOrUpdateTrustDomain(gctx, dbTD)
 	if err != nil {
 		err = fmt.Errorf("failed creating trustDomain: %v", err)
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
@@ -141,8 +133,7 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	err = chttp.WriteResponse(ctx, response)
 	if err != nil {
 		err = fmt.Errorf("trustDomain entity - %v", err.Error())
-		h.handleError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -183,12 +174,10 @@ func (h AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relation
 	return relationships, nil
 }
 
-func (h AdminAPIHandlers) handleError(ctx echo.Context, err error) {
+func (h AdminAPIHandlers) HandleAndLog(ctx echo.Context, err error, code int) error {
 	errMsg := util.LogSanitize(err.Error())
 	h.Logger.Errorf(errMsg)
-	if err := chttp.HandleTCPError(ctx, err); err != nil {
-		h.Logger.Errorf(err.Error())
-	}
+	return chttp.NewHTTPErr(ctx, err, code)
 }
 
 func mapRelationships(relationships []*entity.Relationship) []*commonAPI.Relationship {

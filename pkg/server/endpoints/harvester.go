@@ -3,6 +3,7 @@ package endpoints
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
@@ -32,19 +33,19 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) Harve
 
 // List the relationships.
 // (GET /relationships)
-func (h *HarvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvesterAPI.GetRelationshipsParams) error {
+func (h HarvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvesterAPI.GetRelationshipsParams) error {
 	return nil
 }
 
 // Accept/Denies relationship requests
 // (PATCH /relationships/{relationshipID})
-func (h *HarvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID commonAPI.UUID) error {
+func (h HarvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID commonAPI.UUID) error {
 	return nil
 }
 
 // Onboarding a new Trust Domain in the Galadriel Server
 // (POST /trust-domain/onboard)
-func (h *HarvesterAPIHandlers) Onboard(ctx echo.Context) error {
+func (h HarvesterAPIHandlers) Onboard(ctx echo.Context) error {
 	return nil
 }
 
@@ -56,7 +57,7 @@ func (h HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName commo
 
 // Upload a new trust bundle to the server
 // (PUT /trust-domain/{trustDomainName}/bundles)
-func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+func (h HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
 	h.Logger.Debug("Receiving post bundle request")
 	gctx := ctx.Request().Context()
 
@@ -64,22 +65,19 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	token, err := h.Datastore.FindJoinToken(gctx, jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	authenticatedTD, err := h.Datastore.FindTrustDomainByID(gctx, token.TrustDomainID)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	if authenticatedTD.Name.String() != trustDomainName {
@@ -90,19 +88,18 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 	req := &harvesterAPI.BundlePutJSONRequestBody{}
 	err = chttp.FromBody(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to read bundle put body: %v", err)
+		err := fmt.Errorf("failed to read bundle put body: %v", err)
+		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
 	}
 
 	if authenticatedTD.Name.String() != req.TrustDomain {
 		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusBadRequest)
 	}
 
 	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(gctx, authenticatedTD.ID.UUID)
 	if err != nil {
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	if req.TrustBundle == "" {
@@ -111,8 +108,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 
 	bundle, err := req.ToEntity()
 	if err != nil {
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	if storedBundle != nil {
@@ -121,22 +117,18 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commo
 
 	res, err := h.Datastore.CreateOrUpdateBundle(gctx, bundle)
 	if err != nil {
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	if err = chttp.WriteResponse(ctx, res); err != nil {
-		h.handleTCPError(ctx, err)
-		return err
+		return h.HandleAndLog(ctx, err, http.StatusInternalServerError)
 	}
 
 	return nil
 }
 
-func (h *HarvesterAPIHandlers) handleTCPError(ctx echo.Context, err error) {
+func (h HarvesterAPIHandlers) HandleAndLog(ctx echo.Context, err error, code int) error {
 	errMsg := util.LogSanitize(err.Error())
 	h.Logger.Errorf(errMsg)
-	if err := chttp.HandleTCPError(ctx, err); err != nil {
-		h.Logger.Errorf(err.Error())
-	}
+	return chttp.NewHTTPErr(ctx, err, code)
 }

@@ -115,26 +115,17 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 }
 
 func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
-	adminAPI.RegisterHandlers(server,
-		&AdminAPIHandlers{
-			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		},
-	)
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	adminAPI.RegisterHandlers(server, NewAdminAPIHandlers(logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	harvesterAPI.RegisterHandlers(server,
-		&HarvesterAPIHandlers{
-			Logger: e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		},
-	)
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	harvesterAPI.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
-	authNMiddleware := AuthenthicationMD{
-		Logger:    e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		Datastore: e.Datastore,
-	}
-
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	authNMiddleware := NewAuthenthicationMiddleware(logger, e.Datastore)
 	server.Use(middleware.KeyAuth(authNMiddleware.Authenticate))
 }
