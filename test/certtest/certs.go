@@ -49,9 +49,9 @@ func CreateTestIntermediateCACertificate(t *testing.T, clk clock.Clock, parent *
 	return caCert, signer
 }
 
-// CreateTestCertificates creates a self-signed CA and an intermediate CA for testing purposes.
+// CreateTestCACertificates creates a self-signed CA and an intermediate CA for testing purposes.
 // It returns the path to the temporary directory where the certificates are stored.
-func CreateTestCertificates(t *testing.T, clk clock.Clock) string {
+func CreateTestCACertificates(t *testing.T, clk clock.Clock) string {
 	tempDir, err := os.MkdirTemp("", "galadriel-test")
 	require.NoError(t, err)
 

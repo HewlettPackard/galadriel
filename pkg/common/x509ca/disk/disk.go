@@ -65,8 +65,14 @@ func (ca *X509CA) Configure(config *Config) error {
 		return fmt.Errorf("unable to load certificate: %v", err)
 	}
 
+	// verify the certificate is self-signed (i.e. ROOT CA)
 	if err := cert.CheckSignatureFrom(cert); err != nil {
 		return fmt.Errorf("certificate is not self-signed")
+	}
+
+	// verify the certificate public key matches the private key
+	if err := cryptoutil.VerifyCertificatePrivateKey(cert, key); err != nil {
+		return fmt.Errorf("certificate verification failed: %w", err)
 	}
 
 	ca.certificate = cert

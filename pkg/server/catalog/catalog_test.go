@@ -73,7 +73,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 }
 
 func setupTest(t *testing.T) (string, func()) {
-	tempDir := certtest.CreateTestCertificates(t, clk)
+	tempDir := certtest.CreateTestCACertificates(t, clk)
 	cleanup := func() {
 		os.RemoveAll(tempDir)
 	}

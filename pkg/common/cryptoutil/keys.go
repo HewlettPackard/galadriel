@@ -169,9 +169,63 @@ func ParseECPrivateKeyPEM(pemBlocks []byte) (interface{}, error) {
 }
 
 // EncodeECPrivateKey encodes an RSA private key in PEM format.
-func EncodeECPrivateKey(privateKey *rsa.PrivateKey) []byte {
+func EncodeECPrivateKey(privateKey *ecdsa.PrivateKey) ([]byte, error) {
+	keyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed marshaling private key: %w", err)
+	}
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  ecPrivateKeyType,
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	})
+		Bytes: keyBytes,
+	}), nil
+}
+
+// VerifyCertificatePrivateKey verifies that the private key matches the public key in the certificate.
+func VerifyCertificatePrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) error {
+	switch privateKey.(type) {
+	case *rsa.PrivateKey:
+		return verifyRSAPrivateKey(cert, privateKey)
+	case *ecdsa.PrivateKey:
+		return verifyECPrivateKey(cert, privateKey)
+	}
+
+	return errors.New("unsupported key type")
+}
+
+func verifyRSAPrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) error {
+	certPublicKey, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return errors.New("certificate public key is not an RSA key")
+	}
+
+	keyPublicKey, ok := privateKey.(crypto.Signer).Public().(*rsa.PublicKey)
+	if !ok {
+		return errors.New("privateKey is not an RSA public key")
+	}
+
+	matches := certPublicKey.N.Cmp(keyPublicKey.N) == 0 && certPublicKey.E == keyPublicKey.E
+	if !matches {
+		return errors.New("certificate public key does not match private key")
+	}
+
+	return nil
+}
+
+func verifyECPrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) error {
+	certPublicKey, ok := cert.PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return errors.New("certificate public key is not an EC key")
+	}
+
+	keyPublicKey, ok := privateKey.(crypto.Signer).Public().(*ecdsa.PublicKey)
+	if !ok {
+		return errors.New("privateKey is not an EC key")
+	}
+
+	matches := certPublicKey.X.Cmp(keyPublicKey.X) == 0 && certPublicKey.Y.Cmp(keyPublicKey.Y) == 0
+	if !matches {
+		return errors.New("certificate public key does not match private key")
+	}
+
+	return nil
 }

@@ -48,6 +48,21 @@ func TestConfigure(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestConfigureCertAndPrivateKeyNotMatch(t *testing.T) {
+	tempDir, cleanup := setupTest(t)
+	defer cleanup()
+
+	config := Config{
+		KeyFilePath:  tempDir + "/other-ca.key",
+		CertFilePath: tempDir + "/root-ca.crt",
+	}
+
+	ca := newCA(t)
+	err := ca.Configure(&config)
+	require.Error(t, err)
+	assert.Equal(t, "certificate verification failed: certificate public key does not match private key", err.Error())
+}
+
 func TestConfigureNoSelfSigned(t *testing.T) {
 	tempDir, cleanup := setupTest(t)
 	defer cleanup()
@@ -153,7 +168,7 @@ func newCA(t *testing.T) *X509CA {
 }
 
 func setupTest(t *testing.T) (string, func()) {
-	tempDir := certtest.CreateTestCertificates(t, clk)
+	tempDir := certtest.CreateTestCACertificates(t, clk)
 	cleanup := func() {
 		os.RemoveAll(tempDir)
 	}

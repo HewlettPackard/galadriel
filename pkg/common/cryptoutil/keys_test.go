@@ -134,3 +134,52 @@ func TestLoadECPrivateKey(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, key)
 }
+
+func TestEncodeRSAPrivateKey(t *testing.T) {
+	key, err := LoadRSAPrivateKey(rsaKeyPath)
+	require.NoError(t, err)
+	require.NotNil(t, key)
+
+	pem := EncodeRSAPrivateKey(key.(*rsa.PrivateKey))
+	require.NoError(t, err)
+	require.NotNil(t, pem)
+}
+
+func TestEncodeECPrivateKey(t *testing.T) {
+	key, err := LoadECPrivateKey(ecKeyPath)
+	require.NoError(t, err)
+	require.NotNil(t, key)
+
+	pem, err := EncodeECPrivateKey(key.(*ecdsa.PrivateKey))
+	require.NoError(t, err)
+	require.NoError(t, err)
+	require.NotNil(t, pem)
+}
+
+func TestVerifyCertificatePrivateKeyRSA(t *testing.T) {
+	cert, key := createCert(t, RSA4096)
+
+	err := VerifyCertificatePrivateKey(cert, key)
+	require.NoError(t, err)
+
+	// failure with wrong key
+	key, err = GenerateSigner(RSA4096)
+	require.NoError(t, err)
+	require.NotNil(t, key)
+	err = VerifyCertificatePrivateKey(cert, key)
+	require.Error(t, err)
+}
+
+func TestVerifyCertificatePrivateKeyEC(t *testing.T) {
+	cert, key := createCert(t, ECP384)
+
+	err := VerifyCertificatePrivateKey(cert, key)
+	require.NoError(t, err)
+
+	// failure with wrong key
+	key, err = GenerateSigner(ECP256)
+	require.NoError(t, err)
+	require.NotNil(t, key)
+	err = VerifyCertificatePrivateKey(cert, key)
+	require.Error(t, err)
+}

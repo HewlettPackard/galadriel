@@ -162,6 +162,26 @@ func makeRootCA(t *testing.T) (*x509.Certificate, crypto.PrivateKey) {
 	return cert, key
 }
 
+func createCert(t *testing.T, keyType KeyType) (*x509.Certificate, crypto.PrivateKey) {
+	clk := clock.NewFake()
+	key, err := GenerateSigner(keyType)
+	require.NoError(t, err)
+	name := pkix.Name{CommonName: "test-cn"}
+
+	tmpl, err := CreateX509Template(clk, key.Public(), name, nil, nil, 1*time.Hour)
+	require.NoError(t, err)
+	require.NotNil(t, tmpl)
+
+	// create parent certificate for signing
+	parentCert, signingKey := makeRootCA(t)
+
+	cert, err := SignX509(tmpl, parentCert, signingKey)
+	require.NoError(t, err)
+	require.NotNil(t, cert)
+
+	return cert, key
+}
+
 func readFile(t *testing.T, path string) []byte {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
