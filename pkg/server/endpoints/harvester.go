@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	commonAPI "github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -58,7 +57,7 @@ func (h HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.T
 
 // Upload a new trust bundle to the server
 // (PUT /trust-domain/{trustDomainName}/bundles)
-func (h HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName commonAPI.TrustDomainName) error {
+func (h HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	h.Logger.Debug("Receiving post bundle request")
 	gctx := ctx.Request().Context()
 
