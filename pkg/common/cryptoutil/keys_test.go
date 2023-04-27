@@ -3,6 +3,7 @@ package cryptoutil
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -168,6 +169,7 @@ func TestVerifyCertificatePrivateKeyRSA(t *testing.T) {
 	require.NotNil(t, key)
 	err = VerifyCertificatePrivateKey(cert, key)
 	require.Error(t, err)
+	assert.Equal(t, "certificate public key does not match private key", err.Error())
 }
 
 func TestVerifyCertificatePrivateKeyEC(t *testing.T) {
@@ -182,4 +184,5 @@ func TestVerifyCertificatePrivateKeyEC(t *testing.T) {
 	require.NotNil(t, key)
 	err = VerifyCertificatePrivateKey(cert, key)
 	require.Error(t, err)
+	assert.Equal(t, "certificate public key does not match private key", err.Error())
 }

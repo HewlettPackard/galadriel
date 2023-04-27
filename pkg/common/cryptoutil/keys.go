@@ -195,12 +195,12 @@ func VerifyCertificatePrivateKey(cert *x509.Certificate, privateKey crypto.Priva
 func verifyRSAPrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) error {
 	certPublicKey, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return errors.New("certificate public key is not an RSA key")
+		return fmt.Errorf("expected certificate to have a RSA public key type; got %T", cert.PublicKey)
 	}
 
 	keyPublicKey, ok := privateKey.(crypto.Signer).Public().(*rsa.PublicKey)
 	if !ok {
-		return errors.New("privateKey is not an RSA public key")
+		return fmt.Errorf("expected private key to be a RSA key type; got %T", privateKey)
 	}
 
 	matches := certPublicKey.N.Cmp(keyPublicKey.N) == 0 && certPublicKey.E == keyPublicKey.E
@@ -214,12 +214,12 @@ func verifyRSAPrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) e
 func verifyECPrivateKey(cert *x509.Certificate, privateKey crypto.PrivateKey) error {
 	certPublicKey, ok := cert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return errors.New("certificate public key is not an EC key")
+		return fmt.Errorf("expected certificate to have a EC public key type; got %T", cert.PublicKey)
 	}
 
 	keyPublicKey, ok := privateKey.(crypto.Signer).Public().(*ecdsa.PublicKey)
 	if !ok {
-		return errors.New("privateKey is not an EC key")
+		return fmt.Errorf("expected private key to be a EC key type; got %T", privateKey)
 	}
 
 	matches := certPublicKey.X.Cmp(keyPublicKey.X) == 0 && certPublicKey.Y.Cmp(keyPublicKey.Y) == 0
