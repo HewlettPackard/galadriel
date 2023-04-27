@@ -47,7 +47,6 @@ func New() (*X509CA, error) {
 
 // Configure configures the disk-based X509CA from the given map.
 func (ca *X509CA) Configure(config *Config) error {
-
 	if config.CertFilePath == "" {
 		return errors.New("certificate file path is required")
 	}

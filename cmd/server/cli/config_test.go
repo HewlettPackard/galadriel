@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/require"
 	"io"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var hclConfigWithProviders = `server {

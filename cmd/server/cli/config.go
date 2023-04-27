@@ -2,16 +2,16 @@ package cli
 
 import (
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"io"
 	"net"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server"
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

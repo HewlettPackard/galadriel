@@ -17,9 +17,13 @@ import (
 	"github.com/jmhodges/clock"
 )
 
-// NotBeforeTolerance is used to allow for a small amount of clock skew when
-// validating the NotBefore field of a certificate.
-const NotBeforeTolerance = 30 * time.Second
+const (
+	// NotBeforeTolerance is used to allow for a small amount of clock skew when
+	// validating the NotBefore field of a certificate.
+	NotBeforeTolerance = 30 * time.Second
+
+	certType = "CERTIFICATE"
+)
 
 var (
 	maxBigInt64 = getMaxBigInt64()
@@ -50,7 +54,7 @@ func LoadCertificates(path string) ([]*x509.Certificate, error) {
 		if block == nil {
 			break
 		}
-		if block.Type != "CERTIFICATE" {
+		if block.Type != certType {
 			continue
 		}
 
@@ -85,7 +89,7 @@ func ParseCertificate(pemBytes []byte) (*x509.Certificate, error) {
 
 // EncodeCertificate encodes the given x509.Certificate into PEM format.
 func EncodeCertificate(cert *x509.Certificate) []byte {
-	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+	return pem.EncodeToMemory(&pem.Block{Type: certType, Bytes: cert.Raw})
 }
 
 // CreateX509Template creates a new x509.Certificate template for a leaf certificate.
@@ -162,8 +166,6 @@ func CreateRootCATemplate(clk clock.Clock, subject pkix.Name, ttl time.Duration)
 // The parent certificate is the issuer of the new certificate.
 // The signerPrivateKey is used to sign the new certificate.
 func SignX509(template, parent *x509.Certificate, signerPrivateKey crypto.PrivateKey) (*x509.Certificate, error) {
-	var err error
-
 	certData, err := x509.CreateCertificate(rand.Reader, template, parent, template.PublicKey, signerPrivateKey)
 	if err != nil {
 		return nil, err

@@ -3,8 +3,16 @@ package cryptoutil
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+const (
+	certPath      = "testdata/cert.pem"
+	certChainPath = "testdata/cert-chain.pem"
+	rsaKeyPath    = "testdata/rsa-key.pem"
+	ecKeyPath     = "testdata/ec-key.pem"
 )
 
 func TestGenerateSigner(t *testing.T) {
@@ -37,54 +45,54 @@ func TestGenerateSigner(t *testing.T) {
 
 func TestParseRSAPrivateKeyPEM(t *testing.T) {
 	// not a private key
-	_, err := ParseRSAPrivateKeyPEM(readFile(t, "testdata/cert.pem"))
+	_, err := ParseRSAPrivateKeyPEM(readFile(t, certPath))
 	require.Error(t, err)
 
 	// success with RSA
-	key, err := ParseRSAPrivateKeyPEM(readFile(t, "testdata/rsa-key.pem"))
+	key, err := ParseRSAPrivateKeyPEM(readFile(t, rsaKeyPath))
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok := key.(*rsa.PrivateKey)
 	require.True(t, ok)
 
 	// failure with EC
-	key, err = ParseRSAPrivateKeyPEM(readFile(t, "testdata/ec-key.pem"))
+	key, err = ParseRSAPrivateKeyPEM(readFile(t, ecKeyPath))
 	require.Error(t, err)
 	require.Nil(t, key)
 }
 
 func TestParseECPrivateKeyPEM(t *testing.T) {
 	// not a private key
-	_, err := ParseECPrivateKeyPEM(readFile(t, "testdata/cert.pem"))
+	_, err := ParseECPrivateKeyPEM(readFile(t, certPath))
 	require.Error(t, err)
 
 	// success with EC
-	key, err := ParseECPrivateKeyPEM(readFile(t, "testdata/ec-key.pem"))
+	key, err := ParseECPrivateKeyPEM(readFile(t, ecKeyPath))
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok := key.(*ecdsa.PrivateKey)
 	require.True(t, ok)
 
 	// failure with RSA
-	key, err = ParseECPrivateKeyPEM(readFile(t, "testdata/rsa-key.pem"))
+	key, err = ParseECPrivateKeyPEM(readFile(t, rsaKeyPath))
 	require.Error(t, err)
 	require.Nil(t, key)
 }
 
 func TestLoadPrivateKey(t *testing.T) {
 	// not a private key
-	_, err := LoadPrivateKey("testdata/cert.pem")
+	_, err := LoadPrivateKey(certPath)
 	require.Error(t, err)
 
 	// success with RSA
-	key, err := LoadPrivateKey("testdata/rsa-key.pem")
+	key, err := LoadPrivateKey(rsaKeyPath)
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok := key.(*rsa.PrivateKey)
 	require.True(t, ok)
 
 	// success with EC
-	key, err = LoadPrivateKey("testdata/ec-key.pem")
+	key, err = LoadPrivateKey(ecKeyPath)
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok = key.(*ecdsa.PrivateKey)
@@ -93,36 +101,36 @@ func TestLoadPrivateKey(t *testing.T) {
 
 func TestLoadRSAPrivateKey(t *testing.T) {
 	// not a private key
-	_, err := LoadRSAPrivateKey("testdata/cert.pem")
+	_, err := LoadRSAPrivateKey(certPath)
 	require.Error(t, err)
 
 	// success with RSA
-	key, err := LoadRSAPrivateKey("testdata/rsa-key.pem")
+	key, err := LoadRSAPrivateKey(rsaKeyPath)
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok := key.(*rsa.PrivateKey)
 	require.True(t, ok)
 
 	// failure with EC
-	key, err = LoadRSAPrivateKey("testdata/rsa-ec.pem")
+	key, err = LoadRSAPrivateKey(ecKeyPath)
 	require.Error(t, err)
 	require.Nil(t, key)
 }
 
 func TestLoadECPrivateKey(t *testing.T) {
 	// not a private key
-	_, err := LoadECPrivateKey("testdata/cert.pem")
+	_, err := LoadECPrivateKey(certPath)
 	require.Error(t, err)
 
 	// success with EC
-	key, err := LoadECPrivateKey("testdata/ec-key.pem")
+	key, err := LoadECPrivateKey(ecKeyPath)
 	require.NoError(t, err)
 	require.NotNil(t, key)
 	_, ok := key.(*ecdsa.PrivateKey)
 	require.True(t, ok)
 
 	// failure with RSA
-	key, err = LoadECPrivateKey("testdata/rsa-key.pem")
+	key, err = LoadECPrivateKey(rsaPrivateKeyType)
 	require.Error(t, err)
 	require.Nil(t, key)
 }
