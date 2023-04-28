@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -20,13 +21,13 @@ func NewHarvesterTestSetup(method, url, body string) *HarvesterTestSetup {
 	req := httptest.NewRequest(method, url, strings.NewReader(body))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	// inMemoryDB := NewInMemoryDB()
+	inMemoryDB := datastore.NewInMemoryDB()
 	logger := logrus.New()
 
 	return &HarvesterTestSetup{
 		EchoCtx:  e.NewContext(req, rec),
 		Recorder: rec,
-		Handler:  NewHarvesterAPIHandlers(logger, _),
+		Handler:  NewHarvesterAPIHandlers(logger, inMemoryDB),
 	}
 }
 

@@ -8,14 +8,26 @@ import (
 )
 
 func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
-	harvesterSpiffeID, err := spiffeid.FromString(*td.HarvesterSpiffeId)
-	if err != nil {
-		return nil, common.ErrWrongSPIFFEID{Cause: err}
+
+	var harvesterSpiffeID spiffeid.ID
+	if td.HarvesterSpiffeId != nil {
+		hSID, err := spiffeid.FromString(*td.HarvesterSpiffeId)
+		if err != nil {
+			return nil, common.ErrWrongSPIFFEID{
+				Cause:    err,
+				SPIFFEID: *td.HarvesterSpiffeId,
+			}
+		}
+
+		harvesterSpiffeID = hSID
 	}
 
 	tdName, err := spiffeid.TrustDomainFromString(td.Name)
 	if err != nil {
-		return nil, common.ErrWrongTrustDomain{Cause: err}
+		return nil, common.ErrWrongTrustDomain{
+			Cause:       err,
+			TrustDomain: td.Name,
+		}
 	}
 
 	description := ""

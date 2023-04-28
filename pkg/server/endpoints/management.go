@@ -23,8 +23,8 @@ type AdminAPIHandlers struct {
 	Datastore datastore.Datastore
 }
 
-func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) AdminAPIHandlers {
-	return AdminAPIHandlers{
+func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPIHandlers {
+	return &AdminAPIHandlers{
 		Logger:    l,
 		Datastore: ds,
 	}

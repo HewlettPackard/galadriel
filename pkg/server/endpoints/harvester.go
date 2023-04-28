@@ -24,8 +24,8 @@ type HarvesterAPIHandlers struct {
 	Datastore datastore.Datastore
 }
 
-func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) HarvesterAPIHandlers {
-	return HarvesterAPIHandlers{
+func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *HarvesterAPIHandlers {
+	return &HarvesterAPIHandlers{
 		Logger:    l,
 		Datastore: ds,
 	}
