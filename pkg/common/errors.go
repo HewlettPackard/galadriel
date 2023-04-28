@@ -7,7 +7,7 @@ type ErrWrongSPIFFEID struct {
 }
 
 func (e ErrWrongSPIFFEID) Error() string {
-	return fmt.Sprintf("malformed spiffe ID: %v", e.Cause)
+	return fmt.Errorf("malformed trust domain name: %w", e.Cause).Error()
 }
 
 type ErrWrongTrustDomain struct {
@@ -15,5 +15,5 @@ type ErrWrongTrustDomain struct {
 }
 
 func (e ErrWrongTrustDomain) Error() string {
-	return fmt.Sprintf("malformed trust domain name: %v", e.Cause)
+	return fmt.Errorf("malformed trust domain name: %w", e.Cause).Error()
 }

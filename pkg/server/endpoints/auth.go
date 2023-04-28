@@ -26,8 +26,7 @@ func (m AuthenticationMiddleware) Authenticate(token string, echoCtx echo.Contex
 	// Any skip cases ?
 	t, err := m.datastore.FindJoinToken(ctx, token)
 	if err != nil {
-		message := "Invalid authorization token"
-		return false, echo.NewHTTPError(http.StatusUnauthorized, message)
+		return false, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	if t == nil {
