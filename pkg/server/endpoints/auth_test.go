@@ -76,11 +76,10 @@ func TestAuthenticate(t *testing.T) {
 		token := GenerateSecureToken(10)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
-		assert.NoError(t, err)
-		assert.True(t, authorized)
+		assert.Error(t, err)
+		assert.False(t, authorized)
 
 		echoHTTPErr := err.(*echo.HTTPError)
-
 		assert.Equal(t, http.StatusInternalServerError, echoHTTPErr.Code)
 	})
 
