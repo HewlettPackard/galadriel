@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -15,8 +16,7 @@ type Config struct {
 	// LocalAddress is the local address to bind the listener to.
 	LocalAddress net.Addr
 
-	// Postgres connection string
-	DatastoreConnString string
+	Datastore datastore.Datastore
 
 	Logger logrus.FieldLogger
 
