@@ -3,7 +3,6 @@ package admin
 import (
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,7 +32,7 @@ func TestTrustDomainPutToEntity(t *testing.T) {
 		}
 
 		trustDomain, err := tdPut.ToEntity()
-		assert.ErrorAs(t, err, &common.ErrWrongTrustDomain{})
+		assert.Error(t, err)
 		assert.Nil(t, trustDomain)
 	})
 

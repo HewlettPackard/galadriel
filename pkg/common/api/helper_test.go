@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -16,7 +15,7 @@ func TestTrustDomainToEntity(t *testing.T) {
 		harvesterSpiffeID := "Not and spiffeid"
 		td := TrustDomain{HarvesterSpiffeId: &harvesterSpiffeID}
 		etd, err := td.ToEntity()
-		assert.ErrorAs(t, err, &common.ErrWrongSPIFFEID{})
+		assert.Error(t, err)
 		assert.Nil(t, etd)
 	})
 
@@ -28,7 +27,7 @@ func TestTrustDomainToEntity(t *testing.T) {
 		}
 
 		etd, err := td.ToEntity()
-		assert.ErrorAs(t, err, &common.ErrWrongTrustDomain{})
+		assert.Error(t, err)
 		assert.Nil(t, etd)
 	})
 

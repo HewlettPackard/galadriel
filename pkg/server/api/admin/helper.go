@@ -1,7 +1,8 @@
 package admin
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"fmt"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -16,7 +17,7 @@ func (r RelationshipRequest) ToEntity() *entity.Relationship {
 func (td TrustDomainPut) ToEntity() (*entity.TrustDomain, error) {
 	tdName, err := spiffeid.TrustDomainFromString(td.Name)
 	if err != nil {
-		return nil, common.ErrWrongTrustDomain{Cause: err}
+		return nil, fmt.Errorf("malformed trust domain[%v]: %w", td.Name, err)
 	}
 
 	description := ""

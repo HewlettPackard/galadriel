@@ -3,7 +3,6 @@ package harvester
 import (
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +11,7 @@ func TestBundlePutToEntity(t *testing.T) {
 		bundlePut := BundlePut{}
 
 		bundle, err := bundlePut.ToEntity()
-		assert.ErrorAs(t, err, &common.ErrWrongTrustDomain{})
+		assert.Error(t, err)
 		assert.Nil(t, bundle)
 	})
 

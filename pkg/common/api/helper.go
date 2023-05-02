@@ -1,7 +1,8 @@
 package api
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"fmt"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -13,10 +14,7 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 	if td.HarvesterSpiffeId != nil {
 		hSID, err := spiffeid.FromString(*td.HarvesterSpiffeId)
 		if err != nil {
-			return nil, common.ErrWrongSPIFFEID{
-				Cause:    err,
-				SPIFFEID: *td.HarvesterSpiffeId,
-			}
+			return nil, fmt.Errorf("malformed SPIFFE ID[%v]: %w", *td.HarvesterSpiffeId, err)
 		}
 
 		harvesterSpiffeID = hSID
@@ -24,10 +22,7 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 
 	tdName, err := spiffeid.TrustDomainFromString(td.Name)
 	if err != nil {
-		return nil, common.ErrWrongTrustDomain{
-			Cause:       err,
-			TrustDomain: td.Name,
-		}
+		return nil, fmt.Errorf("malformed trust domain[%v]: %w", td.Name, err)
 	}
 
 	description := ""

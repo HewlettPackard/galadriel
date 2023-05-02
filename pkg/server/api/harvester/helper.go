@@ -1,7 +1,8 @@
 package harvester
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/common"
+	"fmt"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -9,7 +10,7 @@ import (
 func (b BundlePut) ToEntity() (*entity.Bundle, error) {
 	td, err := spiffeid.TrustDomainFromString(b.TrustDomain)
 	if err != nil {
-		return nil, common.ErrWrongTrustDomain{Cause: err}
+		return nil, fmt.Errorf("malformed trust domain[%v]: %w", b.TrustDomain, err)
 	}
 
 	return &entity.Bundle{
