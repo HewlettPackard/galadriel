@@ -7,9 +7,29 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+var hclConfigWithProviders = `server {
+    listen_address = "127.0.0.1"
+    listen_port = "2222"
+    socket_path = "/tmp/api.sock"
+    db_conn_string = "test_conn_string" 
+	log_level = "DEBUG"
+}
+
+providers {
+	x509ca "disk" {
+		key_file_path = "./root_ca.key"
+		cert_file_path = "./root_ca.crt"
+	}
+}
+`
 
 type fakeReader int
 
@@ -45,28 +65,30 @@ func TestNew(t *testing.T) {
 		err      string
 	}{
 		{
-			name: "ok",
-			config: bytes.NewBuffer([]byte(
-				`server { listen_address = "127.0.0.1" listen_port = 2222 socket_path = "/tmp/api.sock" log_level = "INFO" db_conn_string = "postgresql://postgres:postgres@localhost:5432/galadriel"}`)),
+			name:   "ok",
+			config: bytes.NewBuffer([]byte(hclConfigWithProviders)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: "127.0.0.1",
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
-					LogLevel:      "INFO",
-					DBConnString:  "postgresql://postgres:postgres@localhost:5432/galadriel",
+					LogLevel:      "DEBUG",
+					DBConnString:  "test_conn_string",
 				},
 			},
 		},
 		{
-			name:   "defaults",
-			config: bytes.NewBuffer([]byte(`server { }`)),
+			name: "defaults",
+			config: bytes.NewBuffer([]byte(`server {
+db_conn_string = "test_conn_string"
+}`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: defaultAddress,
 					ListenPort:    defaultPort,
 					SocketPath:    defaultSocketPath,
 					LogLevel:      defaultLogLevel,
+					DBConnString:  "test_conn_string",
 				},
 			},
 		},
@@ -78,7 +100,7 @@ func TestNew(t *testing.T) {
 		{
 			name:   "err_hcl",
 			config: bytes.NewBufferString(`not a valid hcl`),
-			err:    "unable to decode configuration: At 1:17: key 'not a valid hcl' expected start of object ('{') or assignment ('=')",
+			err:    "failed to parse HCL",
 		},
 		{
 			name:   "err_config_reader",
@@ -98,12 +120,24 @@ func TestNew(t *testing.T) {
 
 			if tt.err != "" {
 				assert.Nil(t, serverConfig)
-				assert.EqualError(t, err, tt.err)
+				assert.Contains(t, err.Error(), tt.err)
 				return
 			}
 
-			assert.Equal(t, tt.expected, serverConfig)
+			assert.Equal(t, tt.expected.Server, serverConfig.Server)
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestParseHCLConfigWithProviders(t *testing.T) {
+	var config Config
+
+	hclBody, err := hclsyntax.ParseConfig([]byte(hclConfigWithProviders), "", hcl.Pos{Line: 1, Column: 1})
+	require.False(t, err.HasErrors())
+
+	diagErr := gohcl.DecodeBody(hclBody.Body, nil, &config)
+	require.False(t, diagErr.HasErrors())
+
+	require.NotNil(t, config.Providers)
 }
