@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,16 +20,16 @@ import (
 )
 
 type AuthNTestSetup struct {
-	EchoCtx    echo.Context
-	Middleware *AuthenticationMiddleware
-	Recorder   *httptest.ResponseRecorder
-	InMemoryDB *datastore.InMemoryDatabase
+	EchoCtx      echo.Context
+	Middleware   *AuthenticationMiddleware
+	Recorder     *httptest.ResponseRecorder
+	FakeDatabase *datastore.FakeDatabase
 }
 
 func SetupMiddleware() *AuthNTestSetup {
 	logger := logrus.New()
-	inMemoryDB := datastore.NewInMemoryDB()
-	authnMiddleware := NewAuthenticationMiddleware(logger, inMemoryDB)
+	fakeDB := datastore.NewFakeDB()
+	authnMiddleware := NewAuthenticationMiddleware(logger, fakeDB)
 
 	e := echo.New()
 	e.Use(middleware.KeyAuth(authnMiddleware.Authenticate))
@@ -38,31 +39,35 @@ func SetupMiddleware() *AuthNTestSetup {
 	rec := httptest.NewRecorder()
 
 	return &AuthNTestSetup{
-		Recorder:   rec,
-		InMemoryDB: inMemoryDB,
-		Middleware: authnMiddleware,
-		EchoCtx:    e.NewContext(req, rec),
+		Recorder:     rec,
+		FakeDatabase: fakeDB,
+		Middleware:   authnMiddleware,
+		EchoCtx:      e.NewContext(req, rec),
 	}
 }
 
-func SetupToken(t *testing.T, setup *AuthNTestSetup, token string) {
-	td, err := spiffeid.TrustDomainFromString("test.com")
+func SetupToken(t *testing.T, ds datastore.Datastore, token string, tdID uuid.UUID) *entity.JoinToken {
+	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
 	assert.NoError(t, err)
 
 	jt := &entity.JoinToken{
 		Token:           token,
-		TrustDomainID:   uuid.New(),
+		TrustDomainID:   tdID,
 		TrustDomainName: td,
 	}
 
-	setup.Middleware.datastore.CreateJoinToken(context.TODO(), jt)
+	jt, err = ds.CreateJoinToken(context.TODO(), jt)
+	assert.NoError(t, err)
+	assert.NotNil(t, jt)
+
+	return jt
 }
 
 func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
 		token := GenerateSecureToken(10)
-		SetupToken(t, authnSetup, token)
+		SetupToken(t, authnSetup.FakeDatabase, token, uuid.New())
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.NoError(t, err)
@@ -71,7 +76,9 @@ func TestAuthenticate(t *testing.T) {
 
 	t.Run("Problems when lookup data store must signalize internal server error", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
-		authnSetup.InMemoryDB.FailNext()
+
+		err := errors.New("connection error")
+		authnSetup.FakeDatabase.SetNextError(err)
 
 		token := GenerateSecureToken(10)
 
@@ -80,6 +87,7 @@ func TestAuthenticate(t *testing.T) {
 		assert.False(t, authorized)
 
 		echoHTTPErr := err.(*echo.HTTPError)
+		assert.Equal(t, err.Error(), echoHTTPErr.Message)
 		assert.Equal(t, http.StatusInternalServerError, echoHTTPErr.Code)
 	})
 
