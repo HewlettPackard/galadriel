@@ -14,7 +14,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 
 	adminAPI "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	harvesterAPI "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
+	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
