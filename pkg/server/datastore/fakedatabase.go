@@ -386,7 +386,7 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, tr
 	relationships := []*entity.Relationship{}
 	for _, r := range db.relationships {
 		matchA := r.TrustDomainAID.String() == trustDomainID.String()
-		mattchB := r.TrustDomainBID.String() == trustDomainID.String()
+		matchB := r.TrustDomainBID.String() == trustDomainID.String()
 
 		if matchA || matchB {
 			relationships = append(relationships, r)
