@@ -116,12 +116,12 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 
 func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
 	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	adminAPI.RegisterHandlers(server, NewAdminAPIHandlers(logger, e.Datastore))
+	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	harvesterAPI.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore))
+	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {

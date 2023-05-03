@@ -22,7 +22,6 @@ type FakeDatabase struct {
 }
 
 func NewFakeDB() *FakeDatabase {
-
 	return &FakeDatabase{
 		errors: []error{},
 		mutex:  sync.Mutex{},
