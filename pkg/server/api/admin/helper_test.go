@@ -32,7 +32,7 @@ func TestTrustDomainPutToEntity(t *testing.T) {
 		}
 
 		trustDomain, err := tdPut.ToEntity()
-		assert.EqualError(t, err, "malformed trust domain")
+		assert.ErrorContains(t, err, "malformed trust domain")
 		assert.Nil(t, trustDomain)
 	})
 

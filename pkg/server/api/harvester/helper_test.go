@@ -11,7 +11,7 @@ func TestBundlePutToEntity(t *testing.T) {
 		bundlePut := BundlePut{}
 
 		bundle, err := bundlePut.ToEntity()
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "malformed trust domain")
 		assert.Nil(t, bundle)
 	})
 
