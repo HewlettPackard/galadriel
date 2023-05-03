@@ -35,7 +35,8 @@ func TestWriteResponse(t *testing.T) {
 	t.Run("Error when nil body is passed", func(t *testing.T) {
 		setup := Setup()
 		err := WriteResponse(setup.EchoContext, nil)
-		assert.Error(t, err)
+		assert.EqualError(t, err, "body is required")
+		assert.Empty(t, setup.Recorder.Body)
 	})
 
 	t.Run("No error when an empty body is passed", func(t *testing.T) {
