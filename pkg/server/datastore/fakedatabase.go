@@ -35,6 +35,9 @@ func NewFakeDB() *FakeDatabase {
 }
 
 func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
@@ -53,22 +56,46 @@ func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *enti
 }
 
 func (db *FakeDatabase) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UUID) error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return err
 	}
+
+	var uuid uuid.UUID
+
+	for idx, td := range db.trustDomains {
+		if trustDomainID.String() == td.ID.UUID.String() {
+			uuid = idx
+		}
+	}
+
+	delete(db.trustDomains, uuid)
 
 	return nil
 }
 
 func (db *FakeDatabase) ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	domains := []*entity.TrustDomain{}
+	for _, td := range db.trustDomains {
+		domains = append(domains, td)
+	}
+
+	return domains, nil
 }
 
 func (db *FakeDatabase) FindTrustDomainByID(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
@@ -83,14 +110,26 @@ func (db *FakeDatabase) FindTrustDomainByID(ctx context.Context, trustDomainID u
 }
 
 func (db *FakeDatabase) FindTrustDomainByName(ctx context.Context, trustDomain spiffeid.TrustDomain) (*entity.TrustDomain, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
+	}
+
+	for _, td := range db.trustDomains {
+		if trustDomain.String() == td.Name.String() {
+			return td, nil
+		}
 	}
 
 	return nil, nil
 }
 
 func (db *FakeDatabase) CreateOrUpdateBundle(ctx context.Context, req *entity.Bundle) (*entity.Bundle, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
@@ -109,14 +148,26 @@ func (db *FakeDatabase) CreateOrUpdateBundle(ctx context.Context, req *entity.Bu
 }
 
 func (db *FakeDatabase) FindBundleByID(ctx context.Context, bundleID uuid.UUID) (*entity.Bundle, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
+	}
+
+	for _, b := range db.bundles {
+		if bundleID.String() == b.ID.UUID.String() {
+			return b, nil
+		}
 	}
 
 	return nil, nil
 }
 
 func (db *FakeDatabase) FindBundleByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) (*entity.Bundle, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
@@ -131,22 +182,44 @@ func (db *FakeDatabase) FindBundleByTrustDomainID(ctx context.Context, trustDoma
 }
 
 func (db *FakeDatabase) ListBundles(ctx context.Context) ([]*entity.Bundle, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	bundles := []*entity.Bundle{}
+	for _, bundle := range db.bundles {
+		bundles = append(bundles, bundle)
+	}
+
+	return bundles, nil
 }
 
 func (db *FakeDatabase) DeleteBundle(ctx context.Context, bundleID uuid.UUID) error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return err
 	}
+
+	var uuid uuid.UUID
+	for idx, b := range db.bundles {
+		if bundleID.String() == b.ID.UUID.String() {
+			uuid = idx
+		}
+	}
+
+	delete(db.bundles, uuid)
 
 	return nil
 }
 
 func (db *FakeDatabase) CreateJoinToken(ctx context.Context, req *entity.JoinToken) (*entity.JoinToken, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
 
 	if err := db.getNextError(); err != nil {
 		return nil, err
@@ -176,7 +249,7 @@ func (db *FakeDatabase) FindJoinTokensByID(ctx context.Context, joinTokenID uuid
 	}
 
 	for id, jt := range db.tokens {
-		if joinTokenID == id {
+		if joinTokenID.String() == id.String() {
 			return jt, nil
 		}
 	}
@@ -192,7 +265,14 @@ func (db *FakeDatabase) FindJoinTokensByTrustDomainID(ctx context.Context, trust
 		return nil, err
 	}
 
-	return nil, nil
+	tokens := []*entity.JoinToken{}
+	for _, jt := range db.tokens {
+		if jt.TrustDomainID.String() == trustDomainID.String() {
+			tokens = append(tokens, jt)
+		}
+	}
+
+	return tokens, nil
 }
 
 func (db *FakeDatabase) ListJoinTokens(ctx context.Context) ([]*entity.JoinToken, error) {
@@ -203,21 +283,49 @@ func (db *FakeDatabase) ListJoinTokens(ctx context.Context) ([]*entity.JoinToken
 		return nil, err
 	}
 
-	return nil, nil
+	tokens := []*entity.JoinToken{}
+	for _, jt := range db.tokens {
+		tokens = append(tokens, jt)
+	}
+
+	return tokens, nil
 }
 
 func (db *FakeDatabase) UpdateJoinToken(ctx context.Context, joinTokenID uuid.UUID, used bool) (*entity.JoinToken, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
+	}
+
+	for _, jt := range db.tokens {
+		if jt.TrustDomainID.String() == joinTokenID.String() {
+			jt.Used = used
+			jt.UpdatedAt = time.Now()
+			return jt, nil
+		}
 	}
 
 	return nil, nil
 }
 
 func (db *FakeDatabase) DeleteJoinToken(ctx context.Context, joinTokenID uuid.UUID) error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return err
 	}
+
+	var uuid uuid.UUID
+	for idx, t := range db.tokens {
+		if t.ID.UUID.String() == joinTokenID.String() {
+			uuid = idx
+		}
+	}
+
+	delete(db.tokens, uuid)
 
 	return nil
 }
@@ -240,6 +348,9 @@ func (db *FakeDatabase) FindJoinToken(ctx context.Context, token string) (*entit
 }
 
 func (db *FakeDatabase) CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
@@ -248,33 +359,75 @@ func (db *FakeDatabase) CreateOrUpdateRelationship(ctx context.Context, req *ent
 }
 
 func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
+	}
+
+	for _, r := range db.relationships {
+		if r.ID.UUID.String() == relationshipID.String() {
+			return r, nil
+		}
 	}
 
 	return nil, nil
 }
 
 func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	relationships := []*entity.Relationship{}
+	for _, r := range db.relationships {
+		mactchA := r.TrustDomainAID.String() == trustDomainID.String()
+		mattchB := r.TrustDomainBID.String() == trustDomainID.String()
+
+		if mactchA || mattchB {
+			relationships = append(relationships, r)
+		}
+	}
+
+	return relationships, nil
 }
 
 func (db *FakeDatabase) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	relationships := []*entity.Relationship{}
+	for _, r := range db.relationships {
+		relationships = append(relationships, r)
+	}
+
+	return relationships, nil
 }
 
 func (db *FakeDatabase) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
 	if err := db.getNextError(); err != nil {
 		return err
 	}
+
+	var uuid uuid.UUID
+	for idx, r := range db.relationships {
+		if r.ID.UUID.String() == relationshipID.String() {
+			uuid = idx
+		}
+	}
+
+	delete(db.relationships, uuid)
 
 	return nil
 }
