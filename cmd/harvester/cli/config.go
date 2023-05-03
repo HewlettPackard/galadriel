@@ -19,6 +19,8 @@ const (
 	defaultLogLevel              = "INFO"
 )
 
+// TODO: migrate to HCL 2 (see Server CLI)
+
 type Config struct {
 	Harvester *harvesterConfig `hcl:"harvester"`
 }

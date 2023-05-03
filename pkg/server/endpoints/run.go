@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"net"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -29,6 +30,7 @@ type Endpoints struct {
 	LocalAddr  net.Addr
 	Datastore  datastore.Datastore
 	Logger     logrus.FieldLogger
+	catalog    catalog.Catalog
 }
 
 func New(c *Config) (*Endpoints, error) {
@@ -46,6 +48,7 @@ func New(c *Config) (*Endpoints, error) {
 		LocalAddr:  c.LocalAddress,
 		Datastore:  ds,
 		Logger:     c.Logger,
+		catalog:    c.Catalog,
 	}, nil
 }
 

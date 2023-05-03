@@ -8,7 +8,10 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server"
-	"github.com/hashicorp/hcl"
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -20,22 +23,28 @@ const (
 	defaultLogLevel   = "INFO"
 )
 
+// Config holds the configuration for the Galadriel server.
 type Config struct {
-	Server *serverConfig `hcl:"server"`
+	Server    *serverConfig   `hcl:"server,block"`
+	Providers *providersBlock `hcl:"providers,block"`
 }
 
 type serverConfig struct {
-	ListenAddress string `hcl:"listen_address"`
-	ListenPort    int    `hcl:"listen_port"`
-	SocketPath    string `hcl:"socket_path"`
-	LogLevel      string `hcl:"log_level"`
+	ListenAddress string `hcl:"listen_address,optional"`
+	ListenPort    int    `hcl:"listen_port,optional"`
+	SocketPath    string `hcl:"socket_path,optional"`
+	LogLevel      string `hcl:"log_level,optional"`
 	DBConnString  string `hcl:"db_conn_string"`
+}
+
+// providersBlock holds the Providers HCL block body.
+type providersBlock struct {
+	Body hcl.Body `hcl:",remain"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
 // to a cli.Config object setting the defaults for the missing values.
 func ParseConfig(config io.Reader) (*Config, error) {
-
 	if config == nil {
 		return nil, errors.New("configuration is required")
 	}
@@ -70,14 +79,27 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 
 	sc.DBConnString = c.Server.DBConnString
 
+	// TODO: eventually providers section will be required
+	if c.Providers != nil {
+		sc.ProvidersConfig, err = catalog.ProvidersConfigsFromHCLBody(c.Providers.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse providers configuration: %w", err)
+		}
+	}
+
 	return sc, nil
 }
 
 func newConfig(configBytes []byte) (*Config, error) {
 	var config Config
 
-	if err := hcl.Decode(&config, string(configBytes)); err != nil {
-		return nil, fmt.Errorf("unable to decode configuration: %v", err)
+	hclBody, err := hclsyntax.ParseConfig(configBytes, "", hcl.Pos{Line: 1, Column: 1})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HCL: %w", err)
+	}
+
+	if err := gohcl.DecodeBody(hclBody.Body, nil, &config); err != nil {
+		return nil, fmt.Errorf("failed to decode HCL: %w", err)
 	}
 
 	if config.Server == nil {

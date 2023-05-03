@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -21,4 +22,6 @@ type Config struct {
 	DBConnString string
 
 	Logger logrus.FieldLogger
+
+	ProvidersConfig *catalog.ProvidersConfig
 }
