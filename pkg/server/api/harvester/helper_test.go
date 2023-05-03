@@ -8,10 +8,12 @@ import (
 
 func TestBundlePutToEntity(t *testing.T) {
 	t.Run("Does not allow wrong trust domain names", func(t *testing.T) {
-		bundlePut := BundlePut{}
+		bundlePut := BundlePut{
+			TrustDomain: "a wrong trust domain",
+		}
 
 		bundle, err := bundlePut.ToEntity()
-		assert.ErrorContains(t, err, "malformed trust domain")
+		assert.ErrorContains(t, err, "malformed trust domain[a wrong trust domain]")
 		assert.Nil(t, bundle)
 	})
 
