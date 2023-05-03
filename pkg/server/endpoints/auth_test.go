@@ -77,8 +77,8 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("Problems when lookup data store must signalize internal server error", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
 
-		err := errors.New("connection error")
-		authnSetup.FakeDatabase.SetNextError(err)
+		expectedErr := errors.New("connection error")
+		authnSetup.FakeDatabase.SetNextError(expectedErr)
 
 		token := GenerateSecureToken(10)
 
@@ -87,7 +87,7 @@ func TestAuthenticate(t *testing.T) {
 		assert.False(t, authorized)
 
 		echoHTTPErr := err.(*echo.HTTPError)
-		assert.Equal(t, err.Error(), echoHTTPErr.Message)
+		assert.Equal(t, expectedErr.Error(), echoHTTPErr.Message)
 		assert.Equal(t, http.StatusInternalServerError, echoHTTPErr.Code)
 	})
 
