@@ -13,7 +13,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 
-	adminAPI "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
