@@ -3,6 +3,7 @@ package harvester
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -31,18 +32,18 @@ func (h *Harvester) Run(ctx context.Context) error {
 		return errors.New("token is required to connect the Harvester to the Galadriel Server")
 	}
 
-	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.JoinToken)
+	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.JoinToken, h.config.ServerTrustBundlePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create Galadriel Server client: %w", err)
 	}
 
 	err = galadrielClient.Connect(ctx, h.config.JoinToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to Galadriel Server: %w", err)
 	}
 
 	config := &controller.Config{
-		ServerAddress:         h.config.ServerAddress,
+		GaladrielServerClient: galadrielClient,
 		SpireSocketPath:       h.config.SpireAddress,
 		AccessToken:           h.config.JoinToken,
 		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
@@ -60,6 +61,7 @@ func (h *Harvester) Run(ctx context.Context) error {
 	return err
 }
 
+// TODO: implement this or remove it
 func (h *Harvester) Stop() {
 	// unload and cleanup stuff
 }

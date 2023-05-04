@@ -26,23 +26,19 @@ type HarvesterController struct {
 
 // Config represents the configurations for the Harvester Controller
 type Config struct {
-	ServerAddress         string
 	SpireSocketPath       net.Addr
 	AccessToken           string
 	BundleUpdatesInterval time.Duration
 	Logger                logrus.FieldLogger
+	GaladrielServerClient client.GaladrielServerClient
 }
 
 func NewHarvesterController(ctx context.Context, config *Config) (*HarvesterController, error) {
 	sc := spire.NewLocalSpireServer(ctx, config.SpireSocketPath)
-	gc, err := client.NewGaladrielServerClient(config.ServerAddress, config.AccessToken)
-	if err != nil {
-		return nil, err
-	}
 
 	return &HarvesterController{
 		spire:  sc,
-		server: gc,
+		server: config.GaladrielServerClient,
 		config: config,
 		logger: logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
 	}, nil
