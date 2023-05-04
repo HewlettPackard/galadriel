@@ -41,7 +41,7 @@ type client struct {
 }
 
 // NewGaladrielServerClient creates a new Galadriel Server client, using the given token to authenticate
-// and the given rootCAPath to validate the server certificate.
+// and the given trustBundlePath to validate the server certificate.
 func NewGaladrielServerClient(address *net.TCPAddr, token string, trustBundlePath string) (GaladrielServerClient, error) {
 	c, err := createTLSClient(trustBundlePath)
 	if err != nil {
