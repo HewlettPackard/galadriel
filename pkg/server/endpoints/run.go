@@ -21,6 +21,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
+
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+
+	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
 const (
@@ -87,10 +92,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	server.HidePort = true
 
 	e.addTCPHandlers(server)
-
-	server.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		return e.validateToken(c, key)
-	}))
+	e.addTCPMiddlewares(server)
 
 	cert, err := e.getTLSCertificate(ctx)
 	if err != nil {
@@ -141,7 +143,7 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 }
 
 func (e *Endpoints) runUDSServer(ctx context.Context) error {
-	server := &http.Server{}
+	server := echo.New()
 
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
 	if err != nil {
@@ -149,12 +151,12 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 	defer l.Close()
 
-	e.addHandlers()
+	e.addUDSHandlers(server)
 
 	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
 	errChan := make(chan error)
 	go func() {
-		errChan <- server.Serve(l)
+		errChan <- server.Server.Serve(l)
 	}()
 
 	select {
@@ -170,18 +172,20 @@ func (e *Endpoints) runUDSServer(ctx context.Context) error {
 	}
 }
 
-func (e *Endpoints) addHandlers() {
-	http.HandleFunc("/createTrustDomain", e.createTrustDomainHandler)
-	http.HandleFunc("/listTrustDomains", e.listTrustDomainsHandler)
-	http.HandleFunc("/createRelationship", e.createRelationshipHandler)
-	http.HandleFunc("/listRelationships", e.listRelationshipsHandler)
-	http.HandleFunc("/generateToken", e.generateTokenHandler)
+func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	server.CONNECT("/onboard", e.onboardHandler)
-	server.POST("/bundle", e.postBundleHandler)
-	server.POST("/bundle/sync", e.syncFederatedBundleHandler)
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore))
+}
+
+func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
+	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	authNMiddleware := NewAuthenticationMiddleware(logger, e.Datastore)
+	server.Use(middleware.KeyAuth(authNMiddleware.Authenticate))
 }
 
 func (t *certificateSource) setTLSCertificate(cert *tls.Certificate) {
