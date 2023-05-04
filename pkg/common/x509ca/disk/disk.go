@@ -84,6 +84,13 @@ func (ca *X509CA) Configure(config *Config) error {
 // IssueX509Certificate issues an X509 certificate using the disk-based private key and ROOT CA certificate. The certificate
 // is bound to the given public key and subject.
 func (ca *X509CA) IssueX509Certificate(ctx context.Context, params *x509ca.X509CertificateParams) ([]*x509.Certificate, error) {
+	if params.PublicKey == nil {
+		return nil, errors.New("public key is required")
+	}
+	if params.TTL == 0 {
+		return nil, errors.New("TTL is required")
+	}
+
 	template, err := cryptoutil.CreateX509Template(ca.clock, params.PublicKey, params.Subject, params.URIs, params.DNSNames, params.TTL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create template for Server certificate: %w", err)

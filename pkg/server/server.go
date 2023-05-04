@@ -6,6 +6,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 )
 
@@ -34,7 +35,13 @@ func (s *Server) run(ctx context.Context) error {
 		return err
 	}
 
-	endpointsServer, err := s.newEndpointsServer(cat)
+	// TODO: consider moving the datastore to the catalog?
+	ds, err := datastore.NewSQLDatastore(s.config.Logger, s.config.DBConnString)
+	if err != nil {
+		return err
+	}
+
+	endpointsServer, err := s.newEndpointsServer(cat, ds)
 	if err != nil {
 		return err
 	}
@@ -46,13 +53,13 @@ func (s *Server) run(ctx context.Context) error {
 	return err
 }
 
-func (s *Server) newEndpointsServer(catalog catalog.Catalog) (endpoints.Server, error) {
+func (s *Server) newEndpointsServer(catalog catalog.Catalog, ds datastore.Datastore) (endpoints.Server, error) {
 	config := &endpoints.Config{
-		TCPAddress:          s.config.TCPAddress,
-		LocalAddress:        s.config.LocalAddress,
-		DatastoreConnString: s.config.DBConnString,
-		Logger:              s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		Catalog:             catalog,
+		TCPAddress:   s.config.TCPAddress,
+		LocalAddress: s.config.LocalAddress,
+		Logger:       s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		Datastore:    ds,
+		Catalog:      catalog,
 	}
 
 	return endpoints.New(config)

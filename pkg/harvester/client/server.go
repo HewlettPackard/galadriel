@@ -3,12 +3,17 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/sirupsen/logrus"
 )
@@ -29,23 +34,31 @@ type GaladrielServerClient interface {
 }
 
 type client struct {
-	c       http.Client
-	address string
+	c       *http.Client
+	address *net.TCPAddr
 	token   string
 	logger  logrus.FieldLogger
 }
 
-func NewGaladrielServerClient(address, token string) (GaladrielServerClient, error) {
+// NewGaladrielServerClient creates a new Galadriel Server client, using the given token to authenticate
+// and the given trustBundlePath to validate the server certificate.
+func NewGaladrielServerClient(address *net.TCPAddr, token string, trustBundlePath string) (GaladrielServerClient, error) {
+	c, err := createTLSClient(trustBundlePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TLS client: %w", err)
+	}
+
 	return &client{
-		c:       *http.DefaultClient,
-		address: "http://" + address,
+		c:       c,
+		address: address,
 		token:   token,
 		logger:  logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
 	}, nil
 }
 
 func (c *client) Connect(ctx context.Context, token string) error {
-	url := c.address + onboardPath
+	url := fmt.Sprintf("https://%s%s", c.address.String(), onboardPath)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodConnect, url, nil)
 	if err != nil {
 		return err
@@ -77,7 +90,7 @@ func (c *client) SyncFederatedBundles(ctx context.Context, req *common.SyncBundl
 	}
 
 	c.logger.Debugf("Sending post federated bundles updates:\n%s", b)
-	url := c.address + postBundleSyncPath
+	url := c.address.String() + postBundleSyncPath
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
@@ -117,7 +130,7 @@ func (c *client) PostBundle(ctx context.Context, req *common.PostBundleRequest) 
 		return fmt.Errorf("failed to marshal push bundle request: %v", err)
 	}
 
-	url := c.address + postBundlePath
+	url := c.address.String() + postBundlePath
 
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
@@ -145,6 +158,30 @@ func (c *client) PostBundle(ctx context.Context, req *common.PostBundleRequest) 
 	}
 
 	return nil
+}
+
+func createTLSClient(trustBundlePath string) (*http.Client, error) {
+	caCert, err := os.ReadFile(trustBundlePath)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		return nil, fmt.Errorf("failed to append CA certificates")
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:    caCertPool,
+			ServerName: constants.GaladrielServerName,
+		},
+	}
+
+	return &http.Client{
+		Transport: tr,
+	}, nil
 }
 
 func readBody(resp *http.Response) (string, error) {

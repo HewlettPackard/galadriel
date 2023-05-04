@@ -16,7 +16,7 @@ type Config struct {
 	LocalAddress net.Addr
 
 	// Address of Galadriel server
-	ServerAddress string
+	ServerAddress *net.TCPAddr
 
 	// Address of SPIRE Server
 	SpireAddress net.Addr
@@ -29,6 +29,9 @@ type Config struct {
 
 	// Directory to store runtime data
 	DataDir string
+
+	// Path to the trust bundle for the Galadriel Server
+	ServerTrustBundlePath string
 
 	Logger logrus.FieldLogger
 }
