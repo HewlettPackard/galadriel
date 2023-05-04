@@ -179,11 +179,9 @@ func createTLSClient(trustBundlePath string) (*http.Client, error) {
 		},
 	}
 
-	client := &http.Client{
+	return &http.Client{
 		Transport: tr,
-	}
-
-	return client, nil
+	}, nil
 }
 
 func readBody(resp *http.Response) (string, error) {
