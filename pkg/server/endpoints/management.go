@@ -23,6 +23,7 @@ type AdminAPIHandlers struct {
 	Datastore datastore.Datastore
 }
 
+// NewAdminAPIHandlers create a new NewAdminAPIHandlers
 func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPIHandlers {
 	return &AdminAPIHandlers{
 		Logger:    l,
@@ -30,8 +31,7 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPI
 	}
 }
 
-// Get relationships
-// (GET /relationships)
+// GetRelationships list all relationships filtered by the request params - (GET /relationships)
 func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRelationshipsParams) error {
 	gctx := ctx.Request().Context()
 
@@ -57,8 +57,7 @@ func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRel
 	return nil
 }
 
-// Create a relationship request between two Trust Domains
-// (PUT /relationships)
+// PutRelationships create a new relationship request between two trust domains - (PUT /relationships)
 func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	gctx := ctx.Request().Context()
 
@@ -88,14 +87,12 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	return nil
 }
 
-// Get a specific relationship
-// (GET /relationships/{relationshipID})
+// GetRelationshipsRelationshipID retrieve a specific relationship based on its id - (GET /relationships/{relationshipID})
 func (h AdminAPIHandlers) GetRelationshipsRelationshipID(ctx echo.Context, relationshipID api.UUID) error {
 	return nil
 }
 
-// Add a specific trust domain
-// (PUT /trust-domain)
+// PutTrustDomain create a new trust domain - (PUT /trust-domain)
 func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	// Getting golang context
 	gctx := ctx.Request().Context()
@@ -139,20 +136,17 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	return nil
 }
 
-// Get a specific trust domain
-// (GET /trust-domain/{trustDomainName})
+// GetTrustDomainTrustDomainName retrieve a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
 func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	return nil
 }
 
-// Update a specific trust domain
-// (PUT /trust-domain/{trustDomainName})
+// PutTrustDomainTrustDomainName updates the trust domain - (PUT /trust-domain/{trustDomainName})
 func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName api.UUID) error {
 	return nil
 }
 
-// Get a join token for a specific Trust Domain
-// (POST /trust-domain/{trustDomainName}/join-token)
+// PostTrustDomainTrustDomainNameJoinToken generate a join token for the trust domain - (POST /trust-domain/{trustDomainName}/join-token)
 func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	return nil
 }
