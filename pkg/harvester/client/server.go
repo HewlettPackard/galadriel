@@ -167,7 +167,11 @@ func createTLSClient(trustBundlePath string) (*http.Client, error) {
 	}
 
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		return nil, fmt.Errorf("failed to append CA certificates")
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			RootCAs:    caCertPool,

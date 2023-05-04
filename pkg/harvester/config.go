@@ -30,7 +30,8 @@ type Config struct {
 	// Directory to store runtime data
 	DataDir string
 
-	TrustBundlePath string
+	// Path to the trust bundle for the Galadriel Server
+	ServerTrustBundlePath string
 
 	Logger logrus.FieldLogger
 }

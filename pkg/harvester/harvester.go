@@ -32,7 +32,7 @@ func (h *Harvester) Run(ctx context.Context) error {
 		return errors.New("token is required to connect the Harvester to the Galadriel Server")
 	}
 
-	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.JoinToken, h.config.TrustBundlePath)
+	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.JoinToken, h.config.ServerTrustBundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to create Galadriel Server client: %w", err)
 	}

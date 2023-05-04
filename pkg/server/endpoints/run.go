@@ -191,8 +191,8 @@ func (t *certificateSource) setTLSCertificate(cert *tls.Certificate) {
 }
 
 func (t *certificateSource) getTLSCertificate() *tls.Certificate {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.cert
 }
 
@@ -206,14 +206,14 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 	for {
 		select {
 		case <-ticker.C:
-			e.Logger.Info("Rotating GCA TLS certificate")
+			e.Logger.Info("Rotating Server TLS certificate")
 			cert, err := e.getTLSCertificate(ctx)
 			if err != nil {
-				errChan <- fmt.Errorf("failed to rotate GCA TLS certificate: %w", err)
+				errChan <- fmt.Errorf("failed to rotate Server TLS certificate: %w", err)
 			}
 			e.certsStore.setTLSCertificate(cert)
 		case <-ctx.Done():
-			e.Logger.Info("Stopped GCA TLS certificate rotator")
+			e.Logger.Info("Stopped Server TLS certificate rotator")
 			return
 		}
 	}

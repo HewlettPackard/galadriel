@@ -29,7 +29,7 @@ type Config struct {
 type harvesterConfig struct {
 	SpireSocketPath       string `hcl:"spire_socket_path"`
 	ServerAddress         string `hcl:"server_address"`
-	TrustBundlePath       string `hcl:"trust_bundle_path"`
+	ServerTrustBundlePath string `hcl:"server_trust_bundle_path"`
 	BundleUpdatesInterval string `hcl:"bundle_updates_interval"`
 	LogLevel              string `hcl:"log_level"`
 }
@@ -70,7 +70,7 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 
 	hc.SpireAddress = spireAddr
 	hc.ServerAddress = serverTCPAddress
-	hc.TrustBundlePath = c.Harvester.TrustBundlePath
+	hc.ServerTrustBundlePath = c.Harvester.ServerTrustBundlePath
 	hc.BundleUpdatesInterval = buInt
 
 	hc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
