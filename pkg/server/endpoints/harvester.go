@@ -391,8 +391,8 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	}
 	// end authn
 
-	var req harvesterapi.BundlePut
-	err = chttp.FromBody(ctx, req)
+	var req *harvesterapi.BundlePut
+	err = chttp.FromBody(ctx, &req)
 	if err != nil {
 		err = fmt.Errorf("failed to unmarshal request body: %v", err)
 		return h.handleErrorAndLog(err, http.StatusBadRequest)
@@ -405,7 +405,7 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	}
 
 	storedBundle, err := h.datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
-	if err != nil || storedBundle == nil {
+	if err != nil {
 		err := errors.New("error looking up bundle")
 		h.handleTCPError(ctx, err.Error())
 		return err
@@ -423,15 +423,18 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 		h.handleTCPError(ctx, err.Error())
 		return err
 	}
-	bundle.TrustDomainID = storedBundle.TrustDomainID
 
-	res, err := h.datastore.CreateOrUpdateBundle(ctx.Request().Context(), bundle)
+	if storedBundle != nil {
+		bundle.TrustDomainID = storedBundle.TrustDomainID
+	}
+
+	_, err = h.datastore.CreateOrUpdateBundle(ctx.Request().Context(), bundle)
 	if err != nil {
 		h.handleTCPError(ctx, err.Error())
 		return err
 	}
 
-	if err = WriteResponse(ctx, res); err != nil {
+	if err = chttp.BodylessResponse(ctx); err != nil {
 		h.handleTCPError(ctx, err.Error())
 		return err
 	}
