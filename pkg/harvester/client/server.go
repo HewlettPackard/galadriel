@@ -6,11 +6,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
@@ -23,63 +26,127 @@ const (
 
 	postBundlePath     = "/bundle"
 	postBundleSyncPath = "/bundle/sync"
-	onboardPath        = "/onboard"
+	onboardPath        = "/trust-domain/onboard"
+	jwtPath            = "/trust-domain/jwt"
 )
 
 // GaladrielServerClient represents a client to connect to Galadriel Server
 type GaladrielServerClient interface {
 	SyncFederatedBundles(context.Context, *common.SyncBundleRequest) (*common.SyncBundleResponse, error)
 	PostBundle(context.Context, *common.PostBundleRequest) error
-	Connect(ctx context.Context, token string) error
+	Onboard(ctx context.Context, token string) error
+	GetNewJWTToken(ctx context.Context) error
 }
 
 type client struct {
-	c       *http.Client
-	address *net.TCPAddr
-	token   string
-	logger  logrus.FieldLogger
+	httpClient  *http.Client
+	address     *net.TCPAddr
+	logger      logrus.FieldLogger
+	jwtProvider *jwtProvider
+	errChan     chan error
+}
+
+type jwtProvider struct {
+	mu  sync.RWMutex
+	jwt string
 }
 
 // NewGaladrielServerClient creates a new Galadriel Server client, using the given token to authenticate
 // and the given trustBundlePath to validate the server certificate.
-func NewGaladrielServerClient(address *net.TCPAddr, token string, trustBundlePath string) (GaladrielServerClient, error) {
-	c, err := createTLSClient(trustBundlePath)
+func NewGaladrielServerClient(address *net.TCPAddr, trustBundlePath string) (GaladrielServerClient, error) {
+	skipOnboard := func(req *http.Request) bool {
+		return strings.Contains(req.URL.Path, onboardPath)
+	}
+
+	jp := &jwtProvider{}
+
+	c, err := createTLSClient(trustBundlePath, jp, skipOnboard)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TLS client: %w", err)
 	}
 
-	return &client{
-		c:       c,
-		address: address,
-		token:   token,
-		logger:  logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
-	}, nil
+	errChan := make(chan error)
+	client := &client{
+		httpClient:  c,
+		address:     address,
+		logger:      logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServerClient),
+		jwtProvider: jp,
+		errChan:     errChan,
+	}
+
+	return client, nil
 }
 
-func (c *client) Connect(ctx context.Context, token string) error {
-	url := fmt.Sprintf("https://%s%s", c.address.String(), onboardPath)
+func (c *client) Onboard(ctx context.Context, token string) error {
+	url := fmt.Sprintf("%s%s?joinToken=%s", c.getHTTPAddress(), onboardPath, token)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodConnect, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
 
-	resp, err := c.c.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		bodyString, err := readBody(resp)
 		if err != nil {
 			return fmt.Errorf("failed to read response body: %v", err)
 		}
-		return fmt.Errorf("failed to connect to Galadriel Server: %s", bodyString)
+		return errors.New(bodyString)
 	}
 
+	bodyString, err := readBody(resp)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if bodyString == "" {
+		return errors.New("empty response body")
+	}
+	c.jwtProvider.setToken(bodyString)
+
 	c.logger.Info("Connected to Galadriel Server")
+
+	return nil
+}
+
+func (c *client) GetNewJWTToken(ctx context.Context) error {
+	url := fmt.Sprintf("%s%s", c.getHTTPAddress(), jwtPath)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyString, err := readBody(resp)
+		if err != nil {
+			return fmt.Errorf("failed to read response body: %v", err)
+		}
+		return errors.New(bodyString)
+	}
+
+	bodyString, err := readBody(resp)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if bodyString == "" {
+		return errors.New("empty response body")
+	}
+
+	c.jwtProvider.setToken(bodyString)
+
 	return nil
 }
 
@@ -96,11 +163,7 @@ func (c *client) SyncFederatedBundles(ctx context.Context, req *common.SyncBundl
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
-	// TODO: decorate all requests coming out
-	r.Header.Set("Authorization", "Bearer "+c.token)
-	r.Header.Set("Content-Type", contentType)
-
-	res, err := c.c.Do(r)
+	res, err := c.httpClient.Do(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
@@ -111,8 +174,7 @@ func (c *client) SyncFederatedBundles(ctx context.Context, req *common.SyncBundl
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// TODO: check right status code
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("request returned an error code %d: \n%s", res.StatusCode, body)
 	}
 
@@ -137,11 +199,7 @@ func (c *client) PostBundle(ctx context.Context, req *common.PostBundleRequest) 
 		return fmt.Errorf("failed to create push bundle request: %v", err)
 	}
 
-	// TODO: decorate all requests coming out
-	r.Header.Set("Authorization", "Bearer "+c.token)
-	r.Header.Set("Content-Type", contentType)
-
-	res, err := c.c.Do(r)
+	res, err := c.httpClient.Do(r)
 	if err != nil {
 		return fmt.Errorf("failed to send push bundle request: %v", err)
 	}
@@ -152,15 +210,14 @@ func (c *client) PostBundle(ctx context.Context, req *common.PostBundleRequest) 
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// TODO: check right status code
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("push bundle request returned an error code %d: \n%s", res.StatusCode, body)
 	}
 
 	return nil
 }
 
-func createTLSClient(trustBundlePath string) (*http.Client, error) {
+func createTLSClient(trustBundlePath string, jwtProvider *jwtProvider, skipper func(*http.Request) bool) (*http.Client, error) {
 	caCert, err := os.ReadFile(trustBundlePath)
 	if err != nil {
 		return nil, err
@@ -172,7 +229,7 @@ func createTLSClient(trustBundlePath string) (*http.Client, error) {
 		return nil, fmt.Errorf("failed to append CA certificates")
 	}
 
-	tr := &http.Transport{
+	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			RootCAs:    caCertPool,
 			ServerName: constants.GaladrielServerName,
@@ -180,8 +237,51 @@ func createTLSClient(trustBundlePath string) (*http.Client, error) {
 	}
 
 	return &http.Client{
-		Transport: tr,
+		Transport: &decoratedTransport{
+			jwtProvider: jwtProvider,
+			transport:   transport,
+			skipper:     skipper,
+		},
 	}, nil
+}
+
+type decoratedTransport struct {
+	jwtProvider *jwtProvider
+	transport   *http.Transport
+	skipper     func(*http.Request) bool
+}
+
+// RoundTrip applies the decorator to every request adding the Authorization header
+func (t *decoratedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.skipper != nil && t.skipper(req) {
+		return t.transport.RoundTrip(req)
+	}
+
+	// Apply decorator
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.jwtProvider.getToken()))
+	req.Header.Set("Content-Type", contentType)
+
+	return t.transport.RoundTrip(req)
+}
+
+func (j *jwtProvider) setToken(t string) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	// Sanitize token removing leading and trailing spaces and quotes
+	token := strings.TrimSpace(t)
+	token = strings.ReplaceAll(token, "\"", "")
+	j.jwt = token
+}
+
+func (j *jwtProvider) getToken() string {
+	j.mu.RLock()
+	defer j.mu.RUnlock()
+	return j.jwt
+}
+
+func (c *client) getHTTPAddress() string {
+	return fmt.Sprintf("https://%s", c.address.String())
 }
 
 func readBody(resp *http.Response) (string, error) {

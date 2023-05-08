@@ -2,6 +2,8 @@ package catalog
 
 import (
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
+	"github.com/HewlettPackard/galadriel/pkg/common/keymanager/memory"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
@@ -12,16 +14,19 @@ import (
 // Catalog is a collection of provider interfaces.
 type Catalog interface {
 	GetX509CA() x509ca.X509CA
+	GetKeyManager() keymanager.KeyManager
 }
 
 // ProvidersRepository is the implementation of the Catalog interface.
 type ProvidersRepository struct {
-	x509ca x509ca.X509CA
+	x509ca     x509ca.X509CA
+	keyManager keymanager.KeyManager
 }
 
 // ProvidersConfig holds the HCL configuration for the providers.
 type ProvidersConfig struct {
-	X509CA *providerConfig `hcl:"x509ca,block"`
+	X509CA     *providerConfig `hcl:"X509CA,block"`
+	KeyManager *providerConfig `hcl:"KeyManager,block"`
 }
 
 // providerConfig holds the HCL configuration options for a single provider.
@@ -52,16 +57,22 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 	if config == nil {
 		return fmt.Errorf("configuration is required")
 	}
+	if config.X509CA == nil {
+		return fmt.Errorf("X509CA configuration is required")
+	}
+	if config.KeyManager == nil {
+		return fmt.Errorf("KeyManager configuration is required")
+	}
 
-	switch config.X509CA.Name {
-	case "disk":
-		x509CA, err := makeDiskX509CA(config.X509CA)
-		if err != nil {
-			return fmt.Errorf("error creating disk X509CA: %w", err)
-		}
-		c.x509ca = x509CA
-	default:
-		return fmt.Errorf("unknown X509CA provider: %s", config.X509CA.Name)
+	var err error
+	c.x509ca, err = loadX509CA(config.X509CA)
+	if err != nil {
+		return fmt.Errorf("error loading X509CA: %w", err)
+	}
+
+	c.keyManager, err = loadKeyManager(config.KeyManager)
+	if err != nil {
+		return fmt.Errorf("error loading KeyManager: %w", err)
 	}
 
 	return nil
@@ -69,6 +80,33 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 
 func (c *ProvidersRepository) GetX509CA() x509ca.X509CA {
 	return c.x509ca
+}
+
+func (c *ProvidersRepository) GetKeyManager() keymanager.KeyManager {
+	return c.keyManager
+}
+
+func loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
+	switch c.Name {
+	case "disk":
+		x509CA, err := makeDiskX509CA(c)
+		if err != nil {
+			return nil, fmt.Errorf("error creating disk X509CA: %w", err)
+		}
+		return x509CA, nil
+	}
+
+	return nil, fmt.Errorf("unknown X509CA provider: %s", c.Name)
+}
+
+func loadKeyManager(c *providerConfig) (keymanager.KeyManager, error) {
+	switch c.Name {
+	case "memory":
+		km := memory.New(nil)
+		return km, nil
+	}
+
+	return nil, fmt.Errorf("unknown KeyManager provider: %s", c.Name)
 }
 
 func makeDiskX509CA(config *providerConfig) (*disk.X509CA, error) {

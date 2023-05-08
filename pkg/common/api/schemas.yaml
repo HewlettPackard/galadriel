@@ -171,7 +171,3 @@ components:
       type: "http"
       scheme: "bearer"
       bearerFormat: "JWT"
-    join_token:
-      type: "http"
-      scheme: "bearer"
-      bearerFormat: "UUID"

@@ -10,22 +10,23 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
+	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
+	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
-
-	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-
-	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 )
 
 const (
@@ -46,8 +47,11 @@ type Endpoints struct {
 	Datastore  datastore.Datastore
 	Logger     logrus.FieldLogger
 
-	x509CA     x509ca.X509CA
-	certsStore *certificateSource
+	x509CA       x509ca.X509CA
+	jwtIssuer    jwt.Issuer
+	jwtValidator jwt.Validator
+	keyManager   keymanager.KeyManager
+	certsStore   *certificateSource
 
 	hooks struct {
 		// test hook used to signal that TCP listener is ready
@@ -66,11 +70,13 @@ func New(c *Config) (*Endpoints, error) {
 	}
 
 	return &Endpoints{
-		TCPAddress: c.TCPAddress,
-		LocalAddr:  c.LocalAddress,
-		Datastore:  c.Datastore,
-		Logger:     c.Logger,
-		x509CA:     c.Catalog.GetX509CA(),
+		TCPAddress:   c.TCPAddress,
+		LocalAddr:    c.LocalAddress,
+		Datastore:    c.Datastore,
+		Logger:       c.Logger,
+		x509CA:       c.Catalog.GetX509CA(),
+		jwtIssuer:    c.JWTIssuer,
+		jwtValidator: c.JWTValidator,
 	}, nil
 }
 
@@ -179,13 +185,27 @@ func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
 	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore))
+	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore, e.jwtIssuer, e.jwtValidator))
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
 	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	authNMiddleware := NewAuthenticationMiddleware(logger, e.Datastore)
-	server.Use(middleware.KeyAuth(authNMiddleware.Authenticate))
+	authNMiddleware := NewAuthenticationMiddleware(logger, e.Datastore, e.jwtValidator)
+
+	skipOnboard := func(c echo.Context) bool {
+		return strings.Contains(c.Request().URL.Path, "/onboard")
+	}
+
+	myMiddleware := func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if skipOnboard(c) {
+				return next(c)
+			}
+			return middleware.KeyAuth(authNMiddleware.Authenticate)(next)(c)
+		}
+	}
+
+	server.Use(myMiddleware, middleware.Recover(), middleware.CORS())
 }
 
 func (t *certificateSource) setTLSCertificate(cert *tls.Certificate) {

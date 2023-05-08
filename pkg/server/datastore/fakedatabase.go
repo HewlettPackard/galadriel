@@ -1,3 +1,4 @@
+// TODO: move to folder test/fakes/fakedatastpre
 package datastore
 
 import (

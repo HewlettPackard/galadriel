@@ -29,12 +29,12 @@ var tokenCmd = &cobra.Command{
 			return err
 		}
 
-		at, err := c.GenerateJoinToken(trustDomain)
+		joinToken, err := c.GenerateJoinToken(trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("Join Token: " + at.Token)
+		fmt.Printf("Join Token: %s", joinToken)
 		return nil
 	},
 }

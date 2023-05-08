@@ -11,6 +11,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/test/jwttest"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -30,11 +31,13 @@ func NewHarvesterTestSetup(method, url, body string) *HarvesterTestSetup {
 	rec := httptest.NewRecorder()
 	fakeDB := datastore.NewFakeDB()
 	logger := logrus.New()
+	jwtIssuer, signer := jwttest.NewJWTIssuer()
+	jwtValidator := jwttest.NewJWTValidator(signer, []string{"test"})
 
 	return &HarvesterTestSetup{
 		EchoCtx:  e.NewContext(req, rec),
 		Recorder: rec,
-		Handler:  NewHarvesterAPIHandlers(logger, fakeDB),
+		Handler:  NewHarvesterAPIHandlers(logger, fakeDB, jwtIssuer, jwtValidator),
 	}
 }
 
@@ -86,10 +89,8 @@ func TestTCPBundlePut(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Creating Auth token to bypass AuthN layer
-		token := GenerateSecureToken(10)
-		jt := SetupToken(t, harvesterTestSetup.Handler.Datastore, token, td.ID.UUID)
 		assert.NoError(t, err)
-		echoCtx.Set(tokenKey, jt)
+		echoCtx.Set(trustDomainKey, td)
 
 		// Test Main Objective
 		err = harvesterTestSetup.Handler.BundlePut(echoCtx, testTrustDomain)
