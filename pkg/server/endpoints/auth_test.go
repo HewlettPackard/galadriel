@@ -77,6 +77,7 @@ func TestAuthenticate(t *testing.T) {
 			Audience: []string{"test"},
 			TTL:      5 * time.Minute,
 		})
+		require.NoError(t, err)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.NoError(t, err)
@@ -92,6 +93,7 @@ func TestAuthenticate(t *testing.T) {
 			Audience: []string{"invalid-audience"},
 			TTL:      5 * time.Minute,
 		})
+		require.NoError(t, err)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.Error(t, err)

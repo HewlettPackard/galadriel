@@ -17,7 +17,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
-	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
@@ -50,7 +49,6 @@ type Endpoints struct {
 	x509CA       x509ca.X509CA
 	jwtIssuer    jwt.Issuer
 	jwtValidator jwt.Validator
-	keyManager   keymanager.KeyManager
 	certsStore   *certificateSource
 
 	hooks struct {
