@@ -3,14 +3,11 @@ package endpoints
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
@@ -18,12 +15,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type HarvesterTestSetup struct {
 	EchoCtx  echo.Context
-	Handler  *harvesterAPIHandlers
 	Recorder *httptest.ResponseRecorder
+	Handler  *harvesterAPIHandlers
 }
 
 func NewHarvesterTestSetup(method, url, body string) *HarvesterTestSetup {
@@ -41,128 +39,88 @@ func NewHarvesterTestSetup(method, url, body string) *HarvesterTestSetup {
 	}
 }
 
-func SetupTrustDomain(t *testing.T, ds datastore.Datastore) (*entity.TrustDomain, error) {
-	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
-	assert.NoError(t, err)
+func setupTrustDomain(t *testing.T, ds datastore.Datastore, trustDomain string) *entity.TrustDomain {
+	td, err := spiffeid.TrustDomainFromString(trustDomain)
+	require.NoError(t, err)
 
 	tdEntity := &entity.TrustDomain{
 		Name:        td,
-		Description: "Fake domain",
+		Description: "Fake trust domain",
 	}
+	newTd, err := ds.CreateOrUpdateTrustDomain(context.TODO(), tdEntity)
+	require.NoError(t, err)
 
-	return ds.CreateOrUpdateTrustDomain(context.TODO(), tdEntity)
+	return newTd
 }
 
-func TestTCPGetRelationships(t *testing.T) {
+func setupRelationship(t *testing.T, ds datastore.Datastore, tdA *entity.TrustDomain, consentA bool, tdB *entity.TrustDomain, consentB bool) *entity.Relationship {
+	rel := &entity.Relationship{
+		TrustDomainAID:      tdA.ID.UUID,
+		TrustDomainBID:      tdB.ID.UUID,
+		TrustDomainAName:    tdA.Name,
+		TrustDomainBName:    tdB.Name,
+		TrustDomainAConsent: consentA,
+		TrustDomainBConsent: consentB,
+	}
+	rel, err := ds.CreateOrUpdateRelationship(context.TODO(), rel)
+	require.NoError(t, err)
+
+	return rel
+}
+
+func TestPatchRelationshipRelationshipID(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestTCPPatchRelationshipRelationshipID(t *testing.T) {
+func TestOnboard(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestTCPOnboard(t *testing.T) {
+func TestBundleSync(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestTCPBundleSync(t *testing.T) {
-	t.Skip("Missing tests will be added when the API be implemented")
-}
-
-func TestTCPBundlePut(t *testing.T) {
-	t.Run("Succesfully register bundles for a trust domain", func(t *testing.T) {
+func TestBundlePut(t *testing.T) {
+	t.Run("register bundles for a trust domain", func(t *testing.T) {
 		bundlePut := harvester.BundlePut{
-			Signature:          "",
-			SigningCertificate: "",
-			TrustBundle:        "a new bundle",
-			TrustDomain:        testTrustDomain,
+			TrustBundle: "fake bundle",
+			TrustDomain: "example.org",
 		}
 
 		body, err := json.Marshal(bundlePut)
 		assert.NoError(t, err)
 
-		harvesterTestSetup := NewHarvesterTestSetup(http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
-		echoCtx := harvesterTestSetup.EchoCtx
+		setup := NewHarvesterTestSetup(http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
 
 		// Creating Trust Domain
-		td, err := SetupTrustDomain(t, harvesterTestSetup.Handler.datastore)
-		assert.NoError(t, err)
-
-		// Creating Auth token to bypass AuthN layer
-		token := GenerateSecureToken(10)
-		jt := SetupToken(t, harvesterTestSetup.Handler.datastore, token, td.ID.UUID)
-		assert.NoError(t, err)
-		echoCtx.Set(tokenKey, jt)
+		td := setupTrustDomain(t, setup.Handler.datastore, "example.org")
+		setupToken(t, setup.EchoCtx, setup.Handler.datastore, td)
 
 		// Test Main Objective
-		err = harvesterTestSetup.Handler.BundlePut(echoCtx, testTrustDomain)
-		assert.NoError(t, err)
+		err = setup.Handler.BundlePut(setup.EchoCtx, td.Name.String())
 
-		recorder := harvesterTestSetup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Empty(t, recorder.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, setup.Recorder.Code, http.StatusOK)
+		assert.Empty(t, setup.Recorder.Body)
 	})
 }
 
 func TestGetRelationships(t *testing.T) {
-	relApproval := &harvester.RelationshipApproval{
-		Accept: true,
-	}
-	body, err := json.Marshal(relApproval)
-	assert.NoError(t, err)
+	setup := NewHarvesterTestSetup(http.MethodGet, "/relationships", "")
 
-	reader := strings.NewReader(string(body))
+	tdA := setupTrustDomain(t, setup.Handler.datastore, "one.org")
+	tdB := setupTrustDomain(t, setup.Handler.datastore, "two.org")
+	setupToken(t, setup.EchoCtx, setup.Handler.datastore, tdA)
+	setupRelationship(t, setup.Handler.datastore, tdA, true, tdB, true)
 
-	// Setup
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/relationships", reader)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-	ds := datastore.NewFakeDB()
-	h := NewHarvesterAPIHandlers(logrus.New(), ds)
-
-	var status harvester.GetRelationshipsParamsStatus = "approved"
-	var tdName api.TrustDomainName = "one.org"
-	p := harvester.GetRelationshipsParams{
+	tdName := tdA.Name.String()
+	params := harvester.GetRelationshipsParams{
 		TrustDomainName: &tdName,
-		Status:          &status,
 	}
 
-	tdA := &entity.TrustDomain{
-		Name:      spiffeid.RequireTrustDomainFromString("one.org"),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	tdB := &entity.TrustDomain{
-		Name:      spiffeid.RequireTrustDomainFromString("two.org"),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	_, err = ds.CreateOrUpdateTrustDomain(c.Request().Context(), tdA)
-	assert.NoError(t, err)
-	_, err = ds.CreateOrUpdateTrustDomain(c.Request().Context(), tdB)
+	err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+	// assert body content
+
 	assert.NoError(t, err)
 
-	rel := &entity.Relationship{
-		TrustDomainAID:      tdA.ID.UUID,
-		TrustDomainBID:      tdB.ID.UUID,
-		TrustDomainAConsent: true,
-		TrustDomainBConsent: true,
-	}
-	_, err = ds.CreateOrUpdateRelationship(c.Request().Context(), rel)
-	assert.NoError(t, err)
-
-	ds.CreateJoinToken(c.Request().Context(), &entity.JoinToken{
-		TrustDomainID:   tdA.ID.UUID,
-		TrustDomainName: tdA.Name,
-		Token:           "fake-token2",
-	})
-
-	req.Header.Set(echo.HeaderAuthorization, "Bearer fake-token33")
-
-	err = h.GetRelationships(c, p)
-	assert.NoError(t, err)
-
-	fmt.Println(rec.Body.String())
 }

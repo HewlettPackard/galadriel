@@ -38,13 +38,3 @@ func FromBody(ctx echo.Context, in interface{}) error {
 
 	return ctx.Bind(in)
 }
-
-// FromBody unmarshals the request body into a strong type
-func FromBody2[T any](ctx echo.Context) (*T, error) {
-	var out T
-	if err := ctx.Bind(&out); err != nil {
-		return nil, err
-	}
-
-	return &out, nil
-}

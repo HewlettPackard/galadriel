@@ -2,8 +2,6 @@ package endpoints
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -15,8 +13,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type AuthNTestSetup struct {
@@ -46,19 +44,18 @@ func SetupMiddleware() *AuthNTestSetup {
 	}
 }
 
-func SetupToken(t *testing.T, ds datastore.Datastore, token string, tdID uuid.UUID) *entity.JoinToken {
-	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
-	assert.NoError(t, err)
-
+func setupToken(t *testing.T, echoCtx echo.Context, ds datastore.Datastore, td *entity.TrustDomain) *entity.JoinToken {
 	jt := &entity.JoinToken{
-		Token:           token,
-		TrustDomainID:   tdID,
-		TrustDomainName: td,
+		Token:           uuid.NewString(),
+		TrustDomainID:   td.ID.UUID,
+		TrustDomainName: td.Name,
 	}
 
-	jt, err = ds.CreateJoinToken(context.TODO(), jt)
-	assert.NoError(t, err)
-	assert.NotNil(t, jt)
+	jt, err := ds.CreateJoinToken(context.Background(), jt)
+	require.NoError(t, err)
+	require.NotNil(t, jt)
+
+	echoCtx.Set(tokenKey, jt)
 
 	return jt
 }
@@ -66,10 +63,10 @@ func SetupToken(t *testing.T, ds datastore.Datastore, token string, tdID uuid.UU
 func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
-		token := GenerateSecureToken(10)
-		SetupToken(t, authnSetup.FakeDatabase, token, uuid.New())
+		token := setupToken(t, authnSetup.EchoCtx, authnSetup.FakeDatabase, testTrustDomain)
 
-		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
+		authorized, err := authnSetup.Middleware.Authenticate(token.Token, authnSetup.EchoCtx)
+
 		assert.NoError(t, err)
 		assert.True(t, authorized)
 	})
@@ -80,7 +77,7 @@ func TestAuthenticate(t *testing.T) {
 		expectedErr := errors.New("connection error")
 		authnSetup.FakeDatabase.SetNextError(expectedErr)
 
-		token := GenerateSecureToken(10)
+		token := uuid.NewString()
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.Error(t, err)
@@ -94,7 +91,7 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("Non authorized tokens must raise unauthorized responses", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
 
-		token := GenerateSecureToken(10)
+		token := uuid.NewString()
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.Error(t, err)
@@ -105,10 +102,12 @@ func TestAuthenticate(t *testing.T) {
 	})
 }
 
-func GenerateSecureToken(length int) string {
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return ""
-	}
-	return hex.EncodeToString(b)
-}
+// func generateFakeToken(length int) string {
+
+// 	 uuid.NewUUID()
+// 	b := make([]byte, length)
+// 	if _, err := rand.Read(b); err != nil {
+// 		return ""
+// 	}
+// 	return hex.EncodeToString(b)
+// }

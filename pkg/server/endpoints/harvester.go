@@ -140,6 +140,7 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *harv
 }
 
 func (h harvesterAPIHandlers) handleErrorAndLog(err error, code int) error {
+	// TODO: return json
 	errMsg := util.LogSanitize(err.Error())
 	h.logger.Errorf(errMsg)
 	return echo.NewHTTPError(code, err.Error())
@@ -202,36 +203,30 @@ func (h *harvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvest
 func (h *harvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID uuid.UUID) error {
 	if relationshipID == uuid.Nil {
 		err := errors.New("relationship id is required")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	existingRel, err := h.datastore.FindRelationshipByID(ctx.Request().Context(), relationshipID)
 	if err != nil {
 		err := errors.New("error looking up relationship")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
 	if existingRel == nil {
-		// TODO: handle all errors properly, return a valid json with 404 code// TODO: handle all errors properly, return a valid json with 404 code
 		err := errors.New("relationship not found")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
-	relApproval, err := chttp.FromBody2[harvesterapi.RelationshipApproval](ctx)
+	var relApproval *harvesterapi.RelationshipApproval
+	err = chttp.FromBody(ctx, &relApproval)
 	if err != nil {
-		err := errors.New("error parsing request body")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing join token")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	// TODO: should we check the current status? can an already denied relationship be accepted?
@@ -242,18 +237,17 @@ func (h *harvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context
 		existingRel.TrustDomainBConsent = relApproval.Accept
 	}
 
-	var updatedRel *entity.Relationship
-	if updatedRel, err = h.datastore.CreateOrUpdateRelationship(ctx.Request().Context(), existingRel); err != nil {
+	updatedRel, err := h.datastore.CreateOrUpdateRelationship(ctx.Request().Context(), existingRel)
+	if err != nil {
 		err := errors.New("error updating relationship")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	updatedApiRel := harvesterapi.RelationshipFromEntity(updatedRel)
-	if err := WriteResponse(ctx, updatedApiRel); err != nil {
+	err = WriteResponse(ctx, updatedApiRel)
+	if err != nil {
 		err := errors.New("error writing response")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -271,49 +265,47 @@ func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing join token")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	token, err := h.datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	harvesterTrustDomain, err := h.datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
-		return err
+		err := fmt.Errorf("failed to read body: %v", err)
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 	// end authn
 
 	body, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to read body: %v", err))
-		return err
+		err := fmt.Errorf("failed to read body: %v", err)
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	receivedHarvesterState := common.SyncBundleRequest{}
 	err = json.Unmarshal(body, &receivedHarvesterState)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to unmarshal state: %v", err))
-		return err
+		err := fmt.Errorf("failed to unmarshal state: %v", err)
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	harvesterBundleDigests := receivedHarvesterState.State
 
 	_, foundSelf := receivedHarvesterState.State[harvesterTrustDomain.Name]
 	if foundSelf {
-		h.handleTCPError(ctx, "bad request: harvester cannot federate with itself")
-		return err
+		err := errors.New("bad request: harvester cannot federate with itself")
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	relationships, err := h.datastore.FindRelationshipsByTrustDomainID(ctx.Request().Context(), harvesterTrustDomain.ID.UUID)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to fetch relationships: %v", err))
-		return err
+		err := fmt.Errorf("failed to fetch relationships: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	federatedTDs := getFederatedTrustDomains(relationships, harvesterTrustDomain.ID.UUID)
@@ -325,8 +317,8 @@ func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 
 	federatedBundles, federatedBundlesDigests, err := h.getCurrentFederatedBundles(ctx.Request().Context(), federatedTDs)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
-		return err
+		err := fmt.Errorf("failed to fetch bundles: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	if len(federatedBundles) == 0 {
@@ -336,8 +328,8 @@ func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 
 	bundlesUpdates, err := h.getFederatedBundlesUpdates(ctx.Request().Context(), harvesterBundleDigests, federatedBundles)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to fetch bundles from DB: %v", err))
-		return err
+		err := fmt.Errorf("failed to fetch bundles: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	response := common.SyncBundleResponse{
@@ -347,14 +339,14 @@ func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to marshal response: %v", err))
-		return err
+		err := fmt.Errorf("failed to marshal response: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
-	_, err = ctx.Response().Write(responseBytes)
+	err = chttp.WriteResponse(ctx, responseBytes)
 	if err != nil {
-		h.handleTCPError(ctx, fmt.Sprintf("failed to write response: %v", err))
-		return err
+		err := fmt.Errorf("failed to write response: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -368,8 +360,7 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	token, err := h.datastore.FindJoinToken(ctx.Request().Context(), jt.Token)

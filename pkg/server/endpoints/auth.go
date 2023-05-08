@@ -35,7 +35,7 @@ func (m AuthenticationMiddleware) Authenticate(token string, echoCtx echo.Contex
 	}
 
 	m.logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
-	echoCtx.Set("token", t)
+	echoCtx.Set(tokenKey, t)
 
 	return true, nil
 }
