@@ -38,10 +38,32 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPI
 func (h AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRelationshipsParams) error {
 	gctx := ctx.Request().Context()
 
-	rels, err := h.Datastore.ListRelationships(gctx)
+	var err error
+	var rels []*entity.Relationship
+
+	if params.TrustDomainName != nil {
+		td, err := h.findTrustDomainByName(gctx, *params.TrustDomainName)
+		if err != nil {
+			err = fmt.Errorf("failed parsing trust domain name: %v", err)
+			return h.HandleAndLog(err, http.StatusBadRequest)
+		}
+
+		rels, err = h.Datastore.FindRelationshipsByTrustDomainID(gctx, td.ID.UUID)
+		if err != nil {
+			err = fmt.Errorf("failed listing relationships: %v", err)
+			return h.HandleAndLog(err, http.StatusInternalServerError)
+		}
+	} else {
+		rels, err = h.Datastore.ListRelationships(gctx)
+		if err != nil {
+			err = fmt.Errorf("failed listing relationships: %v", err)
+			return h.HandleAndLog(err, http.StatusInternalServerError)
+		}
+	}
+
+	rels, err = h.filterRelationshipsByStatus(gctx, rels, params.Status)
 	if err != nil {
-		err = fmt.Errorf("failed listing relationships: %v", err)
-		return h.HandleAndLog(err, http.StatusInternalServerError)
+		return err
 	}
 
 	rels, err = h.populateTrustDomainNames(gctx, rels)
@@ -219,16 +241,9 @@ func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustD
 func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	gctx := ctx.Request().Context()
 
-	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
+	td, err := h.findTrustDomainByName(gctx, trustDomainName)
 	if err != nil {
-		err = fmt.Errorf("failed parsing trust domain name: %v", err)
-		return h.HandleAndLog(err, http.StatusBadRequest)
-	}
-
-	td, err := h.Datastore.FindTrustDomainByName(gctx, tdName)
-	if err != nil {
-		err = fmt.Errorf("failed retrieve the trust domain by name %v", err)
-		return h.HandleAndLog(err, http.StatusInternalServerError)
+		return err
 	}
 
 	if td == nil {
@@ -269,6 +284,48 @@ func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Conte
 	return nil
 }
 
+func (h AdminAPIHandlers) findTrustDomainByName(ctx context.Context, trustDomain string) (*entity.TrustDomain, error) {
+	tdName, err := spiffeid.TrustDomainFromString(trustDomain)
+	if err != nil {
+		err = fmt.Errorf("failed parsing trust domain name: %v", err)
+		return nil, h.HandleAndLog(err, http.StatusBadRequest)
+	}
+
+	td, err := h.Datastore.FindTrustDomainByName(ctx, tdName)
+	if err != nil {
+		err = fmt.Errorf("failed getting trust domain: %v", err)
+		return nil, h.HandleAndLog(err, http.StatusInternalServerError)
+	}
+
+	return td, nil
+}
+
+func (h AdminAPIHandlers) filterRelationshipsByStatus(
+	ctx context.Context,
+	relationships []*entity.Relationship,
+	status *admin.GetRelationshipsParamsStatus,
+) ([]*entity.Relationship, error) {
+
+	if status != nil {
+		switch *status {
+		case admin.Denied:
+			return filterBy(relationships, deniedRelationFilter), nil
+		case admin.Approved:
+			return filterBy(relationships, approvedRelationFilter), nil
+		case admin.Pending:
+			return filterBy(relationships, pendingRelationFilter), nil
+		}
+
+		err := fmt.Errorf(
+			"unrecognized status filter %v, accepted values [%v, %v, %v]",
+			*status, admin.Denied, admin.Approved, admin.Pending,
+		)
+		return nil, h.HandleAndLog(err, http.StatusBadRequest)
+	} else {
+		return filterBy(relationships, pendingRelationFilter), nil
+	}
+}
+
 func (h AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relationships []*entity.Relationship) ([]*entity.Relationship, error) {
 	for _, r := range relationships {
 		tda, err := h.Datastore.FindTrustDomainByID(ctx, r.TrustDomainAID)
@@ -301,4 +358,27 @@ func (h AdminAPIHandlers) HandleAndLog(err error, code int) error {
 	errMsg := util.LogSanitize(err.Error())
 	h.Logger.Errorf(errMsg)
 	return echo.NewHTTPError(code, err.Error())
+}
+
+func deniedRelationFilter(e *entity.Relationship) bool {
+	return !e.TrustDomainAConsent || !e.TrustDomainBConsent
+}
+
+func approvedRelationFilter(e *entity.Relationship) bool {
+	return e.TrustDomainAConsent && e.TrustDomainBConsent
+}
+
+func pendingRelationFilter(e *entity.Relationship) bool {
+	return !e.TrustDomainAConsent || !e.TrustDomainBConsent
+}
+
+// filterBy will generate a new slice with the elements that matched
+func filterBy[E any](s []E, match func(E) bool) []E {
+	filtered := []E{}
+	for _, e := range s {
+		if match(e) {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered
 }

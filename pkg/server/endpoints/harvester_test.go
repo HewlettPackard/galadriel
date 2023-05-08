@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,9 +24,16 @@ type HarvesterTestSetup struct {
 	Recorder *httptest.ResponseRecorder
 }
 
-func NewHarvesterTestSetup(method, url, body string) *HarvesterTestSetup {
+func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *HarvesterTestSetup {
+	var bodyReader io.Reader
+	if body != nil {
+		bodyStr, err := json.Marshal(body)
+		assert.NoError(t, err)
+		bodyReader = strings.NewReader(string(bodyStr))
+	}
+
 	e := echo.New()
-	req := httptest.NewRequest(method, url, strings.NewReader(body))
+	req := httptest.NewRequest(method, url, bodyReader)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	fakeDB := datastore.NewFakeDB()
@@ -67,7 +75,7 @@ func TestTCPBundleSync(t *testing.T) {
 }
 
 func TestTCPBundlePut(t *testing.T) {
-	t.Run("Succesfully register bundles for a trust domain", func(t *testing.T) {
+	t.Run("Successfully register bundles for a trust domain", func(t *testing.T) {
 		bundlePut := harvester.BundlePut{
 			Signature:          "",
 			SigningCertificate: "",
@@ -75,10 +83,7 @@ func TestTCPBundlePut(t *testing.T) {
 			TrustDomain:        testTrustDomain,
 		}
 
-		body, err := json.Marshal(bundlePut)
-		assert.NoError(t, err)
-
-		harvesterTestSetup := NewHarvesterTestSetup(http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", bundlePut)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		// Creating Trust Domain
@@ -87,7 +92,7 @@ func TestTCPBundlePut(t *testing.T) {
 
 		// Creating Auth token to bypass AuthN layer
 		token := GenerateSecureToken(10)
-		jt := SetupToken(t, harvesterTestSetup.Handler.Datastore, token, td.ID.UUID)
+		jt := SetupToken(t, harvesterTestSetup.Handler.Datastore, td.ID.UUID, token, td.Name.String())
 		assert.NoError(t, err)
 		echoCtx.Set(tokenKey, jt)
 

@@ -46,8 +46,8 @@ func SetupMiddleware() *AuthNTestSetup {
 	}
 }
 
-func SetupToken(t *testing.T, ds datastore.Datastore, token string, tdID uuid.UUID) *entity.JoinToken {
-	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
+func SetupToken(t *testing.T, ds datastore.Datastore, tdID uuid.UUID, token, tdName string) *entity.JoinToken {
+	td, err := spiffeid.TrustDomainFromString(tdName)
 	assert.NoError(t, err)
 
 	jt := &entity.JoinToken{
@@ -67,7 +67,7 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
 		token := GenerateSecureToken(10)
-		SetupToken(t, authnSetup.FakeDatabase, token, uuid.New())
+		SetupToken(t, authnSetup.FakeDatabase, uuid.New(), token, testTrustDomain)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.NoError(t, err)
