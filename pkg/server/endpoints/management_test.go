@@ -154,83 +154,53 @@ func TestUDSGetRelationships(t *testing.T) {
 		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
 		setup.FakeDatabase.WithRelationships(fakeRelationships...)
 
-		// Approved filter
-		status := admin.Approved
-		params := admin.GetRelationshipsParams{
-			Status: &status,
+		assertFilter := func(
+			t *testing.T,
+			setup *ManagementTestSetup,
+			expectedRelations []*api.Relationship,
+			status admin.GetRelationshipsParamsStatus,
+		) {
+			setup.Refresh()
+
+			strAddress := status
+			params := admin.GetRelationshipsParams{
+				Status: &strAddress,
+			}
+
+			err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+			assert.NoError(t, err)
+
+			assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+			assert.NotEmpty(t, setup.Recorder.Body)
+
+			relationships := []*api.Relationship{}
+			err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+			assert.NoError(t, err)
+
+			assert.Len(t, relationships, len(expectedRelations))
+
+			assert.ElementsMatchf(t, relationships, expectedRelations, "%v status filter does not work properly", status)
 		}
 
-		err := setup.Handler.GetRelationships(setup.EchoCtx, params)
-		assert.NoError(t, err)
-
-		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
-		assert.NotEmpty(t, setup.Recorder.Body)
-
-		relationships := []*api.Relationship{}
-		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-
-		assert.Len(t, relationships, 1)
-
-		apiRelations := mapRelationships([]*entity.Relationship{
+		expectedRelations := mapRelationships([]*entity.Relationship{
 			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
 		})
 
-		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Approved)
+		assertFilter(t, setup, expectedRelations, admin.Approved)
 
-		// Denied
-		setup.Refresh()
-
-		status = admin.Denied
-		params = admin.GetRelationshipsParams{
-			Status: &status,
-		}
-
-		err = setup.Handler.GetRelationships(setup.EchoCtx, params)
-		assert.NoError(t, err)
-
-		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
-		assert.NotEmpty(t, setup.Recorder.Body)
-
-		relationships = []*api.Relationship{}
-		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-
-		assert.Len(t, relationships, 2)
-
-		apiRelations = mapRelationships([]*entity.Relationship{
+		expectedRelations = mapRelationships([]*entity.Relationship{
 			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
 			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: true},
 		})
 
-		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Denied)
+		assertFilter(t, setup, expectedRelations, admin.Denied)
 
-		// Pending
-		setup.Refresh()
-
-		status = admin.Pending
-		params = admin.GetRelationshipsParams{
-			Status: &status,
-		}
-
-		err = setup.Handler.GetRelationships(setup.EchoCtx, params)
-		assert.NoError(t, err)
-
-		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
-		assert.NotEmpty(t, setup.Recorder.Body)
-
-		relationships = []*api.Relationship{}
-		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-
-		assert.Len(t, relationships, 2)
-
-		apiRelations = mapRelationships([]*entity.Relationship{
+		expectedRelations = mapRelationships([]*entity.Relationship{
 			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
 			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: true},
 		})
 
-		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Pending)
+		assertFilter(t, setup, expectedRelations, admin.Pending)
 	})
 
 	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
