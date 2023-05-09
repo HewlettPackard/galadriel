@@ -63,7 +63,7 @@ func TestWriteResponse(t *testing.T) {
 func TestBodylessResponse(t *testing.T) {
 	t.Run("Ensuring that the body is empty", func(t *testing.T) {
 		setup := Setup()
-		err := BodylessResponse(setup.EchoContext)
+		err := BodilessResponse(setup.EchoContext)
 		assert.NoError(t, err)
 
 		assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestBodylessResponse(t *testing.T) {
 func TestFromBody(t *testing.T) {
 	t.Run("Ensuring that the body is empty", func(t *testing.T) {
 		setup := Setup()
-		err := BodylessResponse(setup.EchoContext)
+		err := BodilessResponse(setup.EchoContext)
 		assert.NoError(t, err)
 
 		assert.NoError(t, err)

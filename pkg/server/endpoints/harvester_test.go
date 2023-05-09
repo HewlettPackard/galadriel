@@ -47,7 +47,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *
 }
 
 func SetupTrustDomain(t *testing.T, ds datastore.Datastore) (*entity.TrustDomain, error) {
-	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
+	td, err := spiffeid.TrustDomainFromString(td1)
 	assert.NoError(t, err)
 
 	tdEntity := &entity.TrustDomain{
@@ -80,7 +80,7 @@ func TestTCPBundlePut(t *testing.T) {
 			Signature:          "",
 			SigningCertificate: "",
 			TrustBundle:        "a new bundle",
-			TrustDomain:        testTrustDomain,
+			TrustDomain:        td1,
 		}
 
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", bundlePut)
@@ -97,7 +97,7 @@ func TestTCPBundlePut(t *testing.T) {
 		echoCtx.Set(tokenKey, jt)
 
 		// Test Main Objective
-		err = harvesterTestSetup.Handler.BundlePut(echoCtx, testTrustDomain)
+		err = harvesterTestSetup.Handler.BundlePut(echoCtx, td1)
 		assert.NoError(t, err)
 
 		recorder := harvesterTestSetup.Recorder

@@ -116,7 +116,7 @@ func (h HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.Tr
 		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodylessResponse(ctx); err != nil {
+	if err = chttp.BodilessResponse(ctx); err != nil {
 		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 

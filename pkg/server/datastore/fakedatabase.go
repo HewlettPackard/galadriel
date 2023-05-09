@@ -354,7 +354,18 @@ func (db *FakeDatabase) CreateOrUpdateRelationship(ctx context.Context, req *ent
 		return nil, err
 	}
 
-	return nil, nil
+	if req.ID.Valid {
+
+	} else {
+		req.CreatedAt = time.Now()
+
+	}
+
+	req.UpdatedAt = time.Now()
+
+	db.relationships[req.ID.UUID] = req
+
+	return req, nil
 }
 
 func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
@@ -432,7 +443,7 @@ func (db *FakeDatabase) DeleteRelationship(ctx context.Context, relationshipID u
 }
 
 // WithRelationships overrides all relationships
-func (db *FakeDatabase) WithRelationships(relationships []*entity.Relationship) {
+func (db *FakeDatabase) WithRelationships(relationships ...*entity.Relationship) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -443,7 +454,7 @@ func (db *FakeDatabase) WithRelationships(relationships []*entity.Relationship) 
 }
 
 // WithRelationships overrides all trust domains
-func (db *FakeDatabase) WithTrustDomains(trustDomains []*entity.TrustDomain) {
+func (db *FakeDatabase) WithTrustDomains(trustDomains ...*entity.TrustDomain) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 

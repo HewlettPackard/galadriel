@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,12 @@ type ManagementTestSetup struct {
 	Handler      *AdminAPIHandlers
 	Recorder     *httptest.ResponseRecorder
 	FakeDatabase *datastore.FakeDatabase
+
+	// Helpers
+	bodyReader io.Reader
+
+	url    string
+	method string
 }
 
 func NewManagementTestSetup(t *testing.T, method, url string, body interface{}) *ManagementTestSetup {
@@ -46,39 +53,55 @@ func NewManagementTestSetup(t *testing.T, method, url string, body interface{}) 
 		Recorder:     rec,
 		Handler:      NewAdminAPIHandlers(logger, fakeDB),
 		FakeDatabase: fakeDB,
+		// Helpers
+		url:        url,
+		method:     method,
+		bodyReader: bodyReader,
 	}
+}
+
+func (setup *ManagementTestSetup) Refresh() {
+	e := echo.New()
+	req := httptest.NewRequest(setup.method, setup.url, setup.bodyReader)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+
+	// Refreshing Request context and Recorder
+	setup.EchoCtx = e.NewContext(req, rec)
+	setup.Recorder = rec
 }
 
 func TestUDSGetRelationships(t *testing.T) {
 	t.Run("Successfully filter by trust domain", func(t *testing.T) {
-
 		// Setup
 		managementTestSetup := NewManagementTestSetup(t, http.MethodGet, "/relationships", nil)
 		echoCtx := managementTestSetup.EchoCtx
 
-		// Creating fake trust bundles and relationships to be filtered
-		td1Name := NewTrustDomain(t, testTrustDomain)
+		td1Name := NewTrustDomain(t, td1)
 		tdUUID1 := NewNullableID()
 		tdUUID2 := NewNullableID()
 		tdUUID3 := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
 			{ID: tdUUID1, Name: td1Name},
-			{ID: tdUUID2, Name: NewTrustDomain(t, "test2.com")},
-			{ID: tdUUID3, Name: NewTrustDomain(t, "test3.com")},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
+			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
 		}
 
+		r1ID := NewNullableID()
+		r2ID := NewNullableID()
 		fakeRelationships := []*entity.Relationship{
-			{ID: NewNullableID(), TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
-			{ID: NewNullableID(), TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r2ID, TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: true, TrustDomainBConsent: true},
+			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: true, TrustDomainBConsent: false},
 			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: false, TrustDomainBConsent: false},
 		}
 
-		managementTestSetup.FakeDatabase.WithTrustDomains(fakeTrustDomains)
-		managementTestSetup.FakeDatabase.WithRelationships(fakeRelationships)
+		managementTestSetup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+		managementTestSetup.FakeDatabase.WithRelationships(fakeRelationships...)
 
-		// managementTestSetup.Handler.Datastore
-		tdName := td1Name.String()
+		tdName := td1
 		params := admin.GetRelationshipsParams{
 			TrustDomainName: &tdName,
 		}
@@ -96,17 +119,178 @@ func TestUDSGetRelationships(t *testing.T) {
 
 		assert.Len(t, relationships, 2)
 
-		// apiRelations := mapRelationships([]*entity.Relationship{
-		// 	{TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
-		// 	{TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
-		// })
+		apiRelations := mapRelationships([]*entity.Relationship{
+			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r2ID, TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+		})
 
-		// assert.ElementsMatchf(t, relationships, apiRelations, "filter does not work properly")
+		assert.ElementsMatch(t, relationships, apiRelations, "trust domain name filter does not work properly")
+	})
+
+	t.Run("Successfully filter by status", func(t *testing.T) {
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, "/relationships", nil)
+
+		td1Name := NewTrustDomain(t, td1)
+		tdUUID1 := NewNullableID()
+		tdUUID2 := NewNullableID()
+		tdUUID3 := NewNullableID()
+
+		fakeTrustDomains := []*entity.TrustDomain{
+			{ID: tdUUID1, Name: td1Name},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
+			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
+		}
+
+		r1ID := NewNullableID()
+		r2ID := NewNullableID()
+		r3ID := NewNullableID()
+		fakeRelationships := []*entity.Relationship{
+			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
+			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: true},
+		}
+
+		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+		setup.FakeDatabase.WithRelationships(fakeRelationships...)
+
+		// Approved filter
+		status := admin.Approved
+		params := admin.GetRelationshipsParams{
+			Status: &status,
+		}
+
+		err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+		assert.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+		assert.NotEmpty(t, setup.Recorder.Body)
+
+		relationships := []*api.Relationship{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+
+		assert.Len(t, relationships, 1)
+
+		apiRelations := mapRelationships([]*entity.Relationship{
+			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
+		})
+
+		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Approved)
+
+		// Denied
+		setup.Refresh()
+
+		status = admin.Denied
+		params = admin.GetRelationshipsParams{
+			Status: &status,
+		}
+
+		err = setup.Handler.GetRelationships(setup.EchoCtx, params)
+		assert.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+		assert.NotEmpty(t, setup.Recorder.Body)
+
+		relationships = []*api.Relationship{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+
+		assert.Len(t, relationships, 2)
+
+		apiRelations = mapRelationships([]*entity.Relationship{
+			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: true},
+		})
+
+		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Denied)
+
+		// Pending
+		setup.Refresh()
+
+		status = admin.Pending
+		params = admin.GetRelationshipsParams{
+			Status: &status,
+		}
+
+		err = setup.Handler.GetRelationships(setup.EchoCtx, params)
+		assert.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+		assert.NotEmpty(t, setup.Recorder.Body)
+
+		relationships = []*api.Relationship{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+
+		assert.Len(t, relationships, 2)
+
+		apiRelations = mapRelationships([]*entity.Relationship{
+			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
+			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: true},
+		})
+
+		assert.ElementsMatchf(t, relationships, apiRelations, "%v status filter does not work properly", admin.Pending)
+	})
+
+	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, "/relationships", nil)
+
+		// Approved filter
+		var randomFilter admin.GetRelationshipsParamsStatus = "a random filter"
+		params := admin.GetRelationshipsParams{
+			Status: &randomFilter,
+		}
+
+		err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+		assert.Error(t, err)
+
+		httpErr := err.(*echo.HTTPError)
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
+		assert.Empty(t, setup.Recorder.Body)
+
+		expectedMsg := fmt.Sprintf(
+			"unrecognized status filter %v, accepted values [%v, %v, %v]",
+			randomFilter, admin.Denied, admin.Approved, admin.Pending,
+		)
+
+		assert.ErrorContains(t, err, expectedMsg)
 	})
 }
 
 func TestUDSPutRelationships(t *testing.T) {
-	t.Skip("Missing tests will be added when the API be implemented")
+	t.Run("Successfully create a new relationship request", func(t *testing.T) {
+		td1ID := NewNullableID()
+		td2ID := NewNullableID()
+
+		fakeTrustDomains := []*entity.TrustDomain{
+			{ID: td1ID, Name: NewTrustDomain(t, td1)},
+			{ID: td2ID, Name: NewTrustDomain(t, td2)},
+		}
+
+		reqBody := &admin.PutRelationshipsJSONRequestBody{
+			TrustDomainAId: td1ID.UUID,
+			TrustDomainBId: td2ID.UUID,
+		}
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodPut, "/relationships", reqBody)
+		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+
+		err := setup.Handler.PutRelationships(setup.EchoCtx)
+		assert.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		apiRelation := api.Relationship{}
+		json.Unmarshal(setup.Recorder.Body.Bytes(), &apiRelation)
+
+		assert.NotNil(t, apiRelation)
+		assert.Equal(t, td1ID.UUID, apiRelation.TrustDomainAId)
+		assert.Equal(t, td2ID.UUID, apiRelation.TrustDomainBId)
+	})
 }
 
 func TestUDSGetRelationshipsRelationshipID(t *testing.T) {

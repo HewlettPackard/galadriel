@@ -67,7 +67,7 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
 		token := GenerateSecureToken(10)
-		SetupToken(t, authnSetup.FakeDatabase, uuid.New(), token, testTrustDomain)
+		SetupToken(t, authnSetup.FakeDatabase, uuid.New(), token, td1)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token, authnSetup.EchoCtx)
 		assert.NoError(t, err)
