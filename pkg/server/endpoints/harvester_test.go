@@ -9,26 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	tdA           = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-a.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	tdB           = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-b.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	tdC           = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-c.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	pendingRelAB  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	pendingRelAC  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	approvedRelAB = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	approvedRelAC = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	approvedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 )
 
 type HarvesterTestSetup struct {
@@ -79,15 +66,15 @@ func TestPatchRelationshipRelationshipID(t *testing.T) {
 	})
 }
 
-func TestOnboard(t *testing.T) {
+func TestHarvesterOnboard(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestBundleSync(t *testing.T) {
+func TestHarvesterBundleSync(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestBundlePut(t *testing.T) {
+func TestHarvesterBundlePut(t *testing.T) {
 	t.Run("register bundles for a trust domain", func(t *testing.T) {
 		bundlePut := harvester.BundlePut{
 			TrustBundle: "fake bundle", //TODO: validate bundle
@@ -109,7 +96,7 @@ func TestBundlePut(t *testing.T) {
 	})
 }
 
-func TestGetRelationships(t *testing.T) {
+func TestHarvesterGetRelationships(t *testing.T) {
 	t.Run("get all relationships", func(t *testing.T) {
 		setup := NewHarvesterTestSetup(http.MethodGet, "/relationships", "")
 

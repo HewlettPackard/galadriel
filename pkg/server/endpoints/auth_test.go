@@ -63,7 +63,7 @@ func setupToken(t *testing.T, echoCtx echo.Context, ds datastore.Datastore, td *
 func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware()
-		token := setupToken(t, authnSetup.EchoCtx, authnSetup.FakeDatabase, testTrustDomain)
+		token := setupToken(t, authnSetup.EchoCtx, authnSetup.FakeDatabase, tdA)
 
 		authorized, err := authnSetup.Middleware.Authenticate(token.Token, authnSetup.EchoCtx)
 
@@ -101,13 +101,3 @@ func TestAuthenticate(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, echoHTTPErr.Code)
 	})
 }
-
-// func generateFakeToken(length int) string {
-
-// 	 uuid.NewUUID()
-// 	b := make([]byte, length)
-// 	if _, err := rand.Read(b); err != nil {
-// 		return ""
-// 	}
-// 	return hex.EncodeToString(b)
-// }
