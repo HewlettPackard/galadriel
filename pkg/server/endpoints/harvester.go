@@ -44,6 +44,8 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *harv
 
 // GetRelationships lists all the relationships for a given Trust Domain
 func (h *harvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvesterapi.GetRelationshipsParams) error {
+	// TODO: add authn filtering
+
 	if params.TrustDomainName == nil {
 		err := errors.New("trust domain name is required")
 		return h.handleErrorAndLog(err, http.StatusBadRequest)
@@ -91,6 +93,8 @@ func (h *harvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvest
 
 // PatchRelationshipsRelationshipID updates an existing relationship between two trust domains
 func (h *harvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID uuid.UUID) error {
+	// TODO: add authn filtering
+
 	if relationshipID == uuid.Nil {
 		err := errors.New("relationship id is required")
 		return h.handleErrorAndLog(err, http.StatusBadRequest)
@@ -144,14 +148,13 @@ func (h *harvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context
 }
 
 func (h *harvesterAPIHandlers) Onboard(ctx echo.Context) error {
+	// TODO: implement onboarding process
 	return nil
 }
 
 // BundleSync returns the updated bundles for a given trust domain driven by its relationships
 func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	h.logger.Debug("Receiving sync request")
-
-	// TODO: move authn out and replace with Access Token when implemented
+	// TODO: move the authn logic out of the handlers
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing join token")
@@ -244,9 +247,7 @@ func (h *harvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 
 // BundlePut updates the bundle for a given trust domain
 func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	h.logger.Debug("Receiving post bundle request")
-
-	// TODO: move authn out and replace with Access Token when implemented
+	// TODO: move the authn logic out of the handlers
 	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
 	if !ok {
 		err := errors.New("error parsing token")
