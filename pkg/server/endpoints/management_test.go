@@ -285,7 +285,8 @@ func TestUDSPutRelationships(t *testing.T) {
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
 		apiRelation := api.Relationship{}
-		json.Unmarshal(setup.Recorder.Body.Bytes(), &apiRelation)
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiRelation)
+		assert.NoError(t, err)
 
 		assert.NotNil(t, apiRelation)
 		assert.Equal(t, td1ID.UUID, apiRelation.TrustDomainAId)
