@@ -3,7 +3,7 @@ package harvester
 import (
 	"fmt"
 
-	common "github.com/HewlettPackard/galadriel/pkg/common/api"
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -22,8 +22,8 @@ func (b BundlePut) ToEntity() (*entity.Bundle, error) {
 	}, nil
 }
 
-func RelationshipFromEntity(r *entity.Relationship) *common.Relationship {
-	return &common.Relationship{
+func RelationshipFromEntity(r *entity.Relationship) *api.Relationship {
+	return &api.Relationship{
 		Id:                  r.ID.UUID,
 		TrustDomainAId:      r.TrustDomainAID,
 		TrustDomainBId:      r.TrustDomainBID,

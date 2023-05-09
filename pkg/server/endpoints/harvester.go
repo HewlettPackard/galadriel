@@ -29,109 +29,12 @@ type HarvesterAPIHandlers struct {
 	Datastore datastore.Datastore
 }
 
-// GetRelationships list all the relationships - (GET /relationships)
-func (h HarvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvesterapi.GetRelationshipsParams) error {
-	return nil
-}
-
-// PatchRelationshipsRelationshipID accept/denied relationships requests - (PATCH /relationships/{relationshipID})
-func (h HarvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID api.UUID) error {
-	return nil
-}
-
-// Onboard authenticate a trust domain in galadriel server providing its access token - (POST /trust-domain/onboard)
-func (h HarvesterAPIHandlers) Onboard(ctx echo.Context) error {
-	return nil
-}
-
-// BundleSync synchronize the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
-func (h HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	return nil
-}
-
-// BundlePut uploads a new trust bundle to the server  - (PUT /trust-domain/{trustDomainName}/bundles)
-func (h HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	h.Logger.Debug("Receiving post bundle request")
-	gctx := ctx.Request().Context()
-
-	// TODO: move authn out and replace with Access Token when implemented
-	jt, ok := ctx.Get(tokenKey).(*entity.JoinToken)
-	if !ok {
-		err := errors.New("error parsing token")
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	token, err := h.Datastore.FindJoinToken(gctx, jt.Token)
-	if err != nil {
-		err := errors.New("error looking up token")
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	authenticatedTD, err := h.Datastore.FindTrustDomainByID(gctx, token.TrustDomainID)
-	if err != nil {
-		err := errors.New("error looking up trust domain")
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	if authenticatedTD.Name.String() != trustDomainName {
-		return fmt.Errorf("authenticated trust domain {%s} does not match trust domain in path: {%s}", authenticatedTD.Name, trustDomainName)
-	}
-	// end authn
-
-	req := &harvesterapi.BundlePutJSONRequestBody{}
-	err = chttp.FromBody(ctx, req)
-	if err != nil {
-		err := fmt.Errorf("failed to read bundle put body: %v", err)
-		return h.handleErrorAndLog(err, http.StatusBadRequest)
-	}
-
-	if authenticatedTD.Name.String() != req.TrustDomain {
-		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		return h.handleErrorAndLog(err, http.StatusBadRequest)
-	}
-
-	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(gctx, authenticatedTD.ID.UUID)
-	if err != nil || storedBundle == nil {
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	if req.TrustBundle == "" {
-		return nil
-	}
-
-	bundle, err := req.ToEntity()
-	if err != nil {
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	if storedBundle != nil {
-		bundle.TrustDomainID = storedBundle.TrustDomainID
-	}
-
-	_, err = h.Datastore.CreateOrUpdateBundle(gctx, bundle)
-	if err != nil {
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	if err = chttp.BodylessResponse(ctx); err != nil {
-		return h.handleErrorAndLog(err, http.StatusInternalServerError)
-	}
-
-	return nil
-}
-
-func (h HarvesterAPIHandlers) handleErrorAndLog(err error, code int) error {
-	errMsg := util.LogSanitize(err.Error())
-	h.Logger.Errorf(errMsg)
-	return echo.NewHTTPError(code, err.Error())
-}
-
 type harvesterAPIHandlers struct {
 	logger    logrus.FieldLogger
 	datastore datastore.Datastore
 }
 
-// NewHarvesterAPIHandlers create a new harvesterAPIHandlers
+// NewHarvesterAPIHandlers creates a new harvesterAPIHandlers
 func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *harvesterAPIHandlers {
 	return &harvesterAPIHandlers{
 		logger:    l,
@@ -139,46 +42,34 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *harv
 	}
 }
 
-func (h harvesterAPIHandlers) handleErrorAndLog(err error, code int) error {
-	// TODO: return json
-	errMsg := util.LogSanitize(err.Error())
-	h.logger.Errorf(errMsg)
-	return echo.NewHTTPError(code, err.Error())
-}
-
 // GetRelationships lists all the relationships for a given Trust Domain
 func (h *harvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvesterapi.GetRelationshipsParams) error {
 	if params.TrustDomainName == nil {
 		err := errors.New("trust domain name is required")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	tdName, err := spiffeid.TrustDomainFromString(*params.TrustDomainName)
 	if err != nil {
 		err := errors.New("error parsing trust domain name")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	td, err := h.datastore.FindTrustDomainByName(ctx.Request().Context(), tdName)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 	if td == nil {
 		// TODO: handle all errors properly, return a valid json with 404 code
 		err := errors.New("trust domain not found")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
 	rels, err := h.datastore.FindRelationshipsByTrustDomainID(ctx.Request().Context(), td.ID.UUID)
 	if err != nil {
 		err := errors.New("error looking up relationships")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	if params.Status != nil {
@@ -190,10 +81,9 @@ func (h *harvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvest
 		relationships = append(relationships, harvesterapi.RelationshipFromEntity(rel))
 	}
 
-	if err := WriteResponse(ctx, relationships); err != nil {
+	if err := chttp.WriteResponse(ctx, relationships); err != nil {
 		err := errors.New("error writing response")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -244,7 +134,7 @@ func (h *harvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context
 	}
 
 	updatedApiRel := harvesterapi.RelationshipFromEntity(updatedRel)
-	err = WriteResponse(ctx, updatedApiRel)
+	err = chttp.WriteResponse(ctx, updatedApiRel)
 	if err != nil {
 		err := errors.New("error writing response")
 		return h.handleErrorAndLog(err, http.StatusInternalServerError)
@@ -399,10 +289,10 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
+	// TODO: validate trust domain format
 	if req.TrustBundle == "" {
 		err := errors.New("trust bundle is not set")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusBadRequest)
 	}
 
 	bundle, err := req.ToEntity()
@@ -422,19 +312,10 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	}
 
 	if err = chttp.BodylessResponse(ctx); err != nil {
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	return nil
-}
-
-func (h *harvesterAPIHandlers) handleTCPError(ctx echo.Context, errMsg string) {
-	h.logger.Errorf(errMsg)
-	_, err := ctx.Response().Write([]byte(errMsg))
-	if err != nil {
-		h.logger.Errorf("Failed to write error response: %v", err)
-	}
 }
 
 func (h *harvesterAPIHandlers) getCurrentFederatedBundles(ctx context.Context, federatedTDs []uuid.UUID) ([]*entity.Bundle, common.BundlesDigests, error) {
@@ -483,23 +364,11 @@ func (h *harvesterAPIHandlers) getFederatedBundlesUpdates(ctx context.Context, h
 	return response, nil
 }
 
-// WritesReponse writes the response to the client
-func WriteResponse(ctx echo.Context, body interface{}) error {
-	if body == nil {
-		return nil
-	}
-
-	bytes, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("failed to marshal response body: %v", err)
-	}
-	ctx.Response().Header().Add("Content-Type", "application/json")
-	_, err = ctx.Response().Write(bytes)
-	if err != nil {
-		return fmt.Errorf("failed to write response body: %v", err)
-	}
-
-	return nil
+func (h harvesterAPIHandlers) handleErrorAndLog(err error, code int) error {
+	// TODO: return json
+	errMsg := util.LogSanitize(err.Error())
+	h.logger.Errorf(errMsg)
+	return echo.NewHTTPError(code, err.Error())
 }
 
 func getFederatedTrustDomains(relationships []*entity.Relationship, tdID uuid.UUID) []uuid.UUID {
