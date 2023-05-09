@@ -145,6 +145,7 @@ func TestUDSGetRelationships(t *testing.T) {
 		r1ID := NewNullableID()
 		r2ID := NewNullableID()
 		r3ID := NewNullableID()
+
 		fakeRelationships := []*entity.Relationship{
 			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
 			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
@@ -153,34 +154,6 @@ func TestUDSGetRelationships(t *testing.T) {
 
 		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
 		setup.FakeDatabase.WithRelationships(fakeRelationships...)
-
-		assertFilter := func(
-			t *testing.T,
-			setup *ManagementTestSetup,
-			expectedRelations []*api.Relationship,
-			status admin.GetRelationshipsParamsStatus,
-		) {
-			setup.Refresh()
-
-			strAddress := status
-			params := admin.GetRelationshipsParams{
-				Status: &strAddress,
-			}
-
-			err := setup.Handler.GetRelationships(setup.EchoCtx, params)
-			assert.NoError(t, err)
-
-			assert.Equal(t, http.StatusOK, setup.Recorder.Code)
-			assert.NotEmpty(t, setup.Recorder.Body)
-
-			relationships := []*api.Relationship{}
-			err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
-			assert.NoError(t, err)
-
-			assert.Len(t, relationships, len(expectedRelations))
-
-			assert.ElementsMatchf(t, relationships, expectedRelations, "%v status filter does not work properly", status)
-		}
 
 		expectedRelations := mapRelationships([]*entity.Relationship{
 			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
@@ -228,6 +201,34 @@ func TestUDSGetRelationships(t *testing.T) {
 
 		assert.ErrorContains(t, err, expectedMsg)
 	})
+}
+
+func assertFilter(
+	t *testing.T,
+	setup *ManagementTestSetup,
+	expectedRelations []*api.Relationship,
+	status admin.GetRelationshipsParamsStatus,
+) {
+	setup.Refresh()
+
+	strAddress := status
+	params := admin.GetRelationshipsParams{
+		Status: &strAddress,
+	}
+
+	err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+	assert.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+	assert.NotEmpty(t, setup.Recorder.Body)
+
+	relationships := []*api.Relationship{}
+	err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+	assert.NoError(t, err)
+
+	assert.Len(t, relationships, len(expectedRelations))
+
+	assert.ElementsMatchf(t, relationships, expectedRelations, "%v status filter does not work properly", status)
 }
 
 func TestUDSPutRelationships(t *testing.T) {
