@@ -354,7 +354,15 @@ func (db *FakeDatabase) CreateOrUpdateRelationship(ctx context.Context, req *ent
 		return nil, err
 	}
 
-	return nil, nil
+	if !req.ID.Valid {
+		req.ID = uuid.NullUUID{
+			UUID:  uuid.New(),
+			Valid: true,
+		}
+	}
+	db.relationships[req.ID.UUID] = req
+
+	return req, nil
 }
 
 func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error) {
@@ -429,6 +437,28 @@ func (db *FakeDatabase) DeleteRelationship(ctx context.Context, relationshipID u
 	delete(db.relationships, uuid)
 
 	return nil
+}
+
+// WithRelationships overrides all relationships
+func (db *FakeDatabase) WithRelationships(relationships ...*entity.Relationship) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.relationships = make(map[uuid.UUID]*entity.Relationship)
+	for _, r := range relationships {
+		db.relationships[r.ID.UUID] = r
+	}
+}
+
+// WithRelationships overrides all trust domains
+func (db *FakeDatabase) WithTrustDomains(trustDomains ...*entity.TrustDomain) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.trustDomains = make(map[uuid.UUID]*entity.TrustDomain)
+	for _, td := range trustDomains {
+		db.trustDomains[td.ID.UUID] = td
+	}
 }
 
 func (db *FakeDatabase) SetNextError(err error) {

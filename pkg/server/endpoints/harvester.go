@@ -366,19 +366,18 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	token, err := h.datastore.FindJoinToken(ctx.Request().Context(), jt.Token)
 	if err != nil {
 		err := errors.New("error looking up token")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	authenticatedTD, err := h.datastore.FindTrustDomainByID(ctx.Request().Context(), token.TrustDomainID)
 	if err != nil {
 		err := errors.New("error looking up trust domain")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
 	if authenticatedTD.Name.String() != trustDomainName {
-		return fmt.Errorf("authenticated trust domain {%s} does not match trust domain in path: {%s}", authenticatedTD.Name, trustDomainName)
+		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in path: {%s}", authenticatedTD.Name, trustDomainName)
+		return h.handleErrorAndLog(err, http.StatusUnauthorized)
 	}
 	// end authn
 
@@ -391,15 +390,13 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 
 	if authenticatedTD.Name.String() != req.TrustDomain {
 		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusUnauthorized)
 	}
 
 	storedBundle, err := h.datastore.FindBundleByTrustDomainID(ctx.Request().Context(), authenticatedTD.ID.UUID)
 	if err != nil {
 		err := errors.New("error looking up bundle")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusNotFound)
 	}
 
 	if req.TrustBundle == "" {
@@ -411,8 +408,7 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	bundle, err := req.ToEntity()
 	if err != nil {
 		err := errors.New("error parsing request")
-		h.handleTCPError(ctx, err.Error())
-		return err
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	if storedBundle != nil {
@@ -421,8 +417,8 @@ func (h *harvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 
 	_, err = h.datastore.CreateOrUpdateBundle(ctx.Request().Context(), bundle)
 	if err != nil {
-		h.handleTCPError(ctx, err.Error())
-		return err
+		err := fmt.Errorf("error creating or updating bundle: %v", err)
+		return h.handleErrorAndLog(err, http.StatusInternalServerError)
 	}
 
 	if err = chttp.BodylessResponse(ctx); err != nil {
