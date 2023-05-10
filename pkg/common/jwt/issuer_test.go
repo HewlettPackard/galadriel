@@ -12,23 +12,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testKid    = "test-kid"
+	testIssuer = "test-issuer"
+)
+
 func TestNew(t *testing.T) {
 	signer, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
 	require.NoError(t, err)
 
 	ca, err := NewJWTCA(&Config{
 		Signer: signer,
-		Kid:    "test-kid",
+		Kid:    testKid,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, ca)
-	assert.Equal(t, "test-kid", ca.kid)
+	assert.Equal(t, testKid, ca.kid)
 	assert.Equal(t, signer, ca.signer)
 	assert.NotNil(t, ca.clk)
 
 	// missing signer
 	ca, err = NewJWTCA(&Config{
-		Kid: "test-kid",
+		Kid: testKid,
 	})
 	require.Error(t, err)
 	require.Nil(t, ca)
@@ -43,18 +48,18 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "kid is required", err.Error())
 }
 
-func TestJWTCA_IssueJWT(t *testing.T) {
+func TestJWTCAIssueJWT(t *testing.T) {
 	signer, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
 	require.NoError(t, err)
 
 	ca, err := NewJWTCA(&Config{
 		Signer: signer,
-		Kid:    "test-kid",
+		Kid:    testKid,
 	})
 	require.NoError(t, err)
 
 	params := &JWTParams{
-		Issuer:   "test-issuer",
+		Issuer:   testIssuer,
 		Subject:  spiffeid.RequireTrustDomainFromString("test-domain"),
 		Audience: []string{"test-audience-1", "test-audience-2"},
 		TTL:      time.Minute,

@@ -12,7 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var expAud = []string{"test-audience-1", "test-audience-2"}
+var (
+	expAud          = []string{"test-audience-1", "test-audience-2"}
+	testTrustDomain = spiffeid.RequireTrustDomainFromString("test-subject")
+)
 
 func Setup(t *testing.T) (*JWTCA, *DefaultJWTValidator) {
 	ctx := context.Background()
@@ -24,13 +27,13 @@ func Setup(t *testing.T) (*JWTCA, *DefaultJWTValidator) {
 	jwtValidator := NewDefaultJWTValidator(&config)
 	require.NotNil(t, jwtValidator)
 
-	key, err := km.GenerateKey(ctx, "test-key-id", cryptoutil.RSA2048)
+	key, err := km.GenerateKey(ctx, testKid, cryptoutil.RSA2048)
 	require.NoError(t, err)
 	require.NotNil(t, key)
 
 	issuerConfig := &Config{
 		Signer: key.Signer(),
-		Kid:    "test-key-id",
+		Kid:    testKid,
 	}
 	jwtIssuer, err := NewJWTCA(issuerConfig)
 	require.NoError(t, err)
@@ -45,7 +48,7 @@ func TestValidateTokenSuccess(t *testing.T) {
 
 	params := &JWTParams{
 		Issuer:   "test-issuer",
-		Subject:  spiffeid.RequireTrustDomainFromString("test-subject"),
+		Subject:  testTrustDomain,
 		Audience: expAud,
 		TTL:      5 * time.Minute,
 	}
@@ -65,8 +68,8 @@ func TestValidateInvalidAudience(t *testing.T) {
 	jwtIssuer, jwtValidator := Setup(t)
 
 	params := &JWTParams{
-		Issuer:   "test-issuer",
-		Subject:  spiffeid.RequireTrustDomainFromString("test-subject"),
+		Issuer:   testIssuer,
+		Subject:  testTrustDomain,
 		Audience: []string{"other"},
 		TTL:      5 * time.Minute,
 	}
@@ -85,8 +88,8 @@ func TestValidateKeyMisMatch(t *testing.T) {
 	jwtIssuer, jwtValidator := Setup(t)
 
 	params := &JWTParams{
-		Issuer:   "test-issuer",
-		Subject:  spiffeid.RequireTrustDomainFromString("test-subject"),
+		Issuer:   testIssuer,
+		Subject:  testTrustDomain,
 		Audience: []string{"other"},
 		TTL:      5 * time.Minute,
 	}

@@ -22,6 +22,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	jwtPath     = "/jwt"
+	onboardPath = "/onboard"
+)
+
 type HarvesterTestSetup struct {
 	EchoCtx   echo.Context
 	Handler   *HarvesterAPIHandlers
@@ -86,7 +91,7 @@ func TestTCPPatchRelationshipRelationshipID(t *testing.T) {
 
 func TestTCPOnboard(t *testing.T) {
 	t.Run("Successfully onboard a new agent", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/onboard", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -107,7 +112,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
 	t.Run("Onboard without join token fails", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/onboard", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -123,7 +128,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Equal(t, "join token is required", httpErr.Message)
 	})
 	t.Run("Onboard with join token that does not exist fails", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/onboard", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -140,7 +145,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Equal(t, "token not found", httpErr.Message)
 	})
 	t.Run("Onboard with join token that was used", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/onboard", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -164,7 +169,7 @@ func TestTCPOnboard(t *testing.T) {
 
 func TestTCPGetNewJWTToken(t *testing.T) {
 	t.Run("Successfully get a new JWT token", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/jwt", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -188,7 +193,7 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
 	t.Run("Fails if no JWT token was sent", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/jwt", "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, "")
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		err := harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
