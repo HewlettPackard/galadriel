@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -35,45 +36,45 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPI
 }
 
 // GetRelationships list all relationships filtered by the request params - (GET /relationships)
-func (h *AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRelationshipsParams) error {
-	gctx := ctx.Request().Context()
+func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params admin.GetRelationshipsParams) error {
+	ctx := echoContext.Request().Context()
 
 	var err error
 	var rels []*entity.Relationship
 
 	if params.TrustDomainName != nil {
-		td, err := h.findTrustDomainByName(gctx, *params.TrustDomainName)
+		td, err := h.findTrustDomainByName(ctx, *params.TrustDomainName)
 		if err != nil {
 			err = fmt.Errorf("failed parsing trust domain name: %v", err)
 			return h.handleAndLog(err, http.StatusBadRequest)
 		}
 
-		rels, err = h.Datastore.FindRelationshipsByTrustDomainID(gctx, td.ID.UUID)
+		rels, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return h.handleAndLog(err, http.StatusInternalServerError)
 		}
 	} else {
-		rels, err = h.Datastore.ListRelationships(gctx)
+		rels, err = h.Datastore.ListRelationships(ctx)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return h.handleAndLog(err, http.StatusInternalServerError)
 		}
 	}
 
-	rels, err = h.filterRelationshipsByStatus(gctx, rels, params.Status)
+	rels, err = h.filterRelationshipsByStatus(ctx, rels, params.Status)
 	if err != nil {
 		return err
 	}
 
-	rels, err = h.populateTrustDomainNames(gctx, rels)
+	rels, err = h.populateTrustDomainNames(ctx, rels)
 	if err != nil {
 		err = fmt.Errorf("failed populating relationships entities: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
 	cRelationships := mapRelationships(rels)
-	err = chttp.WriteResponse(ctx, cRelationships)
+	err = chttp.WriteResponse(echoContext, http.StatusOK, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -83,21 +84,22 @@ func (h *AdminAPIHandlers) GetRelationships(ctx echo.Context, params admin.GetRe
 }
 
 // PutRelationships create a new relationship request between two trust domains - (PUT /relationships)
-func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
-	gctx := ctx.Request().Context()
+func (h AdminAPIHandlers) PutRelationships(echoCtx echo.Context) error {
+	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutRelationshipsJSONRequestBody{}
-	err := chttp.FromBody(ctx, reqBody)
+	err := chttp.FromBody(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
-
-	// Possible scenario when a fake trust domain uuid is used will fail to create
-	// a relationship and a bad request should be raised.
-	// Should we query the trust domains before trying to create a relation ??
 	eRelationship := reqBody.ToEntity()
-	rel, err := h.Datastore.CreateOrUpdateRelationship(gctx, eRelationship)
+
+	if err := h.checkTrustDomains(ctx, eRelationship.TrustDomainAID, eRelationship.TrustDomainBID); err != nil {
+		return err
+	}
+
+	rel, err := h.Datastore.CreateOrUpdateRelationship(ctx, eRelationship)
 	if err != nil {
 		err = fmt.Errorf("failed creating relationship: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -106,7 +108,7 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
 	response := api.RelationshipFromEntity(rel)
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -116,17 +118,22 @@ func (h AdminAPIHandlers) PutRelationships(ctx echo.Context) error {
 }
 
 // GetRelationshipsRelationshipID retrieve a specific relationship based on its id - (GET /relationships/{relationshipID})
-func (h AdminAPIHandlers) GetRelationshipsRelationshipID(ctx echo.Context, relationshipID api.UUID) error {
-	gctx := ctx.Request().Context()
+func (h AdminAPIHandlers) GetRelationshipsRelationshipID(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
 
-	r, err := h.Datastore.FindRelationshipByID(gctx, relationshipID)
+	r, err := h.Datastore.FindRelationshipByID(ctx, relationshipID)
 	if err != nil {
 		err = fmt.Errorf("failed getting relationships: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
+	if r == nil {
+		err = errors.New("relationship not found")
+		return h.handleAndLog(err, http.StatusNotFound)
+	}
+
 	response := api.RelationshipFromEntity(r)
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationship entity - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -156,9 +163,10 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 		err = fmt.Errorf("failed looking up trust domain: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
+
 	if td != nil {
 		err = fmt.Errorf("trust domain already exists: %q", dbTD.Name)
-		return h.handleAndLog(err, http.StatusInternalServerError)
+		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
 	m, err := h.Datastore.CreateOrUpdateTrustDomain(gctx, dbTD)
@@ -170,7 +178,7 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
 
 	response := api.TrustDomainFromEntity(m)
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, http.StatusCreated, response)
 	if err != nil {
 		err = fmt.Errorf("trustDomain entity - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -196,7 +204,7 @@ func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(ctx echo.Context, trustD
 	}
 
 	response := api.TrustDomainFromEntity(td)
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("trust domain entity - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -231,7 +239,7 @@ func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustD
 	h.Logger.Printf("Trust Bundle %v created/updated", td.Name)
 
 	response := api.TrustDomainFromEntity(td)
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -278,7 +286,7 @@ func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Conte
 		Token: uuid.MustParse(jt.Token),
 	}
 
-	err = chttp.WriteResponse(ctx, response)
+	err = chttp.WriteResponse(ctx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -344,6 +352,23 @@ func (h *AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relatio
 		r.TrustDomainBName = tdb.Name
 	}
 	return relationships, nil
+}
+
+func (h *AdminAPIHandlers) checkTrustDomains(ctx context.Context, ids ...uuid.UUID) error {
+	for _, id := range ids {
+		td, err := h.Datastore.FindTrustDomainByID(ctx, id)
+		if err != nil {
+			err := fmt.Errorf("not able retrieve information about trust domain %w", err)
+			return h.handleAndLog(err, http.StatusInternalServerError)
+		}
+
+		if td == nil {
+			err := fmt.Errorf("trust domain %v does not exists", id)
+			return h.handleAndLog(err, http.StatusBadRequest)
+		}
+	}
+
+	return nil
 }
 
 func mapRelationships(relationships []*entity.Relationship) []*api.Relationship {

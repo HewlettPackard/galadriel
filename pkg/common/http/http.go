@@ -9,12 +9,12 @@ import (
 )
 
 // WriteResponse parses a struct into a json and writes in the response
-func WriteResponse(ctx echo.Context, body interface{}) error {
+func WriteResponse(ctx echo.Context, code int, body interface{}) error {
 	if body == nil {
 		return errors.New("body is required")
 	}
 
-	if err := ctx.JSON(http.StatusOK, body); err != nil {
+	if err := ctx.JSON(code, body); err != nil {
 		return fmt.Errorf("failed to write response body: %v", err)
 	}
 
@@ -22,7 +22,7 @@ func WriteResponse(ctx echo.Context, body interface{}) error {
 }
 
 // BodilessResponse wraps error echo body-less responses.
-func BodilessResponse(ctx echo.Context) error {
+func BodilessResponse(ctx echo.Context, code int) error {
 	if err := ctx.NoContent(http.StatusOK); err != nil {
 		return fmt.Errorf("failed to respond without body: %v", err)
 	}
