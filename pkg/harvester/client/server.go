@@ -273,12 +273,3 @@ func (j *jwtProvider) getToken() string {
 func (c *client) getHTTPAddress() string {
 	return fmt.Sprintf("https://%s", c.address.String())
 }
-
-func readBody(resp *http.Response) (string, error) {
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	bodyString := string(bodyBytes)
-	return bodyString, nil
-}
