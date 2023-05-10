@@ -38,6 +38,7 @@ type GaladrielServerClient interface {
 	GetNewJWTToken(ctx context.Context) error
 }
 
+// client is a struct that implements the GaladrielServerClient interface
 type client struct {
 	httpClient  *http.Client
 	address     *net.TCPAddr
@@ -46,9 +47,18 @@ type client struct {
 	errChan     chan error
 }
 
+// jwtProvider is a struct that holds the JWT access token
 type jwtProvider struct {
 	mu  sync.RWMutex
 	jwt string
+}
+
+// jwtDecoratedTransport is a decorator for http.Transport that adds the JWT access token
+// in the Authorization header to every request
+type jwtDecoratedTransport struct {
+	jwtProvider *jwtProvider
+	transport   *http.Transport
+	skipper     func(*http.Request) bool
 }
 
 // NewGaladrielServerClient creates a new Galadriel Server client, using the given token to authenticate
@@ -80,74 +90,30 @@ func NewGaladrielServerClient(address *net.TCPAddr, trustBundlePath string) (Gal
 func (c *client) Onboard(ctx context.Context, token string) error {
 	url := fmt.Sprintf("%s%s?joinToken=%s", c.getHTTPAddress(), onboardPath, token)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyString, err := readBody(resp)
-		if err != nil {
-			return fmt.Errorf("failed to read response body: %v", err)
+	responseHandler := func(body []byte) error {
+		if len(body) == 0 {
+			return errors.New("empty response body")
 		}
-		return errors.New(bodyString)
+		c.jwtProvider.setToken(string(body))
+		c.logger.Info("Connected to Galadriel Server")
+		return nil
 	}
 
-	bodyString, err := readBody(resp)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %v", err)
-	}
-
-	if bodyString == "" {
-		return errors.New("empty response body")
-	}
-	c.jwtProvider.setToken(bodyString)
-
-	c.logger.Info("Connected to Galadriel Server")
-
-	return nil
+	return c.callAPI(ctx, url, http.MethodGet, responseHandler)
 }
 
 func (c *client) GetNewJWTToken(ctx context.Context) error {
 	url := fmt.Sprintf("%s%s", c.getHTTPAddress(), jwtPath)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyString, err := readBody(resp)
-		if err != nil {
-			return fmt.Errorf("failed to read response body: %v", err)
+	responseHandler := func(body []byte) error {
+		if len(body) == 0 {
+			return errors.New("empty response body")
 		}
-		return errors.New(bodyString)
+		c.jwtProvider.setToken(string(body))
+		return nil
 	}
 
-	bodyString, err := readBody(resp)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %v", err)
-	}
-
-	if bodyString == "" {
-		return errors.New("empty response body")
-	}
-
-	c.jwtProvider.setToken(bodyString)
-
-	return nil
+	return c.callAPI(ctx, url, http.MethodGet, responseHandler)
 }
 
 func (c *client) SyncFederatedBundles(ctx context.Context, req *common.SyncBundleRequest) (*common.SyncBundleResponse, error) {
@@ -245,14 +211,6 @@ func createTLSClient(trustBundlePath string, jwtProvider *jwtProvider, skipper f
 	}, nil
 }
 
-// jwtDecoratedTransport is a decorator for http.Transport that adds the JWT access token
-// in the Authorization header to every request
-type jwtDecoratedTransport struct {
-	jwtProvider *jwtProvider
-	transport   *http.Transport
-	skipper     func(*http.Request) bool
-}
-
 // RoundTrip applies the decorator to every request adding the Authorization header
 func (t *jwtDecoratedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.skipper != nil && t.skipper(req) {
@@ -264,6 +222,36 @@ func (t *jwtDecoratedTransport) RoundTrip(req *http.Request) (*http.Response, er
 	req.Header.Set("Content-Type", jsonContentType)
 
 	return t.transport.RoundTrip(req)
+}
+
+func (c *client) callAPI(ctx context.Context, url string, method string, responseHandler func([]byte) error) error {
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %v", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("request returned an error code %d: \n%s", res.StatusCode, body)
+	}
+
+	if responseHandler != nil {
+		if err := responseHandler(body); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (j *jwtProvider) setToken(t string) {
