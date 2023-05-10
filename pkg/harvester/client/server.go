@@ -237,7 +237,7 @@ func createTLSClient(trustBundlePath string, jwtProvider *jwtProvider, skipper f
 	}
 
 	return &http.Client{
-		Transport: &decoratedTransport{
+		Transport: &jwtDecoratedTransport{
 			jwtProvider: jwtProvider,
 			transport:   transport,
 			skipper:     skipper,
@@ -245,14 +245,16 @@ func createTLSClient(trustBundlePath string, jwtProvider *jwtProvider, skipper f
 	}, nil
 }
 
-type decoratedTransport struct {
+// jwtDecoratedTransport is a decorator for http.Transport that adds the JWT access token
+// in the Authorization header to every request
+type jwtDecoratedTransport struct {
 	jwtProvider *jwtProvider
 	transport   *http.Transport
 	skipper     func(*http.Request) bool
 }
 
 // RoundTrip applies the decorator to every request adding the Authorization header
-func (t *decoratedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *jwtDecoratedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.skipper != nil && t.skipper(req) {
 		return t.transport.RoundTrip(req)
 	}
