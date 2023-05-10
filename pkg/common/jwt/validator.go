@@ -48,21 +48,20 @@ func (v *DefaultJWTValidator) ValidateToken(ctx context.Context, token string) (
 		return nil, err
 	}
 
-	validAudience := true
+	if !v.validAudience(claims) {
+		return nil, jwt.NewValidationError("token audience is invalid", jwt.ValidationErrorAudience)
+	}
+	return claims, nil
+}
+
+func (v *DefaultJWTValidator) validAudience(claims *jwt.RegisteredClaims) bool {
 	for _, aud := range v.expectedAudience {
 		ok := claims.VerifyAudience(aud, true)
 		if !ok {
-			validAudience = false
-			break
+			return false
 		}
-
 	}
-
-	if !validAudience {
-		return nil, jwt.NewValidationError("token audience is invalid", jwt.ValidationErrorAudience)
-	}
-
-	return claims, nil
+	return true
 }
 
 func (v *DefaultJWTValidator) getPublicKey(ctx context.Context, t *jwt.Token) (crypto.PublicKey, error) {

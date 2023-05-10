@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	contentType = "application/json"
+	jsonContentType = "application/json"
 
 	postBundlePath     = "/bundle"
 	postBundleSyncPath = "/bundle/sync"
@@ -259,7 +259,7 @@ func (t *decoratedTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 	// Apply decorator
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.jwtProvider.getToken()))
-	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Content-Type", jsonContentType)
 
 	return t.transport.RoundTrip(req)
 }

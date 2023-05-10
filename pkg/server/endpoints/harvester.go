@@ -107,7 +107,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return echoCtx.JSON(http.StatusOK, jwtToken)
+	return chttp.WriteResponse(echoCtx, jwtToken)
 }
 
 // GetNewJWTToken renews a JWT access token - (GET /trust-domain/jwt)
