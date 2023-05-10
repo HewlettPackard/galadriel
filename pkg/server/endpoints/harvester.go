@@ -56,6 +56,11 @@ func (h *HarvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context
 func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.OnboardParams) error {
 	ctx := echoCtx.Request().Context()
 
+	if params.JoinToken == "" {
+		err := errors.New("join token is required")
+		return h.handleErrorAndLog(err, err, http.StatusBadRequest)
+	}
+
 	token, err := h.Datastore.FindJoinToken(ctx, params.JoinToken)
 	if err != nil {
 		msg := errors.New("error looking up token")

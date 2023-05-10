@@ -300,7 +300,7 @@ func (db *FakeDatabase) UpdateJoinToken(ctx context.Context, joinTokenID uuid.UU
 	}
 
 	for _, jt := range db.tokens {
-		if jt.TrustDomainID.String() == joinTokenID.String() {
+		if jt.ID.UUID == joinTokenID {
 			jt.Used = used
 			jt.UpdatedAt = time.Now()
 			return jt, nil
