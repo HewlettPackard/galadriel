@@ -13,6 +13,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/HewlettPackard/galadriel/test/fakes/fakejwtissuer"
 	"github.com/HewlettPackard/galadriel/test/jwttest"
+	gojwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -161,6 +162,43 @@ func TestTCPOnboard(t *testing.T) {
 	})
 }
 
+func TestTCPGetNewJWTToken(t *testing.T) {
+	t.Run("Successfully get a new JWT token", func(t *testing.T) {
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/jwt", "")
+		echoCtx := harvesterTestSetup.EchoCtx
+
+		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
+
+		var claims gojwt.RegisteredClaims
+		_, err := gojwt.ParseWithClaims(harvesterTestSetup.JWTIssuer.Token, &claims, func(*gojwt.Token) (interface{}, error) {
+			return harvesterTestSetup.JWTIssuer.Signer.Public(), nil
+		})
+		assert.NoError(t, err)
+		echoCtx.Set(authClaimsKey, &claims)
+
+		err = harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
+		assert.NoError(t, err)
+
+		recorder := harvesterTestSetup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NotEmpty(t, recorder.Body)
+
+		jwtToken := strings.ReplaceAll(recorder.Body.String(), "\"", "")
+		jwtToken = strings.ReplaceAll(jwtToken, "\n", "")
+		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
+	})
+	t.Run("Fails if no JWT token was sent", func(t *testing.T) {
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, "/jwt", "")
+		echoCtx := harvesterTestSetup.EchoCtx
+
+		err := harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
+		require.Error(t, err)
+
+		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "invalid JWT access token", err.(*echo.HTTPError).Message)
+	})
+}
+
 func TestTCPBundleSync(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
@@ -183,9 +221,8 @@ func TestTCPBundlePut(t *testing.T) {
 		// Creating Trust Domain
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
 
-		// Creating Auth token to bypass AuthN layer
 		assert.NoError(t, err)
-		echoCtx.Set(trustDomainKey, td)
+		echoCtx.Set(authTrustDomainKey, td)
 
 		// Test Main Objective
 		err = harvesterTestSetup.Handler.BundlePut(echoCtx, testTrustDomain)

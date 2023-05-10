@@ -52,8 +52,9 @@ func (m *AuthenticationMiddleware) Authenticate(bearerToken string, echoCtx echo
 	m.logger.Debugf("Token valid for trust domain: %s\n", tdName)
 
 	// set the authenticated trust domain ID in the echo context
-	echoCtx.Set(trustDomainKey, td)
-	echoCtx.Set("claims", claims)
+	echoCtx.Set(authTrustDomainKey, td)
+	// set the authenticated claims in the echo context
+	echoCtx.Set(authClaimsKey, claims)
 
 	return true, nil
 }

@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	trustDomainKey = "trust_domain"
-	defaultJWTTTL  = 24 * 5 * time.Hour
+	authTrustDomainKey = "trust_domain"
+	authClaimsKey      = "auth_claims"
+	defaultJWTTTL      = 24 * 5 * time.Hour
 )
 
 type HarvesterAPIHandlers struct {
@@ -119,11 +120,11 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
-	claims, ok := echoCtx.Get("claims").(*gojwt.RegisteredClaims)
+	claims, ok := echoCtx.Get(authClaimsKey).(*gojwt.RegisteredClaims)
 	if !ok {
-		msg := fmt.Errorf("internal error")
+		msg := fmt.Errorf("invalid JWT access token")
 		err := errors.New("error getting claims from context")
-		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, msg, http.StatusUnauthorized)
 	}
 
 	sub := claims.Subject
@@ -131,7 +132,7 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 	if err != nil {
 		msg := fmt.Errorf("internal error")
 		err := errors.New("error parsing trust domain from subject")
-		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, msg, http.StatusUnauthorized)
 	}
 
 	h.Logger.Infof("New JWT token requested for trust domain %s", subject)
@@ -165,7 +166,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	gctx := ctx.Request().Context()
 
 	// get the authenticated trust domain from the context
-	authenticatedTD, ok := ctx.Get(trustDomainKey).(*entity.TrustDomain)
+	authenticatedTD, ok := ctx.Get(authTrustDomainKey).(*entity.TrustDomain)
 	if !ok {
 		err := errors.New("failed to get authenticated trust domain")
 		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
