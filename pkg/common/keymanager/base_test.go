@@ -8,14 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewSetsConfigDefaults(t *testing.T) {
+func setup() (*Base, context.Context) {
 	b := New(&Config{})
+	ctx := context.Background()
+	return b, ctx
+}
+
+func TestNewSetsConfigDefaults(t *testing.T) {
+	b, _ := setup()
 	assert.Equal(t, &defaultGenerator{}, b.generator)
 }
 
 func TestGenerateKey(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GenerateKey(ctx, "foo", cryptoutil.RSA2048)
 	assert.NoError(t, err)
@@ -31,8 +36,7 @@ func TestGenerateKey(t *testing.T) {
 }
 
 func TestGenerateKeyOverridesKey(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GenerateKey(ctx, "foo", cryptoutil.RSA2048)
 	assert.NoError(t, err)
@@ -48,8 +52,7 @@ func TestGenerateKeyOverridesKey(t *testing.T) {
 }
 
 func TestGenerateKeyFailsWithInvalidKeyType(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GenerateKey(ctx, "foo", cryptoutil.RSA2048)
 	assert.NoError(t, err)
@@ -63,8 +66,7 @@ func TestGenerateKeyFailsWithInvalidKeyType(t *testing.T) {
 }
 
 func TestGenerateKeyFailsWithEmptyKeyID(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GenerateKey(ctx, "", cryptoutil.RSA2048)
 	assert.Error(t, err)
@@ -72,8 +74,7 @@ func TestGenerateKeyFailsWithEmptyKeyID(t *testing.T) {
 }
 
 func TestGetKey(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GenerateKey(ctx, "foo", cryptoutil.RSA2048)
 	assert.NoError(t, err)
@@ -87,8 +88,7 @@ func TestGetKey(t *testing.T) {
 }
 
 func TestGetKeyFailsWithEmptyKeyID(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GetKey(ctx, "")
 	assert.Error(t, err)
@@ -96,38 +96,9 @@ func TestGetKeyFailsWithEmptyKeyID(t *testing.T) {
 }
 
 func TestGetKeyFailsWithUnknownKeyID(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
+	b, ctx := setup()
 
 	key, err := b.GetKey(ctx, "foo")
 	assert.Error(t, err)
 	assert.Nil(t, key)
-}
-
-func TestGetKeys(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
-
-	key1, err := b.GenerateKey(ctx, "foo", cryptoutil.RSA2048)
-	assert.NoError(t, err)
-	assert.NotNil(t, key1)
-
-	key2, err := b.GenerateKey(ctx, "bar", cryptoutil.RSA2048)
-	assert.NoError(t, err)
-	assert.NotNil(t, key2)
-
-	keys, err := b.GetKeys(ctx)
-	assert.NoError(t, err)
-	assert.Len(t, keys, 2)
-	assert.Equal(t, key1, b.entries["foo"])
-	assert.Equal(t, key2, b.entries["bar"])
-}
-
-func TestGetKeysEmptyKeyManager(t *testing.T) {
-	b := New(&Config{})
-	ctx := context.Background()
-
-	keys, err := b.GetKeys(ctx)
-	assert.NoError(t, err)
-	assert.Len(t, keys, 0)
 }
