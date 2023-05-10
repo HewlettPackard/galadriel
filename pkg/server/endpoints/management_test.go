@@ -257,7 +257,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		err := setup.Handler.PutRelationships(setup.EchoCtx)
 		assert.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+		assert.Equal(t, http.StatusCreated, setup.Recorder.Code)
 
 		apiRelation := api.Relationship{}
 		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiRelation)

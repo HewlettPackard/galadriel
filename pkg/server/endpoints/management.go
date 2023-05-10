@@ -108,7 +108,7 @@ func (h AdminAPIHandlers) PutRelationships(echoCtx echo.Context) error {
 	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
 
 	response := api.RelationshipFromEntity(rel)
-	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
+	err = chttp.WriteResponse(echoCtx, http.StatusCreated, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
