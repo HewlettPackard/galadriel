@@ -3,39 +3,58 @@ package endpoints
 import (
 	"net/http"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type AuthenticationMiddleware struct {
-	datastore datastore.Datastore
-	logger    logrus.FieldLogger
+	datastore    datastore.Datastore
+	jwtValidator jwt.Validator
+	logger       logrus.FieldLogger
 }
 
-func NewAuthenticationMiddleware(l logrus.FieldLogger, ds datastore.Datastore) *AuthenticationMiddleware {
+func NewAuthenticationMiddleware(l logrus.FieldLogger, ds datastore.Datastore, jwtValidator jwt.Validator) *AuthenticationMiddleware {
 	return &AuthenticationMiddleware{
-		logger:    l,
-		datastore: ds,
+		logger:       l,
+		datastore:    ds,
+		jwtValidator: jwtValidator,
 	}
 }
 
-func (m AuthenticationMiddleware) Authenticate(token string, echoCtx echo.Context) (bool, error) {
+// Authenticate is the middleware method that is responsible for authenticating the calling Harvester using the JWT token
+// passed in the Authorization header.
+func (m *AuthenticationMiddleware) Authenticate(bearerToken string, echoCtx echo.Context) (bool, error) {
 	ctx := echoCtx.Request().Context()
 
-	// Any skip cases ?
-	t, err := m.datastore.FindJoinToken(ctx, token)
+	claims, err := m.jwtValidator.ValidateToken(ctx, bearerToken)
 	if err != nil {
-		return false, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return false, echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 
-	if t == nil {
-		message := "Token not found"
-		return false, echo.NewHTTPError(http.StatusUnauthorized, message)
+	subject := claims.Subject
+	if subject == "" {
+		return false, echo.NewHTTPError(http.StatusUnauthorized, "invalid token: missing subject")
 	}
 
-	m.logger.Debugf("Token valid for trust domain: %s\n", t.TrustDomainID)
-	echoCtx.Set("token", t)
+	tdName, err := spiffeid.TrustDomainFromString(subject)
+	if err != nil {
+		return false, echo.NewHTTPError(http.StatusUnauthorized, "invalid token: invalid trust domain name")
+	}
+
+	td, err := m.datastore.FindTrustDomainByName(ctx, tdName)
+	if err != nil {
+		return false, echo.NewHTTPError(http.StatusUnauthorized, "invalid token: trust domain not found")
+	}
+
+	m.logger.Debugf("Token valid for trust domain: %s\n", tdName)
+
+	// set the authenticated trust domain ID in the echo context
+	echoCtx.Set(authTrustDomainKey, td)
+	// set the authenticated claims in the echo context
+	echoCtx.Set(authClaimsKey, claims)
 
 	return true, nil
 }

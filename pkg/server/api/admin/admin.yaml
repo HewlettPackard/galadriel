@@ -159,7 +159,8 @@ paths:
           $ref: '#/components/responses/Default'
 
   /trust-domain/{trustDomainName}/join-token:
-    post:
+    get:
+      operationId: GetJoinToken
       tags:
         - Join Token
       summary: Get a join token for a specific Trust Domain

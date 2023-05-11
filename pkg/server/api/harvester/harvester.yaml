@@ -4,7 +4,7 @@ info:
   description: |-
     Galadriel Server Harvester API specification.
   contact:
-    name: Github 
+    name: Github
     url: https://github.com/HewlettPackard/galadriel
   license:
     name: Apache 2.0
@@ -82,12 +82,19 @@ paths:
         - harvester_auth: []
 
   /trust-domain/onboard:
-    post:
+    get:
       tags:
         - Onboard
       summary: Onboarding a new Trust Domain in the Galadriel Server
       description: It uses a join token to authorize the harvester in the Galadriel Server and get its JWT Access Token
       operationId: Onboard
+      parameters:
+      - name: joinToken
+        in: query
+        description: Join token to be used for onboarding
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           description: Returns an access token to be used for authenticating harvesters on behalf of the Trust Domain.
@@ -97,8 +104,23 @@ paths:
                 $ref: '#/components/schemas/OnboardResult'
         default:
           $ref: '#/components/responses/Default'
+  /trust-domain/jwt:
+    get:
+      operationId: GetNewJWTToken
+      tags:
+        - JWT Token
+      summary: Get a renewed JWT token with the same claims as the original one
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWTResult'
+        default:
+          $ref: '#/components/responses/Default'
       security:
-        - join_token: []
+        - harvester_auth: []
 
   /relationships/{relationshipID}:
     patch:
@@ -140,7 +162,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [accepted, denied, pending]
+            enum: [ accepted, denied, pending ]
         - name: trustDomainName
           in: query
           schema:
@@ -173,7 +195,7 @@ components:
       required:
         - signature
         - trust_domain
-        - trust_bundle        
+        - trust_bundle
         - signing_certificate
       properties:
         trust_domain:
@@ -297,6 +319,14 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
+    JWTResult:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
     RelationshipApproval:
       type: object
       additionalProperties: false
@@ -336,5 +366,3 @@ components:
   securitySchemes:
     harvester_auth:
       $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/harvester_auth'
-    join_token:
-      $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/join_token'

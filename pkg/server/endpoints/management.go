@@ -1,21 +1,22 @@
+// TODO: rename this file to admin.go
 package endpoints
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
-
-	"github.com/sirupsen/logrus"
-
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
+	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type AdminAPIHandlers struct {
@@ -136,6 +137,7 @@ func (h AdminAPIHandlers) PutTrustDomain(ctx echo.Context) error {
 	return nil
 }
 
+// TODO: customize these names.
 // GetTrustDomainTrustDomainName retrieve a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
 func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(ctx echo.Context, trustDomainName api.TrustDomainName) error {
 	return nil
@@ -146,8 +148,43 @@ func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(ctx echo.Context, trustD
 	return nil
 }
 
-// PostTrustDomainTrustDomainNameJoinToken generate a join token for the trust domain - (POST /trust-domain/{trustDomainName}/join-token)
-func (h AdminAPIHandlers) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName api.TrustDomainName) error {
+// GetJoinToken generate a join token for the trust domain - (POST /trust-domain/{trustDomainName}/join-token)
+func (h AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+	ctx := echoCtx.Request().Context()
+	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
+	if err != nil {
+		err = fmt.Errorf("failed parsing trust domain: %v", err)
+		return h.HandleAndLog(err, http.StatusBadRequest)
+	}
+
+	td, err := h.Datastore.FindTrustDomainByName(ctx, tdName)
+	if err != nil {
+		err = fmt.Errorf("failed looking up trust domain: %v", err)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
+	}
+
+	token := uuid.New()
+
+	joinToken := &entity.JoinToken{
+		Token:         token.String(),
+		TrustDomainID: td.ID.UUID,
+		ExpiresAt:     time.Now().Add(1 * time.Hour),
+	}
+
+	_, err = h.Datastore.CreateJoinToken(ctx, joinToken)
+	if err != nil {
+		err = fmt.Errorf("failed creating join token: %v", err)
+		return h.HandleAndLog(err, http.StatusInternalServerError)
+	}
+
+	h.Logger.Infof("Created join token for trust domain: %s", tdName)
+
+	err = chttp.WriteResponse(echoCtx, token)
+	if err != nil {
+		err = fmt.Errorf("failed to write join token response: %v", err.Error())
+		return h.HandleAndLog(err, http.StatusInternalServerError)
+	}
+
 	return nil
 }
 

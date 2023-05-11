@@ -16,10 +16,11 @@ import (
 
 var hclConfigTemplate = `
 providers {
-	x509ca "disk" {
+	X509CA "disk" {
 		key_file_path = "%s"
 		cert_file_path = "%s"
 	}
+    KeyManager "memory" {}
 }
 `
 var clk = clock.NewFake()

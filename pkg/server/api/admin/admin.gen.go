@@ -167,8 +167,8 @@ type ClientInterface interface {
 
 	PutTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostTrustDomainTrustDomainNameJoinToken request
-	PostTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetJoinToken request
+	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -279,8 +279,8 @@ func (c *Client) PutTrustDomainTrustDomainName(ctx context.Context, trustDomainN
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostTrustDomainTrustDomainNameJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostTrustDomainTrustDomainNameJoinTokenRequest(c.Server, trustDomainName)
+func (c *Client) GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetJoinTokenRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
@@ -549,8 +549,8 @@ func NewPutTrustDomainTrustDomainNameRequestWithBody(server string, trustDomainN
 	return req, nil
 }
 
-// NewPostTrustDomainTrustDomainNameJoinTokenRequest generates requests for PostTrustDomainTrustDomainNameJoinToken
-func NewPostTrustDomainTrustDomainNameJoinTokenRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+// NewGetJoinTokenRequest generates requests for GetJoinToken
+func NewGetJoinTokenRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -575,7 +575,7 @@ func NewPostTrustDomainTrustDomainNameJoinTokenRequest(server string, trustDomai
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -650,8 +650,8 @@ type ClientWithResponsesInterface interface {
 
 	PutTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error)
 
-	// PostTrustDomainTrustDomainNameJoinToken request
-	PostTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error)
+	// GetJoinToken request
+	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
 }
 
 type GetRelationshipsResponse struct {
@@ -792,7 +792,7 @@ func (r PutTrustDomainTrustDomainNameResponse) StatusCode() int {
 	return 0
 }
 
-type PostTrustDomainTrustDomainNameJoinTokenResponse struct {
+type GetJoinTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *JoinTokenResult
@@ -800,7 +800,7 @@ type PostTrustDomainTrustDomainNameJoinTokenResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostTrustDomainTrustDomainNameJoinTokenResponse) Status() string {
+func (r GetJoinTokenResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -808,7 +808,7 @@ func (r PostTrustDomainTrustDomainNameJoinTokenResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostTrustDomainTrustDomainNameJoinTokenResponse) StatusCode() int {
+func (r GetJoinTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -893,13 +893,13 @@ func (c *ClientWithResponses) PutTrustDomainTrustDomainNameWithResponse(ctx cont
 	return ParsePutTrustDomainTrustDomainNameResponse(rsp)
 }
 
-// PostTrustDomainTrustDomainNameJoinTokenWithResponse request returning *PostTrustDomainTrustDomainNameJoinTokenResponse
-func (c *ClientWithResponses) PostTrustDomainTrustDomainNameJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error) {
-	rsp, err := c.PostTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName, reqEditors...)
+// GetJoinTokenWithResponse request returning *GetJoinTokenResponse
+func (c *ClientWithResponses) GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error) {
+	rsp, err := c.GetJoinToken(ctx, trustDomainName, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostTrustDomainTrustDomainNameJoinTokenResponse(rsp)
+	return ParseGetJoinTokenResponse(rsp)
 }
 
 // ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
@@ -1100,15 +1100,15 @@ func ParsePutTrustDomainTrustDomainNameResponse(rsp *http.Response) (*PutTrustDo
 	return response, nil
 }
 
-// ParsePostTrustDomainTrustDomainNameJoinTokenResponse parses an HTTP response from a PostTrustDomainTrustDomainNameJoinTokenWithResponse call
-func ParsePostTrustDomainTrustDomainNameJoinTokenResponse(rsp *http.Response) (*PostTrustDomainTrustDomainNameJoinTokenResponse, error) {
+// ParseGetJoinTokenResponse parses an HTTP response from a GetJoinTokenWithResponse call
+func ParseGetJoinTokenResponse(rsp *http.Response) (*GetJoinTokenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostTrustDomainTrustDomainNameJoinTokenResponse{
+	response := &GetJoinTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1154,8 +1154,8 @@ type ServerInterface interface {
 	// (PUT /trust-domain/{trustDomainName})
 	PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName externalRef0.UUID) error
 	// Get a join token for a specific Trust Domain
-	// (POST /trust-domain/{trustDomainName}/join-token)
-	PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// (GET /trust-domain/{trustDomainName}/join-token)
+	GetJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1254,8 +1254,8 @@ func (w *ServerInterfaceWrapper) PutTrustDomainTrustDomainName(ctx echo.Context)
 	return err
 }
 
-// PostTrustDomainTrustDomainNameJoinToken converts echo context to params.
-func (w *ServerInterfaceWrapper) PostTrustDomainTrustDomainNameJoinToken(ctx echo.Context) error {
+// GetJoinToken converts echo context to params.
+func (w *ServerInterfaceWrapper) GetJoinToken(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "trustDomainName" -------------
 	var trustDomainName externalRef0.TrustDomainName
@@ -1266,7 +1266,7 @@ func (w *ServerInterfaceWrapper) PostTrustDomainTrustDomainNameJoinToken(ctx ech
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostTrustDomainTrustDomainNameJoinToken(ctx, trustDomainName)
+	err = w.Handler.GetJoinToken(ctx, trustDomainName)
 	return err
 }
 
@@ -1304,38 +1304,38 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
 	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainTrustDomainName)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainTrustDomainName)
-	router.POST(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.PostTrustDomainTrustDomainNameJoinToken)
+	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetJoinToken)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"z1iIFG+0v87aQCXY+ST/LwAA///i709UiRwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
