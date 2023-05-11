@@ -59,6 +59,13 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
 	}
 
+	switch *params.ConsentStatus {
+	case api.Accepted, api.Denied, api.Pending:
+	default:
+		msg := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
+		return h.handleErrorAndLog(msg, msg, http.StatusBadRequest)
+	}
+
 	// get the relationships for the authenticated trust domain
 	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
 	if err != nil {

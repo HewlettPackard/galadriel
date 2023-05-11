@@ -129,6 +129,23 @@ func TestTCPGetRelationships(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
 		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
 	})
+	t.Run("Fails with invalid consent status", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+		setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+		tdName := tdA.Name.String()
+		status := api.ConsentStatus("invalid")
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: &tdName,
+			ConsentStatus:   &status,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "invalid consent status: \"invalid\"", err.(*echo.HTTPError).Message)
+	})
 }
 
 func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entity.TrustDomain), status api.ConsentStatus, trustDomain *entity.TrustDomain, expectedRelationshipCount int, expectedConsentStatus api.ConsentStatus) {
