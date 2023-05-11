@@ -102,7 +102,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		echoCtx := setup.EchoCtx
 
 		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
 
 		trustDomain := tdA
 
@@ -134,7 +134,7 @@ func TestTCPGetRelationships(t *testing.T) {
 				assert.Equal(t, status, rel.TrustDomainAConsent)
 			}
 			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
+				assert.Equal(t, status, rel.TrustDomainBConsent)
 			}
 		}
 	})
@@ -143,7 +143,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		echoCtx := setup.EchoCtx
 
 		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
 
 		trustDomain := tdC
 
@@ -175,7 +175,7 @@ func TestTCPGetRelationships(t *testing.T) {
 				assert.Equal(t, status, rel.TrustDomainAConsent)
 			}
 			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
+				assert.Equal(t, status, rel.TrustDomainBConsent)
 			}
 		}
 	})
@@ -184,7 +184,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		echoCtx := setup.EchoCtx
 
 		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
 
 		trustDomain := tdB
 
@@ -216,7 +216,7 @@ func TestTCPGetRelationships(t *testing.T) {
 				assert.Equal(t, status, rel.TrustDomainAConsent)
 			}
 			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
+				assert.Equal(t, status, rel.TrustDomainBConsent)
 			}
 		}
 	})
@@ -367,7 +367,7 @@ func TestTCPBundleSync(t *testing.T) {
 }
 
 func TestTCPBundlePut(t *testing.T) {
-	t.Run("Succesfully register bundles for a trust domain", func(t *testing.T) {
+	t.Run("Successfully register bundles for a trust domain", func(t *testing.T) {
 		bundlePut := harvester.BundlePut{
 			Signature:          "",
 			SigningCertificate: "",

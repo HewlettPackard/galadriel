@@ -76,7 +76,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		apiRelationships = append(apiRelationships, api.RelationshipFromEntity(r))
 	}
 
-	return chttp.WriteResponse(echoCtx, relationships)
+	return chttp.WriteResponse(echoCtx, apiRelationships)
 }
 
 // PatchRelationshipsRelationshipID accept/denied relationships requests - (PATCH /relationships/{relationshipID})
