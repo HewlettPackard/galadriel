@@ -98,128 +98,23 @@ func SetupJoinToken(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.
 
 func TestTCPGetRelationships(t *testing.T) {
 	t.Run("Successfully get accepted relationships", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
-		echoCtx := setup.EchoCtx
-
-		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
-
-		trustDomain := tdA
-
-		// Set the auth trust domain in the context
-		echoCtx.Set(authTrustDomainKey, trustDomain)
-
-		status := api.Accepted
-		tdName := trustDomain.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: &tdName,
-			ConsentStatus:   &status,
-		}
-
-		err := setup.Handler.GetRelationships(echoCtx, params)
-		assert.NoError(t, err)
-
-		recorder := setup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.NotEmpty(t, recorder.Body)
-
-		var relationships []*api.Relationship
-		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-		assert.Len(t, relationships, 2)
-
-		// assert that all relationships are accepted by trustDomain
-		for _, rel := range relationships {
-			if rel.TrustDomainAId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
-			}
-			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainBConsent)
-			}
-		}
+		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
+			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
+		}, api.Accepted, tdA, 2, api.Accepted)
 	})
+
 	t.Run("Successfully get denied relationships", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
-		echoCtx := setup.EchoCtx
-
-		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
-
-		trustDomain := tdC
-
-		// Set the auth trust domain in the context
-		echoCtx.Set(authTrustDomainKey, trustDomain)
-
-		status := api.Denied
-		tdName := trustDomain.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: &tdName,
-			ConsentStatus:   &status,
-		}
-
-		err := setup.Handler.GetRelationships(echoCtx, params)
-		assert.NoError(t, err)
-
-		recorder := setup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.NotEmpty(t, recorder.Body)
-
-		var relationships []*api.Relationship
-		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-		assert.Len(t, relationships, 1)
-
-		// assert that all relationships are denied by the trust domain tdC
-		for _, rel := range relationships {
-			if rel.TrustDomainAId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
-			}
-			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainBConsent)
-			}
-		}
+		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
+			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
+		}, api.Denied, tdC, 1, api.Denied)
 	})
+
 	t.Run("Successfully get pending relationships", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
-		echoCtx := setup.EchoCtx
-
-		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
-
-		trustDomain := tdB
-
-		// Set the auth trust domain in the context
-		echoCtx.Set(authTrustDomainKey, trustDomain)
-
-		status := api.Pending
-		tdName := trustDomain.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: &tdName,
-			ConsentStatus:   &status,
-		}
-
-		err := setup.Handler.GetRelationships(echoCtx, params)
-		assert.NoError(t, err)
-
-		recorder := setup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.NotEmpty(t, recorder.Body)
-
-		var relationships []*api.Relationship
-		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-		assert.Len(t, relationships, 2)
-
-		// assert that all relationships are denied by the trust domain tdC
-		for _, rel := range relationships {
-			if rel.TrustDomainAId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainAConsent)
-			}
-			if rel.TrustDomainBId == trustDomain.ID.UUID {
-				assert.Equal(t, status, rel.TrustDomainBConsent)
-			}
-		}
+		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
+			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
+		}, api.Pending, tdB, 2, api.Pending)
 	})
+
 	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
 		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
 		echoCtx := setup.EchoCtx
@@ -241,6 +136,44 @@ func TestTCPGetRelationships(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
 		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
 	})
+}
+
+func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entity.TrustDomain), status api.ConsentStatus, trustDomain *entity.TrustDomain, expectedRelationshipCount int, expectedConsentStatus api.ConsentStatus) {
+	setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+	echoCtx := setup.EchoCtx
+
+	setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+	setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+
+	setupFn(setup, trustDomain)
+
+	tdName := trustDomain.Name.String()
+	params := harvester.GetRelationshipsParams{
+		TrustDomainName: &tdName,
+		ConsentStatus:   &status,
+	}
+
+	err := setup.Handler.GetRelationships(echoCtx, params)
+	assert.NoError(t, err)
+
+	recorder := setup.Recorder
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.NotEmpty(t, recorder.Body)
+
+	var relationships []*api.Relationship
+	err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
+	assert.NoError(t, err)
+	assert.Len(t, relationships, expectedRelationshipCount)
+
+	// assert that all relationships have the expected consent status for the specified trust domain
+	for _, rel := range relationships {
+		if rel.TrustDomainAId == trustDomain.ID.UUID {
+			assert.Equal(t, expectedConsentStatus, rel.TrustDomainAConsent)
+		}
+		if rel.TrustDomainBId == trustDomain.ID.UUID {
+			assert.Equal(t, expectedConsentStatus, rel.TrustDomainBConsent)
+		}
+	}
 }
 
 func TestTCPPatchRelationshipRelationshipID(t *testing.T) {
