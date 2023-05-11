@@ -119,16 +119,9 @@ func TestTCPGetRelationships(t *testing.T) {
 		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
 		echoCtx := setup.EchoCtx
 
-		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
-
-		trustDomain := tdA
-
-		status := api.Pending
-		tdName := trustDomain.Name.String()
+		tdName := tdA.Name.String()
 		params := harvester.GetRelationshipsParams{
 			TrustDomainName: &tdName,
-			ConsentStatus:   &status,
 		}
 
 		err := setup.Handler.GetRelationships(echoCtx, params)
