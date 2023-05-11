@@ -45,7 +45,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 	if params.TrustDomainName != nil {
 		td, err := h.findTrustDomainByName(ctx, *params.TrustDomainName)
 		if err != nil {
-			err = fmt.Errorf("failed parsing trust domain name: %v", err)
+			err = fmt.Errorf("failed looking up trust domain name: %w", err)
 			return h.handleAndLog(err, http.StatusBadRequest)
 		}
 
