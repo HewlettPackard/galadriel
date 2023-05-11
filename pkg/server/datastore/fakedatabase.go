@@ -41,14 +41,15 @@ func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *enti
 		return nil, err
 	}
 
-	req.ID = uuid.NullUUID{
-		UUID:  uuid.New(),
-		Valid: true,
+	if !req.ID.Valid {
+		req.ID = uuid.NullUUID{
+			UUID:  uuid.New(),
+			Valid: true,
+		}
+		req.CreatedAt = time.Now()
 	}
 
-	req.CreatedAt = time.Now()
 	req.UpdatedAt = time.Now()
-
 	db.trustDomains[req.ID.UUID] = req
 
 	return req, nil
@@ -133,14 +134,15 @@ func (db *FakeDatabase) CreateOrUpdateBundle(ctx context.Context, req *entity.Bu
 		return nil, err
 	}
 
-	req.ID = uuid.NullUUID{
-		UUID:  uuid.New(),
-		Valid: true,
+	if !req.ID.Valid {
+		req.ID = uuid.NullUUID{
+			UUID:  uuid.New(),
+			Valid: true,
+		}
+		req.CreatedAt = time.Now()
 	}
 
-	req.CreatedAt = time.Now()
 	req.UpdatedAt = time.Now()
-
 	db.bundles[req.ID.UUID] = req
 
 	return req, nil
@@ -354,15 +356,15 @@ func (db *FakeDatabase) CreateOrUpdateRelationship(ctx context.Context, req *ent
 		return nil, err
 	}
 
-	if req.ID.Valid {
-
-	} else {
+	if !req.ID.Valid {
+		req.ID = uuid.NullUUID{
+			Valid: true,
+			UUID:  uuid.New(),
+		}
 		req.CreatedAt = time.Now()
-
 	}
 
 	req.UpdatedAt = time.Now()
-
 	db.relationships[req.ID.UUID] = req
 
 	return req, nil
