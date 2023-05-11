@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
@@ -23,13 +24,26 @@ import (
 )
 
 const (
-	jwtPath     = "/jwt"
-	onboardPath = "/onboard"
+	jwtPath           = "/jwt"
+	onboardPath       = "/onboard"
+	relationshipsPath = "/relationships"
+)
+
+var (
+	tdA                   = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-a.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	tdB                   = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-b.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	tdC                   = &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-c.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	pendingRelAB          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	pendingRelAC          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	acceptedPendingRelAB  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	acceptedDeniedRelAC   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDenied, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	acceptedAcceptedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 )
 
 type HarvesterTestSetup struct {
 	EchoCtx   echo.Context
 	Handler   *HarvesterAPIHandlers
+	Datastore *datastore.FakeDatabase
 	JWTIssuer *fakejwtissuer.JWTIssuer
 	Recorder  *httptest.ResponseRecorder
 }
@@ -51,6 +65,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url, body string) *HarvesterTes
 		Recorder:  rec,
 		Handler:   NewHarvesterAPIHandlers(logger, fakeDB, jwtIssuer, jwtValidator),
 		JWTIssuer: jwtIssuer,
+		Datastore: fakeDB,
 	}
 }
 
@@ -82,7 +97,150 @@ func SetupJoinToken(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.
 }
 
 func TestTCPGetRelationships(t *testing.T) {
-	t.Skip("Missing tests will be added when the API be implemented")
+	t.Run("Successfully get accepted relationships", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+
+		trustDomain := tdA
+
+		// Set the auth trust domain in the context
+		echoCtx.Set(authTrustDomainKey, trustDomain)
+
+		status := api.Accepted
+		tdName := trustDomain.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: &tdName,
+			ConsentStatus:   &status,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NotEmpty(t, recorder.Body)
+
+		var relationships []*api.Relationship
+		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+		assert.Len(t, relationships, 2)
+
+		// assert that all relationships are accepted by trustDomain
+		for _, rel := range relationships {
+			if rel.TrustDomainAId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+			if rel.TrustDomainBId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+		}
+	})
+	t.Run("Successfully get denied relationships", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+
+		trustDomain := tdC
+
+		// Set the auth trust domain in the context
+		echoCtx.Set(authTrustDomainKey, trustDomain)
+
+		status := api.Denied
+		tdName := trustDomain.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: &tdName,
+			ConsentStatus:   &status,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NotEmpty(t, recorder.Body)
+
+		var relationships []*api.Relationship
+		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+		assert.Len(t, relationships, 1)
+
+		// assert that all relationships are denied by the trust domain tdC
+		for _, rel := range relationships {
+			if rel.TrustDomainAId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+			if rel.TrustDomainBId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+		}
+	})
+	t.Run("Successfully get pending relationships", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+
+		trustDomain := tdB
+
+		// Set the auth trust domain in the context
+		echoCtx.Set(authTrustDomainKey, trustDomain)
+
+		status := api.Pending
+		tdName := trustDomain.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: &tdName,
+			ConsentStatus:   &status,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NotEmpty(t, recorder.Body)
+
+		var relationships []*api.Relationship
+		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
+		assert.NoError(t, err)
+		assert.Len(t, relationships, 2)
+
+		// assert that all relationships are denied by the trust domain tdC
+		for _, rel := range relationships {
+			if rel.TrustDomainAId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+			if rel.TrustDomainBId == trustDomain.ID.UUID {
+				assert.Equal(t, status, rel.TrustDomainAConsent)
+			}
+		}
+	})
+	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAB, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+
+		trustDomain := tdA
+
+		status := api.Pending
+		tdName := trustDomain.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: &tdName,
+			ConsentStatus:   &status,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
+	})
 }
 
 func TestTCPPatchRelationshipRelationshipID(t *testing.T) {

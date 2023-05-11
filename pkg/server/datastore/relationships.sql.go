@@ -154,8 +154,8 @@ RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trus
 
 type UpdateRelationshipParams struct {
 	ID                  pgtype.UUID
-	TrustDomainAConsent bool
-	TrustDomainBConsent bool
+	TrustDomainAConsent ConsentStatus
+	TrustDomainBConsent ConsentStatus
 }
 
 func (q *Queries) UpdateRelationship(ctx context.Context, arg UpdateRelationshipParams) (Relationship, error) {

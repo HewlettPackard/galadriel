@@ -73,7 +73,7 @@ func RelationshipFromEntity(entity *entity.Relationship) *Relationship {
 		UpdatedAt:           entity.UpdatedAt,
 		TrustDomainAId:      entity.TrustDomainAID,
 		TrustDomainBId:      entity.TrustDomainBID,
-		TrustDomainBConsent: entity.TrustDomainBConsent,
-		TrustDomainAConsent: entity.TrustDomainAConsent,
+		TrustDomainAConsent: ConsentStatus(entity.TrustDomainAConsent),
+		TrustDomainBConsent: ConsentStatus(entity.TrustDomainBConsent),
 	}
 }

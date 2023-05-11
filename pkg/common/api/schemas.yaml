@@ -79,11 +79,11 @@ components:
         trust_domain_b_id:
           $ref: '#/components/schemas/UUID'
         trust_domain_a_consent:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/ConsentStatus'
+          default: pending
         trust_domain_b_consent:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/ConsentStatus'
+          default: pending
         created_at: 
           type: string
           format: date-time
@@ -94,6 +94,12 @@ components:
           format: date-time
           maxLength: 21
           example: "2021-01-30T08:30:00Z"
+    ConsentStatus:
+      type: string
+      enum:
+        - accepted
+        - denied
+        - pending
     JoinToken:
       $ref: '#/components/schemas/UUID'
     SPIFFEID:

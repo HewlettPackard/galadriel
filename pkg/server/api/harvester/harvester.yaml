@@ -158,11 +158,10 @@ paths:
         - Relationships
       summary: List the relationships.
       parameters:
-        - name: status
+        - name: consentStatus
           in: query
           schema:
-            type: string
-            enum: [ accepted, denied, pending ]
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
         - name: trustDomainName
           in: query
           schema:

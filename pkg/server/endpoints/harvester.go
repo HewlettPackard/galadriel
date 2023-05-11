@@ -15,6 +15,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	gojwt "github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -44,8 +45,38 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore, jwtIs
 }
 
 // GetRelationships list all the relationships - (GET /relationships)
-func (h *HarvesterAPIHandlers) GetRelationships(ctx echo.Context, params harvester.GetRelationshipsParams) error {
-	return nil
+func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params harvester.GetRelationshipsParams) error {
+	ctx := echoCtx.Request().Context()
+
+	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
+	if !ok {
+		err := errors.New("no authenticated trust domain")
+		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
+	}
+
+	if authTD.Name.String() != *params.TrustDomainName {
+		err := errors.New("trust domain does not match authenticated trust domain")
+		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
+	}
+
+	// get the relationships for the authenticated trust domain
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
+	if err != nil {
+		msg := errors.New("error looking up relationships")
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	// filter relationships by consent status
+	if params.ConsentStatus != nil {
+		relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, *params.ConsentStatus)
+	}
+
+	apiRelationships := make([]*api.Relationship, 0, len(relationships))
+	for _, r := range relationships {
+		apiRelationships = append(apiRelationships, api.RelationshipFromEntity(r))
+	}
+
+	return chttp.WriteResponse(echoCtx, relationships)
 }
 
 // PatchRelationshipsRelationshipID accept/denied relationships requests - (PATCH /relationships/{relationshipID})
@@ -217,6 +248,22 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	}
 
 	return nil
+}
+
+func filterRelationshipsByConsentStatus(trustDomainID uuid.UUID, relationships []*entity.Relationship, status api.ConsentStatus) []*entity.Relationship {
+	filtered := make([]*entity.Relationship, 0)
+	for _, r := range relationships {
+		if r.TrustDomainAID == trustDomainID && api.ConsentStatus(r.TrustDomainAConsent) == status {
+			filtered = append(filtered, r)
+			continue
+		}
+		if r.TrustDomainBID == trustDomainID && api.ConsentStatus(r.TrustDomainBConsent) == status {
+			filtered = append(filtered, r)
+			continue
+		}
+
+	}
+	return filtered
 }
 
 func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr, msg error, code int) error {
