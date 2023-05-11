@@ -51,7 +51,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 
 		rels, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID)
 		if err != nil {
-			err = fmt.Errorf("failed listing relationships: %v", err)
+			err = fmt.Errorf("failed looking up relationships: %v", err)
 			return h.handleAndLog(err, http.StatusInternalServerError)
 		}
 	} else {
