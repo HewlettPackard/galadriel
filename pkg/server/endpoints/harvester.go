@@ -73,10 +73,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	// filter relationships by consent status
-	if params.ConsentStatus != nil {
-		relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, *params.ConsentStatus)
-	}
+	relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, *params.ConsentStatus)
 
 	apiRelationships := make([]*api.Relationship, 0, len(relationships))
 	for _, r := range relationships {
