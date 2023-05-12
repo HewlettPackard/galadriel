@@ -71,7 +71,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		return h.handleErrorAndLog(msg, msg, http.StatusBadRequest)
 	}
 
-	// get the relationships for the authenticated trust domain
+	// get the relationships for the trust domain
 	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
 	if err != nil {
 		msg := errors.New("error looking up relationships")
