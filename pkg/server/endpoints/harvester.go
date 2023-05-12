@@ -44,7 +44,10 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore, jwtIs
 	}
 }
 
-// GetRelationships list all the relationships - (GET /relationships)
+// GetRelationships list all the relationships for a given trust domain name and consent status  - (GET /relationships)
+// The consent status is optional, if not provided, all relationships will be returned for a given trust domain. If the
+// consent status is provided, only relationships with the given consent status for the given trust domain will be returned.
+// The trust domain name provided should match the authenticated trust domain.
 func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params harvester.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
@@ -54,13 +57,15 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
 	}
 
-	if authTD.Name.String() != *params.TrustDomainName {
+	if authTD.Name.String() != params.TrustDomainName {
 		err := errors.New("trust domain does not match authenticated trust domain")
 		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
 	}
 
-	switch *params.ConsentStatus {
-	case api.Accepted, api.Denied, api.Pending:
+	consentStatus := *params.ConsentStatus
+
+	switch consentStatus {
+	case "", api.Accepted, api.Denied, api.Pending:
 	default:
 		msg := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
 		return h.handleErrorAndLog(msg, msg, http.StatusBadRequest)
@@ -73,7 +78,9 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, *params.ConsentStatus)
+	if consentStatus != "" {
+		relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, consentStatus)
+	}
 
 	apiRelationships := make([]*api.Relationship, 0, len(relationships))
 	for _, r := range relationships {

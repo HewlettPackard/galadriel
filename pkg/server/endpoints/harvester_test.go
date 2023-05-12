@@ -100,19 +100,25 @@ func TestTCPGetRelationships(t *testing.T) {
 	t.Run("Successfully get accepted relationships", func(t *testing.T) {
 		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
-		}, api.Accepted, tdA, 2, api.Accepted)
+		}, api.Accepted, tdA, 2)
 	})
 
 	t.Run("Successfully get denied relationships", func(t *testing.T) {
 		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
-		}, api.Denied, tdC, 1, api.Denied)
+		}, api.Denied, tdC, 1)
 	})
 
 	t.Run("Successfully get pending relationships", func(t *testing.T) {
 		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
-		}, api.Pending, tdB, 2, api.Pending)
+		}, api.Pending, tdB, 2)
+	})
+
+	t.Run("Successfully get all relationships", func(t *testing.T) {
+		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
+			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
+		}, "", tdA, 4)
 	})
 
 	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
@@ -121,7 +127,7 @@ func TestTCPGetRelationships(t *testing.T) {
 
 		tdName := tdA.Name.String()
 		params := harvester.GetRelationshipsParams{
-			TrustDomainName: &tdName,
+			TrustDomainName: tdName,
 		}
 
 		err := setup.Handler.GetRelationships(echoCtx, params)
@@ -137,7 +143,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		tdName := tdA.Name.String()
 		status := api.ConsentStatus("invalid")
 		params := harvester.GetRelationshipsParams{
-			TrustDomainName: &tdName,
+			TrustDomainName: tdName,
 			ConsentStatus:   &status,
 		}
 
@@ -148,7 +154,7 @@ func TestTCPGetRelationships(t *testing.T) {
 	})
 }
 
-func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entity.TrustDomain), status api.ConsentStatus, trustDomain *entity.TrustDomain, expectedRelationshipCount int, expectedConsentStatus api.ConsentStatus) {
+func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entity.TrustDomain), status api.ConsentStatus, trustDomain *entity.TrustDomain, expectedRelationshipCount int) {
 	setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
 	echoCtx := setup.EchoCtx
 
@@ -159,7 +165,7 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 
 	tdName := trustDomain.Name.String()
 	params := harvester.GetRelationshipsParams{
-		TrustDomainName: &tdName,
+		TrustDomainName: tdName,
 		ConsentStatus:   &status,
 	}
 
@@ -175,13 +181,16 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 	assert.NoError(t, err)
 	assert.Len(t, relationships, expectedRelationshipCount)
 
+	if status == "" {
+		return // no need to assert consent status
+	}
 	// assert that all relationships have the expected consent status for the specified trust domain
 	for _, rel := range relationships {
 		if rel.TrustDomainAId == trustDomain.ID.UUID {
-			assert.Equal(t, expectedConsentStatus, rel.TrustDomainAConsent)
+			assert.Equal(t, status, rel.TrustDomainAConsent)
 		}
 		if rel.TrustDomainBId == trustDomain.ID.UUID {
-			assert.Equal(t, expectedConsentStatus, rel.TrustDomainBConsent)
+			assert.Equal(t, status, rel.TrustDomainBConsent)
 		}
 	}
 }

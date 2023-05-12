@@ -167,6 +167,7 @@ paths:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: relationship status from a Trust Domain perspective
+          required: true
       responses:
         '200':
           description: Successful operation
