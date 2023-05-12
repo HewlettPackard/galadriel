@@ -58,7 +58,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	}
 
 	if authTD.Name.String() != params.TrustDomainName {
-		err := errors.New("trust domain does not match authenticated trust domain")
+		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", params.TrustDomainName, authTD.Name.String())
 		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
 	}
 

@@ -121,20 +121,6 @@ func TestTCPGetRelationships(t *testing.T) {
 		}, "", tdA, 4)
 	})
 
-	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
-		echoCtx := setup.EchoCtx
-
-		tdName := tdA.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: tdName,
-		}
-
-		err := setup.Handler.GetRelationships(echoCtx, params)
-		assert.Error(t, err)
-		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
-	})
 	t.Run("Fails with invalid consent status", func(t *testing.T) {
 		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
 		echoCtx := setup.EchoCtx
@@ -151,6 +137,37 @@ func TestTCPGetRelationships(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
 		assert.Equal(t, "invalid consent status: \"invalid\"", err.(*echo.HTTPError).Message)
+	})
+
+	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+
+		tdName := tdA.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: tdName,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
+	})
+
+	t.Run("Fails if authenticated trust domain does not match trust domain parameter", func(t *testing.T) {
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		echoCtx := setup.EchoCtx
+		setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+		tdName := tdB.Name.String()
+		params := harvester.GetRelationshipsParams{
+			TrustDomainName: tdName,
+		}
+
+		err := setup.Handler.GetRelationships(echoCtx, params)
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "request trust domain \"td-b.org\" does not match authenticated trust domain \"td-a.org\"", err.(*echo.HTTPError).Message)
 	})
 }
 
