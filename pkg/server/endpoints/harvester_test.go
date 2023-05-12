@@ -327,7 +327,7 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		require.Error(t, err)
 
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "invalid JWT access token", err.(*echo.HTTPError).Message)
+		assert.Equal(t, "failed to parse JWT access token claims", err.(*echo.HTTPError).Message)
 	})
 }
 

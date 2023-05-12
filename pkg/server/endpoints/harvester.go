@@ -54,12 +54,12 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
 	if !ok {
 		err := errors.New("no authenticated trust domain")
-		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
 	}
 
 	if authTD.Name.String() != params.TrustDomainName {
 		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", params.TrustDomainName, authTD.Name.String())
-		return h.handleErrorAndLog(err, err, http.StatusUnauthorized)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
 	}
 
 	consentStatus := *params.ConsentStatus
@@ -67,14 +67,15 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	switch consentStatus {
 	case "", api.Accepted, api.Denied, api.Pending:
 	default:
-		msg := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
-		return h.handleErrorAndLog(msg, msg, http.StatusBadRequest)
+		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
 	// get the relationships for the trust domain
 	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
 	if err != nil {
-		msg := errors.New("error looking up relationships")
+		msg := "error looking up relationships"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
@@ -101,42 +102,45 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 
 	if params.JoinToken == "" {
 		err := errors.New("join token is required")
-		return h.handleErrorAndLog(err, err, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
 	token, err := h.Datastore.FindJoinToken(ctx, params.JoinToken)
 	if err != nil {
-		msg := errors.New("error looking up token")
+		msg := "error looking up token"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
 
 	if token == nil {
 		err := errors.New("token not found")
-		return h.handleErrorAndLog(err, err, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
 	if token.ExpiresAt.Before(time.Now()) {
-		err := fmt.Errorf("token expired: trust domain ID: %s", token.TrustDomainID)
-		msg := fmt.Errorf("token expired")
+		msg := "token expired"
+		err := fmt.Errorf("%s: trust domain ID: %s", msg, token.TrustDomainID)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
 
 	if token.Used {
-		err := fmt.Errorf("token already used: trust domain ID: %s", token.TrustDomainID)
-		msg := fmt.Errorf("token already used")
+		msg := "token already used"
+		err := fmt.Errorf("%s: trust domain ID: %s", msg, token.TrustDomainID)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
 
 	trustDomain, err := h.Datastore.FindTrustDomainByID(ctx, token.TrustDomainID)
 	if err != nil {
-		msg := fmt.Errorf("error looking up trust domain")
+		msg := "error looking up trust domain"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
 
 	// mark token as used
 	_, err = h.Datastore.UpdateJoinToken(ctx, token.ID.UUID, true)
 	if err != nil {
-		msg := fmt.Errorf("internal error")
+		msg := "failed to update token"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
@@ -151,7 +155,8 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 
 	jwtToken, err := h.jwtIssuer.IssueJWT(ctx, jwtParams)
 	if err != nil {
-		msg := fmt.Errorf("error generating JWT token")
+		msg := "error generating JWT token"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
@@ -164,16 +169,16 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 
 	claims, ok := echoCtx.Get(authClaimsKey).(*gojwt.RegisteredClaims)
 	if !ok {
-		msg := fmt.Errorf("invalid JWT access token")
-		err := errors.New("error getting claims from context")
+		msg := "failed to parse JWT access token claims"
+		err := fmt.Errorf("%s", msg)
 		return h.handleErrorAndLog(err, msg, http.StatusUnauthorized)
 	}
 
 	sub := claims.Subject
 	subject, err := spiffeid.TrustDomainFromString(sub)
 	if err != nil {
-		msg := fmt.Errorf("internal error")
-		err := errors.New("error parsing trust domain from subject")
+		msg := "failed to parse trust domain from subject"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusUnauthorized)
 	}
 
@@ -190,7 +195,8 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 
 	newToken, err := h.jwtIssuer.IssueJWT(ctx, &params)
 	if err != nil {
-		msg := fmt.Errorf("failed to generate new JWT token")
+		msg := "failed to generate new JWT token"
+		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
@@ -211,7 +217,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	authenticatedTD, ok := ctx.Get(authTrustDomainKey).(*entity.TrustDomain)
 	if !ok {
 		err := errors.New("failed to get authenticated trust domain")
-		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
 	if authenticatedTD.Name.String() != trustDomainName {
@@ -222,17 +228,17 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	err := chttp.FromBody(ctx, req)
 	if err != nil {
 		err := fmt.Errorf("failed to read bundle put body: %v", err)
-		return h.handleErrorAndLog(err, err, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
 	if authenticatedTD.Name.String() != req.TrustDomain {
 		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		return h.handleErrorAndLog(err, err, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
 	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(gctx, authenticatedTD.ID.UUID)
 	if err != nil {
-		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
 	if req.TrustBundle == "" {
@@ -242,7 +248,7 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 	bundle, err := req.ToEntity()
 	if err != nil {
 		err := fmt.Errorf("failed to convert bundle put body to entity: %v", err)
-		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
 	if storedBundle != nil {
@@ -251,11 +257,11 @@ func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.T
 
 	_, err = h.Datastore.CreateOrUpdateBundle(gctx, bundle)
 	if err != nil {
-		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
 	if err = chttp.BodylessResponse(ctx); err != nil {
-		return h.handleErrorAndLog(err, err, http.StatusInternalServerError)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
 	return nil
@@ -277,8 +283,8 @@ func filterRelationshipsByConsentStatus(trustDomainID uuid.UUID, relationships [
 	return filtered
 }
 
-func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr, msg error, code int) error {
+func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, code int) error {
 	errMsg := util.LogSanitize(logErr.Error())
 	h.Logger.Errorf(errMsg)
-	return echo.NewHTTPError(code, msg.Error())
+	return echo.NewHTTPError(code, message)
 }
