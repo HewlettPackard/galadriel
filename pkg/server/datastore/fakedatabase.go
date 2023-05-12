@@ -156,9 +156,12 @@ func (db *FakeDatabase) CreateOrUpdateBundle(ctx context.Context, req *entity.Bu
 		return nil, err
 	}
 
-	req.ID = uuid.NullUUID{
-		UUID:  uuid.New(),
-		Valid: true,
+	if !req.ID.Valid {
+		// it's an insert
+		req.ID = uuid.NullUUID{
+			UUID:  uuid.New(),
+			Valid: true,
+		}
 	}
 
 	req.CreatedAt = time.Now()
@@ -195,7 +198,7 @@ func (db *FakeDatabase) FindBundleByTrustDomainID(ctx context.Context, trustDoma
 	}
 
 	for _, bundle := range db.bundles {
-		if trustDomainID.String() == bundle.TrustDomainID.String() {
+		if trustDomainID == bundle.TrustDomainID {
 			return bundle, nil
 		}
 	}
@@ -405,7 +408,7 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, tr
 		return nil, err
 	}
 
-	relationships := []*entity.Relationship{}
+	var relationships []*entity.Relationship
 	for _, r := range db.relationships {
 		matchA := r.TrustDomainAID.String() == trustDomainID.String()
 		matchB := r.TrustDomainBID.String() == trustDomainID.String()
@@ -426,7 +429,7 @@ func (db *FakeDatabase) ListRelationships(ctx context.Context) ([]*entity.Relati
 		return nil, err
 	}
 
-	relationships := []*entity.Relationship{}
+	var relationships []*entity.Relationship
 	for _, r := range db.relationships {
 		relationships = append(relationships, r)
 	}

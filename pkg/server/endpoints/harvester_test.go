@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -82,6 +83,19 @@ func SetupTrustDomain(t *testing.T, ds datastore.Datastore) *entity.TrustDomain 
 	require.NoError(t, err)
 
 	return trustDomain
+}
+
+func SetupBundle(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.Bundle {
+	bundle := &entity.Bundle{
+		TrustDomainID: td,
+		Data:          []byte("test-bundle"),
+		Signature:     []byte("test-signature"),
+	}
+
+	_, err := ds.CreateOrUpdateBundle(context.TODO(), bundle)
+	require.NoError(t, err)
+
+	return bundle
 }
 
 func SetupJoinToken(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.JoinToken {
@@ -335,33 +349,114 @@ func TestTCPBundleSync(t *testing.T) {
 	t.Skip("Missing tests will be added when the API be implemented")
 }
 
-func TestTCPBundlePut(t *testing.T) {
-	t.Run("Successfully register bundles for a trust domain", func(t *testing.T) {
+func TestBundlePut(t *testing.T) {
+	t.Run("Successfully post new bundle for a trust domain", func(t *testing.T) {
+		setupFunc := func(setup *HarvesterTestSetup) *entity.TrustDomain {
+			td := SetupTrustDomain(t, setup.Handler.Datastore)
+			setup.EchoCtx.Set(authTrustDomainKey, td)
+			return td
+		}
+		testBundlePut(t, setupFunc, http.StatusOK, "")
+	})
+
+	t.Run("Successfully post bundle update for a trust domain", func(t *testing.T) {
+		setupFunc := func(setup *HarvesterTestSetup) *entity.TrustDomain {
+			td := SetupTrustDomain(t, setup.Handler.Datastore)
+			setup.EchoCtx.Set(authTrustDomainKey, td)
+			SetupBundle(t, setup.Handler.Datastore, td.ID.UUID)
+			return td
+		}
+		testBundlePut(t, setupFunc, http.StatusOK, "")
+	})
+
+	t.Run("Fail post bundle no authenticated trust domain", func(t *testing.T) {
 		bundlePut := harvester.BundlePut{
-			Signature:          "",
-			SigningCertificate: "",
+			Signature:          "bundle signature",
+			SigningCertificate: "certificate PEM",
 			TrustBundle:        "a new bundle",
 			TrustDomain:        testTrustDomain,
 		}
 
 		body, err := json.Marshal(bundlePut)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
-		echoCtx := harvesterTestSetup.EchoCtx
+		setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+		setup.EchoCtx.Set(authTrustDomainKey, "")
 
-		// Creating Trust Domain
-		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
-
-		assert.NoError(t, err)
-		echoCtx.Set(authTrustDomainKey, td)
-
-		// Test Main Objective
-		err = harvesterTestSetup.Handler.BundlePut(echoCtx, testTrustDomain)
-		assert.NoError(t, err)
-
-		recorder := harvesterTestSetup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.Empty(t, recorder.Body)
+		err = setup.Handler.BundlePut(setup.EchoCtx, testTrustDomain)
+		require.Error(t, err)
+		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
+		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
 	})
+
+	t.Run("Fail post bundle missing Trust bundle", func(t *testing.T) {
+		testInvalidBundleRequest(t, "TrustBundle", "", http.StatusBadRequest, "invalid bundle request: trust bundle is required")
+	})
+
+	t.Run("Fail post bundle missing bundle signature", func(t *testing.T) {
+		testInvalidBundleRequest(t, "Signature", "", http.StatusBadRequest, "invalid bundle request: bundle signature is required")
+	})
+
+	t.Run("Fail post bundle missing bundle trust domain", func(t *testing.T) {
+		testInvalidBundleRequest(t, "TrustDomain", "", http.StatusBadRequest, "invalid bundle request: bundle trust domain is required")
+	})
+
+	t.Run("Fail post bundle bundle trust domain does not match authenticated trust domain", func(t *testing.T) {
+		testInvalidBundleRequest(t, "TrustDomain", "other-trust-domain", http.StatusUnauthorized, "trust domain in request bundle \"other-trust-domain\" does not match authenticated trust domain: \"test.com\"")
+	})
+}
+
+func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.TrustDomain, expectedStatusCode int, expectedResponseBody string) {
+	bundlePut := harvester.BundlePut{
+		Signature:          "bundle signature",
+		SigningCertificate: "certificate PEM",
+		TrustBundle:        "a new bundle",
+		TrustDomain:        testTrustDomain,
+	}
+
+	body, err := json.Marshal(bundlePut)
+	require.NoError(t, err)
+
+	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+	echoCtx := setup.EchoCtx
+
+	td := setupFunc(setup)
+
+	err = setup.Handler.BundlePut(echoCtx, testTrustDomain)
+	require.NoError(t, err)
+
+	recorder := setup.Recorder
+	assert.Equal(t, expectedStatusCode, recorder.Code)
+	assert.Equal(t, expectedResponseBody, recorder.Body.String())
+
+	storedBundle, err := setup.Handler.Datastore.FindBundleByTrustDomainID(context.Background(), td.ID.UUID)
+	require.NoError(t, err)
+	assert.Equal(t, bundlePut.Signature, string(storedBundle.Signature))
+	assert.Equal(t, bundlePut.SigningCertificate, string(storedBundle.SigningCertificate))
+	assert.Equal(t, bundlePut.TrustBundle, string(storedBundle.Data))
+	assert.Equal(t, td.ID.UUID, storedBundle.TrustDomainID)
+}
+
+func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interface{}, expectedStatusCode int, expectedErrorMessage string) {
+	bundlePut := harvester.BundlePut{
+		Signature:          "test-signature",
+		SigningCertificate: "certificate PEM",
+		TrustBundle:        "test trust bundle",
+		TrustDomain:        testTrustDomain,
+	}
+	reflect.ValueOf(&bundlePut).Elem().FieldByName(fieldName).Set(reflect.ValueOf(fieldValue))
+
+	body, err := json.Marshal(bundlePut)
+	require.NoError(t, err)
+
+	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+	echoCtx := setup.EchoCtx
+
+	td := SetupTrustDomain(t, setup.Handler.Datastore)
+	echoCtx.Set(authTrustDomainKey, td)
+
+	err = setup.Handler.BundlePut(echoCtx, testTrustDomain)
+	require.Error(t, err)
+	assert.Equal(t, expectedStatusCode, err.(*echo.HTTPError).Code)
+	assert.Equal(t, expectedErrorMessage, err.(*echo.HTTPError).Message)
 }

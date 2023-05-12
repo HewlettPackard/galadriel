@@ -209,58 +209,70 @@ func (h *HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.
 }
 
 // BundlePut uploads a new trust bundle to the server  - (PUT /trust-domain/{trustDomainName}/bundles)
-func (h *HarvesterAPIHandlers) BundlePut(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	h.Logger.Debug("Receiving post bundle request")
-	gctx := ctx.Request().Context()
+func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+	h.Logger.Infof("Received post bundle request from trust domain: %s", trustDomainName)
+	ctx := echoCtx.Request().Context()
 
 	// get the authenticated trust domain from the context
-	authenticatedTD, ok := ctx.Get(authTrustDomainKey).(*entity.TrustDomain)
+	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
 	if !ok {
-		err := errors.New("failed to get authenticated trust domain")
-		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
+		err := errors.New("no authenticated trust domain")
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
 	}
 
-	if authenticatedTD.Name.String() != trustDomainName {
-		return fmt.Errorf("authenticated trust domain {%s} does not match trust domain in path: {%s}", authenticatedTD.Name, trustDomainName)
+	if authTD.Name.String() != trustDomainName {
+		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", trustDomainName, authTD.Name.String())
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
 	}
 
 	req := &harvester.BundlePutJSONRequestBody{}
-	err := chttp.FromBody(ctx, req)
+	err := chttp.FromBody(echoCtx, req)
 	if err != nil {
-		err := fmt.Errorf("failed to read bundle put body: %v", err)
+		msg := "failed to read bundle from request body"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+	}
+
+	err = validateBundleRequest(req)
+	if err != nil {
+		err := fmt.Errorf("invalid bundle request: %v", err)
 		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
 
-	if authenticatedTD.Name.String() != req.TrustDomain {
-		err := fmt.Errorf("authenticated trust domain {%s} does not match trust domain in request body: {%s}", authenticatedTD.Name, req.TrustDomain)
-		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
-	}
-
-	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(gctx, authenticatedTD.ID.UUID)
-	if err != nil {
-		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
-	}
-
-	if req.TrustBundle == "" {
-		return nil
+	if authTD.Name.String() != req.TrustDomain {
+		err := fmt.Errorf("trust domain in request bundle %q does not match authenticated trust domain: %q", req.TrustDomain, authTD.Name.String())
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
 	}
 
 	bundle, err := req.ToEntity()
 	if err != nil {
-		err := fmt.Errorf("failed to convert bundle put body to entity: %v", err)
-		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
+		msg := "failed to parse request bundle"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
+	// ensure that the bundle's trust domain ID matches the authenticated trust domain ID
+	bundle.TrustDomainID = authTD.ID.UUID
 
-	if storedBundle != nil {
-		bundle.TrustDomainID = storedBundle.TrustDomainID
-	}
-
-	_, err = h.Datastore.CreateOrUpdateBundle(gctx, bundle)
+	storedBundle, err := h.Datastore.FindBundleByTrustDomainID(ctx, authTD.ID.UUID)
 	if err != nil {
-		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
+		msg := "failed looking up bundle in DB"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodylessResponse(ctx); err != nil {
+	// the bundle already exists in the datastore, so we need to update it
+	if storedBundle != nil {
+		bundle.ID = storedBundle.ID
+	}
+
+	_, err = h.Datastore.CreateOrUpdateBundle(ctx, bundle)
+	if err != nil {
+		msg := "failed to store bundle in DB"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	if err = chttp.BodylessResponse(echoCtx); err != nil {
 		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -281,6 +293,22 @@ func filterRelationshipsByConsentStatus(trustDomainID uuid.UUID, relationships [
 
 	}
 	return filtered
+}
+
+func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
+	if req.TrustDomain == "" {
+		return errors.New("bundle trust domain is required")
+	}
+
+	if req.TrustBundle == "" {
+		return errors.New("trust bundle is required")
+	}
+
+	if req.Signature == "" {
+		return errors.New("bundle signature is required")
+	}
+
+	return nil
 }
 
 func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, code int) error {
