@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"net/http"
 	"time"
 
@@ -363,8 +364,10 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, code int) error {
 	errID := uuid.NewString()
 	logMsg := fmt.Sprintf("%v (error ID: %s)", logErr, errID)
-	errMsg := fmt.Sprintf("%s (error ID: %s)", message, errID)
+	logMsg = util.LogSanitize(logMsg)
 	h.Logger.Errorf(logMsg)
+
+	errMsg := fmt.Sprintf("%s (error ID: %s)", message, errID)
 	return echo.NewHTTPError(code, errMsg)
 }
 
