@@ -343,9 +343,8 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 		strDigest := encodeToBase64(digest[:])
 
 		// Look up the bundle digest in the request
-		reqDigest, _ := req.State[bundle.TrustDomainName.String()]
-
-		if strDigest != reqDigest {
+		reqDigest, ok := req.State[bundle.TrustDomainName.String()]
+		if !ok || strDigest != reqDigest {
 			// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 			updateItem := harvester.TrustBundleSyncItem{}
 			updateItem.TrustBundle = encodeToBase64(bundle.Data)
