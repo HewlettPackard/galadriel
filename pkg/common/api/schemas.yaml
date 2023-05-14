@@ -24,6 +24,7 @@ components:
       example: "trust.domain.com"
     BundleDigest:
       type: string
+      description: base64 encoded SHA-256 digest of the bundle
       example: f0456d7aed088e791e4610c3c2ad63afe46e2e777988fdbc9270f15ec9711b42
     TrustBundle:
       $ref: '#/components/schemas/Certificate'

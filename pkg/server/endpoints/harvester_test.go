@@ -2,6 +2,8 @@ package endpoints
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -39,6 +41,10 @@ var (
 	acceptedPendingRelAB  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedDeniedRelAC   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDenied, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedAcceptedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+
+	bundleA = &entity.Bundle{Data: []byte("bundle-A"), Signature: []byte("signature-A"), TrustDomainName: tdA.Name, TrustDomainID: tdA.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	bundleB = &entity.Bundle{Data: []byte("bundle-B"), Signature: []byte("signature-B"), TrustDomainName: tdB.Name, TrustDomainID: tdB.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	bundleC = &entity.Bundle{Data: []byte("bundle-C"), Signature: []byte("signature-C"), TrustDomainName: tdC.Name, TrustDomainID: tdC.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 )
 
 type HarvesterTestSetup struct {
@@ -150,7 +156,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		err := setup.Handler.GetRelationships(echoCtx, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "invalid consent status: \"invalid\"", err.(*echo.HTTPError).Message)
+		assert.Contains(t, err.(*echo.HTTPError).Message, "invalid consent status: \"invalid\"")
 	})
 
 	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
@@ -165,7 +171,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		err := setup.Handler.GetRelationships(echoCtx, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
+		assert.Contains(t, err.(*echo.HTTPError).Message, "no authenticated trust domain")
 	})
 
 	t.Run("Fails if authenticated trust domain does not match trust domain parameter", func(t *testing.T) {
@@ -181,7 +187,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		err := setup.Handler.GetRelationships(echoCtx, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "request trust domain \"td-b.org\" does not match authenticated trust domain \"td-a.org\"", err.(*echo.HTTPError).Message)
+		assert.Contains(t, err.(*echo.HTTPError).Message, "request trust domain \"td-b.org\" does not match authenticated trust domain \"td-a.org\"")
 	})
 }
 
@@ -266,7 +272,7 @@ func TestTCPOnboard(t *testing.T) {
 
 		httpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
-		assert.Equal(t, "join token is required", httpErr.Message)
+		assert.Contains(t, httpErr.Message, "join token is required")
 	})
 	t.Run("Onboard with join token that does not exist fails", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
@@ -283,7 +289,7 @@ func TestTCPOnboard(t *testing.T) {
 
 		httpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
-		assert.Equal(t, "token not found", httpErr.Message)
+		assert.Contains(t, httpErr.Message, "token not found")
 	})
 	t.Run("Onboard with join token that was used", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
@@ -304,7 +310,7 @@ func TestTCPOnboard(t *testing.T) {
 
 		httpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
-		assert.Equal(t, "token already used", httpErr.Message)
+		assert.Contains(t, httpErr.Message, "token already used")
 	})
 }
 
@@ -341,12 +347,214 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		require.Error(t, err)
 
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "failed to parse JWT access token claims", err.(*echo.HTTPError).Message)
+		assert.Contains(t, err.(*echo.HTTPError).Message, "failed to parse JWT access token claims")
 	})
 }
 
 func TestTCPBundleSync(t *testing.T) {
-	t.Skip("Missing tests will be added when the API be implemented")
+	testCases := []struct {
+		name        string
+		bundleState harvester.BundleSyncBody
+		expected    harvester.BundleSyncResult
+	}{
+		{
+			name: "Successfully sync no new bundles",
+			bundleState: harvester.BundleSyncBody{
+				State: map[string]api.BundleDigest{
+					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+			},
+			expected: harvester.BundleSyncResult{
+				State: harvester.BundlesDigests{
+					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+				Updates: harvester.TrustBundleSync{},
+			},
+		},
+		{
+			name: "Successfully sync one new bundle",
+			bundleState: harvester.BundleSyncBody{
+				State: map[string]api.BundleDigest{
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+			},
+			expected: harvester.BundleSyncResult{
+				State: harvester.BundlesDigests{
+					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+				Updates: harvester.TrustBundleSync{
+					tdB.Name.String(): harvester.TrustBundleSyncItem{
+						TrustBundle: encodeToBase64(bundleB.Data),
+						Signature:   encodeToBase64(bundleB.Signature),
+					},
+				},
+			},
+		},
+		{
+			name: "Successfully sync two new bundles",
+			bundleState: harvester.BundleSyncBody{
+				State: map[string]api.BundleDigest{},
+			},
+			expected: harvester.BundleSyncResult{
+				State: harvester.BundlesDigests{
+					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+				Updates: harvester.TrustBundleSync{
+					tdB.Name.String(): harvester.TrustBundleSyncItem{
+						TrustBundle: encodeToBase64(bundleB.Data),
+						Signature:   encodeToBase64(bundleB.Signature),
+					},
+					tdC.Name.String(): harvester.TrustBundleSyncItem{
+						TrustBundle: encodeToBase64(bundleC.Data),
+						Signature:   encodeToBase64(bundleC.Signature),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, err := json.Marshal(tc.bundleState)
+			require.NoError(t, err)
+
+			setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", string(body))
+			echoCtx := setup.EchoCtx
+			setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+			setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+			setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+			setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
+
+			// test bundle sync
+			err = setup.Handler.BundleSync(echoCtx, tdA.Name.String())
+			assert.NoError(t, err)
+
+			recorder := setup.Recorder
+			assert.Equal(t, http.StatusOK, recorder.Code)
+			assert.NoError(t, err)
+
+			var bundles harvester.BundleSyncResult
+			err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
+			require.NoError(t, err)
+
+			assert.Equal(t, tc.expected, bundles)
+		})
+	}
+}
+
+func TestTCPBundleSync2(t *testing.T) {
+	t.Run("Successfully sync no new bundles", func(t *testing.T) {
+		// current state
+		bundleSync := harvester.BundleSyncBody{
+			State: map[string]api.BundleDigest{
+				tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+				tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+			},
+		}
+
+		body, err := json.Marshal(bundleSync)
+		require.NoError(t, err)
+
+		setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", string(body))
+		echoCtx := setup.EchoCtx
+		setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
+
+		// test bundle sync
+		err = setup.Handler.BundleSync(echoCtx, tdA.Name.String())
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NoError(t, err)
+
+		var bundles harvester.BundleSyncResult
+		err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
+		require.NoError(t, err)
+		assert.Equal(t, 0, len(bundles.Updates))
+		assert.Equal(t, 2, len(bundles.State))
+		assert.Equal(t, base64EncodedDigest(bundleB.Data), bundles.State[tdB.Name.String()])
+		assert.Equal(t, base64EncodedDigest(bundleC.Data), bundles.State[tdC.Name.String()])
+	})
+	t.Run("Successfully sync one new bundle", func(t *testing.T) {
+		// current state
+		bundleSync := harvester.BundleSyncBody{
+			State: map[string]api.BundleDigest{
+				tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+			},
+		}
+
+		body, err := json.Marshal(bundleSync)
+		require.NoError(t, err)
+
+		setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", string(body))
+		echoCtx := setup.EchoCtx
+		setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
+
+		// test bundle sync
+		err = setup.Handler.BundleSync(echoCtx, tdA.Name.String())
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NoError(t, err)
+
+		var bundles harvester.BundleSyncResult
+		err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(bundles.Updates))
+		assert.Equal(t, 2, len(bundles.State))
+		assert.Equal(t, encodeToBase64(bundleB.Data), bundles.Updates[tdB.Name.String()].TrustBundle)
+		assert.Equal(t, base64EncodedDigest(bundleB.Data), bundles.State[tdB.Name.String()])
+		assert.Equal(t, base64EncodedDigest(bundleC.Data), bundles.State[tdC.Name.String()])
+	})
+	t.Run("Successfully sync two new bundles", func(t *testing.T) {
+		// current state
+		bundleSync := harvester.BundleSyncBody{
+			State: map[string]api.BundleDigest{},
+		}
+
+		body, err := json.Marshal(bundleSync)
+		require.NoError(t, err)
+
+		setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", string(body))
+		echoCtx := setup.EchoCtx
+		setup.EchoCtx.Set(authTrustDomainKey, tdA)
+
+		setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
+		setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+		setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
+
+		// test bundle sync
+		err = setup.Handler.BundleSync(echoCtx, tdA.Name.String())
+		assert.NoError(t, err)
+
+		recorder := setup.Recorder
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.NoError(t, err)
+
+		var bundles harvester.BundleSyncResult
+		err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(bundles.Updates))
+		assert.Equal(t, 2, len(bundles.State))
+		assert.Equal(t, encodeToBase64(bundleB.Data), bundles.Updates[tdB.Name.String()].TrustBundle)
+		assert.Equal(t, encodeToBase64(bundleC.Data), bundles.Updates[tdC.Name.String()].TrustBundle)
+		assert.Equal(t, base64EncodedDigest(bundleB.Data), bundles.State[tdB.Name.String()])
+		assert.Equal(t, base64EncodedDigest(bundleC.Data), bundles.State[tdC.Name.String()])
+	})
 }
 
 func TestBundlePut(t *testing.T) {
@@ -386,7 +594,7 @@ func TestBundlePut(t *testing.T) {
 		err = setup.Handler.BundlePut(setup.EchoCtx, testTrustDomain)
 		require.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
-		assert.Equal(t, "no authenticated trust domain", err.(*echo.HTTPError).Message)
+		assert.Contains(t, err.(*echo.HTTPError).Message, "no authenticated trust domain")
 	})
 
 	t.Run("Fail post bundle missing Trust bundle", func(t *testing.T) {
@@ -458,5 +666,10 @@ func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interfa
 	err = setup.Handler.BundlePut(echoCtx, testTrustDomain)
 	require.Error(t, err)
 	assert.Equal(t, expectedStatusCode, err.(*echo.HTTPError).Code)
-	assert.Equal(t, expectedErrorMessage, err.(*echo.HTTPError).Message)
+	assert.Contains(t, err.(*echo.HTTPError).Message, expectedErrorMessage)
+}
+
+func base64EncodedDigest(data []byte) string {
+	hash := sha256.Sum256(data)
+	return base64.StdEncoding.EncodeToString(hash[:])
 }

@@ -56,6 +56,16 @@ func (db *FakeDatabase) WithTrustDomains(trustDomains ...*entity.TrustDomain) {
 	}
 }
 
+func (db *FakeDatabase) WithBundles(bundles ...*entity.Bundle) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.bundles = make(map[uuid.UUID]*entity.Bundle)
+	for _, b := range bundles {
+		db.bundles[b.ID.UUID] = b
+	}
+}
+
 func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()

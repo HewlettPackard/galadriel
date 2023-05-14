@@ -1,6 +1,9 @@
 package endpoints
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,7 +14,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	gojwt "github.com/golang-jwt/jwt/v4"
@@ -204,8 +206,49 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 }
 
 // BundleSync synchronize the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
-func (h *HarvesterAPIHandlers) BundleSync(ctx echo.Context, trustDomainName api.TrustDomainName) error {
-	return nil
+func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+	h.Logger.Debugf("Received bundle sync request from trust domain: %s", trustDomainName)
+	ctx := echoCtx.Request().Context()
+
+	// Get the authenticated trust domain from the context
+	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
+	if !ok {
+		err := errors.New("no authenticated trust domain")
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	if authTD.Name.String() != trustDomainName {
+		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", trustDomainName, authTD.Name.String())
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	// Get the request body
+	var req harvester.BundleSyncBody
+	if err := echoCtx.Bind(&req); err != nil {
+		msg := "failed to parse request body"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+	}
+
+	// Look up relationships the authenticated trust domain has with other trust domains
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
+	if err != nil {
+		msg := "failed to look up relationships"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	// filer out the relationships whose consent status is not "accepted" by the authenticated trust domain
+	relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, api.Accepted)
+
+	resp, err := h.getBundleSyncResult(ctx, authTD, relationships, req)
+	if err != nil {
+		msg := "failed to generate bundle sync result"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	return echoCtx.JSON(http.StatusOK, resp)
 }
 
 // BundlePut uploads a new trust bundle to the server  - (PUT /trust-domain/{trustDomainName}/bundles)
@@ -279,18 +322,60 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	return nil
 }
 
+func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.BundleSyncBody) (*harvester.BundleSyncResult, error) {
+	resp := &harvester.BundleSyncResult{
+		State:   make(map[string]api.BundleDigest, len(relationships)),
+		Updates: make(harvester.TrustBundleSync),
+	}
+
+	for _, relationship := range relationships {
+		otherID := relationship.TrustDomainAID
+		if relationship.TrustDomainAID == authTD.ID.UUID {
+			otherID = relationship.TrustDomainBID
+		}
+		bundle, err := h.Datastore.FindBundleByTrustDomainID(ctx, otherID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Calculate the sha256 digest of the stored bundle
+		digest := sha256.Sum256(bundle.Data)
+		strDigest := encodeToBase64(digest[:])
+
+		// Look up the bundle digest in the request
+		reqDigest, _ := req.State[bundle.TrustDomainName.String()]
+
+		if strDigest != reqDigest {
+			// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
+			updateItem := harvester.TrustBundleSyncItem{}
+			updateItem.TrustBundle = encodeToBase64(bundle.Data)
+			updateItem.Signature = encodeToBase64(bundle.Signature)
+			resp.Updates[bundle.TrustDomainName.String()] = updateItem
+		}
+
+		// Add the bundle to the current state
+		resp.State[bundle.TrustDomainName.String()] = encodeToBase64(digest[:])
+	}
+
+	return resp, nil
+}
+
+// handleErrorAndLog logs the error and returns an HTTP error with a unique error ID which can be used to trace the error
+func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, code int) error {
+	errID := uuid.NewString()
+	logMsg := fmt.Sprintf("%v (error ID: %s)", logErr, errID)
+	errMsg := fmt.Sprintf("%s (error ID: %s)", message, errID)
+	h.Logger.Errorf(logMsg)
+	return echo.NewHTTPError(code, errMsg)
+}
+
 func filterRelationshipsByConsentStatus(trustDomainID uuid.UUID, relationships []*entity.Relationship, status api.ConsentStatus) []*entity.Relationship {
 	filtered := make([]*entity.Relationship, 0)
 	for _, r := range relationships {
-		if r.TrustDomainAID == trustDomainID && api.ConsentStatus(r.TrustDomainAConsent) == status {
+		if r.TrustDomainAID == trustDomainID && api.ConsentStatus(r.TrustDomainAConsent) == status ||
+			r.TrustDomainBID == trustDomainID && api.ConsentStatus(r.TrustDomainBConsent) == status {
 			filtered = append(filtered, r)
-			continue
 		}
-		if r.TrustDomainBID == trustDomainID && api.ConsentStatus(r.TrustDomainBConsent) == status {
-			filtered = append(filtered, r)
-			continue
-		}
-
 	}
 	return filtered
 }
@@ -311,8 +396,6 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	return nil
 }
 
-func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, code int) error {
-	errMsg := util.LogSanitize(logErr.Error())
-	h.Logger.Errorf(errMsg)
-	return echo.NewHTTPError(code, message)
+func encodeToBase64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
 }
