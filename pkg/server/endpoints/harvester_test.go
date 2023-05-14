@@ -39,6 +39,7 @@ var (
 	pendingRelAB          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	pendingRelAC          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedPendingRelAB  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	deniedAcceptedRelAB   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusDenied, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedDeniedRelAC   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDenied, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedAcceptedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 
@@ -353,12 +354,14 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 
 func TestTCPBundleSync(t *testing.T) {
 	testCases := []struct {
-		name        string
-		bundleState harvester.BundleSyncBody
-		expected    harvester.BundleSyncResult
+		name          string
+		relationships []*entity.Relationship
+		bundleState   harvester.BundleSyncBody
+		expected      harvester.BundleSyncResult
 	}{
 		{
-			name: "Successfully sync no new bundles",
+			name:          "Successfully sync no new bundles",
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
 					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
@@ -374,7 +377,8 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name: "Successfully sync one new bundle",
+			name:          "Successfully sync one new bundle for one accepted relationship",
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
 					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
@@ -394,7 +398,8 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name: "Successfully sync two new bundles",
+			name:          "Successfully sync two new bundles for two accepted relationships",
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},
 			},
@@ -415,6 +420,42 @@ func TestTCPBundleSync(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:          "Successfully sync one new bundle for one accepted relationship, not including the pending relationship",
+			relationships: []*entity.Relationship{acceptedPendingRelAB, pendingRelAC, acceptedAcceptedRelBC},
+			bundleState: harvester.BundleSyncBody{
+				State: map[string]api.BundleDigest{},
+			},
+			expected: harvester.BundleSyncResult{
+				State: harvester.BundlesDigests{
+					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
+				},
+				Updates: harvester.TrustBundleSync{
+					tdB.Name.String(): harvester.TrustBundleSyncItem{
+						TrustBundle: encodeToBase64(bundleB.Data),
+						Signature:   encodeToBase64(bundleB.Signature),
+					},
+				},
+			},
+		},
+		{
+			name:          "Successfully sync one new bundle for one accepted relationship, not including the denied relationship",
+			relationships: []*entity.Relationship{acceptedDeniedRelAC, deniedAcceptedRelAB, acceptedAcceptedRelBC},
+			bundleState: harvester.BundleSyncBody{
+				State: map[string]api.BundleDigest{},
+			},
+			expected: harvester.BundleSyncResult{
+				State: harvester.BundlesDigests{
+					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
+				},
+				Updates: harvester.TrustBundleSync{
+					tdC.Name.String(): harvester.TrustBundleSyncItem{
+						TrustBundle: encodeToBase64(bundleC.Data),
+						Signature:   encodeToBase64(bundleC.Signature),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -427,7 +468,7 @@ func TestTCPBundleSync(t *testing.T) {
 			setup.EchoCtx.Set(authTrustDomainKey, tdA)
 
 			setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-			setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+			setup.Datastore.WithRelationships(tc.relationships...)
 			setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
 
 			// test bundle sync
