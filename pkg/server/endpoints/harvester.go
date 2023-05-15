@@ -371,14 +371,23 @@ func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, c
 	return echo.NewHTTPError(code, errMsg)
 }
 
-func filterRelationshipsByConsentStatus(trustDomainID uuid.UUID, relationships []*entity.Relationship, status api.ConsentStatus) []*entity.Relationship {
+func filterRelationshipsByConsentStatus(trustDomain uuid.UUID, relationships []*entity.Relationship, status api.ConsentStatus) []*entity.Relationship {
 	filtered := make([]*entity.Relationship, 0)
-	for _, r := range relationships {
-		if r.TrustDomainAID == trustDomainID && api.ConsentStatus(r.TrustDomainAConsent) == status ||
-			r.TrustDomainBID == trustDomainID && api.ConsentStatus(r.TrustDomainBConsent) == status {
-			filtered = append(filtered, r)
+
+	for _, relationship := range relationships {
+		trustDomainA := relationship.TrustDomainAID
+		trustDomainB := relationship.TrustDomainBID
+		trustDomainAConsent := api.ConsentStatus(relationship.TrustDomainAConsent)
+		trustDomainBConsent := api.ConsentStatus(relationship.TrustDomainBConsent)
+
+		isConsentStatusMatch := (trustDomainA == trustDomain && trustDomainAConsent == status) ||
+			(trustDomainB == trustDomain && trustDomainBConsent == status)
+
+		if isConsentStatusMatch {
+			filtered = append(filtered, relationship)
 		}
 	}
+
 	return filtered
 }
 
