@@ -27,7 +27,7 @@ var (
 	listTrustDomainsURL   = fmt.Sprintf(localURL, "listTrustDomains")
 	createRelationshipURL = fmt.Sprintf(localURL, "createRelationship")
 	listRelationshipsURL  = fmt.Sprintf(localURL, "listRelationships")
-	generateTokenURL      = fmt.Sprintf(localURL, "generateToken")
+	joinTokenURL          = fmt.Sprintf(localURL, "trust-domain/%s/join-token")
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
@@ -36,7 +36,7 @@ type ServerLocalClient interface {
 	ListTrustDomains() ([]*entity.TrustDomain, error)
 	CreateRelationship(r *entity.Relationship) error
 	ListRelationships() ([]*entity.Relationship, error)
-	GenerateJoinToken(trustDomain spiffeid.TrustDomain) (*entity.JoinToken, error)
+	GenerateJoinToken(trustDomain spiffeid.TrustDomain) (string, error)
 }
 
 // TODO: improve this adding options for the transport, dialcontext, and http.Client.
@@ -154,31 +154,18 @@ func (c serverClient) ListRelationships() ([]*entity.Relationship, error) {
 	return rels, nil
 }
 
-func (c serverClient) GenerateJoinToken(td spiffeid.TrustDomain) (*entity.JoinToken, error) {
-	b, err := json.Marshal(entity.TrustDomain{Name: td})
+func (c serverClient) GenerateJoinToken(td spiffeid.TrustDomain) (string, error) {
+	joinTokenURL := fmt.Sprintf(joinTokenURL, td)
+	r, err := c.client.Get(joinTokenURL)
 	if err != nil {
-		return nil, err
-	}
-
-	r, err := c.client.Post(generateTokenURL, contentType, bytes.NewReader(b))
-	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer r.Body.Close()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var createdToken entity.JoinToken
-	if err = json.Unmarshal(body, &createdToken); err != nil {
-		if len(body) == 0 {
-			return nil, errors.New("failed to generate token")
-		}
-
-		return nil, errors.New(string(body))
-	}
-
-	return &createdToken, nil
+	return string(body), nil
 }

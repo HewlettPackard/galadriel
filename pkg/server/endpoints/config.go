@@ -1,10 +1,11 @@
 package endpoints
 
 import (
-	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"net"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,7 +19,11 @@ type Config struct {
 
 	Datastore datastore.Datastore
 
-	Logger logrus.FieldLogger
+	JWTIssuer jwt.Issuer
+
+	JWTValidator jwt.Validator
 
 	Catalog catalog.Catalog
+
+	Logger logrus.FieldLogger
 }

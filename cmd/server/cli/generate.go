@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/spf13/cobra"
@@ -29,12 +30,12 @@ var tokenCmd = &cobra.Command{
 			return err
 		}
 
-		at, err := c.GenerateJoinToken(trustDomain)
+		joinToken, err := c.GenerateJoinToken(trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println("Join Token: " + at.Token)
+		fmt.Printf("Token: %s", strings.ReplaceAll(joinToken, "\"", ""))
 		return nil
 	},
 }
