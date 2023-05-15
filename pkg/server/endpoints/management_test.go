@@ -245,7 +245,7 @@ func TestUDSPutRelationships(t *testing.T) {
 			{ID: td2ID, Name: NewTrustDomain(t, td2)},
 		}
 
-		reqBody := &admin.PutRelationshipsJSONRequestBody{
+		reqBody := &admin.PutRelationshipJSONRequestBody{
 			TrustDomainAId: td1ID.UUID,
 			TrustDomainBId: td2ID.UUID,
 		}
@@ -254,7 +254,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, relationshipsPath, reqBody)
 		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
 
-		err := setup.Handler.PutRelationships(setup.EchoCtx)
+		err := setup.Handler.PutRelationship(setup.EchoCtx)
 		assert.NoError(t, err)
 
 		assert.Equal(t, http.StatusCreated, setup.Recorder.Code)
@@ -278,7 +278,7 @@ func TestUDSPutRelationships(t *testing.T) {
 			{ID: td1ID, Name: NewTrustDomain(t, td1)},
 		}
 
-		reqBody := &admin.PutRelationshipsJSONRequestBody{
+		reqBody := &admin.PutRelationshipJSONRequestBody{
 			TrustDomainAId: td1ID.UUID,
 			TrustDomainBId: td2ID.UUID,
 		}
@@ -287,7 +287,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, relationshipsPath, reqBody)
 		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
 
-		err := setup.Handler.PutRelationships(setup.EchoCtx)
+		err := setup.Handler.PutRelationship(setup.EchoCtx)
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 
@@ -301,7 +301,7 @@ func TestUDSPutRelationships(t *testing.T) {
 	// Should we test sending wrong body formats ?
 }
 
-func TestUDSGetRelationshipsRelationshipID(t *testing.T) {
+func TestUDSGetRelationshipsByID(t *testing.T) {
 	relationshipsPath := "/relationships/%v"
 
 	t.Run("Successfully get relationship information", func(t *testing.T) {
@@ -327,7 +327,7 @@ func TestUDSGetRelationshipsRelationshipID(t *testing.T) {
 		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
 		setup.FakeDatabase.WithRelationships(fakeRelationship)
 
-		err := setup.Handler.GetRelationshipsRelationshipID(setup.EchoCtx, r1ID.UUID)
+		err := setup.Handler.GetRelationshipByID(setup.EchoCtx, r1ID.UUID)
 		assert.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
@@ -350,7 +350,7 @@ func TestUDSGetRelationshipsRelationshipID(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodGet, completePath, nil)
 
-		err := setup.Handler.GetRelationshipsRelationshipID(setup.EchoCtx, r1ID.UUID)
+		err := setup.Handler.GetRelationshipByID(setup.EchoCtx, r1ID.UUID)
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 
@@ -364,7 +364,7 @@ func TestUDSPutTrustDomain(t *testing.T) {
 	trustDomainPath := "/trust-domain"
 	t.Run("Successfully create a new trust domain", func(t *testing.T) {
 		description := "A test trust domain"
-		reqBody := &admin.PutTrustDomainJSONRequestBody{
+		reqBody := &admin.TrustDomainPut{
 			Name:        td1,
 			Description: &description,
 		}
@@ -388,7 +388,7 @@ func TestUDSPutTrustDomain(t *testing.T) {
 	})
 
 	t.Run("Should not allow creating trust domain with the same name of one already created", func(t *testing.T) {
-		reqBody := &admin.PutTrustDomainJSONRequestBody{
+		reqBody := &admin.TrustDomainPut{
 			Name: td1,
 		}
 
@@ -408,7 +408,7 @@ func TestUDSPutTrustDomain(t *testing.T) {
 	})
 }
 
-func TestUDSGetTrustDomainTrustDomainName(t *testing.T) {
+func TestUDSGetTrustDomainByName(t *testing.T) {
 	trustDomainPath := "/trust-domain/%v"
 
 	t.Run("Successfully retrieve trust domain information", func(t *testing.T) {
@@ -421,7 +421,7 @@ func TestUDSGetTrustDomainTrustDomainName(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-		err := setup.Handler.GetTrustDomainTrustDomainName(setup.EchoCtx, td1)
+		err := setup.Handler.GetTrustDomainByName(setup.EchoCtx, td1)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
@@ -440,7 +440,7 @@ func TestUDSGetTrustDomainTrustDomainName(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
 
-		err := setup.Handler.GetTrustDomainTrustDomainName(setup.EchoCtx, td1)
+		err := setup.Handler.GetTrustDomainByName(setup.EchoCtx, td1)
 		assert.Error(t, err)
 
 		echoHttpErr := err.(*echo.HTTPError)
@@ -449,7 +449,7 @@ func TestUDSGetTrustDomainTrustDomainName(t *testing.T) {
 	})
 }
 
-func TestUDSPutTrustDomainTrustDomainName(t *testing.T) {
+func TestUDSPutTrustDomainByName(t *testing.T) {
 	trustDomainPath := "/trust-domain/%v"
 
 	t.Run("Successfully updated a trust domain", func(t *testing.T) {
@@ -459,7 +459,7 @@ func TestUDSPutTrustDomainTrustDomainName(t *testing.T) {
 		completePath := fmt.Sprintf(trustDomainPath, td1ID.UUID)
 
 		description := "I am being updated"
-		reqBody := &admin.PutTrustDomainTrustDomainNameJSONRequestBody{
+		reqBody := &admin.PutTrustDomainByNameJSONRequestBody{
 			Id:          td1ID.UUID,
 			Name:        td1,
 			Description: &description,
@@ -469,7 +469,7 @@ func TestUDSPutTrustDomainTrustDomainName(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-		err := setup.Handler.PutTrustDomainTrustDomainName(setup.EchoCtx, td1ID.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1ID.UUID)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
@@ -489,7 +489,7 @@ func TestUDSPutTrustDomainTrustDomainName(t *testing.T) {
 
 		// Fake Request body
 		description := "I am being updated"
-		reqBody := &admin.PutTrustDomainTrustDomainNameJSONRequestBody{
+		reqBody := &admin.PutTrustDomainByNameJSONRequestBody{
 			Id:          td1ID.UUID,
 			Name:        td1,
 			Description: &description,
@@ -498,7 +498,7 @@ func TestUDSPutTrustDomainTrustDomainName(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 
-		err := setup.Handler.PutTrustDomainTrustDomainName(setup.EchoCtx, td1ID.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1ID.UUID)
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 

@@ -82,10 +82,10 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 }
 
 // PutRelationships create a new relationship request between two trust domains - (PUT /relationships)
-func (h AdminAPIHandlers) PutRelationships(echoCtx echo.Context) error {
+func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
-	reqBody := &admin.PutRelationshipsJSONRequestBody{}
+	reqBody := &admin.PutRelationshipJSONRequestBody{}
 	err := chttp.FromBody(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
@@ -115,8 +115,8 @@ func (h AdminAPIHandlers) PutRelationships(echoCtx echo.Context) error {
 	return nil
 }
 
-// GetRelationshipsRelationshipID retrieve a specific relationship based on its id - (GET /relationships/{relationshipID})
-func (h AdminAPIHandlers) GetRelationshipsRelationshipID(echoCtx echo.Context, relationshipID api.UUID) error {
+// GetRelationshipByID retrieve a specific relationship based on its id - (GET /relationships/{relationshipID})
+func (h *AdminAPIHandlers) GetRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
 	r, err := h.Datastore.FindRelationshipByID(ctx, relationshipID)
@@ -141,7 +141,7 @@ func (h AdminAPIHandlers) GetRelationshipsRelationshipID(echoCtx echo.Context, r
 }
 
 // PutTrustDomain create a new trust domain - (PUT /trust-domain)
-func (h AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
+func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	// Getting golang context
 	ctx := echoCtx.Request().Context()
 
@@ -186,8 +186,8 @@ func (h AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 }
 
 // TODO: customize these names.
-// GetTrustDomainTrustDomainName retrieve a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
-func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+// GetTrustDomainByName retrieve a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
+func (h *AdminAPIHandlers) GetTrustDomainByName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
 
 	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
@@ -218,10 +218,10 @@ func (h AdminAPIHandlers) GetTrustDomainTrustDomainName(echoCtx echo.Context, tr
 }
 
 // PutTrustDomainTrustDomainName updates the trust domain - (PUT /trust-domain/{trustDomainName})
-func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(echoCtx echo.Context, trustDomainID api.UUID) error {
+func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomainID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
-	reqBody := &admin.PutTrustDomainTrustDomainNameJSONRequestBody{}
+	reqBody := &admin.PutTrustDomainByNameJSONRequestBody{}
 	err := chttp.FromBody(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read trust domain put body: %v", err)
@@ -256,8 +256,8 @@ func (h AdminAPIHandlers) PutTrustDomainTrustDomainName(echoCtx echo.Context, tr
 	return nil
 }
 
-// GetJoinToken generate a join token for the trust domain - (POST /trust-domain/{trustDomainName}/join-token)
-func (h AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+// GetJoinToken generate a join token for the trust domain - (GET /trust-domain/{trustDomainName}/join-token)
+func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
 	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
 	if err != nil {
