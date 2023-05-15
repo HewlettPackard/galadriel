@@ -26,23 +26,6 @@ import (
 const (
 	jwtPath     = "/jwt"
 	onboardPath = "/onboard"
-
-	// Trust Domains
-	td1 = "test1.com"
-	td2 = "test2.com"
-	td3 = "test3.com"
-)
-
-var (
-	// Relationships ID's
-	r1ID = NewNullableID()
-	r2ID = NewNullableID()
-	r3ID = NewNullableID()
-
-	// Trust Domains ID's
-	tdUUID1 = NewNullableID()
-	tdUUID2 = NewNullableID()
-	tdUUID3 = NewNullableID()
 )
 
 type HarvesterTestSetup struct {
@@ -87,7 +70,6 @@ func SetupTrustDomain(t *testing.T, ds datastore.Datastore) *entity.TrustDomain 
 		Name:        td,
 		Description: "Fake domain",
 	}
-
 	trustDomain, err := ds.CreateOrUpdateTrustDomain(context.TODO(), tdEntity)
 	require.NoError(t, err)
 

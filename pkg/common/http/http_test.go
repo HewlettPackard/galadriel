@@ -34,7 +34,7 @@ func Setup() *HTTPSetup {
 func TestWriteResponse(t *testing.T) {
 	t.Run("Error when nil body is passed", func(t *testing.T) {
 		setup := Setup()
-		err := WriteResponse(setup.EchoContext, 0, nil)
+		err := WriteResponse(setup.EchoContext, http.StatusOK, nil)
 		assert.EqualError(t, err, "body is required")
 		assert.Empty(t, setup.Recorder.Body)
 	})

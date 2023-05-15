@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,7 +22,7 @@ func WriteResponse(ctx echo.Context, code int, body interface{}) error {
 
 // BodilessResponse wraps error echo body-less responses.
 func BodilessResponse(ctx echo.Context, code int) error {
-	if err := ctx.NoContent(http.StatusOK); err != nil {
+	if err := ctx.NoContent(code); err != nil {
 		return fmt.Errorf("failed to respond without body: %v", err)
 	}
 
