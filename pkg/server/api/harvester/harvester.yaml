@@ -47,7 +47,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
       security:
-        - harvester_auth: []
+        - harvester_auth: [ ]
 
   /trust-domain/{trustDomainName}/bundles/sync:
     post:
@@ -79,7 +79,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
       security:
-        - harvester_auth: []
+        - harvester_auth: [ ]
 
   /trust-domain/onboard:
     get:
@@ -89,12 +89,12 @@ paths:
       description: It uses a join token to authorize the harvester in the Galadriel Server and get its JWT Access Token
       operationId: Onboard
       parameters:
-      - name: joinToken
-        in: query
-        description: Join token to be used for onboarding
-        required: true
-        schema:
-          type: string
+        - name: joinToken
+          in: query
+          description: Join token to be used for onboarding
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Returns an access token to be used for authenticating harvesters on behalf of the Trust Domain.
@@ -120,13 +120,14 @@ paths:
         default:
           $ref: '#/components/responses/Default'
       security:
-        - harvester_auth: []
+        - harvester_auth: [ ]
 
   /relationships/{relationshipID}:
     patch:
       tags:
         - Relationships
       summary: Accept/Denies relationship requests
+      operationId: PatchRelationship
       parameters:
         - name: relationshipID
           in: path
@@ -135,10 +136,11 @@ paths:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
       requestBody:
+        description: Relationship status to be updated
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RelationshipApproval'
+              $ref: '#/components/schemas/PatchRelationship'
         required: true
       responses:
         '200':
@@ -150,7 +152,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
       security:
-        - harvester_auth: []
+        - harvester_auth: [ ]
 
   /relationships:
     get:
@@ -178,7 +180,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
       security:
-        - harvester_auth: []
+        - harvester_auth: [ ]
 
 components:
   responses:
@@ -189,6 +191,14 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
+    PatchRelationship:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_status
+      properties:
+        consent_status:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
     BundlePut:
       type: object
       additionalProperties: false
@@ -327,15 +337,6 @@ components:
       properties:
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
-    RelationshipApproval:
-      type: object
-      additionalProperties: false
-      required:
-        - accept
-      properties:
-        accept:
-          type: boolean
-          default: false
     RelationshipGet:
       type: array
       items:

@@ -1,6 +1,6 @@
 -- create tables
 
-CREATE TYPE consent_status AS ENUM ('accepted', 'disabled', 'pending');
+CREATE TYPE consent_status AS ENUM ('accepted', 'denied', 'pending');
 
 CREATE TABLE IF NOT EXISTS trust_domains
 (

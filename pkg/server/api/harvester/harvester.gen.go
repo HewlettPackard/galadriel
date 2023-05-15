@@ -63,9 +63,9 @@ type OnboardResult struct {
 	TrustDomainID externalRef0.UUID `json:"trustDomainID"`
 }
 
-// RelationshipApproval defines model for RelationshipApproval.
-type RelationshipApproval struct {
-	Accept bool `json:"accept"`
+// PatchRelationship defines model for PatchRelationship.
+type PatchRelationship struct {
+	ConsentStatus externalRef0.ConsentStatus `json:"consent_status"`
 }
 
 // RelationshipGet defines model for RelationshipGet.
@@ -102,8 +102,8 @@ type OnboardParams struct {
 	JoinToken string `form:"joinToken" json:"joinToken"`
 }
 
-// PatchRelationshipsRelationshipIDJSONRequestBody defines body for PatchRelationshipsRelationshipID for application/json ContentType.
-type PatchRelationshipsRelationshipIDJSONRequestBody = RelationshipApproval
+// PatchRelationshipJSONRequestBody defines body for PatchRelationship for application/json ContentType.
+type PatchRelationshipJSONRequestBody = PatchRelationship
 
 // BundlePutJSONRequestBody defines body for BundlePut for application/json ContentType.
 type BundlePutJSONRequestBody = BundlePut
@@ -187,10 +187,10 @@ type ClientInterface interface {
 	// GetRelationships request
 	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PatchRelationshipsRelationshipID request with any body
-	PatchRelationshipsRelationshipIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PatchRelationship request with any body
+	PatchRelationshipWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchRelationshipsRelationshipID(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipsRelationshipIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchRelationship(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetNewJWTToken request
 	GetNewJWTToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -221,8 +221,8 @@ func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsP
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchRelationshipsRelationshipIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchRelationshipsRelationshipIDRequestWithBody(c.Server, relationshipID, contentType, body)
+func (c *Client) PatchRelationshipWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipRequestWithBody(c.Server, relationshipID, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -233,8 +233,8 @@ func (c *Client) PatchRelationshipsRelationshipIDWithBody(ctx context.Context, r
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchRelationshipsRelationshipID(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipsRelationshipIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchRelationshipsRelationshipIDRequest(c.Server, relationshipID, body)
+func (c *Client) PatchRelationship(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipRequest(c.Server, relationshipID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -376,19 +376,19 @@ func NewGetRelationshipsRequest(server string, params *GetRelationshipsParams) (
 	return req, nil
 }
 
-// NewPatchRelationshipsRelationshipIDRequest calls the generic PatchRelationshipsRelationshipID builder with application/json body
-func NewPatchRelationshipsRelationshipIDRequest(server string, relationshipID externalRef0.UUID, body PatchRelationshipsRelationshipIDJSONRequestBody) (*http.Request, error) {
+// NewPatchRelationshipRequest calls the generic PatchRelationship builder with application/json body
+func NewPatchRelationshipRequest(server string, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchRelationshipsRelationshipIDRequestWithBody(server, relationshipID, "application/json", bodyReader)
+	return NewPatchRelationshipRequestWithBody(server, relationshipID, "application/json", bodyReader)
 }
 
-// NewPatchRelationshipsRelationshipIDRequestWithBody generates requests for PatchRelationshipsRelationshipID with any type of body
-func NewPatchRelationshipsRelationshipIDRequestWithBody(server string, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
+// NewPatchRelationshipRequestWithBody generates requests for PatchRelationship with any type of body
+func NewPatchRelationshipRequestWithBody(server string, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -633,10 +633,10 @@ type ClientWithResponsesInterface interface {
 	// GetRelationships request
 	GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
 
-	// PatchRelationshipsRelationshipID request with any body
-	PatchRelationshipsRelationshipIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipsRelationshipIDResponse, error)
+	// PatchRelationship request with any body
+	PatchRelationshipWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
 
-	PatchRelationshipsRelationshipIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipsRelationshipIDJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipsRelationshipIDResponse, error)
+	PatchRelationshipWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
 
 	// GetNewJWTToken request
 	GetNewJWTTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNewJWTTokenResponse, error)
@@ -678,7 +678,7 @@ func (r GetRelationshipsResponse) StatusCode() int {
 	return 0
 }
 
-type PatchRelationshipsRelationshipIDResponse struct {
+type PatchRelationshipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Relationship
@@ -686,7 +686,7 @@ type PatchRelationshipsRelationshipIDResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PatchRelationshipsRelationshipIDResponse) Status() string {
+func (r PatchRelationshipResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -694,7 +694,7 @@ func (r PatchRelationshipsRelationshipIDResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PatchRelationshipsRelationshipIDResponse) StatusCode() int {
+func (r PatchRelationshipResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -801,21 +801,21 @@ func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, 
 	return ParseGetRelationshipsResponse(rsp)
 }
 
-// PatchRelationshipsRelationshipIDWithBodyWithResponse request with arbitrary body returning *PatchRelationshipsRelationshipIDResponse
-func (c *ClientWithResponses) PatchRelationshipsRelationshipIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipsRelationshipIDResponse, error) {
-	rsp, err := c.PatchRelationshipsRelationshipIDWithBody(ctx, relationshipID, contentType, body, reqEditors...)
+// PatchRelationshipWithBodyWithResponse request with arbitrary body returning *PatchRelationshipResponse
+func (c *ClientWithResponses) PatchRelationshipWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
+	rsp, err := c.PatchRelationshipWithBody(ctx, relationshipID, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePatchRelationshipsRelationshipIDResponse(rsp)
+	return ParsePatchRelationshipResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchRelationshipsRelationshipIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipsRelationshipIDJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipsRelationshipIDResponse, error) {
-	rsp, err := c.PatchRelationshipsRelationshipID(ctx, relationshipID, body, reqEditors...)
+func (c *ClientWithResponses) PatchRelationshipWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
+	rsp, err := c.PatchRelationship(ctx, relationshipID, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePatchRelationshipsRelationshipIDResponse(rsp)
+	return ParsePatchRelationshipResponse(rsp)
 }
 
 // GetNewJWTTokenWithResponse request returning *GetNewJWTTokenResponse
@@ -903,15 +903,15 @@ func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsRespons
 	return response, nil
 }
 
-// ParsePatchRelationshipsRelationshipIDResponse parses an HTTP response from a PatchRelationshipsRelationshipIDWithResponse call
-func ParsePatchRelationshipsRelationshipIDResponse(rsp *http.Response) (*PatchRelationshipsRelationshipIDResponse, error) {
+// ParsePatchRelationshipResponse parses an HTTP response from a PatchRelationshipWithResponse call
+func ParsePatchRelationshipResponse(rsp *http.Response) (*PatchRelationshipResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PatchRelationshipsRelationshipIDResponse{
+	response := &PatchRelationshipResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1068,7 +1068,7 @@ type ServerInterface interface {
 	GetRelationships(ctx echo.Context, params GetRelationshipsParams) error
 	// Accept/Denies relationship requests
 	// (PATCH /relationships/{relationshipID})
-	PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID externalRef0.UUID) error
+	PatchRelationship(ctx echo.Context, relationshipID externalRef0.UUID) error
 	// Get a renewed JWT token with the same claims as the original one
 	// (GET /trust-domain/jwt)
 	GetNewJWTToken(ctx echo.Context) error
@@ -1115,8 +1115,8 @@ func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
 	return err
 }
 
-// PatchRelationshipsRelationshipID converts echo context to params.
-func (w *ServerInterfaceWrapper) PatchRelationshipsRelationshipID(ctx echo.Context) error {
+// PatchRelationship converts echo context to params.
+func (w *ServerInterfaceWrapper) PatchRelationship(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID externalRef0.UUID
@@ -1129,7 +1129,7 @@ func (w *ServerInterfaceWrapper) PatchRelationshipsRelationshipID(ctx echo.Conte
 	ctx.Set(Harvester_authScopes, []string{""})
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PatchRelationshipsRelationshipID(ctx, relationshipID)
+	err = w.Handler.PatchRelationship(ctx, relationshipID)
 	return err
 }
 
@@ -1227,7 +1227,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
-	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.PatchRelationshipsRelationshipID)
+	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.PatchRelationship)
 	router.GET(baseURL+"/trust-domain/jwt", wrapper.GetNewJWTToken)
 	router.GET(baseURL+"/trust-domain/onboard", wrapper.Onboard)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName/bundles", wrapper.BundlePut)
@@ -1286,78 +1286,77 @@ var swaggerSpec = []string{
 	"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",
-	"AF/kNcibTeM27f3sA/I2G09Uru+DsgHjeSFIatdL748lyINx5C9vkFJ31sv0DLiqsSf7ySpRFfumoHqi",
-	"1Epukj6vUMq53G95dfYBXNVbsFOSVaIM2klDdMvBV8K5V5I+8TKpOWzunTtXJiJTnqVju7uTEOVUDLol",
-	"YtpJIzVBuYbGh02YLobeVDcaWCwkzLCIsC81oIY4tV6dqau6/dUNjLruSf+5Zk598zI7RCAz6t2kdJsG",
-	"VONh5f/+w31/Y98fkPez4/H9r79M/+t4/PBW2/9+3fh//us/Jm9r6k+dsZviDH6Y1BjN8Pp4/Bj41qF4",
-	"lXuFWwV/MztPZ85HqkURfjTGthXhOzK8pvSWTCZI7/nROk7KP5qtrIDbgOBXt3kJZQzB0PcI+h5HLIT5",
-	"iCMfEeTwHEOB24D3TZKBV3lG9A3rJ8Hvk//VQd391X/46g9zaS9c+lsyf3J+76+Z3/sD8z+yOX+nNV5h",
-	"LBnXuGcYeMHCW4p8S7jv2u27Cv0RiNmyrIrOTf8gmB9L+CP58vSnhKd+T7N5RZECN/9GDU8Df8SWDO7E",
-	"kwZkP0ybvfDJT3ezKI9x5LNcvFtV7nV8vXmeeP5qeFemDnvcPYRTqongqykcAnOjNxo+S2+HnX497E31",
-	"IKCqs0OtL7/5wynYq9fDjkS2ctoctjri7NB+bYmofhOvmmX3K8vODvu4d/dqeu9jIcNKiDDd8lFNOKNq",
-	"rsZeZnaehVy1E4tpJ/s/31rYn+eif+a8fua8fua8fua8fua8fua8fua8fua8fua8fua8fua8/hVyXq+L",
-	"Cf5kJcArMuNx5gcFAS8Kaib6cq625SFnFoNUqNkmUQV+PbXbYqOu0lhboHNHOfmUs6bJDqDk2tdU+nZB",
-	"1aW5l277RkNuIbLxl94BzR1H7ows2k1llR3IdZ1tLniGnk/VgISSKiCicNkeYvdWOEpRM8TaZS4y7O8A",
-	"QtZoNS8ch8T7FYajB/ncnOcktcivwVzA+h6EV4Mv2f/8TonLPz2oQOPep73xPHvReGk+tYhtbKsZ7Aj+",
-	"DKMvCkvO0F46GfDrfSvf26ymyAfov3tMgRY3tvx8SlHOcRpgQxrMjciWpZOLSdcDz0njacTPuau719Nx",
-	"3+/tudjLz8P8xPrQY3CtSXZsmBtu7uyG+DBXy8Ouj+y52rnZ9hQIoqdx5ztXbN9vfExqfHlIlzv9Ch32",
-	"ZnnI0tO473862dw0Qbtqlkhot+i22o4nG21sG1bCl7Y+Opzv5xrozxxsno41lcafZejpXJNs5C3uyVsk",
-	"4DnD2emVs1fPirhtA3l79edq6WN2ZGCzxpelFlgi0LiHoiG+77cbiZMUMYg9WTr7WZp6PGf42exy2OmI",
-	"Zta9bDwd+Tj1Nh6uPdluHFxNAznNIHenj6e8P3BG4RmYsWY24XrxYoihDh/igd906srt6RjWCuN00bBZ",
-	"kix3h2oqYAWN6RcGPZiavi5N0SzmOn0jFq5XqFVMdlNoejWqGdPyunM+swLD7C7rdC/EZByWEuf4miv2",
-	"S8zLuGnmS/AOZQ+rwilSemGSwbCfSiwUFEWVwtW211weW9tzws5OhLbewMv6tuM7GpN95BRXC421Zaw8",
-	"jftveLGolq1J1Fhf3SBnIAwM1eM1vaLUShVjkXNEGx2mbXXm27z12RuiopbJLbvmZpN1V4bYgLiLK9XD",
-	"4HqjIDGzztOeWXcDkfYFN1zdSptz7JKb+xHJytu2tH163/I6o5DpygCEkPEmTZ4HqVhLBgEgursQB1Wa",
-	"P04n4nf2ByLHcmK5EDKTuTKq6WHZZlPmmGjwkBacPXmP7DSjwoQF7OSVnSL0VMnsrF9pXslf2pXqIA6b",
-	"shQznEnYaG6hwgghj9WCIe4huVfPyMkstlgeINtqgc9u7K2jZphidtUVRubBgCJIFjLSuc/k4gb7fmYN",
-	"m6l8JTFTMKfQdOPBIcsWSTbssHm999o8YTHF68+erlUVMl3Fa089cCscFS/BDj30JBbPhn3jb2i2XUpQ",
-	"wHl1dtrtJVXc4fhS0EQDD0+HZGP6lzgKt4OmhI1xS8QUbbaMTBvqvkrOGuUW7dKRNjrk4yrRqAhMznw+",
-	"iOU9UgCz75b4UtozKkG1qCQRfsjVuVc4qSaGuLNYcat9lgzu3AXRf0LfjVyvawo/Tr5JnWKvI4hxi69D",
-	"1Q2UpwewXJit2yLFOh8KGwtVQKW17GG6Mh0W9vS8t9dU0h7CngxnhhinUbgMGCOIGho/iWVWUkQanwJi",
-	"DqPm2dtHUmDWITzf86UBs8WlaM1ajMtrpsT9MvQJn1V5NVkMEXqrq/UURVfkbYZ2gVWXRevZB9dspIGf",
-	"8mjBYVPat4u/IIKIGry/ErIvDvl8Xzh0mDI4JhYUhx7+fSPI+aqnryPIve3fPIIIB6WtDZMSBczYmRBb",
-	"L+ITQGdbe8v7uaMlki0EZ0vy5htt0aGuLBMXcU+Wt6Q0oksM9MoayMJLV86BPvEIAxVhsxfoMw6ow8GF",
-	"tzkuky4QF/ISx3zstKj7KScxKh0bub2jrzHTrLEKqa7rTujm0yiIoZyWjM2ylOZYOKu2yakNzjq8Ogvz",
-	"WKcXbBl3GpsTfuVvpzW1HvjrIbcOXZkknnQmzrYZQC6PXQXF9WNHFlkmjdeDg4f0fAEznCvmGZ5POa6j",
-	"tFsQb07ddShDePDp7R7Zb/KzsD7EUJnfTt4MrG71edWtzvv9AaQFgnMLam0CuI3dcIef+tksX7LXQlXd",
-	"wRIkZu2kaqBthwhQEFZ3aBKawg8jyHJ1OCCbqNhuBxssLqstolOqxEHyhpw159KFyWW9MzYOGuwKxjeQ",
-	"Pihn5ys6v+2v690hGzbTq682uhnvDntejiJN0StZWdaQcGjqM09e0u11y8KLODFb0fOxRgkPhA7DZmvI",
-	"cxqjKaSDD4xb7Mx1irOKtk9thGZWugxFDp4WUwTd6k3XesSMs7sLjDYZbJkgtrLetsW50S0NRrrlws3x",
-	"k3mwOeg+vQI7NtaGFbRQs2VgeDRGX3atuSyxaR0nV29Flac8J2HtxF3PW08q9IvKuUEb2UI8TyN4t5L8",
-	"ZNXsKWi2dpt5ma6sXXuedVOGrzQpVZGrlPA4CmrJgtdOfLWsqyFcAowtLC1IyTqrSXx2I13mvxdB8NcR",
-	"xCM8b6esTufWAeCmSclui3srnqgOF8NlxRS5BX6S2lNtTgJRFqygyFYzUT83mxSmHca/dJJqS1yfltIt",
-	"3rNTld7u5Hhzo4l2sQksyyLCXmIuJVItWyReOlKSISZRrVRd6iOs7e3V1RGIOspJZREeDsbBZQIHrK02",
-	"sgarNK9GcbJvOYNy2V8RQTifaU9dlq1XW4qMF4QSNX2zaOnckP9dI4gusP3jrytfI8hT2797BHFg1rGn",
-	"07JquFiHLijGsmeStgLdiQJxSW3wRp/mRV5FaYHMhHZ6vVRCe2Hjddf4Eio1u423Wm85L1PEOdVBFR3p",
-	"25oVOCJYz6ZbU/Fcy9Hzst7OZpcK3fVUt2tWeafNvXXcbddqnksXOTw0uel3nUBAabrRm5I94MZKCqv9",
-	"AU9l2z1h3aql86FfMGVkJ0x7o2hg1vNlphCbKc9cNqtwf5JbKYshmsGznbs3jCtdk3aUJPJ2x/e1ARgN",
-	"vUzTgd8edg6+c65gNd2Ipscx8FLrZ5uEdKTzxgugHbW2MHOAO+AM4jqttOnCw6n0tLhlfsDseoCUCkJm",
-	"xilAG3kBmhmDH8w56Yv5nDP6iIcubiTRZnP7YQTRGKKbZTBHeBhqa3QcOsTGbDsoL0UjIMvNZhubBxTV",
-	"if0UxRwXv1J0fNVP9AUnmy2raNnJJ7I9TQpE0K3K9eGsiTv4vK+gy/S6SvEzvYT7trvtpEThePh8MhiO",
-	"1Lue9QK0L0PscjoZ8qrazhFGS/arw8ocZsxs11ghhHTLHcqsdFTp192anUodF/qLm8qnQCdxO0ky9rS/",
-	"oCh2mZ67nl7ah4DHb0BEwnWOtOIMuqyoXZzaO3AO5GbLDZeCuS0dwBn+sOS0Qaw3wJnpuE3Xy30JJ61D",
-	"aDHZhfF1fjNqWDIgTbyC+QbdoNuF6u8WXEeitIiupredRkYZj9ArCtFOh+C6O+29k7EqDCOFRdZe4gei",
-	"Z40/GEHeutrxVubr//OLZT+8GfaHr4K9vnz2otDhTvPDI2p/8IvsxxcaCeaNTOe9kOYFYTx0GTKkiPck",
-	"jdLvCZLC3nt46L/H/BmFhxTlhi71fLK2vVe0PJsKf1Ubh7yfue/DX35jPr3/8kz8jmcU+/RGcdxoZeC3",
-	"VdJcN6MdHnCJ3aoDdQOqX9125OE7hns5EH416n7tNcnD4vONWte/16/kd+1P5KSJW2/ybtJW6eTjJG6a",
-	"sv4Iw9G9ebQBPAd9Cppm7fpntwrgyE3doEpAOvnmOq38+RW0AVUHKmj+mZX7Hdu6BP4DGkmRf5i8m6SJ",
-	"D/IaPOOGLV0/BhD2AXnB0UcY7vv+g3t/+6GoIvhpaA0vFV7UN+J77APyIW6yO1dN0tyt/gN+3kOrEuTj",
-	"E36frwNV/RAE/YB8QNGRVFGC3C2TEUIfkA/45A6C+G4duHpW3HNviR6VQaPH318owcgEaMwXHUcSlZuB",
-	"BlT15OM/fpsk45SXFlTXybvPivBfVJO9+513nV/VoH1697oY5znLUH3vBoVVkUEudHdM6OGZUAmq0VpN",
-	"0o2+/RaDzSs/fr5QNFULfi/L315G/eXdywvhGIL8ZZfBX9dxvXEnfNP6PqjrsE2hL4Z8QP3LvfS3ZvjC",
-	"Mvz5Avtzp77b+bU7/+OXUda6zTK3uk4+TpZJ3dyvR78A1ugojRuNUJm8BNIv4wwvUQj/9vynInwa2S3d",
-	"xo+/BeZ6bH5B0Xwx9lugvlSUIny+zv18zs9wGd3kK1qq15T/HFieKmR/eYwHdfP5OvFfDo4vtYefXsbA",
-	"kdtP/0MA/ddCJ3uvjoQFkCegfmFy6MkY9Q+Qel8y3j+iO3zqm3+2ZOqgV3eW9VT8/Lep+2tJ+r+UrmXQ",
-	"QC5UgRz0IIDUnQXdy8ChPmniu8fVbgYgP3WTrIbc+t5UVEmU5G4KFTl4Zohx8EONbxiheJTBPzPEKxdv",
-	"oLYGNeRCpyLJn5hoCmjkuqiSG7jP/EUaaOwTA+ibuOvmARSBBkqa+i4Ne1cs9Nm8L63/VJv/o+VHfcGR",
-	"B0ZOAygsKuhJqsdu8a3YNQrzFVrfW4heb9H+zrj08j7CG1g0QdNWeQ25OeQ+lPem6KNhQN7cmcijr5ap",
-	"oSKHPBC7afh50X4e7z/8eVh/wezqi9YhF8pB/3JD8R1kPAPqZ7O/AdPfXm02PsGPY8fdDGX7xgry9csf",
-	"P0DRCybzx0bmjfj1N+92/vpY9lUBb4Dp8fIzdh6l/pPfGeX+VZZIu0wLN3iC2t08T1+VGcW6L5GvAfYw",
-	"9dPnMP4QzOD6qV6mLOrvgu1eU/NvjbYv33d5A3JPnx8ZFx83TaEQBKMGQfBktDGEuc3LJcNvqwrkTXqF",
-	"znnR3/fB/3P7sG8+C/OGTFJRgSTKoRfAgj5/i+V/xAtGBuOqyJMbqN9Q6n2/8E/W3G9c4j7/2OmB3pc5",
-	"gbTw3TQu6uZD3btRBKoPSQG7ZQJ3+GRk64nqa9CvPjvL064RBHcXfe6yYPBjN4/GnUYeQPUXoR7ryRe/",
-	"eMnut6fbZzONwfAxxcO5X24Knuh9Djn/lNIznl9sej3Q9GCMwM9mqb/SfrkB/vTLp/8XAAD//z+hgM31",
-	"TAAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -68,7 +68,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	consentStatus := *params.ConsentStatus
 
 	switch consentStatus {
-	case "", api.Accepted, api.Disabled, api.Pending:
+	case "", api.Accepted, api.Denied, api.Pending:
 	default:
 		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
 		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
@@ -94,8 +94,67 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	return chttp.WriteResponse(echoCtx, apiRelationships)
 }
 
-// PatchRelationshipsRelationshipID accept/denied relationships requests - (PATCH /relationships/{relationshipID})
-func (h *HarvesterAPIHandlers) PatchRelationshipsRelationshipID(ctx echo.Context, relationshipID api.UUID) error {
+// PatchRelationship accept/denied relationships requests - (PATCH /relationships/{relationshipID})
+func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
+
+	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
+	if !ok {
+		err := errors.New("no authenticated trust domain")
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	// get the relationships for the trust domain
+	relationship, err := h.Datastore.FindRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		msg := "error looking up relationships"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	if relationship == nil {
+		err := fmt.Errorf("relationship not found")
+		return h.handleErrorAndLog(err, err.Error(), http.StatusNotFound)
+	}
+
+	if relationship.TrustDomainAID != authTD.ID.UUID && relationship.TrustDomainBID != authTD.ID.UUID {
+		err := fmt.Errorf("relationship doesn't belong to the authenticated trust domain")
+		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	var patchRequest harvester.PatchRelationship
+	if err := chttp.FromBody(echoCtx, &patchRequest); err != nil {
+		msg := "error reading body"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+	}
+
+	consentStatus := patchRequest.ConsentStatus
+
+	switch consentStatus {
+	case api.Accepted, api.Denied, api.Pending:
+	default:
+		err := fmt.Errorf("invalid consent status: %q", consentStatus)
+		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
+	}
+
+	// update the relationship consent status for the authenticated trust domain
+	if relationship.TrustDomainAID == authTD.ID.UUID {
+		relationship.TrustDomainAConsent = entity.ConsentStatus(consentStatus)
+	} else {
+		relationship.TrustDomainBConsent = entity.ConsentStatus(consentStatus)
+	}
+
+	if _, err := h.Datastore.CreateOrUpdateRelationship(ctx, relationship); err != nil {
+		msg := "error updating relationship"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
+	if err = chttp.BodylessResponse(echoCtx); err != nil {
+		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
+	}
+
 	return nil
 }
 
@@ -140,8 +199,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 	}
 
 	// mark token as used
-	_, err = h.Datastore.UpdateJoinToken(ctx, token.ID.UUID, true)
-	if err != nil {
+	if _, err := h.Datastore.UpdateJoinToken(ctx, token.ID.UUID, true); err != nil {
 		msg := "failed to update token"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
@@ -270,15 +328,13 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	}
 
 	req := &harvester.BundlePutJSONRequestBody{}
-	err := chttp.FromBody(echoCtx, req)
-	if err != nil {
+	if err := chttp.FromBody(echoCtx, req); err != nil {
 		msg := "failed to read bundle from request body"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
 	}
 
-	err = validateBundleRequest(req)
-	if err != nil {
+	if err := validateBundleRequest(req); err != nil {
 		err := fmt.Errorf("invalid bundle request: %v", err)
 		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)
 	}
@@ -309,8 +365,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 		bundle.ID = storedBundle.ID
 	}
 
-	_, err = h.Datastore.CreateOrUpdateBundle(ctx, bundle)
-	if err != nil {
+	if _, err := h.Datastore.CreateOrUpdateBundle(ctx, bundle); err != nil {
 		msg := "failed to store bundle in DB"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
