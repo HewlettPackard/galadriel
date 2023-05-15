@@ -500,46 +500,46 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 	})
 }
 
-// func TestUDSPostTrustDomainTrustDomainNameJoinToken(t *testing.T) {
-// 	trustDomainPath := "/trust-domain/%v/join-token"
+func TestUDSGetJoinToken(t *testing.T) {
+	trustDomainPath := "/trust-domain/%v/join-token"
 
-// 	t.Run("Successfully generates a join token for the trust domain", func(t *testing.T) {
-// 		td1ID := NewNullableID()
-// 		fakeTrustDomains := entity.TrustDomain{ID: td1ID, Name: NewTrustDomain(t, td1)}
+	t.Run("Successfully generates a join token for the trust domain", func(t *testing.T) {
+		td1ID := NewNullableID()
+		fakeTrustDomains := entity.TrustDomain{ID: td1ID, Name: NewTrustDomain(t, td1)}
 
-// 		completePath := fmt.Sprintf(trustDomainPath, td1)
+		completePath := fmt.Sprintf(trustDomainPath, td1)
 
-// 		// Setup
-// 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
-// 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, completePath, nil)
+		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-// 		err := setup.Handler.PostTrustDomainTrustDomainNameJoinToken(setup.EchoCtx, td1)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
-// 		apiJToken := admin.JoinTokenResult{}
-// 		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiJToken)
-// 		assert.NoError(t, err)
+		apiJToken := admin.JoinTokenResult{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiJToken)
+		assert.NoError(t, err)
 
-// 		assert.NotEmpty(t, apiJToken)
-// 	})
+		assert.NotEmpty(t, apiJToken)
+	})
 
-// 	t.Run("Raise a bad request when trying to generates a join token for the trust domain that does not exists", func(t *testing.T) {
-// 		completePath := fmt.Sprintf(trustDomainPath, td1)
+	t.Run("Raise a bad request when trying to generates a join token for the trust domain that does not exists", func(t *testing.T) {
+		completePath := fmt.Sprintf(trustDomainPath, td1)
 
-// 		// Setup
-// 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, completePath, nil)
 
-// 		err := setup.Handler.PostTrustDomainTrustDomainNameJoinToken(setup.EchoCtx, td1)
-// 		assert.Error(t, err)
+		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1)
+		assert.Error(t, err)
 
-// 		echoHttpErr := err.(*echo.HTTPError)
-// 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
+		echoHttpErr := err.(*echo.HTTPError)
+		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
 
-// 		expectedMsg := fmt.Sprintf("trust domain %v does not exists ", td1)
-// 		assert.Equal(t, expectedMsg, echoHttpErr.Message)
-// 	})
-// }
+		expectedMsg := fmt.Errorf("trust domain exists: %q", td1)
+		assert.Equal(t, expectedMsg.Error(), echoHttpErr.Message)
+	})
+}
 
 func NewNullableID() uuid.NullUUID {
 	return uuid.NullUUID{

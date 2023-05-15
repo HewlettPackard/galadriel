@@ -93,7 +93,13 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	}
 	eRelationship := reqBody.ToEntity()
 
-	if err := h.checkTrustDomains(ctx, http.StatusBadRequest, eRelationship.TrustDomainAID, eRelationship.TrustDomainBID); err != nil {
+	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainAID)
+	if err != nil {
+		return err
+	}
+
+	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainBID)
+	if err != nil {
 		return err
 	}
 
@@ -234,7 +240,8 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
-	if err := h.checkTrustDomains(ctx, http.StatusNotFound, trustDomainID); err != nil {
+	_, err = h.lookupTrustDomain(ctx, trustDomainID)
+	if err != nil {
 		return err
 	}
 
@@ -271,6 +278,11 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
+	if td == nil {
+		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainName)
+		return h.handleAndLog(errMsg, http.StatusBadRequest)
+	}
+
 	token := uuid.New()
 
 	joinToken := &entity.JoinToken{
@@ -287,7 +299,11 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 
 	h.Logger.Infof("Created join token for trust domain: %s", tdName)
 
-	err = chttp.WriteResponse(echoCtx, http.StatusOK, token)
+	response := admin.JoinTokenResult{
+		Token: token,
+	}
+
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("failed to write join token response: %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -355,21 +371,20 @@ func (h *AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relatio
 	return relationships, nil
 }
 
-func (h *AdminAPIHandlers) checkTrustDomains(ctx context.Context, errCode int, ids ...uuid.UUID) error {
-	for _, id := range ids {
-		td, err := h.Datastore.FindTrustDomainByID(ctx, id)
-		if err != nil {
-			err := fmt.Errorf("not able retrieve information about trust domain %w", err)
-			return h.handleAndLog(err, http.StatusInternalServerError)
-		}
-
-		if td == nil {
-			err := fmt.Errorf("trust domain %v does not exists", id)
-			return h.handleAndLog(err, errCode)
-		}
+func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error) {
+	td, err := h.Datastore.FindTrustDomainByID(ctx, trustDomainID)
+	if err != nil {
+		msg := errors.New("error looking up trust domain")
+		errMsg := fmt.Errorf("%s: %w", msg, err)
+		return nil, h.handleAndLog(errMsg, http.StatusInternalServerError)
 	}
 
-	return nil
+	if td == nil {
+		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainID)
+		return nil, h.handleAndLog(errMsg, http.StatusBadRequest)
+	}
+
+	return td, nil
 }
 
 func mapRelationships(relationships []*entity.Relationship) []*api.Relationship {
