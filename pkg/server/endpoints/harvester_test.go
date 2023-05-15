@@ -26,6 +26,23 @@ import (
 const (
 	jwtPath     = "/jwt"
 	onboardPath = "/onboard"
+
+	// Trust Domains
+	td1 = "test1.com"
+	td2 = "test2.com"
+	td3 = "test3.com"
+)
+
+var (
+	// Relationships ID's
+	r1ID = NewNullableID()
+	r2ID = NewNullableID()
+	r3ID = NewNullableID()
+
+	// Trust Domains ID's
+	tdUUID1 = NewNullableID()
+	tdUUID2 = NewNullableID()
+	tdUUID3 = NewNullableID()
 )
 
 type HarvesterTestSetup struct {
@@ -51,7 +68,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *
 	logger := logrus.New()
 
 	jwtAudience := []string{"test"}
-	jwtIssuer := fakejwtissuer.New(t, "test", testTrustDomain, jwtAudience)
+	jwtIssuer := fakejwtissuer.New(t, "test", td1, jwtAudience)
 	jwtValidator := jwttest.NewJWTValidator(jwtIssuer.Signer, jwtAudience)
 
 	return &HarvesterTestSetup{
@@ -63,7 +80,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *
 }
 
 func SetupTrustDomain(t *testing.T, ds datastore.Datastore) *entity.TrustDomain {
-	td, err := spiffeid.TrustDomainFromString(testTrustDomain)
+	td, err := spiffeid.TrustDomainFromString(td1)
 	assert.NoError(t, err)
 
 	tdEntity := &entity.TrustDomain{

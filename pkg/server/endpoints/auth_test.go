@@ -19,8 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testTrustDomain = "test.com"
-
 type AuthNTestSetup struct {
 	EchoCtx      echo.Context
 	Middleware   *AuthenticationMiddleware
