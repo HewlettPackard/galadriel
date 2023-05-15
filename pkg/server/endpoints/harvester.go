@@ -54,15 +54,9 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore, jwtIs
 func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params harvester.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
-	if !ok {
-		err := errors.New("no authenticated trust domain")
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
-	}
-
-	if authTD.Name.String() != params.TrustDomainName {
-		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", params.TrustDomainName, authTD.Name.String())
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	authTD, err := h.getAuthenticateTrustDomain(echoCtx, params.TrustDomainName)
+	if err != nil {
+		return err
 	}
 
 	consentStatus := *params.ConsentStatus
@@ -269,16 +263,9 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	h.Logger.Debugf("Received bundle sync request from trust domain: %s", trustDomainName)
 	ctx := echoCtx.Request().Context()
 
-	// Get the authenticated trust domain from the context
-	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
-	if !ok {
-		err := errors.New("no authenticated trust domain")
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
-	}
-
-	if authTD.Name.String() != trustDomainName {
-		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", trustDomainName, authTD.Name.String())
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	authTD, err := h.getAuthenticateTrustDomain(echoCtx, trustDomainName)
+	if err != nil {
+		return err
 	}
 
 	// Get the request body
@@ -315,16 +302,9 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	h.Logger.Infof("Received post bundle request from trust domain: %s", trustDomainName)
 	ctx := echoCtx.Request().Context()
 
-	// get the authenticated trust domain from the context
-	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
-	if !ok {
-		err := errors.New("no authenticated trust domain")
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
-	}
-
-	if authTD.Name.String() != trustDomainName {
-		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", trustDomainName, authTD.Name.String())
-		return h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	authTD, err := h.getAuthenticateTrustDomain(echoCtx, trustDomainName)
+	if err != nil {
+		return err
 	}
 
 	req := &harvester.BundlePutJSONRequestBody{}
@@ -444,6 +424,21 @@ func filterRelationshipsByConsentStatus(trustDomain uuid.UUID, relationships []*
 	}
 
 	return filtered
+}
+
+func (h *HarvesterAPIHandlers) getAuthenticateTrustDomain(echoCtx echo.Context, trustDomainName string) (*entity.TrustDomain, error) {
+	authTD, ok := echoCtx.Get(authTrustDomainKey).(*entity.TrustDomain)
+	if !ok {
+		err := errors.New("no authenticated trust domain")
+		return nil, h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	if authTD.Name.String() != trustDomainName {
+		err := fmt.Errorf("request trust domain %q does not match authenticated trust domain %q", trustDomainName, authTD.Name.String())
+		return nil, h.handleErrorAndLog(err, err.Error(), http.StatusUnauthorized)
+	}
+
+	return authTD, nil
 }
 
 func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
