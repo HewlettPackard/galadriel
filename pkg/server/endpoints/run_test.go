@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
 	"github.com/HewlettPackard/galadriel/test/certtest"
@@ -17,11 +18,16 @@ import (
 )
 
 type fakeCatalog struct {
-	x509ca x509ca.X509CA
+	x509ca     x509ca.X509CA
+	keyManager keymanager.KeyManager
 }
 
 func (c fakeCatalog) GetX509CA() x509ca.X509CA {
 	return c.x509ca
+}
+
+func (c fakeCatalog) GetKeyManager() keymanager.KeyManager {
+	return c.keyManager
 }
 
 func TestListenAndServe(t *testing.T) {
@@ -72,8 +78,11 @@ func newEndpointTestConfig(t *testing.T) *Config {
 	err = ca.Configure(c)
 	require.NoError(t, err)
 
+	km := keymanager.New(&keymanager.Config{})
+
 	cat := fakeCatalog{
-		x509ca: ca,
+		x509ca:     ca,
+		keyManager: km,
 	}
 
 	config := &Config{
