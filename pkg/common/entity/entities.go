@@ -11,7 +11,7 @@ type ConsentStatus string
 
 const (
 	ConsentStatusAccepted ConsentStatus = "accepted"
-	ConsentStatusDenied   ConsentStatus = "denied"
+	ConsentStatusDisabled ConsentStatus = "disabled"
 	ConsentStatusPending  ConsentStatus = "pending"
 )
 

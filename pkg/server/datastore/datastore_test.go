@@ -240,7 +240,7 @@ func TestUpdateRelationship(t *testing.T) {
 	relationship1 := createRelationship(ctx, t, ds, req1)
 
 	relationship1.TrustDomainAConsent = entity.ConsentStatusAccepted
-	relationship1.TrustDomainBConsent = entity.ConsentStatusDenied
+	relationship1.TrustDomainBConsent = entity.ConsentStatusDisabled
 
 	updated1, err := ds.CreateOrUpdateRelationship(ctx, relationship1)
 	require.NoError(t, err)
@@ -250,7 +250,7 @@ func TestUpdateRelationship(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, updated1, stored)
 	assert.Equal(t, entity.ConsentStatusAccepted, stored.TrustDomainAConsent)
-	assert.Equal(t, entity.ConsentStatusDenied, stored.TrustDomainBConsent)
+	assert.Equal(t, entity.ConsentStatusDisabled, stored.TrustDomainBConsent)
 }
 
 func TestFindRelationshipByTrustDomain(t *testing.T) {

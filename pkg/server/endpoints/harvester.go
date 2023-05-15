@@ -68,7 +68,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	consentStatus := *params.ConsentStatus
 
 	switch consentStatus {
-	case "", api.Accepted, api.Denied, api.Pending:
+	case "", api.Accepted, api.Disabled, api.Pending:
 	default:
 		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
 		return h.handleErrorAndLog(err, err.Error(), http.StatusBadRequest)

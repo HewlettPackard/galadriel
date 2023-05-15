@@ -99,7 +99,7 @@ components:
       type: string
       enum:
         - accepted
-        - denied
+        - disabled
         - pending
     JoinToken:
       $ref: '#/components/schemas/UUID'

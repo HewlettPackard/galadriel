@@ -39,8 +39,8 @@ var (
 	pendingRelAB          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	pendingRelAC          = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedPendingRelAB  = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	deniedAcceptedRelAB   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusDenied, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	acceptedDeniedRelAC   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDenied, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	disabledAcceptedRelAB = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusDisabled, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	acceptedDisabledRelAC = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDisabled, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedAcceptedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 
 	bundleA = &entity.Bundle{Data: []byte("bundle-A"), Signature: []byte("signature-A"), TrustDomainName: tdA.Name, TrustDomainID: tdA.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
@@ -124,10 +124,10 @@ func TestTCPGetRelationships(t *testing.T) {
 		}, api.Accepted, tdA, 2)
 	})
 
-	t.Run("Successfully get denied relationships", func(t *testing.T) {
+	t.Run("Successfully get disabled relationships", func(t *testing.T) {
 		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
-		}, api.Denied, tdC, 1)
+		}, api.Disabled, tdC, 1)
 	})
 
 	t.Run("Successfully get pending relationships", func(t *testing.T) {
@@ -197,7 +197,7 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 	echoCtx := setup.EchoCtx
 
 	setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
-	setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC)
+	setup.Datastore.WithRelationships(pendingRelAB, pendingRelAC, acceptedPendingRelAB, acceptedDisabledRelAC, acceptedAcceptedRelBC)
 
 	setupFn(setup, trustDomain)
 
@@ -361,7 +361,7 @@ func TestTCPBundleSync(t *testing.T) {
 	}{
 		{
 			name:          "Successfully sync no new bundles",
-			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDisabledRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
 					tdB.Name.String(): base64EncodedDigest(bundleB.Data),
@@ -378,7 +378,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync one new bundle for one accepted relationship",
-			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDisabledRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
 					tdC.Name.String(): base64EncodedDigest(bundleC.Data),
@@ -399,7 +399,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync two new bundles for two accepted relationships",
-			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
+			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDisabledRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},
 			},
@@ -439,8 +439,8 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name:          "Successfully sync one new bundle for one accepted relationship, not including the denied relationship",
-			relationships: []*entity.Relationship{acceptedDeniedRelAC, deniedAcceptedRelAB, acceptedAcceptedRelBC},
+			name:          "Successfully sync one new bundle for one accepted relationship, not including the disabled relationship",
+			relationships: []*entity.Relationship{acceptedDisabledRelAC, disabledAcceptedRelAB, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},
 			},
