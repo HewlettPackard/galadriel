@@ -255,7 +255,7 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return echoCtx.JSON(http.StatusOK, newToken)
+	return chttp.WriteResponse(echoCtx, newToken)
 }
 
 // BundleSync synchronize the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
@@ -294,7 +294,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return echoCtx.JSON(http.StatusOK, resp)
+	return chttp.WriteResponse(echoCtx, resp)
 }
 
 // BundlePut uploads a new trust bundle to the server  - (PUT /trust-domain/{trustDomainName}/bundles)
