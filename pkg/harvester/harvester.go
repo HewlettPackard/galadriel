@@ -49,7 +49,7 @@ func (h *Harvester) Run(ctx context.Context) error {
 
 	config := &controller.Config{
 		GaladrielServerClient: galadrielClient,
-		SpireSocketPath:       h.config.SpireAddress,
+		SpireSocketPath:       h.config.LocalSpireAddress,
 		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
 		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
 	}
