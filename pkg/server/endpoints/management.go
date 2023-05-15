@@ -93,12 +93,12 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	}
 	eRelationship := reqBody.ToEntity()
 
-	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainAID)
+	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainAID, http.StatusBadRequest)
 	if err != nil {
 		return err
 	}
 
-	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainBID)
+	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainBID, http.StatusBadRequest)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
-	_, err = h.lookupTrustDomain(ctx, trustDomainID)
+	_, err = h.lookupTrustDomain(ctx, trustDomainID, http.StatusNotFound)
 	if err != nil {
 		return err
 	}
@@ -371,7 +371,7 @@ func (h *AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relatio
 	return relationships, nil
 }
 
-func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error) {
+func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID uuid.UUID, code int) (*entity.TrustDomain, error) {
 	td, err := h.Datastore.FindTrustDomainByID(ctx, trustDomainID)
 	if err != nil {
 		msg := errors.New("error looking up trust domain")
@@ -381,7 +381,7 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID 
 
 	if td == nil {
 		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainID)
-		return nil, h.handleAndLog(errMsg, http.StatusBadRequest)
+		return nil, h.handleAndLog(errMsg, code)
 	}
 
 	return td, nil

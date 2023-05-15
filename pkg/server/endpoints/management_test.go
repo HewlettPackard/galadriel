@@ -295,7 +295,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHTTPErr.Code)
 
-		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", tdUUID2.UUID)
+		expectedErrorMsg := fmt.Sprintf("trust domain exists: %q", tdUUID2.UUID)
 		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 
@@ -495,7 +495,7 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", tdUUID1.UUID)
+		expectedErrorMsg := fmt.Sprintf("trust domain exists: %q", tdUUID1.UUID)
 		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 }
