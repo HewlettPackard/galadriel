@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"net/http"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	gojwt "github.com/golang-jwt/jwt/v4"
@@ -270,7 +270,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 
 	// Get the request body
 	var req harvester.BundleSyncBody
-	if err := echoCtx.Bind(&req); err != nil {
+	if err := chttp.FromBody(echoCtx, &req); err != nil {
 		msg := "failed to parse request body"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
