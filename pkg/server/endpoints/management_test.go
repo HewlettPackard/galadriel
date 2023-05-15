@@ -80,9 +80,6 @@ func TestUDSGetRelationships(t *testing.T) {
 		echoCtx := managementTestSetup.EchoCtx
 
 		td1Name := NewTrustDomain(t, td1)
-		tdUUID1 := NewNullableID()
-		tdUUID2 := NewNullableID()
-		tdUUID3 := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
 			{ID: tdUUID1, Name: td1Name},
@@ -90,8 +87,6 @@ func TestUDSGetRelationships(t *testing.T) {
 			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
 		}
 
-		r1ID := NewNullableID()
-		r2ID := NewNullableID()
 		fakeRelationships := []*entity.Relationship{
 			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
 			{ID: r2ID, TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: false, TrustDomainBConsent: false},
@@ -134,19 +129,12 @@ func TestUDSGetRelationships(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodGet, relationshipsPath, nil)
 
 		td1Name := NewTrustDomain(t, td1)
-		tdUUID1 := NewNullableID()
-		tdUUID2 := NewNullableID()
-		tdUUID3 := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
 			{ID: tdUUID1, Name: td1Name},
 			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
 			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
 		}
-
-		r1ID := NewNullableID()
-		r2ID := NewNullableID()
-		r3ID := NewNullableID()
 
 		fakeRelationships := []*entity.Relationship{
 			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: true, TrustDomainBConsent: true},
@@ -237,17 +225,15 @@ func TestUDSPutRelationships(t *testing.T) {
 	relationshipsPath := "/relationships"
 
 	t.Run("Successfully create a new relationship request", func(t *testing.T) {
-		td1ID := NewNullableID()
-		td2ID := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
-			{ID: td1ID, Name: NewTrustDomain(t, td1)},
-			{ID: td2ID, Name: NewTrustDomain(t, td2)},
+			{ID: tdUUID1, Name: NewTrustDomain(t, td1)},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
 		}
 
 		reqBody := &admin.PutRelationshipJSONRequestBody{
-			TrustDomainAId: td1ID.UUID,
-			TrustDomainBId: td2ID.UUID,
+			TrustDomainAId: tdUUID1.UUID,
+			TrustDomainBId: tdUUID2.UUID,
 		}
 
 		// Setup
@@ -264,23 +250,19 @@ func TestUDSPutRelationships(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.NotNil(t, apiRelation)
-		assert.Equal(t, td1ID.UUID, apiRelation.TrustDomainAId)
-		assert.Equal(t, td2ID.UUID, apiRelation.TrustDomainBId)
+		assert.Equal(t, tdUUID1.UUID, apiRelation.TrustDomainAId)
+		assert.Equal(t, tdUUID2.UUID, apiRelation.TrustDomainBId)
 	})
 
 	t.Run("Should not allow relationships request between inexistent trust domains", func(t *testing.T) {
-		td1ID := NewNullableID()
-
-		// Creating a fake UUID that does not match with any trust domain ID in the database
-		td2ID := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
-			{ID: td1ID, Name: NewTrustDomain(t, td1)},
+			{ID: tdUUID1, Name: NewTrustDomain(t, td1)},
 		}
 
 		reqBody := &admin.PutRelationshipJSONRequestBody{
-			TrustDomainAId: td1ID.UUID,
-			TrustDomainBId: td2ID.UUID,
+			TrustDomainAId: tdUUID1.UUID,
+			TrustDomainBId: tdUUID2.UUID,
 		}
 
 		// Setup
@@ -294,7 +276,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHTTPErr.Code)
 
-		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", td2ID.UUID)
+		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", tdUUID2.UUID)
 		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 
@@ -305,19 +287,17 @@ func TestUDSGetRelationshipsByID(t *testing.T) {
 	relationshipsPath := "/relationships/%v"
 
 	t.Run("Successfully get relationship information", func(t *testing.T) {
-		td1ID := NewNullableID()
-		td2ID := NewNullableID()
 
 		fakeTrustDomains := []*entity.TrustDomain{
-			{ID: td1ID, Name: NewTrustDomain(t, td1)},
-			{ID: td2ID, Name: NewTrustDomain(t, td2)},
+			{ID: tdUUID1, Name: NewTrustDomain(t, td1)},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
 		}
 
 		r1ID := NewNullableID()
 		fakeRelationship := &entity.Relationship{
 			ID:             r1ID,
-			TrustDomainAID: td1ID.UUID,
-			TrustDomainBID: td2ID.UUID,
+			TrustDomainAID: tdUUID1.UUID,
+			TrustDomainBID: tdUUID2.UUID,
 		}
 
 		completePath := fmt.Sprintf(relationshipsPath, r1ID.UUID)
@@ -337,14 +317,11 @@ func TestUDSGetRelationshipsByID(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.NotNil(t, apiRelation)
-		assert.Equal(t, td1ID.UUID, apiRelation.TrustDomainAId)
-		assert.Equal(t, td2ID.UUID, apiRelation.TrustDomainBId)
+		assert.Equal(t, tdUUID1.UUID, apiRelation.TrustDomainAId)
+		assert.Equal(t, tdUUID2.UUID, apiRelation.TrustDomainBId)
 	})
 
 	t.Run("Should raise a not found request when try to get information about a relationship that doesn't exists", func(t *testing.T) {
-
-		// A random UUID that can represents a real ID
-		r1ID := NewNullableID()
 		completePath := fmt.Sprintf(relationshipsPath, r1ID.UUID)
 
 		// Setup
@@ -412,10 +389,9 @@ func TestUDSGetTrustDomainByName(t *testing.T) {
 	trustDomainPath := "/trust-domain/%v"
 
 	t.Run("Successfully retrieve trust domain information", func(t *testing.T) {
-		td1ID := NewNullableID()
-		fakeTrustDomains := entity.TrustDomain{ID: td1ID, Name: NewTrustDomain(t, td1)}
+		fakeTrustDomains := entity.TrustDomain{ID: tdUUID1, Name: NewTrustDomain(t, td1)}
 
-		completePath := fmt.Sprintf(trustDomainPath, td1ID.UUID)
+		completePath := fmt.Sprintf(trustDomainPath, tdUUID1.UUID)
 
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
@@ -430,12 +406,11 @@ func TestUDSGetTrustDomainByName(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, td1, apiTrustDomain.Name)
-		assert.Equal(t, td1ID.UUID, apiTrustDomain.Id)
+		assert.Equal(t, tdUUID1.UUID, apiTrustDomain.Id)
 	})
 
 	t.Run("Raise a not found when trying to retrieve a trust domain that does not exists", func(t *testing.T) {
-		td1ID := NewNullableID()
-		completePath := fmt.Sprintf(trustDomainPath, td1ID.UUID)
+		completePath := fmt.Sprintf(trustDomainPath, tdUUID1.UUID)
 
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, nil)
@@ -453,14 +428,13 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 	trustDomainPath := "/trust-domain/%v"
 
 	t.Run("Successfully updated a trust domain", func(t *testing.T) {
-		td1ID := NewNullableID()
-		fakeTrustDomains := entity.TrustDomain{ID: td1ID, Name: NewTrustDomain(t, td1)}
+		fakeTrustDomains := entity.TrustDomain{ID: tdUUID1, Name: NewTrustDomain(t, td1)}
 
-		completePath := fmt.Sprintf(trustDomainPath, td1ID.UUID)
+		completePath := fmt.Sprintf(trustDomainPath, tdUUID1.UUID)
 
 		description := "I am being updated"
 		reqBody := &admin.PutTrustDomainByNameJSONRequestBody{
-			Id:          td1ID.UUID,
+			Id:          tdUUID1.UUID,
 			Name:        td1,
 			Description: &description,
 		}
@@ -469,7 +443,7 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1ID.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, tdUUID1.UUID)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
@@ -478,19 +452,17 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, td1, apiTrustDomain.Name)
-		assert.Equal(t, td1ID.UUID, apiTrustDomain.Id)
+		assert.Equal(t, tdUUID1.UUID, apiTrustDomain.Id)
 		assert.Equal(t, description, *apiTrustDomain.Description)
 	})
 
 	t.Run("Raise a not found when trying to updated a trust domain that does not exists", func(t *testing.T) {
-		// Fake ID
-		td1ID := NewNullableID()
-		completePath := fmt.Sprintf(trustDomainPath, td1ID.UUID)
+		completePath := fmt.Sprintf(trustDomainPath, tdUUID1.UUID)
 
 		// Fake Request body
 		description := "I am being updated"
 		reqBody := &admin.PutTrustDomainByNameJSONRequestBody{
-			Id:          td1ID.UUID,
+			Id:          tdUUID1.UUID,
 			Name:        td1,
 			Description: &description,
 		}
@@ -498,13 +470,13 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 
-		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1ID.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, tdUUID1.UUID)
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", td1ID.UUID)
+		expectedErrorMsg := fmt.Sprintf("trust domain %v does not exists", tdUUID1.UUID)
 		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 }
