@@ -150,7 +150,7 @@ func TestTCPGetRelationships(t *testing.T) {
 	})
 
 	t.Run("Fails with invalid consent status", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, nil)
 		echoCtx := setup.EchoCtx
 		setup.EchoCtx.Set(authTrustDomainKey, tdA)
 
@@ -168,7 +168,7 @@ func TestTCPGetRelationships(t *testing.T) {
 	})
 
 	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, nil)
 		echoCtx := setup.EchoCtx
 
 		tdName := tdA.Name.String()
@@ -183,7 +183,7 @@ func TestTCPGetRelationships(t *testing.T) {
 	})
 
 	t.Run("Fails if authenticated trust domain does not match trust domain parameter", func(t *testing.T) {
-		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+		setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, nil)
 		echoCtx := setup.EchoCtx
 		setup.EchoCtx.Set(authTrustDomainKey, tdA)
 
@@ -200,7 +200,7 @@ func TestTCPGetRelationships(t *testing.T) {
 }
 
 func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entity.TrustDomain), status api.ConsentStatus, trustDomain *entity.TrustDomain, expectedRelationshipCount int) {
-	setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, "")
+	setup := NewHarvesterTestSetup(t, http.MethodGet, relationshipsPath, nil)
 	echoCtx := setup.EchoCtx
 
 	setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
@@ -268,10 +268,7 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 		ConsentStatus: status,
 	}
 
-	body, err := json.Marshal(requestBody)
-	require.NoError(t, err)
-
-	setup := NewHarvesterTestSetup(t, http.MethodPatch, relationshipsPath+"/"+relationship.ID.UUID.String(), string(body))
+	setup := NewHarvesterTestSetup(t, http.MethodPatch, relationshipsPath+"/"+relationship.ID.UUID.String(), &requestBody)
 	echoCtx := setup.EchoCtx
 
 	setup.Datastore.WithTrustDomains(tdA, tdB, tdC)
@@ -279,7 +276,7 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 
 	f(setup, trustDomain)
 
-	err = setup.Handler.PatchRelationship(echoCtx, relationship.ID.UUID)
+	err := setup.Handler.PatchRelationship(echoCtx, relationship.ID.UUID)
 	assert.NoError(t, err)
 
 	recorder := setup.Recorder
@@ -304,7 +301,7 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 
 func TestTCPOnboard(t *testing.T) {
 	t.Run("Successfully onboard a new agent", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -325,7 +322,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
 	t.Run("Onboard without join token fails", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -341,7 +338,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Contains(t, httpErr.Message, "join token is required")
 	})
 	t.Run("Onboard with join token that does not exist fails", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -358,7 +355,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Contains(t, httpErr.Message, "token not found")
 	})
 	t.Run("Onboard with join token that was used", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -382,7 +379,7 @@ func TestTCPOnboard(t *testing.T) {
 
 func TestTCPGetNewJWTToken(t *testing.T) {
 	t.Run("Successfully get a new JWT token", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
@@ -406,7 +403,7 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
 	t.Run("Fails if no JWT token was sent", func(t *testing.T) {
-		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, "")
+		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
 		err := harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
@@ -525,10 +522,7 @@ func TestTCPBundleSync(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			body, err := json.Marshal(tc.bundleState)
-			require.NoError(t, err)
-
-			setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", string(body))
+			setup := NewHarvesterTestSetup(t, http.MethodPost, "/trust-domain/:trustDomainName/bundles/sync", &tc.bundleState)
 			echoCtx := setup.EchoCtx
 			setup.EchoCtx.Set(authTrustDomainKey, tdA)
 
@@ -537,7 +531,7 @@ func TestTCPBundleSync(t *testing.T) {
 			setup.Datastore.WithBundles(bundleA, bundleB, bundleC)
 
 			// test bundle sync
-			err = setup.Handler.BundleSync(echoCtx, tdA.Name.String())
+			err := setup.Handler.BundleSync(echoCtx, tdA.Name.String())
 			assert.NoError(t, err)
 
 			recorder := setup.Recorder
@@ -581,13 +575,10 @@ func TestBundlePut(t *testing.T) {
 			TrustDomain:        td1,
 		}
 
-		body, err := json.Marshal(bundlePut)
-		require.NoError(t, err)
-
-		setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+		setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", &bundlePut)
 		setup.EchoCtx.Set(authTrustDomainKey, "")
 
-		err = setup.Handler.BundlePut(setup.EchoCtx, td1)
+		err := setup.Handler.BundlePut(setup.EchoCtx, td1)
 		require.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
 		assert.Contains(t, err.(*echo.HTTPError).Message, "no authenticated trust domain")
@@ -606,7 +597,7 @@ func TestBundlePut(t *testing.T) {
 	})
 
 	t.Run("Fail post bundle bundle trust domain does not match authenticated trust domain", func(t *testing.T) {
-		testInvalidBundleRequest(t, "TrustDomain", "other-trust-domain", http.StatusUnauthorized, "trust domain in request bundle \"other-trust-domain\" does not match authenticated trust domain: \"test.com\"")
+		testInvalidBundleRequest(t, "TrustDomain", "other-trust-domain", http.StatusUnauthorized, "trust domain in request bundle \"other-trust-domain\" does not match authenticated trust domain: \"test1.com\"")
 	})
 }
 
@@ -618,15 +609,12 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 		TrustDomain:        td1,
 	}
 
-	body, err := json.Marshal(&bundlePut)
-	require.NoError(t, err)
-
-	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", &bundlePut)
 	echoCtx := setup.EchoCtx
 
 	td := setupFunc(setup)
 
-	err = setup.Handler.BundlePut(echoCtx, td1)
+	err := setup.Handler.BundlePut(echoCtx, td1)
 	require.NoError(t, err)
 
 	recorder := setup.Recorder
@@ -650,16 +638,13 @@ func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interfa
 	}
 	reflect.ValueOf(&bundlePut).Elem().FieldByName(fieldName).Set(reflect.ValueOf(fieldValue))
 
-	body, err := json.Marshal(bundlePut)
-	require.NoError(t, err)
-
-	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
+	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", &bundlePut)
 	echoCtx := setup.EchoCtx
 
 	td := SetupTrustDomain(t, setup.Handler.Datastore)
 	echoCtx.Set(authTrustDomainKey, td)
 
-	err = setup.Handler.BundlePut(echoCtx, td1)
+	err := setup.Handler.BundlePut(echoCtx, td1)
 	require.Error(t, err)
 	assert.Equal(t, expectedStatusCode, err.(*echo.HTTPError).Code)
 	assert.Contains(t, err.(*echo.HTTPError).Message, expectedErrorMessage)
