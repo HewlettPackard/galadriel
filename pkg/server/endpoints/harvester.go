@@ -165,7 +165,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 	if err != nil {
 		msg := "error looking up token"
 		err := fmt.Errorf("%s: %w", msg, err)
-		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
 	if token == nil {
