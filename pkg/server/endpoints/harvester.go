@@ -88,7 +88,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	return chttp.WriteResponse(echoCtx, apiRelationships)
 }
 
-// PatchRelationship accept/denied relationships requests - (PATCH /relationships/{relationshipID})
+// PatchRelationship accept/denies relationships requests - (PATCH /relationships/{relationshipID})
 func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
@@ -176,7 +176,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 	if token.ExpiresAt.Before(time.Now()) {
 		msg := "token expired"
 		err := fmt.Errorf("%s: trust domain ID: %s", msg, token.TrustDomainID)
-		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, msg, http.StatusUnauthorized)
 	}
 
 	if token.Used {
@@ -189,7 +189,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 	if err != nil {
 		msg := "error looking up trust domain"
 		err := fmt.Errorf("%s: %w", msg, err)
-		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
 	// mark token as used
