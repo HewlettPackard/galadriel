@@ -85,7 +85,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		apiRelationships = append(apiRelationships, api.RelationshipFromEntity(r))
 	}
 
-	return chttp.WriteResponse(echoCtx, apiRelationships)
+	return chttp.WriteResponse(echoCtx, http.StatusOK, apiRelationships)
 }
 
 // PatchRelationship accept/denies relationships requests - (PATCH /relationships/{relationshipID})
@@ -145,7 +145,7 @@ func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relations
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodylessResponse(echoCtx); err != nil {
+	if err = chttp.BodilessResponse(echoCtx, http.StatusOK); err != nil {
 		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -215,7 +215,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, params harvester.On
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return chttp.WriteResponse(echoCtx, jwtToken)
+	return chttp.WriteResponse(echoCtx, http.StatusOK, jwtToken)
 }
 
 // GetNewJWTToken renews a JWT access token - (GET /trust-domain/jwt)
@@ -255,7 +255,7 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return chttp.WriteResponse(echoCtx, newToken)
+	return chttp.WriteResponse(echoCtx, http.StatusOK, newToken)
 }
 
 // BundleSync synchronize the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
@@ -294,7 +294,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	return chttp.WriteResponse(echoCtx, resp)
+	return chttp.WriteResponse(echoCtx, http.StatusOK, resp)
 }
 
 // BundlePut uploads a new trust bundle to the server  - (PUT /trust-domain/{trustDomainName}/bundles)
@@ -351,7 +351,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodylessResponse(echoCtx); err != nil {
+	if err = chttp.BodilessResponse(echoCtx, http.StatusOK); err != nil {
 		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 

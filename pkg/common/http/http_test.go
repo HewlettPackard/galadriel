@@ -34,21 +34,22 @@ func Setup() *HTTPSetup {
 func TestWriteResponse(t *testing.T) {
 	t.Run("Error when nil body is passed", func(t *testing.T) {
 		setup := Setup()
-		err := WriteResponse(setup.EchoContext, nil)
+		err := WriteResponse(setup.EchoContext, http.StatusOK, nil)
 		assert.EqualError(t, err, "body is required")
 		assert.Empty(t, setup.Recorder.Body)
 	})
 
 	t.Run("No error when an empty body is passed", func(t *testing.T) {
 		setup := Setup()
-		err := WriteResponse(setup.EchoContext, TestBody{})
+		err := WriteResponse(setup.EchoContext, http.StatusOK, TestBody{})
 		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 	})
 
 	t.Run("Ensuring that the body is being full filled with the entity", func(t *testing.T) {
 		expectedResponseBody := TestBody{Name: "teste"}
 		setup := Setup()
-		err := WriteResponse(setup.EchoContext, expectedResponseBody)
+		err := WriteResponse(setup.EchoContext, http.StatusOK, expectedResponseBody)
 		assert.NoError(t, err)
 
 		responseBody := TestBody{}
@@ -60,10 +61,10 @@ func TestWriteResponse(t *testing.T) {
 	})
 }
 
-func TestBodylessResponse(t *testing.T) {
+func TestBodilessResponse(t *testing.T) {
 	t.Run("Ensuring that the body is empty", func(t *testing.T) {
 		setup := Setup()
-		err := BodylessResponse(setup.EchoContext)
+		err := BodilessResponse(setup.EchoContext, http.StatusOK)
 		assert.NoError(t, err)
 
 		assert.NoError(t, err)
@@ -75,7 +76,7 @@ func TestBodylessResponse(t *testing.T) {
 func TestFromBody(t *testing.T) {
 	t.Run("Ensuring that the body is empty", func(t *testing.T) {
 		setup := Setup()
-		err := BodylessResponse(setup.EchoContext)
+		err := BodilessResponse(setup.EchoContext, http.StatusOK)
 		assert.NoError(t, err)
 
 		assert.NoError(t, err)

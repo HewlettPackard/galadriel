@@ -23,6 +23,7 @@ tags:
 paths:
   /trust-domain/{trustDomainName}:
     get: 
+      operationId: GetTrustDomainByName
       tags:
         - Trust Domain
       summary: Get a specific trust domain
@@ -43,6 +44,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
     put:
+      operationId: PutTrustDomainByName
       tags:
         - Trust Domain
       summary: Update a specific trust domain
@@ -70,6 +72,7 @@ paths:
 
   /trust-domain:
     put:
+      operationId: PutTrustDomain
       tags:
         - Trust Domain
       summary: Add a specific trust domain
@@ -90,6 +93,7 @@ paths:
 
   /relationships:
     get:
+      operationId: GetRelationships
       tags:
         - Relationships
       summary: Get relationships
@@ -97,8 +101,7 @@ paths:
         - name: status
           in: query
           schema:
-            type: string
-            enum: [approved, denied, pending]
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
           description: relationship status from a Trust Domain perspective,
         - name: trustDomainName
           in: query
@@ -117,6 +120,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
     put:
+      operationId: PutRelationship
       tags:
         - Relationships
       summary: Create a relationship request between two Trust Domains
@@ -138,6 +142,7 @@ paths:
 
   /relationships/{relationshipID}:
     get:
+      operationId: GetRelationshipByID
       tags:
         - Relationships
       summary: Get a specific relationship
