@@ -22,13 +22,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Defines values for GetRelationshipsParamsStatus.
-const (
-	Approved GetRelationshipsParamsStatus = "approved"
-	Denied   GetRelationshipsParamsStatus = "denied"
-	Pending  GetRelationshipsParamsStatus = "pending"
-)
-
 // JoinTokenResult defines model for JoinTokenResult.
 type JoinTokenResult struct {
 	Token externalRef0.JoinToken `json:"token"`
@@ -52,23 +45,20 @@ type Default = externalRef0.ApiError
 // GetRelationshipsParams defines parameters for GetRelationships.
 type GetRelationshipsParams struct {
 	// Status relationship status from a Trust Domain perspective,
-	Status *GetRelationshipsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	Status *externalRef0.ConsentStatus `form:"status,omitempty" json:"status,omitempty"`
 
 	// TrustDomainName TrustDomain
 	TrustDomainName *externalRef0.TrustDomainName `form:"trustDomainName,omitempty" json:"trustDomainName,omitempty"`
 }
 
-// GetRelationshipsParamsStatus defines parameters for GetRelationships.
-type GetRelationshipsParamsStatus string
-
-// PutRelationshipsJSONRequestBody defines body for PutRelationships for application/json ContentType.
-type PutRelationshipsJSONRequestBody = RelationshipRequest
+// PutRelationshipJSONRequestBody defines body for PutRelationship for application/json ContentType.
+type PutRelationshipJSONRequestBody = RelationshipRequest
 
 // PutTrustDomainJSONRequestBody defines body for PutTrustDomain for application/json ContentType.
 type PutTrustDomainJSONRequestBody = TrustDomainPut
 
-// PutTrustDomainTrustDomainNameJSONRequestBody defines body for PutTrustDomainTrustDomainName for application/json ContentType.
-type PutTrustDomainTrustDomainNameJSONRequestBody = externalRef0.TrustDomain
+// PutTrustDomainByNameJSONRequestBody defines body for PutTrustDomainByName for application/json ContentType.
+type PutTrustDomainByNameJSONRequestBody = externalRef0.TrustDomain
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -146,26 +136,26 @@ type ClientInterface interface {
 	// GetRelationships request
 	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PutRelationships request with any body
-	PutRelationshipsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutRelationship request with any body
+	PutRelationshipWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PutRelationships(ctx context.Context, body PutRelationshipsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutRelationship(ctx context.Context, body PutRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetRelationshipsRelationshipID request
-	GetRelationshipsRelationshipID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetRelationshipByID request
+	GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetTrustDomainTrustDomainName request
-	GetTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetTrustDomainByName request
+	GetTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PutTrustDomainTrustDomainName request with any body
-	PutTrustDomainTrustDomainNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutTrustDomainByName request with any body
+	PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PutTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetJoinToken request
 	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -183,8 +173,8 @@ func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsP
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutRelationshipsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutRelationshipsRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutRelationshipWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutRelationshipRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +185,8 @@ func (c *Client) PutRelationshipsWithBody(ctx context.Context, contentType strin
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutRelationships(ctx context.Context, body PutRelationshipsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutRelationshipsRequest(c.Server, body)
+func (c *Client) PutRelationship(ctx context.Context, body PutRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutRelationshipRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -207,8 +197,8 @@ func (c *Client) PutRelationships(ctx context.Context, body PutRelationshipsJSON
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRelationshipsRelationshipID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRelationshipsRelationshipIDRequest(c.Server, relationshipID)
+func (c *Client) GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRelationshipByIDRequest(c.Server, relationshipID)
 	if err != nil {
 		return nil, err
 	}
@@ -243,8 +233,8 @@ func (c *Client) PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTrustDomainTrustDomainNameRequest(c.Server, trustDomainName)
+func (c *Client) GetTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTrustDomainByNameRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
@@ -255,8 +245,8 @@ func (c *Client) GetTrustDomainTrustDomainName(ctx context.Context, trustDomainN
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutTrustDomainTrustDomainNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutTrustDomainTrustDomainNameRequestWithBody(c.Server, trustDomainName, contentType, body)
+func (c *Client) PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutTrustDomainByNameRequestWithBody(c.Server, trustDomainName, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -267,8 +257,8 @@ func (c *Client) PutTrustDomainTrustDomainNameWithBody(ctx context.Context, trus
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutTrustDomainTrustDomainName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutTrustDomainTrustDomainNameRequest(c.Server, trustDomainName, body)
+func (c *Client) PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutTrustDomainByNameRequest(c.Server, trustDomainName, body)
 	if err != nil {
 		return nil, err
 	}
@@ -354,19 +344,19 @@ func NewGetRelationshipsRequest(server string, params *GetRelationshipsParams) (
 	return req, nil
 }
 
-// NewPutRelationshipsRequest calls the generic PutRelationships builder with application/json body
-func NewPutRelationshipsRequest(server string, body PutRelationshipsJSONRequestBody) (*http.Request, error) {
+// NewPutRelationshipRequest calls the generic PutRelationship builder with application/json body
+func NewPutRelationshipRequest(server string, body PutRelationshipJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPutRelationshipsRequestWithBody(server, "application/json", bodyReader)
+	return NewPutRelationshipRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewPutRelationshipsRequestWithBody generates requests for PutRelationships with any type of body
-func NewPutRelationshipsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutRelationshipRequestWithBody generates requests for PutRelationship with any type of body
+func NewPutRelationshipRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -394,8 +384,8 @@ func NewPutRelationshipsRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
-// NewGetRelationshipsRelationshipIDRequest generates requests for GetRelationshipsRelationshipID
-func NewGetRelationshipsRelationshipIDRequest(server string, relationshipID externalRef0.UUID) (*http.Request, error) {
+// NewGetRelationshipByIDRequest generates requests for GetRelationshipByID
+func NewGetRelationshipByIDRequest(server string, relationshipID externalRef0.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -468,8 +458,8 @@ func NewPutTrustDomainRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewGetTrustDomainTrustDomainNameRequest generates requests for GetTrustDomainTrustDomainName
-func NewGetTrustDomainTrustDomainNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+// NewGetTrustDomainByNameRequest generates requests for GetTrustDomainByName
+func NewGetTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -502,19 +492,19 @@ func NewGetTrustDomainTrustDomainNameRequest(server string, trustDomainName exte
 	return req, nil
 }
 
-// NewPutTrustDomainTrustDomainNameRequest calls the generic PutTrustDomainTrustDomainName builder with application/json body
-func NewPutTrustDomainTrustDomainNameRequest(server string, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody) (*http.Request, error) {
+// NewPutTrustDomainByNameRequest calls the generic PutTrustDomainByName builder with application/json body
+func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPutTrustDomainTrustDomainNameRequestWithBody(server, trustDomainName, "application/json", bodyReader)
+	return NewPutTrustDomainByNameRequestWithBody(server, trustDomainName, "application/json", bodyReader)
 }
 
-// NewPutTrustDomainTrustDomainNameRequestWithBody generates requests for PutTrustDomainTrustDomainName with any type of body
-func NewPutTrustDomainTrustDomainNameRequestWithBody(server string, trustDomainName externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
+// NewPutTrustDomainByNameRequestWithBody generates requests for PutTrustDomainByName with any type of body
+func NewPutTrustDomainByNameRequestWithBody(server string, trustDomainName externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -629,26 +619,26 @@ type ClientWithResponsesInterface interface {
 	// GetRelationships request
 	GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
 
-	// PutRelationships request with any body
-	PutRelationshipsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutRelationshipsResponse, error)
+	// PutRelationship request with any body
+	PutRelationshipWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutRelationshipResponse, error)
 
-	PutRelationshipsWithResponse(ctx context.Context, body PutRelationshipsJSONRequestBody, reqEditors ...RequestEditorFn) (*PutRelationshipsResponse, error)
+	PutRelationshipWithResponse(ctx context.Context, body PutRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PutRelationshipResponse, error)
 
-	// GetRelationshipsRelationshipID request
-	GetRelationshipsRelationshipIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipsRelationshipIDResponse, error)
+	// GetRelationshipByID request
+	GetRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipByIDResponse, error)
 
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
 
 	PutTrustDomainWithResponse(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
 
-	// GetTrustDomainTrustDomainName request
-	GetTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainTrustDomainNameResponse, error)
+	// GetTrustDomainByName request
+	GetTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainByNameResponse, error)
 
-	// PutTrustDomainTrustDomainName request with any body
-	PutTrustDomainTrustDomainNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error)
+	// PutTrustDomainByName request with any body
+	PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
 
-	PutTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error)
+	PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
 
 	// GetJoinToken request
 	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
@@ -677,7 +667,7 @@ func (r GetRelationshipsResponse) StatusCode() int {
 	return 0
 }
 
-type PutRelationshipsResponse struct {
+type PutRelationshipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Relationship
@@ -685,7 +675,7 @@ type PutRelationshipsResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PutRelationshipsResponse) Status() string {
+func (r PutRelationshipResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -693,14 +683,14 @@ func (r PutRelationshipsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PutRelationshipsResponse) StatusCode() int {
+func (r PutRelationshipResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetRelationshipsRelationshipIDResponse struct {
+type GetRelationshipByIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Relationship
@@ -708,7 +698,7 @@ type GetRelationshipsRelationshipIDResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetRelationshipsRelationshipIDResponse) Status() string {
+func (r GetRelationshipByIDResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -716,7 +706,7 @@ func (r GetRelationshipsRelationshipIDResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetRelationshipsRelationshipIDResponse) StatusCode() int {
+func (r GetRelationshipByIDResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -746,7 +736,7 @@ func (r PutTrustDomainResponse) StatusCode() int {
 	return 0
 }
 
-type GetTrustDomainTrustDomainNameResponse struct {
+type GetTrustDomainByNameResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.TrustDomain
@@ -754,7 +744,7 @@ type GetTrustDomainTrustDomainNameResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetTrustDomainTrustDomainNameResponse) Status() string {
+func (r GetTrustDomainByNameResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -762,14 +752,14 @@ func (r GetTrustDomainTrustDomainNameResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetTrustDomainTrustDomainNameResponse) StatusCode() int {
+func (r GetTrustDomainByNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PutTrustDomainTrustDomainNameResponse struct {
+type PutTrustDomainByNameResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.TrustDomain
@@ -777,7 +767,7 @@ type PutTrustDomainTrustDomainNameResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PutTrustDomainTrustDomainNameResponse) Status() string {
+func (r PutTrustDomainByNameResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -785,7 +775,7 @@ func (r PutTrustDomainTrustDomainNameResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PutTrustDomainTrustDomainNameResponse) StatusCode() int {
+func (r PutTrustDomainByNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -824,30 +814,30 @@ func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, 
 	return ParseGetRelationshipsResponse(rsp)
 }
 
-// PutRelationshipsWithBodyWithResponse request with arbitrary body returning *PutRelationshipsResponse
-func (c *ClientWithResponses) PutRelationshipsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutRelationshipsResponse, error) {
-	rsp, err := c.PutRelationshipsWithBody(ctx, contentType, body, reqEditors...)
+// PutRelationshipWithBodyWithResponse request with arbitrary body returning *PutRelationshipResponse
+func (c *ClientWithResponses) PutRelationshipWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutRelationshipResponse, error) {
+	rsp, err := c.PutRelationshipWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutRelationshipsResponse(rsp)
+	return ParsePutRelationshipResponse(rsp)
 }
 
-func (c *ClientWithResponses) PutRelationshipsWithResponse(ctx context.Context, body PutRelationshipsJSONRequestBody, reqEditors ...RequestEditorFn) (*PutRelationshipsResponse, error) {
-	rsp, err := c.PutRelationships(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PutRelationshipWithResponse(ctx context.Context, body PutRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PutRelationshipResponse, error) {
+	rsp, err := c.PutRelationship(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutRelationshipsResponse(rsp)
+	return ParsePutRelationshipResponse(rsp)
 }
 
-// GetRelationshipsRelationshipIDWithResponse request returning *GetRelationshipsRelationshipIDResponse
-func (c *ClientWithResponses) GetRelationshipsRelationshipIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipsRelationshipIDResponse, error) {
-	rsp, err := c.GetRelationshipsRelationshipID(ctx, relationshipID, reqEditors...)
+// GetRelationshipByIDWithResponse request returning *GetRelationshipByIDResponse
+func (c *ClientWithResponses) GetRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipByIDResponse, error) {
+	rsp, err := c.GetRelationshipByID(ctx, relationshipID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetRelationshipsRelationshipIDResponse(rsp)
+	return ParseGetRelationshipByIDResponse(rsp)
 }
 
 // PutTrustDomainWithBodyWithResponse request with arbitrary body returning *PutTrustDomainResponse
@@ -867,30 +857,30 @@ func (c *ClientWithResponses) PutTrustDomainWithResponse(ctx context.Context, bo
 	return ParsePutTrustDomainResponse(rsp)
 }
 
-// GetTrustDomainTrustDomainNameWithResponse request returning *GetTrustDomainTrustDomainNameResponse
-func (c *ClientWithResponses) GetTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainTrustDomainNameResponse, error) {
-	rsp, err := c.GetTrustDomainTrustDomainName(ctx, trustDomainName, reqEditors...)
+// GetTrustDomainByNameWithResponse request returning *GetTrustDomainByNameResponse
+func (c *ClientWithResponses) GetTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainByNameResponse, error) {
+	rsp, err := c.GetTrustDomainByName(ctx, trustDomainName, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetTrustDomainTrustDomainNameResponse(rsp)
+	return ParseGetTrustDomainByNameResponse(rsp)
 }
 
-// PutTrustDomainTrustDomainNameWithBodyWithResponse request with arbitrary body returning *PutTrustDomainTrustDomainNameResponse
-func (c *ClientWithResponses) PutTrustDomainTrustDomainNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error) {
-	rsp, err := c.PutTrustDomainTrustDomainNameWithBody(ctx, trustDomainName, contentType, body, reqEditors...)
+// PutTrustDomainByNameWithBodyWithResponse request with arbitrary body returning *PutTrustDomainByNameResponse
+func (c *ClientWithResponses) PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
+	rsp, err := c.PutTrustDomainByNameWithBody(ctx, trustDomainName, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutTrustDomainTrustDomainNameResponse(rsp)
+	return ParsePutTrustDomainByNameResponse(rsp)
 }
 
-func (c *ClientWithResponses) PutTrustDomainTrustDomainNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainTrustDomainNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainTrustDomainNameResponse, error) {
-	rsp, err := c.PutTrustDomainTrustDomainName(ctx, trustDomainName, body, reqEditors...)
+func (c *ClientWithResponses) PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
+	rsp, err := c.PutTrustDomainByName(ctx, trustDomainName, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePutTrustDomainTrustDomainNameResponse(rsp)
+	return ParsePutTrustDomainByNameResponse(rsp)
 }
 
 // GetJoinTokenWithResponse request returning *GetJoinTokenResponse
@@ -935,15 +925,15 @@ func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsRespons
 	return response, nil
 }
 
-// ParsePutRelationshipsResponse parses an HTTP response from a PutRelationshipsWithResponse call
-func ParsePutRelationshipsResponse(rsp *http.Response) (*PutRelationshipsResponse, error) {
+// ParsePutRelationshipResponse parses an HTTP response from a PutRelationshipWithResponse call
+func ParsePutRelationshipResponse(rsp *http.Response) (*PutRelationshipResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PutRelationshipsResponse{
+	response := &PutRelationshipResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -968,15 +958,15 @@ func ParsePutRelationshipsResponse(rsp *http.Response) (*PutRelationshipsRespons
 	return response, nil
 }
 
-// ParseGetRelationshipsRelationshipIDResponse parses an HTTP response from a GetRelationshipsRelationshipIDWithResponse call
-func ParseGetRelationshipsRelationshipIDResponse(rsp *http.Response) (*GetRelationshipsRelationshipIDResponse, error) {
+// ParseGetRelationshipByIDResponse parses an HTTP response from a GetRelationshipByIDWithResponse call
+func ParseGetRelationshipByIDResponse(rsp *http.Response) (*GetRelationshipByIDResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetRelationshipsRelationshipIDResponse{
+	response := &GetRelationshipByIDResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1034,15 +1024,15 @@ func ParsePutTrustDomainResponse(rsp *http.Response) (*PutTrustDomainResponse, e
 	return response, nil
 }
 
-// ParseGetTrustDomainTrustDomainNameResponse parses an HTTP response from a GetTrustDomainTrustDomainNameWithResponse call
-func ParseGetTrustDomainTrustDomainNameResponse(rsp *http.Response) (*GetTrustDomainTrustDomainNameResponse, error) {
+// ParseGetTrustDomainByNameResponse parses an HTTP response from a GetTrustDomainByNameWithResponse call
+func ParseGetTrustDomainByNameResponse(rsp *http.Response) (*GetTrustDomainByNameResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetTrustDomainTrustDomainNameResponse{
+	response := &GetTrustDomainByNameResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1067,15 +1057,15 @@ func ParseGetTrustDomainTrustDomainNameResponse(rsp *http.Response) (*GetTrustDo
 	return response, nil
 }
 
-// ParsePutTrustDomainTrustDomainNameResponse parses an HTTP response from a PutTrustDomainTrustDomainNameWithResponse call
-func ParsePutTrustDomainTrustDomainNameResponse(rsp *http.Response) (*PutTrustDomainTrustDomainNameResponse, error) {
+// ParsePutTrustDomainByNameResponse parses an HTTP response from a PutTrustDomainByNameWithResponse call
+func ParsePutTrustDomainByNameResponse(rsp *http.Response) (*PutTrustDomainByNameResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PutTrustDomainTrustDomainNameResponse{
+	response := &PutTrustDomainByNameResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1140,19 +1130,19 @@ type ServerInterface interface {
 	GetRelationships(ctx echo.Context, params GetRelationshipsParams) error
 	// Create a relationship request between two Trust Domains
 	// (PUT /relationships)
-	PutRelationships(ctx echo.Context) error
+	PutRelationship(ctx echo.Context) error
 	// Get a specific relationship
 	// (GET /relationships/{relationshipID})
-	GetRelationshipsRelationshipID(ctx echo.Context, relationshipID externalRef0.UUID) error
+	GetRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
 	// Add a specific trust domain
 	// (PUT /trust-domain)
 	PutTrustDomain(ctx echo.Context) error
 	// Get a specific trust domain
 	// (GET /trust-domain/{trustDomainName})
-	GetTrustDomainTrustDomainName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Update a specific trust domain
 	// (PUT /trust-domain/{trustDomainName})
-	PutTrustDomainTrustDomainName(ctx echo.Context, trustDomainName externalRef0.UUID) error
+	PutTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.UUID) error
 	// Get a join token for a specific Trust Domain
 	// (GET /trust-domain/{trustDomainName}/join-token)
 	GetJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
@@ -1188,17 +1178,17 @@ func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
 	return err
 }
 
-// PutRelationships converts echo context to params.
-func (w *ServerInterfaceWrapper) PutRelationships(ctx echo.Context) error {
+// PutRelationship converts echo context to params.
+func (w *ServerInterfaceWrapper) PutRelationship(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutRelationships(ctx)
+	err = w.Handler.PutRelationship(ctx)
 	return err
 }
 
-// GetRelationshipsRelationshipID converts echo context to params.
-func (w *ServerInterfaceWrapper) GetRelationshipsRelationshipID(ctx echo.Context) error {
+// GetRelationshipByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRelationshipByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID externalRef0.UUID
@@ -1209,7 +1199,7 @@ func (w *ServerInterfaceWrapper) GetRelationshipsRelationshipID(ctx echo.Context
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetRelationshipsRelationshipID(ctx, relationshipID)
+	err = w.Handler.GetRelationshipByID(ctx, relationshipID)
 	return err
 }
 
@@ -1222,8 +1212,8 @@ func (w *ServerInterfaceWrapper) PutTrustDomain(ctx echo.Context) error {
 	return err
 }
 
-// GetTrustDomainTrustDomainName converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTrustDomainTrustDomainName(ctx echo.Context) error {
+// GetTrustDomainByName converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTrustDomainByName(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "trustDomainName" -------------
 	var trustDomainName externalRef0.TrustDomainName
@@ -1234,12 +1224,12 @@ func (w *ServerInterfaceWrapper) GetTrustDomainTrustDomainName(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetTrustDomainTrustDomainName(ctx, trustDomainName)
+	err = w.Handler.GetTrustDomainByName(ctx, trustDomainName)
 	return err
 }
 
-// PutTrustDomainTrustDomainName converts echo context to params.
-func (w *ServerInterfaceWrapper) PutTrustDomainTrustDomainName(ctx echo.Context) error {
+// PutTrustDomainByName converts echo context to params.
+func (w *ServerInterfaceWrapper) PutTrustDomainByName(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "trustDomainName" -------------
 	var trustDomainName externalRef0.UUID
@@ -1250,7 +1240,7 @@ func (w *ServerInterfaceWrapper) PutTrustDomainTrustDomainName(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutTrustDomainTrustDomainName(ctx, trustDomainName)
+	err = w.Handler.PutTrustDomainByName(ctx, trustDomainName)
 	return err
 }
 
@@ -1299,11 +1289,11 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
-	router.PUT(baseURL+"/relationships", wrapper.PutRelationships)
-	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipsRelationshipID)
+	router.PUT(baseURL+"/relationships", wrapper.PutRelationship)
+	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
-	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainTrustDomainName)
-	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainTrustDomainName)
+	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainByName)
+	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetJoinToken)
 
 }
@@ -1311,31 +1301,31 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"z1iIFG+0v87aQCXY+ST/LwAA///i709UiRwAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

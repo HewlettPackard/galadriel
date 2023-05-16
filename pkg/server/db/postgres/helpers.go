@@ -1,4 +1,4 @@
-package datastore
+package postgres
 
 import (
 	"fmt"
@@ -54,8 +54,8 @@ func (r Relationship) ToEntity() (*entity.Relationship, error) {
 		ID:                  id,
 		TrustDomainAID:      r.TrustDomainAID.Bytes,
 		TrustDomainBID:      r.TrustDomainBID.Bytes,
-		TrustDomainAConsent: r.TrustDomainAConsent,
-		TrustDomainBConsent: r.TrustDomainBConsent,
+		TrustDomainAConsent: entity.ConsentStatus(r.TrustDomainAConsent),
+		TrustDomainBConsent: entity.ConsentStatus(r.TrustDomainBConsent),
 		CreatedAt:           r.CreatedAt,
 		UpdatedAt:           r.UpdatedAt,
 	}, nil

@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"net"
 	"net/http"
 	"strings"
@@ -22,7 +23,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
@@ -43,7 +43,7 @@ type Endpoints struct {
 	// TODO: unexport these fields
 	TCPAddress *net.TCPAddr
 	LocalAddr  net.Addr
-	Datastore  datastore.Datastore
+	Datastore  db.Datastore
 	Logger     logrus.FieldLogger
 
 	x509CA       x509ca.X509CA
@@ -70,7 +70,7 @@ func New(c *Config) (*Endpoints, error) {
 	return &Endpoints{
 		TCPAddress:   c.TCPAddress,
 		LocalAddr:    c.LocalAddress,
-		Datastore:    c.Datastore,
+		Datastore:    c.Catalog.GetDatastore(),
 		Logger:       c.Logger,
 		x509CA:       c.Catalog.GetX509CA(),
 		jwtIssuer:    c.JWTIssuer,

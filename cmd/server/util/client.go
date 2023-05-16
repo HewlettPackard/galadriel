@@ -61,18 +61,17 @@ type serverClient struct {
 }
 
 func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName spiffeid.TrustDomain) (*entity.TrustDomain, error) {
-	trustDomainNameBytes, err := trustDomainName.MarshalText()
+	trustDomainBytes, err := trustDomainName.MarshalText()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal trust domain: %v", err)
 	}
 
-	getTrustDomainByNameURL := fmt.Sprintf(trustDomainByNameURL, trustDomainName)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, getTrustDomainByNameURL, bytes.NewReader(trustDomainNameBytes))
+	req, err := http.NewRequest(http.MethodPut, trustDomainURL, bytes.NewReader(trustDomainBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
 	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
@@ -201,7 +200,7 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 }
 func (c *serverClient) GetRelationships(ctx context.Context, consentStatus string, trustDomain string) (*entity.Relationship, error) {
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, relationshipsURL, bytes.NewReader())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, relationshipsURL, bytes.NewReader([]byte(consentStatus)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}

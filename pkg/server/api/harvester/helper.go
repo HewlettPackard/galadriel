@@ -14,10 +14,9 @@ func (b BundlePut) ToEntity() (*entity.Bundle, error) {
 	}
 
 	return &entity.Bundle{
-		Data:            []byte(b.TrustBundle),
-		Signature:       []byte(b.Signature),
-		TrustDomainName: td,
-		// TODO: do we need to store it in PEM or DER?
+		Data:               []byte(b.TrustBundle),
+		Signature:          []byte(b.Signature),
+		TrustDomainName:    td,
 		SigningCertificate: []byte(b.SigningCertificate),
 	}, nil
 }

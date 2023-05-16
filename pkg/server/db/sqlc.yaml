@@ -1,0 +1,30 @@
+version: "1"
+packages:
+  - name: "postgres"
+    path: "postgres"
+    queries: "postgres/queries"
+    schema: "postgres/migrations"
+    engine: "postgresql"
+    emit_json_tags: false
+    emit_prepared_queries: true
+    emit_interface: true
+    emit_exact_table_names: false
+    output_db_file_name: "db.gen.go"
+    output_models_file_name: "models.gen.go"
+    output_querier_file_name: "querier.gen.go"
+  - name: "sqlite"
+    path: "sqlite"
+    queries: "sqlite/queries"
+    schema: "sqlite/migrations"
+    engine: "sqlite"
+    emit_json_tags: false
+    emit_prepared_queries: true
+    emit_interface: true
+    emit_exact_table_names: false
+    output_db_file_name: "db.gen.go"
+    output_models_file_name: "models.gen.go"
+    output_querier_file_name: "querier.gen.go"
+overrides:
+  - go_type: "github.com/jackc/pgtype.UUID"
+    db_type: "uuid"
+    engine: "postgresql"

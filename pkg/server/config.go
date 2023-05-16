@@ -9,14 +9,11 @@ import (
 
 // Config conveys configurations for the Galadriel Server
 type Config struct {
-	// Address of Galadriel Server
+	// TCPAddress represents the TCP address of the Galadriel server.
 	TCPAddress *net.TCPAddr
 
-	// Address of Galadriel Server to be reached locally
+	// LocalAddress represents the Unix Domain Socket (UDS) address of the Server.
 	LocalAddress net.Addr
-
-	// Directory to store runtime data
-	DataDir string
 
 	// DB Connection string
 	DBConnString string
