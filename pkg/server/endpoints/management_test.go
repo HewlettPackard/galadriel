@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -92,111 +93,33 @@ func (setup *ManagementTestSetup) Refresh() {
 	setup.Recorder = rec
 }
 
-func TestUDSGetRelationships(t *testing.T) {
-	relationshipsPath := "/relationships"
+func TestGetRelationships(t *testing.T) {
+	tdName := td1
+	statusAccepted := api.Accepted
+	statusPending := api.Pending
+	statusDenied := api.Denied
 
 	t.Run("Successfully filter by trust domain", func(t *testing.T) {
-		// Setup
-		managementTestSetup := NewManagementTestSetup(t, http.MethodGet, relationshipsPath, nil)
-		echoCtx := managementTestSetup.EchoCtx
-
-		td1Name := NewTrustDomain(t, td1)
-
-		fakeTrustDomains := []*entity.TrustDomain{
-			{ID: tdUUID1, Name: td1Name},
-			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
-			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
-		}
-
-		fakeRelationships := []*entity.Relationship{
-			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-			{ID: r2ID, TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Denied)},
-			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Denied)},
-			{ID: NewNullableID(), TrustDomainAID: uuid.New(), TrustDomainBID: uuid.New(), TrustDomainAConsent: entity.ConsentStatus(api.Pending), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-		}
-
-		managementTestSetup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
-		managementTestSetup.FakeDatabase.WithRelationships(fakeRelationships...)
-
-		tdName := td1
-		params := admin.GetRelationshipsParams{
-			TrustDomainName: &tdName,
-		}
-
-		err := managementTestSetup.Handler.GetRelationships(echoCtx, params)
-		assert.NoError(t, err)
-
-		recorder := managementTestSetup.Recorder
-		assert.Equal(t, http.StatusOK, recorder.Code)
-		assert.NotEmpty(t, recorder.Body)
-
-		relationships := []*api.Relationship{}
-		err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
-		assert.NoError(t, err)
-
-		assert.Len(t, relationships, 2)
-
-		apiRelations := mapRelationships([]*entity.Relationship{
-			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-			{ID: r2ID, TrustDomainBID: tdUUID1.UUID, TrustDomainAID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-		})
-
-		assert.ElementsMatch(t, relationships, apiRelations, "trust domain name filter does not work properly")
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName}, 3, 0, 1, 3)
 	})
 
-	t.Run("Successfully filter by status", func(t *testing.T) {
-		// Setup
-		setup := NewManagementTestSetup(t, http.MethodGet, relationshipsPath, nil)
+	t.Run("Successfully filter by status accepted", func(t *testing.T) {
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusAccepted}, 3, 0, 1, 2)
+	})
 
-		td1Name := NewTrustDomain(t, td1)
+	t.Run("Successfully filter by status pending", func(t *testing.T) {
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusPending}, 2, 0, 4)
+	})
 
-		fakeTrustDomains := []*entity.TrustDomain{
-			{ID: tdUUID1, Name: td1Name},
-			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
-			{ID: tdUUID3, Name: NewTrustDomain(t, td3)},
-		}
+	t.Run("Successfully filter by status denied", func(t *testing.T) {
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusDenied}, 3, 1, 2, 3)
+	})
 
-		fakeRelationships := []*entity.Relationship{
-			{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-			{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Pending), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-			{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-			{ID: r4ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Denied)},
-			{ID: r5ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-		}
-
-		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
-		setup.FakeDatabase.WithRelationships(fakeRelationships...)
-
-		t.Run("Accepted Filter", func(t *testing.T) {
-			expectedRelations := mapRelationships([]*entity.Relationship{
-				{ID: r1ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)},
-			})
-
-			assertFilter(t, setup, expectedRelations, api.Accepted)
-		})
-
-		t.Run("Denied Filter", func(t *testing.T) {
-			expectedRelations := mapRelationships([]*entity.Relationship{
-				{ID: r3ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-				{ID: r4ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Denied)},
-			})
-
-			assertFilter(t, setup, expectedRelations, api.Denied)
-		})
-
-		t.Run("Pending Filter", func(t *testing.T) {
-			expectedRelations := mapRelationships([]*entity.Relationship{
-				{ID: r2ID, TrustDomainAID: tdUUID1.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Pending), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-				{ID: r5ID, TrustDomainAID: tdUUID2.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Pending)},
-			})
-
-			assertFilter(t, setup, expectedRelations, api.Pending)
-		})
+	t.Run("Successfully filter by status accepted and trust domain", func(t *testing.T) {
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, 0)
 	})
 
 	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
-
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodGet, relationshipsPath, nil)
 
@@ -214,7 +137,7 @@ func TestUDSGetRelationships(t *testing.T) {
 		assert.Empty(t, setup.Recorder.Body)
 
 		expectedMsg := fmt.Sprintf(
-			"status filter [`%v`] is not supported, accepted values [%v, %v, %v]",
+			"status filter %q is not supported, accepted values [%v, %v, %v]",
 			randomFilter, api.Accepted, api.Denied, api.Pending,
 		)
 
@@ -222,32 +145,52 @@ func TestUDSGetRelationships(t *testing.T) {
 	})
 }
 
-func assertFilter(
-	t *testing.T,
-	setup *ManagementTestSetup,
-	expectedRelations []*api.Relationship,
-	status api.ConsentStatus,
-) {
-	setup.Refresh()
-
-	strAddress := status
-	params := admin.GetRelationshipsParams{
-		Status: &strAddress,
-	}
+func runGetRelationshipTest(t *testing.T, params admin.GetRelationshipsParams, expectedLength int, expectedRelsIndices ...int) {
+	setup, rels := setupGetRelationshipTest(t)
 
 	err := setup.Handler.GetRelationships(setup.EchoCtx, params)
 	assert.NoError(t, err)
 
-	assert.Equal(t, http.StatusOK, setup.Recorder.Code)
-	assert.NotEmpty(t, setup.Recorder.Body)
+	recorder := setup.Recorder
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.NotEmpty(t, recorder.Body)
 
-	relationships := []*api.Relationship{}
-	err = json.Unmarshal(setup.Recorder.Body.Bytes(), &relationships)
+	var relationships []*api.Relationship
+	err = json.Unmarshal(recorder.Body.Bytes(), &relationships)
 	assert.NoError(t, err)
 
-	assert.Len(t, relationships, len(expectedRelations))
+	assert.Equal(t, expectedLength, len(relationships))
 
-	assert.ElementsMatchf(t, relationships, expectedRelations, "%v status filter does not work properly", status)
+	expectedRels := make([]*entity.Relationship, len(expectedRelsIndices))
+	for i, index := range expectedRelsIndices {
+		expectedRels[i] = rels[index]
+	}
+
+	assertContainRelationships(t, relationships, api.MapRelationships(expectedRels...))
+}
+
+func setupGetRelationshipTest(t *testing.T) (*ManagementTestSetup, []*entity.Relationship) {
+	managementTestSetup := NewManagementTestSetup(t, http.MethodGet, "/relationships", nil)
+
+	spiffeTD1 := NewTrustDomain(t, td1)
+	spiffeTD2 := NewTrustDomain(t, td2)
+	spiffeTD3 := NewTrustDomain(t, td3)
+	entTD1 := &entity.TrustDomain{ID: tdUUID1, Name: spiffeTD1}
+	entTD2 := &entity.TrustDomain{ID: tdUUID2, Name: spiffeTD2}
+	entTD3 := &entity.TrustDomain{ID: tdUUID3, Name: spiffeTD3}
+	fakeTrustDomains := []*entity.TrustDomain{entTD1, entTD2, entTD3}
+
+	rel1 := &entity.Relationship{ID: r1ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD2, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Pending)}
+	rel2 := &entity.Relationship{ID: r2ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)}
+	rel3 := &entity.Relationship{ID: r3ID, TrustDomainAID: entTD2.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD2, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Denied)}
+	rel4 := &entity.Relationship{ID: r4ID, TrustDomainAID: entTD3.ID.UUID, TrustDomainBID: tdUUID1.UUID, TrustDomainAName: spiffeTD3, TrustDomainBName: spiffeTD1, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Denied)}
+	rel5 := &entity.Relationship{ID: r5ID, TrustDomainAID: entTD3.ID.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAName: spiffeTD3, TrustDomainBName: spiffeTD2, TrustDomainAConsent: entity.ConsentStatus(api.Pending), TrustDomainBConsent: entity.ConsentStatus(api.Pending)}
+	fakeRelationships := []*entity.Relationship{rel1, rel2, rel3, rel4, rel5}
+
+	managementTestSetup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+	managementTestSetup.FakeDatabase.WithRelationships(fakeRelationships...)
+
+	return managementTestSetup, fakeRelationships
 }
 
 func TestUDSPutRelationships(t *testing.T) {
@@ -562,4 +505,23 @@ func NewTrustDomain(t *testing.T, tdName string) spiffeid.TrustDomain {
 	td, err := spiffeid.TrustDomainFromString(tdName)
 	assert.NoError(t, err)
 	return td
+}
+
+func assertContainRelationships(t *testing.T, expectedRelationships []*api.Relationship, actualRelationships []*api.Relationship) {
+	require.Equal(t, len(expectedRelationships), len(actualRelationships))
+	for _, expectedRel := range expectedRelationships {
+		found := false
+		for _, actualRel := range actualRelationships {
+			if equalRelationships(expectedRel, actualRel) {
+				found = true
+				break
+			}
+		}
+		require.True(t, found, "Did not find expected relationship in the actual relationships list: %+v", expectedRel)
+	}
+}
+
+func equalRelationships(r1 *api.Relationship, r2 *api.Relationship) bool {
+	return r1.Id == r2.Id && r1.TrustDomainAId == r2.TrustDomainAId && r1.TrustDomainBId == r2.TrustDomainBId &&
+		r1.TrustDomainAConsent == r2.TrustDomainAConsent && r1.TrustDomainBConsent == r2.TrustDomainBConsent
 }

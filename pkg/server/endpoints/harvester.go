@@ -37,7 +37,7 @@ type HarvesterAPIHandlers struct {
 	jwtValidator jwt.Validator
 }
 
-// NewHarvesterAPIHandlers create a new HarvesterAPIHandlers
+// NewHarvesterAPIHandlers creates a new HarvesterAPIHandlers
 func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds db.Datastore, jwtIssuer jwt.Issuer, jwtValidator jwt.Validator) *HarvesterAPIHandlers {
 	return &HarvesterAPIHandlers{
 		Logger:       l,
@@ -47,7 +47,7 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds db.Datastore, jwtIssuer jw
 	}
 }
 
-// GetRelationships list all the relationships for a given trust domain name and consent status  - (GET /relationships)
+// GetRelationships lists all the relationships for a given trust domain name and consent status  - (GET /relationships)
 // The consent status is optional, if not provided, all relationships will be returned for a given trust domain. If the
 // consent status is provided, only relationships with the given consent status for the given trust domain will be returned.
 // The trust domain name provided should match the authenticated trust domain.
@@ -60,7 +60,6 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	}
 
 	consentStatus := *params.ConsentStatus
-
 	switch consentStatus {
 	case "", api.Accepted, api.Denied, api.Pending:
 	default:
@@ -77,18 +76,15 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	}
 
 	if consentStatus != "" {
-		relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, consentStatus)
+		relationships = api.FilterRelationships(&authTD.ID.UUID, relationships, consentStatus)
 	}
 
-	apiRelationships := make([]*api.Relationship, 0, len(relationships))
-	for _, r := range relationships {
-		apiRelationships = append(apiRelationships, api.RelationshipFromEntity(r))
-	}
+	apiRelationships := api.MapRelationships(relationships...)
 
 	return chttp.WriteResponse(echoCtx, http.StatusOK, apiRelationships)
 }
 
-// PatchRelationship accept/denies relationships requests - (PATCH /relationships/{relationshipID})
+// PatchRelationship accepts/denies relationships requests - (PATCH /relationships/{relationshipID})
 func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
@@ -258,7 +254,7 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context) error {
 	return chttp.WriteResponse(echoCtx, http.StatusOK, newToken)
 }
 
-// BundleSync synchronize the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
+// BundleSync synchronizes the status of trust bundles between server and harvester - (POST /trust-domain/{trustDomainName}/bundles/sync)
 func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	h.Logger.Debugf("Received bundle sync request from trust domain: %s", trustDomainName)
 	ctx := echoCtx.Request().Context()
@@ -285,7 +281,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// filer out the relationships whose consent status is not "accepted" by the authenticated trust domain
-	relationships = filterRelationshipsByConsentStatus(authTD.ID.UUID, relationships, api.Accepted)
+	relationships = api.FilterRelationships(&authTD.ID.UUID, relationships, api.Accepted)
 
 	resp, err := h.getBundleSyncResult(ctx, authTD, relationships, req)
 	if err != nil {
@@ -340,7 +336,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	// the bundle already exists in the db, so we need to update it
+	// the bundle already exists in the datastore, so we need to update it
 	if storedBundle != nil {
 		bundle.ID = storedBundle.ID
 	}
@@ -404,26 +400,6 @@ func (h *HarvesterAPIHandlers) handleErrorAndLog(logErr error, message string, c
 
 	errMsg := fmt.Sprintf("%s (error ID: %s)", message, errID)
 	return echo.NewHTTPError(code, errMsg)
-}
-
-func filterRelationshipsByConsentStatus(trustDomain uuid.UUID, relationships []*entity.Relationship, status api.ConsentStatus) []*entity.Relationship {
-	filtered := make([]*entity.Relationship, 0)
-
-	for _, relationship := range relationships {
-		trustDomainA := relationship.TrustDomainAID
-		trustDomainB := relationship.TrustDomainBID
-		trustDomainAConsent := api.ConsentStatus(relationship.TrustDomainAConsent)
-		trustDomainBConsent := api.ConsentStatus(relationship.TrustDomainBConsent)
-
-		isConsentStatusMatch := (trustDomainA == trustDomain && trustDomainAConsent == status) ||
-			(trustDomainB == trustDomain && trustDomainBConsent == status)
-
-		if isConsentStatusMatch {
-			filtered = append(filtered, relationship)
-		}
-	}
-
-	return filtered
 }
 
 func (h *HarvesterAPIHandlers) getAuthenticateTrustDomain(echoCtx echo.Context, trustDomainName string) (*entity.TrustDomain, error) {

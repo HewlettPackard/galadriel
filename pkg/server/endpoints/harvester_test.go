@@ -418,12 +418,14 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 func TestTCPBundleSync(t *testing.T) {
 	testCases := []struct {
 		name          string
+		trustDomain   string
 		relationships []*entity.Relationship
 		bundleState   harvester.BundleSyncBody
 		expected      harvester.BundleSyncResult
 	}{
 		{
 			name:          "Successfully sync no new bundles",
+			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
@@ -441,6 +443,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync one new bundle for one accepted relationship",
+			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
@@ -462,6 +465,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync two new bundles for two accepted relationships",
+			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},
@@ -485,6 +489,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync one new bundle for one accepted relationship, not including the pending relationship",
+			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, pendingRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},
@@ -503,6 +508,7 @@ func TestTCPBundleSync(t *testing.T) {
 		},
 		{
 			name:          "Successfully sync one new bundle for one accepted relationship, not including the denied relationship",
+			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedDeniedRelAC, deniedAcceptedRelAB, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{},

@@ -25,7 +25,7 @@ type AdminAPIHandlers struct {
 	Datastore db.Datastore
 }
 
-// NewAdminAPIHandlers create a new NewAdminAPIHandlers
+// NewAdminAPIHandlers creates a new NewAdminAPIHandlers
 func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandlers {
 	return &AdminAPIHandlers{
 		Logger:    l,
@@ -33,27 +33,28 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 	}
 }
 
-// GetRelationships list all relationships filtered by the request params - (GET /relationships)
-func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params admin.GetRelationshipsParams) error {
-	ctx := echoContext.Request().Context()
+// GetRelationships lists all relationships filtered by the request params - (GET /relationships)
+func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
+	ctx := echoCtx.Request().Context()
 
 	var err error
-	var rels []*entity.Relationship
+	var relationships []*entity.Relationship
+	var td *entity.TrustDomain
 
 	if params.TrustDomainName != nil {
-		td, err := h.findTrustDomainByName(ctx, *params.TrustDomainName)
+		td, err = h.findTrustDomainByName(ctx, *params.TrustDomainName)
 		if err != nil {
 			err = fmt.Errorf("failed looking up trust domain name: %w", err)
 			return h.handleAndLog(err, http.StatusBadRequest)
 		}
 
-		rels, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID)
+		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID)
 		if err != nil {
 			err = fmt.Errorf("failed looking up relationships: %v", err)
 			return h.handleAndLog(err, http.StatusInternalServerError)
 		}
 	} else {
-		rels, err = h.Datastore.ListRelationships(ctx)
+		relationships, err = h.Datastore.ListRelationships(ctx)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return h.handleAndLog(err, http.StatusInternalServerError)
@@ -61,20 +62,28 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 	}
 
 	if params.Status != nil {
-		rels, err = h.adminFilterRelationshipsByConsentStatus(rels, api.ConsentStatus(*params.Status))
-		if err != nil {
-			return err
+		switch *params.Status {
+		case api.Accepted, api.Denied, api.Pending:
+		default:
+			err := fmt.Errorf("status filter %q is not supported, accepted values [accepted, denied, pending]", *params.Status)
+			return h.handleAndLog(err, http.StatusBadRequest)
 		}
+
+		var tdID *uuid.UUID
+		if td != nil {
+			tdID = &td.ID.UUID
+		}
+		relationships = api.FilterRelationships(tdID, relationships, *params.Status)
 	}
 
-	rels, err = h.populateTrustDomainNames(ctx, rels)
+	relationships, err = h.populateTrustDomainNames(ctx, relationships)
 	if err != nil {
 		err = fmt.Errorf("failed populating relationships entities: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
-	cRelationships := mapRelationships(rels)
-	err = chttp.WriteResponse(echoContext, http.StatusOK, cRelationships)
+	cRelationships := api.MapRelationships(relationships...)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, cRelationships)
 	if err != nil {
 		err = fmt.Errorf("relationships entities - %v", err.Error())
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -83,7 +92,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 	return nil
 }
 
-// PutRelationships create a new relationship request between two trust domains - (PUT /relationships)
+// PutRelationship creates a new relationship request between two trust domains - (PUT /relationships)
 func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
@@ -123,7 +132,7 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	return nil
 }
 
-// GetRelationshipByID retrieve a specific relationship based on its id - (GET /relationships/{relationshipID})
+// GetRelationshipByID retrieves a specific relationship based on its id - (GET /relationships/{relationshipID})
 func (h *AdminAPIHandlers) GetRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
@@ -148,9 +157,8 @@ func (h *AdminAPIHandlers) GetRelationshipByID(echoCtx echo.Context, relationshi
 	return nil
 }
 
-// PutTrustDomain create a new trust domain - (PUT /trust-domain)
+// PutTrustDomain creates a new trust domain - (PUT /trust-domain)
 func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
-	// Getting golang context
 	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutTrustDomainJSONRequestBody{}
@@ -193,8 +201,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	return nil
 }
 
-// TODO: customize these names.
-// GetTrustDomainByName retrieve a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
+// GetTrustDomainByName retrieves a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
 func (h *AdminAPIHandlers) GetTrustDomainByName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
 
@@ -225,7 +232,7 @@ func (h *AdminAPIHandlers) GetTrustDomainByName(echoCtx echo.Context, trustDomai
 	return nil
 }
 
-// PutTrustDomainTrustDomainName updates the trust domain - (PUT /trust-domain/{trustDomainName})
+// PutTrustDomainByName updates the trust domain - (PUT /trust-domain/{trustDomainName})
 func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomainID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
@@ -265,7 +272,7 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 	return nil
 }
 
-// GetJoinToken generate a join token for the trust domain - (GET /trust-domain/{trustDomainName}/join-token)
+// GetJoinToken generates a join token for the trust domain - (GET /trust-domain/{trustDomainName}/join-token)
 func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
 	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
@@ -361,65 +368,6 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID 
 	}
 
 	return td, nil
-}
-
-func (h *AdminAPIHandlers) adminFilterRelationshipsByConsentStatus(
-	relationships []*entity.Relationship,
-	status api.ConsentStatus,
-) ([]*entity.Relationship, error) {
-	filtered := make([]*entity.Relationship, 0)
-
-	var checkConsentF func(api.ConsentStatus, api.ConsentStatus) bool
-	switch status {
-	case api.Denied:
-		checkConsentF = denied
-	case api.Accepted:
-		checkConsentF = accepted
-	case api.Pending:
-		checkConsentF = pending
-	case "":
-		checkConsentF = pending
-	default:
-		err := fmt.Errorf(
-			"status filter [`%v`] is not supported, accepted values [%v, %v, %v]",
-			status, api.Accepted, api.Denied, api.Pending,
-		)
-		return nil, h.handleAndLog(err, http.StatusBadRequest)
-	}
-
-	for _, relationship := range relationships {
-		trustDomainAConsent := api.ConsentStatus(relationship.TrustDomainAConsent)
-		trustDomainBConsent := api.ConsentStatus(relationship.TrustDomainBConsent)
-
-		if checkConsentF(trustDomainAConsent, trustDomainBConsent) {
-			filtered = append(filtered, relationship)
-		}
-	}
-
-	return filtered, nil
-}
-
-func denied(ca api.ConsentStatus, cb api.ConsentStatus) bool {
-	return ca == api.Denied || cb == api.Denied
-}
-
-func accepted(ca api.ConsentStatus, cb api.ConsentStatus) bool {
-	return ca == api.Accepted && cb == api.Accepted
-}
-
-func pending(ca api.ConsentStatus, cb api.ConsentStatus) bool {
-	return (ca == api.Pending || cb == api.Pending) && ca != api.Denied && cb != api.Denied
-}
-
-func mapRelationships(relationships []*entity.Relationship) []*api.Relationship {
-	cRelationships := []*api.Relationship{}
-
-	for _, r := range relationships {
-		cRelation := api.RelationshipFromEntity(r)
-		cRelationships = append(cRelationships, cRelation)
-	}
-
-	return cRelationships
 }
 
 func (h *AdminAPIHandlers) handleAndLog(err error, code int) error {
