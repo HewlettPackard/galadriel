@@ -34,7 +34,6 @@ var (
 	r3ID = NewNullableID()
 	r4ID = NewNullableID()
 	r5ID = NewNullableID()
-	r6ID = NewNullableID()
 
 	// Trust Domains ID's
 	tdUUID1 = NewNullableID()
