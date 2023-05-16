@@ -110,40 +110,6 @@ func RelationshipFromEntity(entity *entity.Relationship) *Relationship {
 	}
 }
 
-// FilterRelationships filters a slice of Relationship entities based on a trust domain ID and consent status.
-// If the trust domain ID is nil, it filters based on the consent status only.
-// If the trust domain ID is not nil, it filters based on both the trust domain ID and the consent status.
-// Parameters:
-// - trustDomain: The ID of the trust domain for which relationships are to be filtered. Can be nil.
-// - relationships: The slice of Relationship entities to be filtered.
-// - status: The consent status to be used as a filter criterion.
-// Return: A slice of Relationship entities that match the filter criteria.
-func FilterRelationships(trustDomain *uuid.UUID, relationships []*entity.Relationship, status ConsentStatus) []*entity.Relationship {
-	filtered := make([]*entity.Relationship, 0, len(relationships))
-
-	for _, relationship := range relationships {
-		trustDomainA := relationship.TrustDomainAID
-		trustDomainB := relationship.TrustDomainBID
-		trustDomainAConsent := ConsentStatus(relationship.TrustDomainAConsent)
-		trustDomainBConsent := ConsentStatus(relationship.TrustDomainBConsent)
-
-		var isConsentStatusMatch bool
-		if trustDomain == nil {
-			isConsentStatusMatch = trustDomainAConsent == status || trustDomainBConsent == status
-		} else {
-			isConsentStatusMatch = (trustDomainA == *trustDomain && trustDomainAConsent == status) ||
-				(trustDomainB == *trustDomain && trustDomainBConsent == status)
-		}
-
-		if isConsentStatusMatch {
-			filtered = append(filtered, relationship)
-		}
-	}
-
-	// Trim the slice to the actual length to free up unused capacity
-	return filtered[:]
-}
-
 // MapRelationships transforms a slice of Relationship entities to a slice of API Relationship representations.
 // Parameters:
 // - relationships: A slice of Relationship entities to be transformed.

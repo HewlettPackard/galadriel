@@ -194,35 +194,3 @@ func TestMapRelationships(t *testing.T) {
 		assert.Equal(t, ConsentStatus(relationships[i].TrustDomainBConsent), cRelation.TrustDomainBConsent)
 	}
 }
-
-func TestFilterRelationships(t *testing.T) {
-	relationships := []*entity.Relationship{
-		{
-			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
-			TrustDomainAID:      uuid.New(),
-			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: "accepted",
-			TrustDomainBConsent: "denied",
-		},
-		{
-			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
-			TrustDomainAID:      uuid.New(),
-			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: "denied",
-			TrustDomainBConsent: "accepted",
-		},
-	}
-
-	trustDomain := relationships[0].TrustDomainAID
-	status := ConsentStatus("accepted")
-
-	// Call FilterRelationships
-	filtered := FilterRelationships(&trustDomain, relationships, status)
-
-	assert.Equal(t, 1, len(filtered))
-	assert.Equal(t, relationships[0].ID.UUID, filtered[0].ID.UUID)
-	assert.Equal(t, relationships[0].TrustDomainAID, filtered[0].TrustDomainAID)
-	assert.Equal(t, relationships[0].TrustDomainBID, filtered[0].TrustDomainBID)
-	assert.Equal(t, relationships[0].TrustDomainAConsent, filtered[0].TrustDomainAConsent)
-	assert.Equal(t, relationships[0].TrustDomainBConsent, filtered[0].TrustDomainBConsent)
-}

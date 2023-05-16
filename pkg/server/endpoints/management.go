@@ -73,7 +73,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 		if td != nil {
 			tdID = &td.ID.UUID
 		}
-		relationships = api.FilterRelationships(tdID, relationships, *params.Status)
+		relationships = entity.FilterRelationships(relationships, tdID, entity.ConsentStatus(*params.Status))
 	}
 
 	relationships, err = h.populateTrustDomainNames(ctx, relationships)
