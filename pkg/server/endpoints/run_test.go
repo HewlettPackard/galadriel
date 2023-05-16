@@ -10,6 +10,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/HewlettPackard/galadriel/test/certtest"
 	"github.com/jmhodges/clock"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -18,6 +19,7 @@ import (
 )
 
 type fakeCatalog struct {
+	ds         db.Datastore
 	x509ca     x509ca.X509CA
 	keyManager keymanager.KeyManager
 }
@@ -28,6 +30,10 @@ func (c fakeCatalog) GetX509CA() x509ca.X509CA {
 
 func (c fakeCatalog) GetKeyManager() keymanager.KeyManager {
 	return c.keyManager
+}
+
+func (c fakeCatalog) GetDatastore() db.Datastore {
+	return c.ds
 }
 
 func TestListenAndServe(t *testing.T) {

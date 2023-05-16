@@ -1,11 +1,11 @@
-package datastore
+package sqlite
 
 import (
 	"database/sql"
 	"embed"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -18,7 +18,7 @@ var fs embed.FS
 // the migrations to run when starting up the app.
 const currentDBVersion = 1
 
-const scheme = "postgresql"
+const scheme = "sqlite3"
 
 func validateAndMigrateSchema(db *sql.DB) error {
 
@@ -27,7 +27,7 @@ func validateAndMigrateSchema(db *sql.DB) error {
 		return err
 	}
 
-	driverInstance, err := postgres.WithInstance(db, new(postgres.Config))
+	driverInstance, err := sqlite.WithInstance(db, new(sqlite.Config))
 	if err != nil {
 		return err
 	}

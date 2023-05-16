@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +11,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
@@ -23,13 +23,13 @@ type AuthNTestSetup struct {
 	EchoCtx      echo.Context
 	Middleware   *AuthenticationMiddleware
 	Recorder     *httptest.ResponseRecorder
-	FakeDatabase *datastore.FakeDatabase
+	FakeDatabase *fakedatastore.FakeDatabase
 	JWTIssuer    jwt.Issuer
 }
 
 func SetupMiddleware(t *testing.T) *AuthNTestSetup {
 	logger := logrus.New()
-	fakeDB := datastore.NewFakeDB()
+	fakeDB := fakedatastore.NewFakeDB()
 
 	km := keymanager.New(&keymanager.Config{})
 	c := jwt.ValidatorConfig{

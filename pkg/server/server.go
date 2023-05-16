@@ -12,7 +12,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 	"github.com/google/uuid"
 )
@@ -46,12 +45,6 @@ func (s *Server) run(ctx context.Context) error {
 		return fmt.Errorf("failed to load catalogs from providers config: %w", err)
 	}
 
-	// TODO: consider moving the datastore to the catalog?
-	ds, err := datastore.NewSQLDatastore(s.config.Logger, s.config.DBConnString)
-	if err != nil {
-		return fmt.Errorf("failed to create datastore: %w", err)
-	}
-
 	jwtIssuer, err := s.createJWTIssuer(ctx, cat.GetKeyManager())
 	if err != nil {
 		return fmt.Errorf("failed to create JWT issuer: %w", err)
@@ -63,7 +56,7 @@ func (s *Server) run(ctx context.Context) error {
 	}
 	jwtValidator := jwt.NewDefaultJWTValidator(c)
 
-	endpointsServer, err := s.newEndpointsServer(cat, ds, jwtIssuer, jwtValidator)
+	endpointsServer, err := s.newEndpointsServer(cat, jwtIssuer, jwtValidator)
 	if err != nil {
 		return fmt.Errorf("failed to create endpoints server: %w", err)
 	}
@@ -75,12 +68,11 @@ func (s *Server) run(ctx context.Context) error {
 	return err
 }
 
-func (s *Server) newEndpointsServer(catalog catalog.Catalog, ds datastore.Datastore, jwtIssuer jwt.Issuer, jwtValidator jwt.Validator) (endpoints.Server, error) {
+func (s *Server) newEndpointsServer(catalog catalog.Catalog, jwtIssuer jwt.Issuer, jwtValidator jwt.Validator) (endpoints.Server, error) {
 	config := &endpoints.Config{
 		TCPAddress:   s.config.TCPAddress,
 		LocalAddress: s.config.LocalAddress,
 		Logger:       s.config.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
-		Datastore:    ds,
 		Catalog:      catalog,
 		JWTIssuer:    jwtIssuer,
 		JWTValidator: jwtValidator,
