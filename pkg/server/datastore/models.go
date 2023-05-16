@@ -6,10 +6,55 @@ package datastore
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgtype"
 )
+
+type ConsentStatus string
+
+const (
+	ConsentStatusAccepted ConsentStatus = "accepted"
+	ConsentStatusDenied   ConsentStatus = "denied"
+	ConsentStatusPending  ConsentStatus = "pending"
+)
+
+func (e *ConsentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ConsentStatus(s)
+	case string:
+		*e = ConsentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ConsentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullConsentStatus struct {
+	ConsentStatus ConsentStatus
+	Valid         bool // Valid is true if ConsentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullConsentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ConsentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ConsentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullConsentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ConsentStatus), nil
+}
 
 type Bundle struct {
 	ID                 pgtype.UUID
@@ -36,8 +81,8 @@ type Relationship struct {
 	ID                  pgtype.UUID
 	TrustDomainAID      pgtype.UUID
 	TrustDomainBID      pgtype.UUID
-	TrustDomainAConsent bool
-	TrustDomainBConsent bool
+	TrustDomainAConsent ConsentStatus
+	TrustDomainBConsent ConsentStatus
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }

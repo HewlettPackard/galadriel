@@ -1,6 +1,6 @@
 -- create tables
 
--- CREATE TYPE status AS ENUM ('pending', 'active', 'disabled', 'denied');
+CREATE TYPE consent_status AS ENUM ('accepted', 'denied', 'pending');
 
 CREATE TABLE IF NOT EXISTS trust_domains
 (
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS relationships
     id                     UUID PRIMARY KEY                  DEFAULT gen_random_uuid(),
     trust_domain_a_id      UUID                     NOT NULL,
     trust_domain_b_id      UUID                     NOT NULL,
-    trust_domain_a_consent BOOL                     NOT NULL DEFAULT FALSE,
-    trust_domain_b_consent BOOL                     NOT NULL DEFAULT FALSE,
+    trust_domain_a_consent consent_status                   NOT NULL DEFAULT 'pending',
+    trust_domain_b_consent consent_status                   NOT NULL DEFAULT 'pending',
     created_at             TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at             TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     UNIQUE (trust_domain_a_id, trust_domain_b_id)

@@ -60,9 +60,11 @@ func (h *AdminAPIHandlers) GetRelationships(echoContext echo.Context, params adm
 		}
 	}
 
-	rels, err = h.filterRelationshipsByStatus(ctx, rels, params.Status)
-	if err != nil {
-		return err
+	if params.Status != nil {
+		rels, err = h.adminFilterRelationshipsByConsentStatus(rels, api.ConsentStatus(*params.Status))
+		if err != nil {
+			return err
+		}
 	}
 
 	rels, err = h.populateTrustDomainNames(ctx, rels)
@@ -328,32 +330,6 @@ func (h *AdminAPIHandlers) findTrustDomainByName(ctx context.Context, trustDomai
 	return td, nil
 }
 
-func (h *AdminAPIHandlers) filterRelationshipsByStatus(
-	ctx context.Context,
-	relationships []*entity.Relationship,
-	status *admin.GetRelationshipsParamsStatus,
-) ([]*entity.Relationship, error) {
-
-	if status != nil {
-		switch *status {
-		case admin.Denied:
-			return filterBy(relationships, deniedRelationFilter), nil
-		case admin.Approved:
-			return filterBy(relationships, approvedRelationFilter), nil
-		case admin.Pending:
-			return filterBy(relationships, pendingRelationFilter), nil
-		}
-
-		err := fmt.Errorf(
-			"unrecognized status filter %v, accepted values [%v, %v, %v]",
-			*status, admin.Denied, admin.Approved, admin.Pending,
-		)
-		return nil, h.handleAndLog(err, http.StatusBadRequest)
-	} else {
-		return filterBy(relationships, pendingRelationFilter), nil
-	}
-}
-
 func (h *AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relationships []*entity.Relationship) ([]*entity.Relationship, error) {
 	for _, r := range relationships {
 		tda, err := h.Datastore.FindTrustDomainByID(ctx, r.TrustDomainAID)
@@ -387,6 +363,54 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID 
 	return td, nil
 }
 
+func (h *AdminAPIHandlers) adminFilterRelationshipsByConsentStatus(
+	relationships []*entity.Relationship,
+	status api.ConsentStatus,
+) ([]*entity.Relationship, error) {
+	filtered := make([]*entity.Relationship, 0)
+
+	var checkConsentF func(api.ConsentStatus, api.ConsentStatus) bool
+	switch status {
+	case api.Denied:
+		checkConsentF = denied
+	case api.Accepted:
+		checkConsentF = accepted
+	case api.Pending:
+		checkConsentF = pending
+	case "":
+		checkConsentF = pending
+	default:
+		err := fmt.Errorf(
+			"status filter [`%v`] is not supported, accepted values [%v, %v, %v]",
+			status, api.Accepted, api.Denied, api.Pending,
+		)
+		return nil, h.handleAndLog(err, http.StatusBadRequest)
+	}
+
+	for _, relationship := range relationships {
+		trustDomainAConsent := api.ConsentStatus(relationship.TrustDomainAConsent)
+		trustDomainBConsent := api.ConsentStatus(relationship.TrustDomainBConsent)
+
+		if checkConsentF(trustDomainAConsent, trustDomainBConsent) {
+			filtered = append(filtered, relationship)
+		}
+	}
+
+	return filtered, nil
+}
+
+func denied(ca api.ConsentStatus, cb api.ConsentStatus) bool {
+	return ca == api.Denied || cb == api.Denied
+}
+
+func accepted(ca api.ConsentStatus, cb api.ConsentStatus) bool {
+	return ca == api.Accepted && cb == api.Accepted
+}
+
+func pending(ca api.ConsentStatus, cb api.ConsentStatus) bool {
+	return (ca == api.Pending || cb == api.Pending) && ca != api.Denied && cb != api.Denied
+}
+
 func mapRelationships(relationships []*entity.Relationship) []*api.Relationship {
 	cRelationships := []*api.Relationship{}
 
@@ -402,27 +426,4 @@ func (h *AdminAPIHandlers) handleAndLog(err error, code int) error {
 	errMsg := util.LogSanitize(err.Error())
 	h.Logger.Errorf(errMsg)
 	return echo.NewHTTPError(code, err.Error())
-}
-
-func deniedRelationFilter(e *entity.Relationship) bool {
-	return !e.TrustDomainAConsent || !e.TrustDomainBConsent
-}
-
-func approvedRelationFilter(e *entity.Relationship) bool {
-	return e.TrustDomainAConsent && e.TrustDomainBConsent
-}
-
-func pendingRelationFilter(e *entity.Relationship) bool {
-	return !e.TrustDomainAConsent || !e.TrustDomainBConsent
-}
-
-// filterBy will generate a new slice with the elements that matched
-func filterBy[E any](s []E, match func(E) bool) []E {
-	filtered := []E{}
-	for _, e := range s {
-		if match(e) {
-			filtered = append(filtered, e)
-		}
-	}
-	return filtered
 }

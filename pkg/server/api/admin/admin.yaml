@@ -101,8 +101,7 @@ paths:
         - name: status
           in: query
           schema:
-            type: string
-            enum: [approved, denied, pending]
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
           description: relationship status from a Trust Domain perspective,
         - name: trustDomainName
           in: query

@@ -75,9 +75,16 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 	}
 
 	sc.LocalAddress = socketAddr
-	sc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.GaladrielServer)
 
 	sc.DBConnString = c.Server.DBConnString
+
+	logLevel, err := logrus.ParseLevel(c.Server.LogLevel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse log level: %v", err)
+	}
+	logger := logrus.New()
+	logger.SetLevel(logLevel)
+	sc.Logger = logger.WithField(telemetry.SubsystemName, telemetry.Server)
 
 	// TODO: eventually providers section will be required
 	if c.Providers != nil {

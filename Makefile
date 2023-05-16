@@ -205,11 +205,13 @@ help:
 ### Code generation ####
 .PHONY: generate-sqlc-server generete-spec
 
+# Run sqlc to generate sql code
 generate-sqlc-server: install-sqlc run-sqlc-server
 
 run-sqlc-server:
 	$(sqlc_bin) generate --file $(server_sqlc_config_file)
 
+# Run oapi-codegen to generate api code
 generate-spec:
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v$(oapi_codegen_version)
 	cd ./pkg/common/api; $(GOPATH)/bin/oapi-codegen -config schemas.cfg.yaml schemas.yaml
