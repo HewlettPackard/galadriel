@@ -34,6 +34,38 @@ func NewFakeDB() *FakeDatabase {
 	}
 }
 
+// WithRelationships overrides all relationships
+func (db *FakeDatabase) WithRelationships(relationships ...*entity.Relationship) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.relationships = make(map[uuid.UUID]*entity.Relationship)
+	for _, r := range relationships {
+		db.relationships[r.ID.UUID] = r
+	}
+}
+
+// WithTrustDomains overrides all trust domains
+func (db *FakeDatabase) WithTrustDomains(trustDomains ...*entity.TrustDomain) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.trustDomains = make(map[uuid.UUID]*entity.TrustDomain)
+	for _, td := range trustDomains {
+		db.trustDomains[td.ID.UUID] = td
+	}
+}
+
+func (db *FakeDatabase) WithBundles(bundles ...*entity.Bundle) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.bundles = make(map[uuid.UUID]*entity.Bundle)
+	for _, b := range bundles {
+		db.bundles[b.ID.UUID] = b
+	}
+}
+
 func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
@@ -134,9 +166,12 @@ func (db *FakeDatabase) CreateOrUpdateBundle(ctx context.Context, req *entity.Bu
 		return nil, err
 	}
 
-	req.ID = uuid.NullUUID{
-		UUID:  uuid.New(),
-		Valid: true,
+	if !req.ID.Valid {
+		// it's an insert
+		req.ID = uuid.NullUUID{
+			UUID:  uuid.New(),
+			Valid: true,
+		}
 	}
 
 	req.CreatedAt = time.Now()
@@ -173,7 +208,7 @@ func (db *FakeDatabase) FindBundleByTrustDomainID(ctx context.Context, trustDoma
 	}
 
 	for _, bundle := range db.bundles {
-		if trustDomainID.String() == bundle.TrustDomainID.String() {
+		if trustDomainID == bundle.TrustDomainID {
 			return bundle, nil
 		}
 	}
@@ -383,7 +418,7 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, tr
 		return nil, err
 	}
 
-	relationships := []*entity.Relationship{}
+	var relationships []*entity.Relationship
 	for _, r := range db.relationships {
 		matchA := r.TrustDomainAID.String() == trustDomainID.String()
 		matchB := r.TrustDomainBID.String() == trustDomainID.String()
@@ -404,7 +439,7 @@ func (db *FakeDatabase) ListRelationships(ctx context.Context) ([]*entity.Relati
 		return nil, err
 	}
 
-	relationships := []*entity.Relationship{}
+	var relationships []*entity.Relationship
 	for _, r := range db.relationships {
 		relationships = append(relationships, r)
 	}

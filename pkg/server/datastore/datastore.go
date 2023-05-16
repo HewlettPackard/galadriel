@@ -532,8 +532,8 @@ func (d *SQLDatastore) updateRelationship(ctx context.Context, req *entity.Relat
 
 	params := UpdateRelationshipParams{
 		ID:                  pgID,
-		TrustDomainAConsent: req.TrustDomainAConsent,
-		TrustDomainBConsent: req.TrustDomainBConsent,
+		TrustDomainAConsent: ConsentStatus(req.TrustDomainAConsent),
+		TrustDomainBConsent: ConsentStatus(req.TrustDomainBConsent),
 	}
 
 	relationship, err := d.querier.UpdateRelationship(ctx, params)
