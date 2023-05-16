@@ -78,7 +78,7 @@ server_sqlc_config_file = $(DIR)/pkg/server/db/sqlc.yaml
 
 sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
 sqlc_bin = $(sqlc_dir)/sqlc
-sqlc_version = 1.17.0
+sqlc_version = 1.18.0
 ifeq ($(os1),windows)
 	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_windows_amd64.zip
 else ifeq ($(os1),darwin)

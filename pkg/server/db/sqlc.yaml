@@ -9,6 +9,9 @@ packages:
     emit_prepared_queries: true
     emit_interface: true
     emit_exact_table_names: false
+    output_db_file_name: "db.gen.go"
+    output_models_file_name: "models.gen.go"
+    output_querier_file_name: "querier.gen.go"
   - name: "sqlite"
     path: "sqlite"
     queries: "sqlite/queries"
@@ -18,6 +21,9 @@ packages:
     emit_prepared_queries: true
     emit_interface: true
     emit_exact_table_names: false
+    output_db_file_name: "db.gen.go"
+    output_models_file_name: "models.gen.go"
+    output_querier_file_name: "querier.gen.go"
 overrides:
   - go_type: "github.com/jackc/pgtype.UUID"
     db_type: "uuid"
