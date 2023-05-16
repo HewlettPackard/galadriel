@@ -1,5 +1,5 @@
 // TODO: move to folder test/fakes/fakedatastpre
-package datastore
+package fakedatastore
 
 import (
 	"context"

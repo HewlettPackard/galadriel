@@ -3,28 +3,27 @@
 //   sqlc v1.17.0
 // source: trust_domains.sql
 
-package datastore
+package sqlite
 
 import (
 	"context"
 	"database/sql"
-
-	"github.com/jackc/pgtype"
 )
 
 const createTrustDomain = `-- name: CreateTrustDomain :one
-INSERT INTO trust_domains(name, description)
-VALUES ($1, $2)
+INSERT INTO trust_domains(id, name, description)
+VALUES (?, ?, ?)
 RETURNING id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
 `
 
 type CreateTrustDomainParams struct {
+	ID          string
 	Name        string
 	Description sql.NullString
 }
 
 func (q *Queries) CreateTrustDomain(ctx context.Context, arg CreateTrustDomainParams) (TrustDomain, error) {
-	row := q.queryRow(ctx, q.createTrustDomainStmt, createTrustDomain, arg.Name, arg.Description)
+	row := q.queryRow(ctx, q.createTrustDomainStmt, createTrustDomain, arg.ID, arg.Name, arg.Description)
 	var i TrustDomain
 	err := row.Scan(
 		&i.ID,
@@ -41,10 +40,10 @@ func (q *Queries) CreateTrustDomain(ctx context.Context, arg CreateTrustDomainPa
 const deleteTrustDomain = `-- name: DeleteTrustDomain :exec
 DELETE
 FROM trust_domains
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) DeleteTrustDomain(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) DeleteTrustDomain(ctx context.Context, id string) error {
 	_, err := q.exec(ctx, q.deleteTrustDomainStmt, deleteTrustDomain, id)
 	return err
 }
@@ -52,10 +51,10 @@ func (q *Queries) DeleteTrustDomain(ctx context.Context, id pgtype.UUID) error {
 const findTrustDomainByID = `-- name: FindTrustDomainByID :one
 SELECT id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
 FROM trust_domains
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) FindTrustDomainByID(ctx context.Context, id pgtype.UUID) (TrustDomain, error) {
+func (q *Queries) FindTrustDomainByID(ctx context.Context, id string) (TrustDomain, error) {
 	row := q.queryRow(ctx, q.findTrustDomainByIDStmt, findTrustDomainByID, id)
 	var i TrustDomain
 	err := row.Scan(
@@ -73,7 +72,7 @@ func (q *Queries) FindTrustDomainByID(ctx context.Context, id pgtype.UUID) (Trus
 const findTrustDomainByName = `-- name: FindTrustDomainByName :one
 SELECT id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
 FROM trust_domains
-WHERE name = $1
+WHERE name = ?
 `
 
 func (q *Queries) FindTrustDomainByName(ctx context.Context, name string) (TrustDomain, error) {
@@ -130,27 +129,27 @@ func (q *Queries) ListTrustDomains(ctx context.Context) ([]TrustDomain, error) {
 
 const updateTrustDomain = `-- name: UpdateTrustDomain :one
 UPDATE trust_domains
-SET description         = $2,
-    harvester_spiffe_id = $3,
-    onboarding_bundle   = $4,
-    updated_at          = now()
-WHERE id = $1
+SET description         = ?,
+    harvester_spiffe_id = ?,
+    onboarding_bundle   = ?,
+    updated_at          = datetime('now')
+WHERE id = ?
 RETURNING id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
 `
 
 type UpdateTrustDomainParams struct {
-	ID                pgtype.UUID
 	Description       sql.NullString
 	HarvesterSpiffeID sql.NullString
 	OnboardingBundle  []byte
+	ID                string
 }
 
 func (q *Queries) UpdateTrustDomain(ctx context.Context, arg UpdateTrustDomainParams) (TrustDomain, error) {
 	row := q.queryRow(ctx, q.updateTrustDomainStmt, updateTrustDomain,
-		arg.ID,
 		arg.Description,
 		arg.HarvesterSpiffeID,
 		arg.OnboardingBundle,
+		arg.ID,
 	)
 	var i TrustDomain
 	err := row.Scan(

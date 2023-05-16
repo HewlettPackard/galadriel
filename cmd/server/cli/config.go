@@ -34,7 +34,6 @@ type serverConfig struct {
 	ListenPort    int    `hcl:"listen_port,optional"`
 	SocketPath    string `hcl:"socket_path,optional"`
 	LogLevel      string `hcl:"log_level,optional"`
-	DBConnString  string `hcl:"db_conn_string"`
 }
 
 // providersBlock holds the Providers HCL block body.
@@ -76,8 +75,6 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 
 	sc.LocalAddress = socketAddr
 
-	sc.DBConnString = c.Server.DBConnString
-
 	logLevel, err := logrus.ParseLevel(c.Server.LogLevel)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse log level: %v", err)
@@ -86,12 +83,9 @@ func NewServerConfig(c *Config) (*server.Config, error) {
 	logger.SetLevel(logLevel)
 	sc.Logger = logger.WithField(telemetry.SubsystemName, telemetry.Server)
 
-	// TODO: eventually providers section will be required
-	if c.Providers != nil {
-		sc.ProvidersConfig, err = catalog.ProvidersConfigsFromHCLBody(c.Providers.Body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse providers configuration: %w", err)
-		}
+	sc.ProvidersConfig, err = catalog.ProvidersConfigsFromHCLBody(c.Providers.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse providers configuration: %w", err)
 	}
 
 	return sc, nil

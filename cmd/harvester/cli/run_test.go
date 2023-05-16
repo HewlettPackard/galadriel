@@ -1,10 +1,11 @@
 package cli
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadConfig(t *testing.T) {

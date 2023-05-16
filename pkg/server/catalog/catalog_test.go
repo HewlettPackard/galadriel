@@ -16,6 +16,9 @@ import (
 
 var hclConfigTemplate = `
 providers {
+    Datastore "sqlite3" {
+		connection_string = "%s"
+	}
 	X509CA "disk" {
 		key_file_path = "%s"
 		cert_file_path = "%s"
@@ -51,7 +54,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	tempDir, cleanup := setupTest(t)
 	defer cleanup()
 
-	hclConfig := fmt.Sprintf(hclConfigTemplate, tempDir+"/root-ca.key", tempDir+"/root-ca.crt")
+	hclConfig := fmt.Sprintf(hclConfigTemplate, ":memory:", tempDir+"/root-ca.key", tempDir+"/root-ca.crt")
 
 	hclBody, diagErr := hclsyntax.ParseConfig([]byte(hclConfig), "", hcl.Pos{Line: 1, Column: 1})
 	require.False(t, diagErr.HasErrors())
@@ -67,6 +70,8 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	cat := New()
 	err = cat.LoadFromProvidersConfig(pc)
 	require.NoError(t, err)
+	require.NotNil(t, cat.GetDatastore())
+	require.NotNil(t, cat.GetKeyManager())
 	require.NotNil(t, cat.GetX509CA())
 
 	_, ok := cat.GetX509CA().(*disk.X509CA)

@@ -1,12 +1,10 @@
-package datastore
+package sqlite
 
 import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
-	"github.com/pkg/errors"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -16,13 +14,17 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 		return nil, err
 	}
 
-	id := uuid.NullUUID{
-		UUID:  td.ID.Bytes,
+	id, err := uuid.Parse(td.ID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+	nullID := uuid.NullUUID{
+		UUID:  id,
 		Valid: true,
 	}
 
 	result := &entity.TrustDomain{
-		ID:               id,
+		ID:               nullID,
 		Name:             trustDomain,
 		OnboardingBundle: td.OnboardingBundle,
 		CreatedAt:        td.CreatedAt,
@@ -45,15 +47,28 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 }
 
 func (r Relationship) ToEntity() (*entity.Relationship, error) {
-	id := uuid.NullUUID{
-		UUID:  r.ID.Bytes,
+	id, err := uuid.Parse(r.ID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+	nullID := uuid.NullUUID{
+		UUID:  id,
 		Valid: true,
 	}
 
+	tdAID, err := uuid.Parse(r.TrustDomainAID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+	tdBID, err := uuid.Parse(r.TrustDomainBID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+
 	return &entity.Relationship{
-		ID:                  id,
-		TrustDomainAID:      r.TrustDomainAID.Bytes,
-		TrustDomainBID:      r.TrustDomainBID.Bytes,
+		ID:                  nullID,
+		TrustDomainAID:      tdAID,
+		TrustDomainBID:      tdBID,
 		TrustDomainAConsent: entity.ConsentStatus(r.TrustDomainAConsent),
 		TrustDomainBConsent: entity.ConsentStatus(r.TrustDomainBConsent),
 		CreatedAt:           r.CreatedAt,
@@ -62,45 +77,54 @@ func (r Relationship) ToEntity() (*entity.Relationship, error) {
 }
 
 func (b Bundle) ToEntity() (*entity.Bundle, error) {
-	id := uuid.NullUUID{
-		UUID:  b.ID.Bytes,
+	id, err := uuid.Parse(b.ID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+	nullID := uuid.NullUUID{
+		UUID:  id,
 		Valid: true,
 	}
 
+	tdID, err := uuid.Parse(b.TrustDomainID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+
 	return &entity.Bundle{
-		ID:                 id,
+		ID:                 nullID,
 		Data:               b.Data,
 		Signature:          b.Signature,
 		SignatureAlgorithm: b.SignatureAlgorithm.String,
 		SigningCertificate: b.SigningCertificate,
-		TrustDomainID:      b.TrustDomainID.Bytes,
+		TrustDomainID:      tdID,
 		CreatedAt:          b.CreatedAt,
 		UpdatedAt:          b.UpdatedAt,
 	}, nil
 }
 
-func (jt JoinToken) ToEntity() *entity.JoinToken {
-	id := uuid.NullUUID{
-		UUID:  jt.ID.Bytes,
+func (jt JoinToken) ToEntity() (*entity.JoinToken, error) {
+	id, err := uuid.Parse(jt.ID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+	nullID := uuid.NullUUID{
+		UUID:  id,
 		Valid: true,
 	}
 
+	tdID, err := uuid.Parse(jt.TrustDomainID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert model to entity: %v", err)
+	}
+
 	return &entity.JoinToken{
-		ID:            id,
+		ID:            nullID,
 		Token:         jt.Token,
 		ExpiresAt:     jt.ExpiresAt,
 		Used:          jt.Used,
-		TrustDomainID: jt.TrustDomainID.Bytes,
+		TrustDomainID: tdID,
 		CreatedAt:     jt.CreatedAt,
 		UpdatedAt:     jt.UpdatedAt,
-	}
-}
-
-func uuidToPgType(id uuid.UUID) (pgtype.UUID, error) {
-	pgID := pgtype.UUID{}
-	err := pgID.Set(id)
-	if err != nil {
-		return pgtype.UUID{}, errors.Errorf("failed converting UUID to Postgres UUID type: %v", err)
-	}
-	return pgID, err
+	}, nil
 }

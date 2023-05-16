@@ -16,7 +16,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	gojwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -32,13 +32,13 @@ const (
 
 type HarvesterAPIHandlers struct {
 	Logger       logrus.FieldLogger
-	Datastore    datastore.Datastore
+	Datastore    db.Datastore
 	jwtIssuer    jwt.Issuer
 	jwtValidator jwt.Validator
 }
 
 // NewHarvesterAPIHandlers create a new HarvesterAPIHandlers
-func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore, jwtIssuer jwt.Issuer, jwtValidator jwt.Validator) *HarvesterAPIHandlers {
+func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds db.Datastore, jwtIssuer jwt.Issuer, jwtValidator jwt.Validator) *HarvesterAPIHandlers {
 	return &HarvesterAPIHandlers{
 		Logger:       l,
 		Datastore:    ds,
@@ -340,7 +340,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	// the bundle already exists in the datastore, so we need to update it
+	// the bundle already exists in the db, so we need to update it
 	if storedBundle != nil {
 		bundle.ID = storedBundle.ID
 	}

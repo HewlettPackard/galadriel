@@ -13,7 +13,7 @@ import (
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -22,11 +22,11 @@ import (
 
 type AdminAPIHandlers struct {
 	Logger    logrus.FieldLogger
-	Datastore datastore.Datastore
+	Datastore db.Datastore
 }
 
 // NewAdminAPIHandlers create a new NewAdminAPIHandlers
-func NewAdminAPIHandlers(l logrus.FieldLogger, ds datastore.Datastore) *AdminAPIHandlers {
+func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandlers {
 	return &AdminAPIHandlers{
 		Logger:    l,
 		Datastore: ds,

@@ -12,7 +12,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -45,7 +45,7 @@ type ManagementTestSetup struct {
 	EchoCtx      echo.Context
 	Handler      *AdminAPIHandlers
 	Recorder     *httptest.ResponseRecorder
-	FakeDatabase *datastore.FakeDatabase
+	FakeDatabase *fakedatastore.FakeDatabase
 
 	// Helpers
 	bodyReader io.Reader
@@ -66,7 +66,7 @@ func NewManagementTestSetup(t *testing.T, method, url string, body interface{}) 
 	req := httptest.NewRequest(method, url, bodyReader)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	fakeDB := datastore.NewFakeDB()
+	fakeDB := fakedatastore.NewFakeDB()
 	logger := logrus.New()
 
 	return &ManagementTestSetup{

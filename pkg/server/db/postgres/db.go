@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.17.0
 
-package datastore
+package postgres
 
 import (
 	"context"

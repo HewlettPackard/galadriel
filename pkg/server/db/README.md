@@ -1,4 +1,4 @@
-# Datastore code 
+# Datastore code
 
 Type-safe code from SQL is generated using [sqlc](https://github.com/kyleconroy/sqlc).
 
@@ -7,7 +7,7 @@ Type-safe code from SQL is generated using [sqlc](https://github.com/kyleconroy/
 When there is a change in the schema or in the queries, the DB code should be re-generated:
 
 ```
-make generate-sql-server
+make generate-sqlc-code
 ```
 
 This regenerates the files `models.go`, `db.go`, `querier.go`, and files ending in `.sql.go`.
@@ -18,10 +18,11 @@ This regenerates the files `models.go`, `db.go`, `querier.go`, and files ending 
 
 Migrations are done using [golang-migrate](https://github.com/golang-migrate/migrate).
 
-When a new Datastore object is created using the NewDatastore method, the schema version is verified and 
-migrations are applied if needed. 
+When a new Datastore object is created using the NewDatastore method, the schema version is verified and
+migrations are applied if needed.
 
 # Change the DB schema
 
 Once there was an initial release of Galadriel, changes in the DB schema should be added through new files
-in the [migrations](migrations) folder and the queries in the [queries](queries) should be updated.
+in the [migrations](postgres/migrations) folder and the queries in the [queries](postgres/queries) should be updated.
+For SQLite, the files are in the [sqlite](sqlite) folder.

@@ -3,31 +3,31 @@
 //   sqlc v1.17.0
 // source: bundles.sql
 
-package datastore
+package sqlite
 
 import (
 	"context"
 	"database/sql"
-
-	"github.com/jackc/pgtype"
 )
 
 const createBundle = `-- name: CreateBundle :one
-INSERT INTO bundles(data, signature, signature_algorithm, signing_certificate, trust_domain_id)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO bundles(id, data, signature, signature_algorithm, signing_certificate, trust_domain_id)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING id, trust_domain_id, data, signature, signature_algorithm, signing_certificate, created_at, updated_at
 `
 
 type CreateBundleParams struct {
+	ID                 string
 	Data               []byte
 	Signature          []byte
 	SignatureAlgorithm sql.NullString
 	SigningCertificate []byte
-	TrustDomainID      pgtype.UUID
+	TrustDomainID      string
 }
 
 func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bundle, error) {
 	row := q.queryRow(ctx, q.createBundleStmt, createBundle,
+		arg.ID,
 		arg.Data,
 		arg.Signature,
 		arg.SignatureAlgorithm,
@@ -51,10 +51,10 @@ func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bun
 const deleteBundle = `-- name: DeleteBundle :exec
 DELETE
 FROM bundles
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) DeleteBundle(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) DeleteBundle(ctx context.Context, id string) error {
 	_, err := q.exec(ctx, q.deleteBundleStmt, deleteBundle, id)
 	return err
 }
@@ -62,10 +62,10 @@ func (q *Queries) DeleteBundle(ctx context.Context, id pgtype.UUID) error {
 const findBundleByID = `-- name: FindBundleByID :one
 SELECT id, trust_domain_id, data, signature, signature_algorithm, signing_certificate, created_at, updated_at
 FROM bundles
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) FindBundleByID(ctx context.Context, id pgtype.UUID) (Bundle, error) {
+func (q *Queries) FindBundleByID(ctx context.Context, id string) (Bundle, error) {
 	row := q.queryRow(ctx, q.findBundleByIDStmt, findBundleByID, id)
 	var i Bundle
 	err := row.Scan(
@@ -84,10 +84,11 @@ func (q *Queries) FindBundleByID(ctx context.Context, id pgtype.UUID) (Bundle, e
 const findBundleByTrustDomainID = `-- name: FindBundleByTrustDomainID :one
 SELECT id, trust_domain_id, data, signature, signature_algorithm, signing_certificate, created_at, updated_at
 FROM bundles
-WHERE trust_domain_id = $1
+WHERE trust_domain_id = ?
+LIMIT 1
 `
 
-func (q *Queries) FindBundleByTrustDomainID(ctx context.Context, trustDomainID pgtype.UUID) (Bundle, error) {
+func (q *Queries) FindBundleByTrustDomainID(ctx context.Context, trustDomainID string) (Bundle, error) {
 	row := q.queryRow(ctx, q.findBundleByTrustDomainIDStmt, findBundleByTrustDomainID, trustDomainID)
 	var i Bundle
 	err := row.Scan(
@@ -143,30 +144,30 @@ func (q *Queries) ListBundles(ctx context.Context) ([]Bundle, error) {
 
 const updateBundle = `-- name: UpdateBundle :one
 UPDATE bundles
-SET data                = $2,
-    signature           = $3,
-    signature_algorithm = $4,
-    signing_certificate = $5,
-    updated_at          = now()
-WHERE id = $1
+SET data                = ?,
+    signature           = ?,
+    signature_algorithm = ?,
+    signing_certificate = ?,
+    updated_at          = datetime('now')
+WHERE id = ?
 RETURNING id, trust_domain_id, data, signature, signature_algorithm, signing_certificate, created_at, updated_at
 `
 
 type UpdateBundleParams struct {
-	ID                 pgtype.UUID
 	Data               []byte
 	Signature          []byte
 	SignatureAlgorithm sql.NullString
 	SigningCertificate []byte
+	ID                 string
 }
 
 func (q *Queries) UpdateBundle(ctx context.Context, arg UpdateBundleParams) (Bundle, error) {
 	row := q.queryRow(ctx, q.updateBundleStmt, updateBundle,
-		arg.ID,
 		arg.Data,
 		arg.Signature,
 		arg.SignatureAlgorithm,
 		arg.SigningCertificate,
+		arg.ID,
 	)
 	var i Bundle
 	err := row.Scan(

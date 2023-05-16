@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/HewlettPackard/galadriel/test/fakes/fakejwtissuer"
 	"github.com/HewlettPackard/galadriel/test/jwttest"
 	gojwt "github.com/golang-jwt/jwt/v4"
@@ -52,7 +53,7 @@ var (
 type HarvesterTestSetup struct {
 	EchoCtx   echo.Context
 	Handler   *HarvesterAPIHandlers
-	Datastore *datastore.FakeDatabase
+	Datastore *fakedatastore.FakeDatabase
 	JWTIssuer *fakejwtissuer.JWTIssuer
 	Recorder  *httptest.ResponseRecorder
 }
@@ -69,7 +70,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *
 	req := httptest.NewRequest(method, url, bodyReader)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
-	fakeDB := datastore.NewFakeDB()
+	fakeDB := fakedatastore.NewFakeDB()
 	logger := logrus.New()
 
 	jwtAudience := []string{"test"}
@@ -85,7 +86,7 @@ func NewHarvesterTestSetup(t *testing.T, method, url string, body interface{}) *
 	}
 }
 
-func SetupTrustDomain(t *testing.T, ds datastore.Datastore) *entity.TrustDomain {
+func SetupTrustDomain(t *testing.T, ds db.Datastore) *entity.TrustDomain {
 	td, err := spiffeid.TrustDomainFromString(td1)
 	assert.NoError(t, err)
 
@@ -99,7 +100,7 @@ func SetupTrustDomain(t *testing.T, ds datastore.Datastore) *entity.TrustDomain 
 	return trustDomain
 }
 
-func SetupBundle(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.Bundle {
+func SetupBundle(t *testing.T, ds db.Datastore, td uuid.UUID) *entity.Bundle {
 	bundle := &entity.Bundle{
 		TrustDomainID: td,
 		Data:          []byte("test-bundle"),
@@ -112,7 +113,7 @@ func SetupBundle(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.Bun
 	return bundle
 }
 
-func SetupJoinToken(t *testing.T, ds datastore.Datastore, td uuid.UUID) *entity.JoinToken {
+func SetupJoinToken(t *testing.T, ds db.Datastore, td uuid.UUID) *entity.JoinToken {
 	jt := &entity.JoinToken{
 		Token:         "test-join-token",
 		TrustDomainID: td,

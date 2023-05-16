@@ -3,29 +3,33 @@
 //   sqlc v1.17.0
 // source: join_tokens.sql
 
-package datastore
+package sqlite
 
 import (
 	"context"
 	"time"
-
-	"github.com/jackc/pgtype"
 )
 
 const createJoinToken = `-- name: CreateJoinToken :one
-INSERT INTO join_tokens(token, expires_at, trust_domain_id)
-VALUES ($1, $2, $3)
+INSERT INTO join_tokens(id, token, expires_at, trust_domain_id)
+VALUES (?, ?, ?, ?)
 RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
 
 type CreateJoinTokenParams struct {
+	ID            string
 	Token         string
 	ExpiresAt     time.Time
-	TrustDomainID pgtype.UUID
+	TrustDomainID string
 }
 
 func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams) (JoinToken, error) {
-	row := q.queryRow(ctx, q.createJoinTokenStmt, createJoinToken, arg.Token, arg.ExpiresAt, arg.TrustDomainID)
+	row := q.queryRow(ctx, q.createJoinTokenStmt, createJoinToken,
+		arg.ID,
+		arg.Token,
+		arg.ExpiresAt,
+		arg.TrustDomainID,
+	)
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
@@ -40,12 +44,11 @@ func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams
 }
 
 const deleteJoinToken = `-- name: DeleteJoinToken :exec
-DELETE
-FROM join_tokens
-WHERE id = $1
+DELETE FROM join_tokens
+WHERE id = ?
 `
 
-func (q *Queries) DeleteJoinToken(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) DeleteJoinToken(ctx context.Context, id string) error {
 	_, err := q.exec(ctx, q.deleteJoinTokenStmt, deleteJoinToken, id)
 	return err
 }
@@ -53,7 +56,7 @@ func (q *Queries) DeleteJoinToken(ctx context.Context, id pgtype.UUID) error {
 const findJoinToken = `-- name: FindJoinToken :one
 SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
-WHERE token = $1
+WHERE token = ?
 `
 
 func (q *Queries) FindJoinToken(ctx context.Context, token string) (JoinToken, error) {
@@ -74,10 +77,10 @@ func (q *Queries) FindJoinToken(ctx context.Context, token string) (JoinToken, e
 const findJoinTokenByID = `-- name: FindJoinTokenByID :one
 SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
-WHERE id = $1
+WHERE id = ?
 `
 
-func (q *Queries) FindJoinTokenByID(ctx context.Context, id pgtype.UUID) (JoinToken, error) {
+func (q *Queries) FindJoinTokenByID(ctx context.Context, id string) (JoinToken, error) {
 	row := q.queryRow(ctx, q.findJoinTokenByIDStmt, findJoinTokenByID, id)
 	var i JoinToken
 	err := row.Scan(
@@ -95,10 +98,11 @@ func (q *Queries) FindJoinTokenByID(ctx context.Context, id pgtype.UUID) (JoinTo
 const findJoinTokensByTrustDomainID = `-- name: FindJoinTokensByTrustDomainID :many
 SELECT id, trust_domain_id, token, used, expires_at, created_at, updated_at
 FROM join_tokens
-WHERE trust_domain_id = $1
+WHERE trust_domain_id = ?
+ORDER BY created_at DESC
 `
 
-func (q *Queries) FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID pgtype.UUID) ([]JoinToken, error) {
+func (q *Queries) FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID string) ([]JoinToken, error) {
 	rows, err := q.query(ctx, q.findJoinTokensByTrustDomainIDStmt, findJoinTokensByTrustDomainID, trustDomainID)
 	if err != nil {
 		return nil, err
@@ -168,19 +172,19 @@ func (q *Queries) ListJoinTokens(ctx context.Context) ([]JoinToken, error) {
 
 const updateJoinToken = `-- name: UpdateJoinToken :one
 UPDATE join_tokens
-    SET used = $2,
-        updated_at = now()
-WHERE id = $1
+SET used = ?,
+    updated_at = datetime('now')
+WHERE id = ?
 RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
 
 type UpdateJoinTokenParams struct {
-	ID   pgtype.UUID
 	Used bool
+	ID   string
 }
 
 func (q *Queries) UpdateJoinToken(ctx context.Context, arg UpdateJoinTokenParams) (JoinToken, error) {
-	row := q.queryRow(ctx, q.updateJoinTokenStmt, updateJoinToken, arg.ID, arg.Used)
+	row := q.queryRow(ctx, q.updateJoinTokenStmt, updateJoinToken, arg.Used, arg.ID)
 	var i JoinToken
 	err := row.Scan(
 		&i.ID,
