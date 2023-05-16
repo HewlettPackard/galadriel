@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	createTrustDomainURL  = fmt.Sprintf(localURL, "createTrustDomain")
+	createTrustDomainURL  = fmt.Sprintf(localURL, "trust-domain")
 	listTrustDomainsURL   = fmt.Sprintf(localURL, "listTrustDomains")
 	createRelationshipURL = fmt.Sprintf(localURL, "createRelationship")
 	listRelationshipsURL  = fmt.Sprintf(localURL, "listRelationships")
@@ -63,7 +63,12 @@ func (c serverClient) CreateTrustDomain(m *entity.TrustDomain) error {
 		return err
 	}
 
-	r, err := c.client.Post(createTrustDomainURL, contentType, bytes.NewReader(trustDomainBytes))
+	req, err := http.NewRequest(http.MethodPut, createTrustDomainURL, bytes.NewReader(trustDomainBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	r, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}

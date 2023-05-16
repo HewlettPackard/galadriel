@@ -9,29 +9,31 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
-	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
+	defaultLocalSocketPath       = "/tmp/galadriel-harvester/api.sock"
 	defaultSpireSocketPath       = "/tmp/spire-server/private/api.sock"
 	defaultBundleUpdatesInterval = "30s"
 	defaultLogLevel              = "INFO"
 )
 
-// TODO: migrate to HCL 2 (see Server CLI)
-
 type Config struct {
-	Harvester *harvesterConfig `hcl:"harvester"`
+	Harvester *harvesterConfig `hcl:"harvester,block"`
 }
 
 type harvesterConfig struct {
-	SpireSocketPath       string `hcl:"spire_socket_path"`
+	LocalSocketPath       string `hcl:"local_socket_path,optional"`
+	SpireSocketPath       string `hcl:"spire_socket_path,optional"`
 	ServerAddress         string `hcl:"server_address"`
 	ServerTrustBundlePath string `hcl:"server_trust_bundle_path"`
-	BundleUpdatesInterval string `hcl:"bundle_updates_interval"`
-	LogLevel              string `hcl:"log_level"`
+	BundleUpdatesInterval string `hcl:"bundle_updates_interval,optional"`
+	LogLevel              string `hcl:"log_level,optional"`
 }
 
 // ParseConfig reads a configuration from the Reader and parses it
@@ -53,12 +55,21 @@ func ParseConfig(config io.Reader) (*Config, error) {
 func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 	hc := &harvester.Config{}
 
+	if c.Harvester == nil {
+		return nil, errors.New("harvester configuration is required")
+	}
+
+	localAddr, err := util.GetUnixAddrWithAbsPath(c.Harvester.LocalSocketPath)
+	if err != nil {
+		return nil, err
+	}
+
 	spireAddr, err := util.GetUnixAddrWithAbsPath(c.Harvester.SpireSocketPath)
 	if err != nil {
 		return nil, err
 	}
 
-	buInt, err := time.ParseDuration(c.Harvester.BundleUpdatesInterval)
+	bundleInterval, err := time.ParseDuration(c.Harvester.BundleUpdatesInterval)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse bundle updates interval: %v", err)
 	}
@@ -68,12 +79,19 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 		return nil, fmt.Errorf("failed to resolve server address: %v", err)
 	}
 
-	hc.SpireAddress = spireAddr
+	hc.LocalAddress = localAddr
+	hc.LocalSpireAddress = spireAddr
 	hc.ServerAddress = serverTCPAddress
 	hc.ServerTrustBundlePath = c.Harvester.ServerTrustBundlePath
-	hc.BundleUpdatesInterval = buInt
+	hc.BundleUpdatesInterval = bundleInterval
 
-	hc.Logger = logrus.WithField(telemetry.SubsystemName, telemetry.Harvester)
+	logLevel, err := logrus.ParseLevel(c.Harvester.LogLevel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse log level: %v", err)
+	}
+	logger := logrus.New()
+	logger.SetLevel(logLevel)
+	hc.Logger = logger.WithField(telemetry.SubsystemName, telemetry.Harvester)
 
 	return hc, nil
 }
@@ -81,29 +99,38 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 func newConfig(configBytes []byte) (*Config, error) {
 	var config Config
 
-	if err := hcl.Decode(&config, string(configBytes)); err != nil {
-		return nil, fmt.Errorf("unable to decode configuration: %w", err)
+	hclBody, err := hclsyntax.ParseConfig(configBytes, "", hcl.Pos{Line: 1, Column: 1})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HCL: %w", err)
+	}
+
+	if err := gohcl.DecodeBody(hclBody.Body, nil, &config); err != nil {
+		return nil, fmt.Errorf("failed to decode HCL: %w", err)
 	}
 
 	if config.Harvester == nil {
-		return nil, errors.New("harvester section is empty")
+		return nil, errors.New("harvester config section is empty")
 	}
 
-	config.setDefaults()
+	setDefaults(config.Harvester)
 
 	return &config, nil
 }
 
-func (c *Config) setDefaults() {
-	if c.Harvester.SpireSocketPath == "" {
-		c.Harvester.SpireSocketPath = defaultSpireSocketPath
+func setDefaults(config *harvesterConfig) {
+	if config.LocalSocketPath == "" {
+		config.LocalSocketPath = defaultLocalSocketPath
 	}
 
-	if c.Harvester.BundleUpdatesInterval == "" {
-		c.Harvester.BundleUpdatesInterval = defaultBundleUpdatesInterval
+	if config.SpireSocketPath == "" {
+		config.SpireSocketPath = defaultSpireSocketPath
 	}
 
-	if c.Harvester.LogLevel == "" {
-		c.Harvester.LogLevel = defaultLogLevel
+	if config.BundleUpdatesInterval == "" {
+		config.BundleUpdatesInterval = defaultBundleUpdatesInterval
+	}
+
+	if config.LogLevel == "" {
+		config.LogLevel = defaultLogLevel
 	}
 }

@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,15 +17,20 @@ var hclConfigWithProviders = `server {
     listen_address = "127.0.0.1"
     listen_port = "2222"
     socket_path = "/tmp/api.sock"
-    db_conn_string = "test_conn_string" 
 	log_level = "DEBUG"
 }
 
 providers {
-	x509ca "disk" {
+    Datastore "sqlite3" {
+        connection_string = "./datastore.sqlite3"
+    }
+
+	X509CA "disk" {
 		key_file_path = "./root_ca.key"
 		cert_file_path = "./root_ca.crt"
 	}
+
+    KeyManager "memory" {}
 }
 `
 
@@ -35,26 +38,6 @@ type fakeReader int
 
 func (fakeReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("error from fake reader")
-}
-
-func TestNewServerConfig(t *testing.T) {
-	config := Config{Server: &serverConfig{
-		ListenAddress: "localhost",
-		ListenPort:    8000,
-		SocketPath:    "/example",
-		LogLevel:      "INFO",
-		DBConnString:  "postgresql://postgres:postgres@localhost:5432/galadriel",
-	}}
-
-	sc, err := NewServerConfig(&config)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, "127.0.0.1", sc.TCPAddress.IP.String())
-	assert.Equal(t, config.Server.ListenPort, sc.TCPAddress.Port)
-	assert.Equal(t, config.Server.SocketPath, sc.LocalAddress.String())
-	assert.Equal(t, strings.ToLower(config.Server.LogLevel), logrus.GetLevel().String())
 }
 
 func TestNew(t *testing.T) {
@@ -73,22 +56,18 @@ func TestNew(t *testing.T) {
 					ListenPort:    2222,
 					SocketPath:    "/tmp/api.sock",
 					LogLevel:      "DEBUG",
-					DBConnString:  "test_conn_string",
 				},
 			},
 		},
 		{
-			name: "defaults",
-			config: bytes.NewBuffer([]byte(`server {
-db_conn_string = "test_conn_string"
-}`)),
+			name:   "defaults",
+			config: bytes.NewBuffer([]byte(`server {}`)),
 			expected: &Config{
 				Server: &serverConfig{
 					ListenAddress: defaultAddress,
 					ListenPort:    defaultPort,
 					SocketPath:    defaultSocketPath,
 					LogLevel:      defaultLogLevel,
-					DBConnString:  "test_conn_string",
 				},
 			},
 		},

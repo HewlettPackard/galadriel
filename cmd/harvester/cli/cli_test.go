@@ -4,26 +4,21 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecute(t *testing.T) {
+func TestCLI(t *testing.T) {
+	expectedSuccess := 0
+	expectedError := 1
 	cmdExecute = func() error {
 		return nil
 	}
-	assert.Nil(t, HarvesterCmd.Execute())
+
+	assert.Equal(t, expectedSuccess, Run())
 
 	cmdExecute = func() error {
-		return errors.New("Ops")
+		return errors.New("")
 	}
-	assert.NotNil(t, HarvesterCmd.Execute())
-}
 
-func TestNewRootCmd(t *testing.T) {
-	expected := &cobra.Command{
-		Use:  "harvester",
-		Long: "This is the Galadriel Harvester CLI",
-	}
-	assert.Equal(t, expected, NewRootCmd())
+	assert.Equal(t, expectedError, Run())
 }

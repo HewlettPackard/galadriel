@@ -106,8 +106,8 @@ func TestRelationshipFromEntity(t *testing.T) {
 			UpdatedAt:           time.Now(),
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: true,
-			TrustDomainBConsent: false,
+			TrustDomainAConsent: entity.ConsentStatusPending,
+			TrustDomainBConsent: entity.ConsentStatusAccepted,
 		}
 
 		r := RelationshipFromEntity(&eRelationship)
@@ -118,7 +118,7 @@ func TestRelationshipFromEntity(t *testing.T) {
 		assert.Equal(t, eRelationship.UpdatedAt, r.UpdatedAt)
 		assert.Equal(t, eRelationship.TrustDomainAID, r.TrustDomainAId)
 		assert.Equal(t, eRelationship.TrustDomainBID, r.TrustDomainBId)
-		assert.Equal(t, eRelationship.TrustDomainAConsent, r.TrustDomainAConsent)
-		assert.Equal(t, eRelationship.TrustDomainBConsent, r.TrustDomainBConsent)
+		assert.Equal(t, string(eRelationship.TrustDomainAConsent), string(r.TrustDomainAConsent))
+		assert.Equal(t, string(eRelationship.TrustDomainBConsent), string(r.TrustDomainBConsent))
 	})
 }

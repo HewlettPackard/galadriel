@@ -74,11 +74,11 @@ go_path := PATH="$(go_bin_dir):$(PATH)"
 oapi_codegen_version = 1.12.4
 oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
 
-server_sqlc_config_file = $(DIR)/pkg/server/datastore/sqlc.yaml
+server_sqlc_config_file = $(DIR)/pkg/server/db/sqlc.yaml
 
 sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
 sqlc_bin = $(sqlc_dir)/sqlc
-sqlc_version = 1.17.0
+sqlc_version = 1.18.0
 ifeq ($(os1),windows)
 	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_windows_amd64.zip
 else ifeq ($(os1),darwin)
@@ -205,11 +205,13 @@ help:
 ### Code generation ####
 .PHONY: generate-sqlc-server generete-spec
 
-generate-sqlc-server: install-sqlc run-sqlc-server
+# Run sqlc to generate sql code
+generate-sqlc-code: install-sqlc run-generate-sqlc
 
-run-sqlc-server:
+run-generate-sqlc:
 	$(sqlc_bin) generate --file $(server_sqlc_config_file)
 
+# Run oapi-codegen to generate api code
 generate-spec:
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v$(oapi_codegen_version)
 	cd ./pkg/common/api; $(GOPATH)/bin/oapi-codegen -config schemas.cfg.yaml schemas.yaml

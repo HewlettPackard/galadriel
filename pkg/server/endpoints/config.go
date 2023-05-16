@@ -5,7 +5,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,8 +15,6 @@ type Config struct {
 
 	// LocalAddress is the local address to bind the listener to.
 	LocalAddress net.Addr
-
-	Datastore datastore.Datastore
 
 	JWTIssuer jwt.Issuer
 

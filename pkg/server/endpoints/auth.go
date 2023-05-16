@@ -4,19 +4,19 @@ import (
 	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
-	"github.com/HewlettPackard/galadriel/pkg/server/datastore"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type AuthenticationMiddleware struct {
-	datastore    datastore.Datastore
+	datastore    db.Datastore
 	jwtValidator jwt.Validator
 	logger       logrus.FieldLogger
 }
 
-func NewAuthenticationMiddleware(l logrus.FieldLogger, ds datastore.Datastore, jwtValidator jwt.Validator) *AuthenticationMiddleware {
+func NewAuthenticationMiddleware(l logrus.FieldLogger, ds db.Datastore, jwtValidator jwt.Validator) *AuthenticationMiddleware {
 	return &AuthenticationMiddleware{
 		logger:       l,
 		datastore:    ds,
@@ -52,7 +52,7 @@ func (m *AuthenticationMiddleware) Authenticate(bearerToken string, echoCtx echo
 	m.logger.Debugf("Token valid for trust domain: %s\n", tdName)
 
 	// set the authenticated trust domain ID in the echo context
-	echoCtx.Set(authTrustDomainKey, td)
+	echoCtx.Set(authTrustDomainKey, &td)
 	// set the authenticated claims in the echo context
 	echoCtx.Set(authClaimsKey, claims)
 
