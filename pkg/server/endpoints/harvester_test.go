@@ -618,7 +618,7 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 		TrustDomain:        td1,
 	}
 
-	body, err := json.Marshal(bundlePut)
+	body, err := json.Marshal(&bundlePut)
 	require.NoError(t, err)
 
 	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", string(body))
