@@ -31,6 +31,9 @@ func NewDatastore(connString string) (*Datastore, error) {
 
 	// enable foreign key constraint enforcement
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		return nil, fmt.Errorf("failed to enable foreign key constraint enforcement: %w", err)
+	}
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
 	if err = validateAndMigrateSchema(db); err != nil {
