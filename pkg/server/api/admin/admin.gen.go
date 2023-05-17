@@ -153,9 +153,9 @@ type ClientInterface interface {
 	GetTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PutTrustDomainByName request with any body
-	PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetJoinToken request
 	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -245,7 +245,7 @@ func (c *Client) GetTrustDomainByName(ctx context.Context, trustDomainName exter
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainByNameRequestWithBody(c.Server, trustDomainName, contentType, body)
 	if err != nil {
 		return nil, err
@@ -257,7 +257,7 @@ func (c *Client) PutTrustDomainByNameWithBody(ctx context.Context, trustDomainNa
 	return c.Client.Do(req)
 }
 
-func (c *Client) PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+func (c *Client) PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainByNameRequest(c.Server, trustDomainName, body)
 	if err != nil {
 		return nil, err
@@ -493,7 +493,7 @@ func NewGetTrustDomainByNameRequest(server string, trustDomainName externalRef0.
 }
 
 // NewPutTrustDomainByNameRequest calls the generic PutTrustDomainByName builder with application/json body
-func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody) (*http.Request, error) {
+func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -504,7 +504,7 @@ func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.
 }
 
 // NewPutTrustDomainByNameRequestWithBody generates requests for PutTrustDomainByName with any type of body
-func NewPutTrustDomainByNameRequestWithBody(server string, trustDomainName externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPutTrustDomainByNameRequestWithBody(server string, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -636,9 +636,9 @@ type ClientWithResponsesInterface interface {
 	GetTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainByNameResponse, error)
 
 	// PutTrustDomainByName request with any body
-	PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
+	PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
 
-	PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
+	PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
 
 	// GetJoinToken request
 	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
@@ -867,7 +867,7 @@ func (c *ClientWithResponses) GetTrustDomainByNameWithResponse(ctx context.Conte
 }
 
 // PutTrustDomainByNameWithBodyWithResponse request with arbitrary body returning *PutTrustDomainByNameResponse
-func (c *ClientWithResponses) PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
+func (c *ClientWithResponses) PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
 	rsp, err := c.PutTrustDomainByNameWithBody(ctx, trustDomainName, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -875,7 +875,7 @@ func (c *ClientWithResponses) PutTrustDomainByNameWithBodyWithResponse(ctx conte
 	return ParsePutTrustDomainByNameResponse(rsp)
 }
 
-func (c *ClientWithResponses) PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.UUID, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
+func (c *ClientWithResponses) PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error) {
 	rsp, err := c.PutTrustDomainByName(ctx, trustDomainName, body, reqEditors...)
 	if err != nil {
 		return nil, err
@@ -1142,7 +1142,7 @@ type ServerInterface interface {
 	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Update a specific trust domain
 	// (PUT /trust-domain/{trustDomainName})
-	PutTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.UUID) error
+	PutTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Get a join token for a specific Trust Domain
 	// (GET /trust-domain/{trustDomainName}/join-token)
 	GetJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
@@ -1232,7 +1232,7 @@ func (w *ServerInterfaceWrapper) GetTrustDomainByName(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) PutTrustDomainByName(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "trustDomainName" -------------
-	var trustDomainName externalRef0.UUID
+	var trustDomainName externalRef0.TrustDomainName
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
 	if err != nil {
@@ -1301,31 +1301,31 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
@@ -32,7 +33,8 @@ var createTrustDomainCmd = &cobra.Command{
 
 		c := util.NewServerClient(defaultSocketPath)
 
-		if err := c.CreateTrustDomain(&entity.TrustDomain{Name: trustDomain}); err != nil {
+		_, err = c.CreateTrustDomain(context.Background(), &entity.TrustDomain{Name: trustDomain})
+		if err != nil {
 			return err
 		}
 
@@ -69,10 +71,11 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		if err := c.CreateRelationship(&entity.Relationship{
+		_, err = c.CreateRelationship(context.Background(), &entity.Relationship{
 			TrustDomainAName: trustDomain1,
 			TrustDomainBName: trustDomain2,
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 

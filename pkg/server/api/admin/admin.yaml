@@ -54,7 +54,7 @@ paths:
           description: Trust Domain name
           required: true
           schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
       requestBody:
         content:
           application/json:
