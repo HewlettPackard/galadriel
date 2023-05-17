@@ -20,8 +20,8 @@ func WriteResponse(ctx echo.Context, code int, body interface{}) error {
 	return nil
 }
 
-// BodilessResponse wraps error echo body-less responses.
-func BodilessResponse(ctx echo.Context, code int) error {
+// RespondWithoutBody wraps error echo bodiless responses.
+func RespondWithoutBody(ctx echo.Context, code int) error {
 	if err := ctx.NoContent(code); err != nil {
 		return fmt.Errorf("failed to respond without body: %v", err)
 	}
@@ -29,11 +29,11 @@ func BodilessResponse(ctx echo.Context, code int) error {
 	return nil
 }
 
-// FromBody parses json bytes into a struct
-func FromBody(ctx echo.Context, in interface{}) error {
-	if in == nil {
+// ParseRequestBodyToStruct parses json bytes into a struct
+func ParseRequestBodyToStruct(ctx echo.Context, targetStruct interface{}) error {
+	if targetStruct == nil {
 		return fmt.Errorf("missing reference for handling parsed data")
 	}
 
-	return ctx.Bind(in)
+	return ctx.Bind(targetStruct)
 }
