@@ -1,6 +1,8 @@
 package entity
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 // FilterRelationships filters a slice of Relationship entities based on a trust domain ID and consent status.
 // If the trust domain ID is nil, it filters based on the consent status only.

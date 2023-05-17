@@ -76,7 +76,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(*params.Status), tdID)
 	}
 
-	relationships, err = h.populateTrustDomainNames(ctx, relationships)
+	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships)
 	if err != nil {
 		err = fmt.Errorf("failed populating relationships entities: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
@@ -335,23 +335,6 @@ func (h *AdminAPIHandlers) findTrustDomainByName(ctx context.Context, trustDomai
 	}
 
 	return td, nil
-}
-
-func (h *AdminAPIHandlers) populateTrustDomainNames(ctx context.Context, relationships []*entity.Relationship) ([]*entity.Relationship, error) {
-	for _, r := range relationships {
-		tda, err := h.Datastore.FindTrustDomainByID(ctx, r.TrustDomainAID)
-		if err != nil {
-			return nil, err
-		}
-		r.TrustDomainAName = tda.Name
-
-		tdb, err := h.Datastore.FindTrustDomainByID(ctx, r.TrustDomainBID)
-		if err != nil {
-			return nil, err
-		}
-		r.TrustDomainBName = tdb.Name
-	}
-	return relationships, nil
 }
 
 func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID uuid.UUID, code int) (*entity.TrustDomain, error) {

@@ -79,6 +79,13 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(consentStatus), &authTD.ID.UUID)
 	}
 
+	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships)
+	if err != nil {
+		msg := "failed populating relationships entities"
+		err := fmt.Errorf("%s: %w", msg, err)
+		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
+	}
+
 	apiRelationships := api.MapRelationships(relationships...)
 
 	return chttp.WriteResponse(echoCtx, http.StatusOK, apiRelationships)
