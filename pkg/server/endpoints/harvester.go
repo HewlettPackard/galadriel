@@ -141,7 +141,7 @@ func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relations
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodilessResponse(echoCtx, http.StatusOK); err != nil {
+	if err = chttp.RespondWithoutBody(echoCtx, http.StatusOK); err != nil {
 		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -347,7 +347,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 		return h.handleErrorAndLog(err, msg, http.StatusInternalServerError)
 	}
 
-	if err = chttp.BodilessResponse(echoCtx, http.StatusOK); err != nil {
+	if err = chttp.RespondWithoutBody(echoCtx, http.StatusOK); err != nil {
 		return h.handleErrorAndLog(err, err.Error(), http.StatusInternalServerError)
 	}
 

@@ -20,8 +20,8 @@ func WriteResponse(ctx echo.Context, code int, body interface{}) error {
 	return nil
 }
 
-// BodilessResponse wraps error echo body-less responses.
-func BodilessResponse(ctx echo.Context, code int) error {
+// RespondWithoutBody wraps error echo bodiless responses.
+func RespondWithoutBody(ctx echo.Context, code int) error {
 	if err := ctx.NoContent(code); err != nil {
 		return fmt.Errorf("failed to respond without body: %v", err)
 	}
