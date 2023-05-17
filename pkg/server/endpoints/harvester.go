@@ -113,7 +113,7 @@ func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, relations
 	}
 
 	var patchRequest harvester.PatchRelationship
-	if err := chttp.FromBody(echoCtx, &patchRequest); err != nil {
+	if err := chttp.ParseRequestBodyToStruct(echoCtx, &patchRequest); err != nil {
 		msg := "error reading body"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
@@ -266,7 +266,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 
 	// Get the request body
 	var req harvester.BundleSyncBody
-	if err := chttp.FromBody(echoCtx, &req); err != nil {
+	if err := chttp.ParseRequestBodyToStruct(echoCtx, &req); err != nil {
 		msg := "failed to parse request body"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)
@@ -304,7 +304,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	}
 
 	req := &harvester.BundlePutJSONRequestBody{}
-	if err := chttp.FromBody(echoCtx, req); err != nil {
+	if err := chttp.ParseRequestBodyToStruct(echoCtx, req); err != nil {
 		msg := "failed to read bundle from request body"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return h.handleErrorAndLog(err, msg, http.StatusBadRequest)

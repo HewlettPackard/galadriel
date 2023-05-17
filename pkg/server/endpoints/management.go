@@ -97,7 +97,7 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutRelationshipJSONRequestBody{}
-	err := chttp.FromBody(echoCtx, reqBody)
+	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
 		return h.handleAndLog(err, http.StatusBadRequest)
@@ -162,7 +162,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutTrustDomainJSONRequestBody{}
-	err := chttp.FromBody(echoCtx, reqBody)
+	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
 	if err != nil {
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
@@ -237,7 +237,7 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutTrustDomainByNameJSONRequestBody{}
-	err := chttp.FromBody(echoCtx, reqBody)
+	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to read trust domain put body: %v", err)
 		return h.handleAndLog(err, http.StatusBadRequest)

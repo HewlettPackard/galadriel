@@ -29,11 +29,11 @@ func RespondWithoutBody(ctx echo.Context, code int) error {
 	return nil
 }
 
-// FromBody parses json bytes into a struct
-func FromBody(ctx echo.Context, in interface{}) error {
-	if in == nil {
+// ParseRequestBodyToStruct parses json bytes into a struct
+func ParseRequestBodyToStruct(ctx echo.Context, targetStruct interface{}) error {
+	if targetStruct == nil {
 		return fmt.Errorf("missing reference for handling parsed data")
 	}
 
-	return ctx.Bind(in)
+	return ctx.Bind(targetStruct)
 }
