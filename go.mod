@@ -16,7 +16,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spiffe/go-spiffe/v2 v2.1.4
 	github.com/spiffe/spire-api-sdk v1.6.3

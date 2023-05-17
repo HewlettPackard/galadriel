@@ -79,6 +79,10 @@ components:
           $ref: '#/components/schemas/UUID'
         trust_domain_b_id:
           $ref: '#/components/schemas/UUID'
+        trust_domain_a_name:
+          $ref: '#/components/schemas/TrustDomainName'
+        trust_domain_b_name:
+          $ref: '#/components/schemas/TrustDomainName'
         trust_domain_a_consent:
           $ref: '#/components/schemas/ConsentStatus'
           default: pending
