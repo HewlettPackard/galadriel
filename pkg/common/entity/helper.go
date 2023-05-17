@@ -7,10 +7,10 @@ import "github.com/google/uuid"
 // If the trust domain ID is not nil, it filters based on both the trust domain ID and the consent status.
 // Parameters:
 // - relationships: The slice of Relationship entities to be filtered.
-// - trustDomain: The ID of the trust domain for which relationships are to be filtered. Can be nil.
 // - status: The consent status to be used as a filter criterion.
+// - trustDomain: The ID of the trust domain for which relationships are to be filtered. Can be nil.
 // Return: A slice of Relationship entities that match the filter criteria.
-func FilterRelationships(relationships []*Relationship, trustDomain *uuid.UUID, status ConsentStatus) []*Relationship {
+func FilterRelationships(relationships []*Relationship, status ConsentStatus, trustDomain *uuid.UUID) []*Relationship {
 	// Pre-allocate space for the slice to avoid unnecessary allocations
 	filtered := make([]*Relationship, 0, len(relationships))
 

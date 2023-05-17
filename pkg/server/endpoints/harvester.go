@@ -76,7 +76,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, params har
 	}
 
 	if consentStatus != "" {
-		relationships = entity.FilterRelationships(relationships, &authTD.ID.UUID, entity.ConsentStatus(consentStatus))
+		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(consentStatus), &authTD.ID.UUID)
 	}
 
 	apiRelationships := api.MapRelationships(relationships...)
@@ -281,7 +281,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// filer out the relationships whose consent status is not "accepted" by the authenticated trust domain
-	relationships = entity.FilterRelationships(relationships, &authTD.ID.UUID, entity.ConsentStatusAccepted)
+	relationships = entity.FilterRelationships(relationships, entity.ConsentStatusAccepted, &authTD.ID.UUID)
 
 	resp, err := h.getBundleSyncResult(ctx, authTD, relationships, req)
 	if err != nil {

@@ -28,7 +28,7 @@ func TestFilterRelationships(t *testing.T) {
 	status := ConsentStatus("accepted")
 
 	// Call FilterRelationships
-	filtered := FilterRelationships(relationships, &trustDomain, status)
+	filtered := FilterRelationships(relationships, status, &trustDomain)
 
 	assert.Equal(t, 1, len(filtered))
 	assert.Equal(t, relationships[0].ID.UUID, filtered[0].ID.UUID)
