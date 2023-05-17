@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTrustDomainToEntity(t *testing.T) {
@@ -62,63 +63,134 @@ func TestTrustDomainToEntity(t *testing.T) {
 }
 
 func TestTrustDomainFromEntity(t *testing.T) {
-	t.Run("Full fill correctly the trust domain API model", func(t *testing.T) {
+	uuid := uuid.NullUUID{UUID: uuid.New(), Valid: true}
+	description := "a really cool description"
+	onboardingBundle := []byte("think that I am a bundle")
+	trustDomain := spiffeid.RequireTrustDomainFromString("trust.com")
 
-		uuid := uuid.NullUUID{UUID: uuid.New(), Valid: true}
-		description := "a really cool description"
-		onboardingBundle := []byte("think that I am a bundle")
-		trustDomain := spiffeid.RequireTrustDomainFromString("trust.com")
+	harversterSpiffeId, err := spiffeid.FromString("spiffe://trust.domain/workload-teste")
+	assert.NoError(t, err)
 
-		harversterSpiffeId, err := spiffeid.FromString("spiffe://trust.domain/workload-teste")
-		assert.NoError(t, err)
+	etd := entity.TrustDomain{
+		ID:                uuid,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+		Name:              trustDomain,
+		Description:       description,
+		OnboardingBundle:  onboardingBundle,
+		HarvesterSpiffeID: harversterSpiffeId,
+	}
 
-		etd := entity.TrustDomain{
-			ID:                uuid,
-			CreatedAt:         time.Now(),
-			UpdatedAt:         time.Now(),
-			Name:              trustDomain,
-			Description:       description,
-			OnboardingBundle:  onboardingBundle,
-			HarvesterSpiffeID: harversterSpiffeId,
-		}
+	td := TrustDomainFromEntity(&etd)
+	assert.NotNil(t, td)
 
-		td := TrustDomainFromEntity(&etd)
-		assert.NotNil(t, td)
+	assert.Equal(t, etd.ID.UUID, td.Id)
+	assert.Equal(t, etd.Name.String(), td.Name)
+	assert.Equal(t, etd.CreatedAt, td.CreatedAt)
+	assert.Equal(t, etd.UpdatedAt, td.UpdatedAt)
+	assert.Equal(t, etd.Description, *td.Description)
+	assert.Equal(t, etd.OnboardingBundle, []byte(*td.OnboardingBundle))
+	assert.Equal(t, etd.HarvesterSpiffeID.String(), *td.HarvesterSpiffeId)
+}
 
-		assert.Equal(t, etd.ID.UUID, td.Id)
-		assert.Equal(t, etd.Name.String(), td.Name)
-		assert.Equal(t, etd.CreatedAt, td.CreatedAt)
-		assert.Equal(t, etd.UpdatedAt, td.UpdatedAt)
-		assert.Equal(t, etd.Description, *td.Description)
-		assert.Equal(t, etd.OnboardingBundle, []byte(*td.OnboardingBundle))
-		assert.Equal(t, etd.HarvesterSpiffeID.String(), *td.HarvesterSpiffeId)
-	})
+func TestRelationshipToEntity(t *testing.T) {
+	// Arrange
+	id := uuid.New()
+	trustDomainAName := "example.org"
+	trustDomainBName := "example.com"
+	trustDomainAId := uuid.New()
+	trustDomainBId := uuid.New()
+
+	r := Relationship{
+		Id:                  id,
+		TrustDomainAName:    &trustDomainAName,
+		TrustDomainBName:    &trustDomainBName,
+		TrustDomainAId:      trustDomainAId,
+		TrustDomainBId:      trustDomainBId,
+		TrustDomainAConsent: Accepted,
+		TrustDomainBConsent: Denied,
+	}
+
+	// Act
+	ent, err := r.ToEntity()
+
+	// Assert
+	require.NoError(t, err)
+	require.Equal(t, id, ent.ID.UUID)
+	require.Equal(t, trustDomainAId, ent.TrustDomainAID)
+	require.Equal(t, trustDomainBId, ent.TrustDomainBID)
+	require.Equal(t, trustDomainAName, ent.TrustDomainAName.String())
+	require.Equal(t, trustDomainBName, ent.TrustDomainBName.String())
+	require.Equal(t, entity.ConsentStatusAccepted, ent.TrustDomainAConsent)
+	require.Equal(t, entity.ConsentStatusDenied, ent.TrustDomainBConsent)
+
+	// Test invalid trust domain A name
+	invalidTrustDomainAName := "invalid trust domain"
+	r.TrustDomainAName = &invalidTrustDomainAName
+	_, err = r.ToEntity()
+	require.Error(t, err)
+
+	// Test invalid trust domain B name
+	r.TrustDomainAName = &trustDomainAName
+	invalidTrustDomainBName := "invalid trust domain"
+	r.TrustDomainBName = &invalidTrustDomainBName
+	_, err = r.ToEntity()
+	require.Error(t, err)
 }
 
 func TestRelationshipFromEntity(t *testing.T) {
-	t.Run("Full fill correctly the relationship API model", func(t *testing.T) {
+	id := uuid.NullUUID{UUID: uuid.New(), Valid: true}
 
-		id := uuid.NullUUID{UUID: uuid.New(), Valid: true}
+	eRelationship := entity.Relationship{
+		ID:                  id,
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
+		TrustDomainAID:      uuid.New(),
+		TrustDomainBID:      uuid.New(),
+		TrustDomainAConsent: entity.ConsentStatusPending,
+		TrustDomainBConsent: entity.ConsentStatusAccepted,
+	}
 
-		eRelationship := entity.Relationship{
-			ID:                  id,
-			CreatedAt:           time.Now(),
-			UpdatedAt:           time.Now(),
+	r := RelationshipFromEntity(&eRelationship)
+	assert.NotNil(t, r)
+
+	assert.Equal(t, eRelationship.ID.UUID, r.Id)
+	assert.Equal(t, eRelationship.CreatedAt, r.CreatedAt)
+	assert.Equal(t, eRelationship.UpdatedAt, r.UpdatedAt)
+	assert.Equal(t, eRelationship.TrustDomainAID, r.TrustDomainAId)
+	assert.Equal(t, eRelationship.TrustDomainBID, r.TrustDomainBId)
+	assert.Equal(t, string(eRelationship.TrustDomainAConsent), string(r.TrustDomainAConsent))
+	assert.Equal(t, string(eRelationship.TrustDomainBConsent), string(r.TrustDomainBConsent))
+}
+
+func TestMapRelationships(t *testing.T) {
+	relationships := []*entity.Relationship{
+		{
+			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: entity.ConsentStatusPending,
-			TrustDomainBConsent: entity.ConsentStatusAccepted,
-		}
+			TrustDomainAConsent: "accepted",
+			TrustDomainBConsent: "accepted",
+		},
+		{
+			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
+			TrustDomainAID:      uuid.New(),
+			TrustDomainBID:      uuid.New(),
+			TrustDomainAConsent: "denied",
+			TrustDomainBConsent: "accepted",
+		},
+	}
 
-		r := RelationshipFromEntity(&eRelationship)
-		assert.NotNil(t, r)
+	// Call MapRelationships
+	cRelationships := MapRelationships(relationships...)
 
-		assert.Equal(t, eRelationship.ID.UUID, r.Id)
-		assert.Equal(t, eRelationship.CreatedAt, r.CreatedAt)
-		assert.Equal(t, eRelationship.UpdatedAt, r.UpdatedAt)
-		assert.Equal(t, eRelationship.TrustDomainAID, r.TrustDomainAId)
-		assert.Equal(t, eRelationship.TrustDomainBID, r.TrustDomainBId)
-		assert.Equal(t, string(eRelationship.TrustDomainAConsent), string(r.TrustDomainAConsent))
-		assert.Equal(t, string(eRelationship.TrustDomainBConsent), string(r.TrustDomainBConsent))
-	})
+	// Verify results
+	assert.Equal(t, len(relationships), len(cRelationships))
+	for i, cRelation := range cRelationships {
+		assert.Equal(t, relationships[i].ID.UUID, cRelation.Id)
+		assert.Equal(t, relationships[i].TrustDomainAID, cRelation.TrustDomainAId)
+		assert.Equal(t, relationships[i].TrustDomainBID, cRelation.TrustDomainBId)
+		assert.Equal(t, ConsentStatus(relationships[i].TrustDomainAConsent), cRelation.TrustDomainAConsent)
+		assert.Equal(t, ConsentStatus(relationships[i].TrustDomainBConsent), cRelation.TrustDomainBConsent)
+	}
 }
