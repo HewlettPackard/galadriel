@@ -13,8 +13,8 @@ type Bundle struct {
 	ID                 string
 	TrustDomainID      string
 	Data               []byte
+	Digest             []byte
 	Signature          []byte
-	SignatureAlgorithm sql.NullString
 	SigningCertificate []byte
 	CreatedAt          time.Time
 	UpdatedAt          time.Time

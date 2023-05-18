@@ -52,8 +52,8 @@ type JoinToken struct {
 type Bundle struct {
 	ID                 uuid.NullUUID
 	Data               []byte
+	Digest             []byte
 	Signature          []byte
-	SignatureAlgorithm string
 	SigningCertificate []byte
 	TrustDomainID      uuid.UUID
 	TrustDomainName    spiffeid.TrustDomain

@@ -204,6 +204,7 @@ components:
       additionalProperties: false
       required:
         - signature
+        - digest
         - trust_domain
         - trust_bundle
         - signing_certificate
@@ -216,6 +217,8 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
         signing_certificate:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+        digest:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
     TrustBundleSync:
       type: object
       additionalProperties:

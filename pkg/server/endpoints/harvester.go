@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -383,13 +382,12 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 			return nil, err
 		}
 
-		// Calculate the sha256 digest of the stored bundle
-		digest := sha256.Sum256(bundle.Data)
-		strDigest := encodeToBase64(digest[:])
+		// encode digest to base64 to compare with the one in the request
+		encodedDigest := encodeToBase64(bundle.Digest[:])
 
 		// Look up the bundle digest in the request
 		reqDigest, ok := req.State[bundle.TrustDomainName.String()]
-		if !ok || strDigest != reqDigest {
+		if !ok || encodedDigest != reqDigest {
 			// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 			updateItem := harvester.TrustBundleSyncItem{}
 			updateItem.TrustBundle = encodeToBase64(bundle.Data)
@@ -398,7 +396,7 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 		}
 
 		// Add the bundle to the current state
-		resp.State[bundle.TrustDomainName.String()] = encodeToBase64(digest[:])
+		resp.State[bundle.TrustDomainName.String()] = encodedDigest
 	}
 
 	return resp, nil
@@ -437,6 +435,10 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 
 	if req.TrustBundle == "" {
 		return errors.New("trust bundle is required")
+	}
+
+	if req.Digest == "" {
+		return errors.New("bundle digest is required")
 	}
 
 	if req.Signature == "" {

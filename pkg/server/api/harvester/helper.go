@@ -15,6 +15,7 @@ func (b BundlePut) ToEntity() (*entity.Bundle, error) {
 
 	return &entity.Bundle{
 		Data:               []byte(b.TrustBundle),
+		Digest:             []byte(b.Digest),
 		Signature:          []byte(b.Signature),
 		TrustDomainName:    td,
 		SigningCertificate: []byte(b.SigningCertificate),

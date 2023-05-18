@@ -509,12 +509,9 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := CreateBundleParams{
-		Data:      req.Data,
-		Signature: req.Signature,
-		SignatureAlgorithm: sql.NullString{
-			String: req.SignatureAlgorithm,
-			Valid:  true,
-		},
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      pgTrustDomainID,
 	}
@@ -533,13 +530,10 @@ func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := UpdateBundleParams{
-		ID:        pgID,
-		Data:      req.Data,
-		Signature: req.Signature,
-		SignatureAlgorithm: sql.NullString{
-			String: req.SignatureAlgorithm,
-			Valid:  true,
-		},
+		ID:                 pgID,
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 	}
 
