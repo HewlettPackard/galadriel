@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	jsonContentType           = "application/json"
 	baseURL                   = "http://localhost/"
 	errFailedRequest          = "failed to send request: %v"
 	errReadResponseBody       = "failed to read response body: %v"
