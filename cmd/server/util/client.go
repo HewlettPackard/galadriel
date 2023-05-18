@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -66,18 +65,14 @@ func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
+		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
-	}
-
-	var trustDomain *entity.TrustDomain
-	if err = json.Unmarshal(body, &trustDomain); err != nil {
-		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
+	trustDomain, err := unmarshalTrustDomain(body)
+	if err != nil {
+		return nil, err
 	}
 
 	return trustDomain, nil
@@ -91,18 +86,14 @@ func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainN
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
+		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
-	}
-
-	var trustDomain *entity.TrustDomain
-	if err = json.Unmarshal(body, &trustDomain); err != nil {
-		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
+	trustDomain, err := unmarshalTrustDomain(body)
+	if err != nil {
+		return nil, err
 	}
 
 	return trustDomain, nil
@@ -117,21 +108,17 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName ap
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
+		return nil, err
 	}
 
-	if res.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
+	trustDomain, err := unmarshalTrustDomain(body)
+	if err != nil {
+		return nil, err
 	}
 
-	var trustDomainRes *entity.TrustDomain
-	if err = json.Unmarshal(body, &trustDomainRes); err != nil {
-		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
-	}
-
-	return trustDomainRes, nil
+	return trustDomain, nil
 }
 
 func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
@@ -142,21 +129,17 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.StatusCode != http.StatusCreated {
-		return nil, errors.New(string(body))
+	relationship, err := unmarshalRelationship(body)
+	if err != nil {
+		return nil, err
 	}
 
-	var relationships *entity.Relationship
-	if err = json.Unmarshal(body, &relationships); err != nil {
-		return nil, fmt.Errorf(errUnmarshalRelationships, err)
-	}
-
-	return relationships, nil
+	return relationship, nil
 }
 func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
 	payload := &admin.GetRelationshipsParams{Status: (*api.ConsentStatus)(&consentStatus), TrustDomainName: &trustDomainName}
@@ -167,18 +150,14 @@ func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.C
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
+		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
-	}
-
-	var relationship *entity.Relationship
-	if err = json.Unmarshal(body, &relationship); err != nil {
-		return nil, fmt.Errorf(errUnmarshalRelationships, err)
+	relationship, err := unmarshalRelationship(body)
+	if err != nil {
+		return nil, err
 	}
 
 	return relationship, nil
@@ -191,18 +170,14 @@ func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID)
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
+		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
-	}
-
-	var relationship *entity.Relationship
-	if err = json.Unmarshal(body, &relationship); err != nil {
-		return nil, fmt.Errorf(errUnmarshalRelationships, err)
+	relationship, err := unmarshalRelationship(body)
+	if err != nil {
+		return nil, err
 	}
 
 	return relationship, nil
@@ -215,13 +190,9 @@ func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.Tru
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	body, err := readBodyAndStatusCode(res)
 	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
+		return nil, err
 	}
 
 	var joinToken *entity.JoinToken
@@ -230,4 +201,35 @@ func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.Tru
 	}
 
 	return joinToken, nil
+}
+
+func unmarshalTrustDomain(body []byte) (*entity.TrustDomain, error) {
+	var trustDomain *entity.TrustDomain
+	if err := json.Unmarshal(body, &trustDomain); err != nil {
+		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
+	}
+
+	return trustDomain, nil
+}
+
+func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
+	var relationship *entity.Relationship
+	if err := json.Unmarshal(body, &relationship); err != nil {
+		return nil, fmt.Errorf(errUnmarshalRelationships, err)
+	}
+
+	return relationship, nil
+}
+
+func readBodyAndStatusCode(res *http.Response) ([]byte, error) {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf(errReadResponseBody, err)
+	}
+
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
+	}
+
+	return body, nil
 }
