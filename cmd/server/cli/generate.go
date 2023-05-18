@@ -17,14 +17,14 @@ var tokenCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Short: "Generates a join token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := util.NewServerClient(defaultSocketPath)
-		if err != nil {
-			return err
-		}
-
 		trustDomain, err := cmd.Flags().GetString("trustDomain")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
+		client, err := util.NewServerClient(defaultSocketPath)
+		if err != nil {
+			return err
 		}
 
 		joinToken, err := client.GetJoinToken(context.Background(), trustDomain)
