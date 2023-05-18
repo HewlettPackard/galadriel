@@ -9,6 +9,7 @@ var listCmd = &cobra.Command{
 	Short: "Lists trust domains and relationships",
 }
 
+// TODO: Implement Get Relationships and Trust Domains
 var listTrustDomainCmd = &cobra.Command{
 	// Use:   "trustdomains",
 	// Args:  cobra.ExactArgs(0),

@@ -9,8 +9,8 @@ import (
 
 func (r RelationshipRequest) ToEntity() *entity.Relationship {
 	return &entity.Relationship{
-		TrustDomainAID: r.TrustDomainAId,
-		TrustDomainBID: r.TrustDomainBId,
+		TrustDomainAName: spiffeid.RequireTrustDomainFromString(r.TrustDomainAName),
+		TrustDomainBName: spiffeid.RequireTrustDomainFromString(r.TrustDomainBName),
 	}
 }
 

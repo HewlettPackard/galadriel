@@ -11,7 +11,7 @@ import (
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create <trustdomain| relationship>",
+	Use:   "create <trustdomain | relationship>",
 	Short: "Allows creation of trust domains and relationships",
 }
 
@@ -28,17 +28,20 @@ var createTrustDomainCmd = &cobra.Command{
 
 		trustDomain, err := spiffeid.TrustDomainFromString(td)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed parsing trust domain: %v", err)
 		}
 
-		c := util.NewServerClient(defaultSocketPath)
-
-		_, err = c.CreateTrustDomain(context.Background(), &entity.TrustDomain{Name: trustDomain})
+		client, err := util.NewServerClient(defaultSocketPath)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Trust Domain created: %q\n", trustDomain.String())
+		trustDomainRes, err := client.CreateTrustDomain(context.Background(), &entity.TrustDomain{Name: trustDomain})
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Trust Domain created: %s\n", trustDomainRes.Name.String())
 
 		return nil
 	},
@@ -50,7 +53,10 @@ var createRelationshipCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := util.NewServerClient(defaultSocketPath)
+		client, err := util.NewServerClient(defaultSocketPath)
+		if err != nil {
+			return err
+		}
 
 		tdA, err := cmd.Flags().GetString("trustDomainA")
 		if err != nil {
@@ -59,19 +65,20 @@ var createRelationshipCmd = &cobra.Command{
 
 		trustDomain1, err := spiffeid.TrustDomainFromString(tdA)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed parsing trust domain: %v", err)
 		}
 
-		tdb, err := cmd.Flags().GetString("trustDomainB")
+		tdB, err := cmd.Flags().GetString("trustDomainB")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain B flag: %v", err)
 		}
-		trustDomain2, err := spiffeid.TrustDomainFromString(tdb)
+
+		trustDomain2, err := spiffeid.TrustDomainFromString(tdB)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed parsing trust domain: %v", err)
 		}
 
-		_, err = c.CreateRelationship(context.Background(), &entity.Relationship{
+		_, err = client.CreateRelationship(context.Background(), &entity.Relationship{
 			TrustDomainAName: trustDomain1,
 			TrustDomainBName: trustDomain2,
 		})
@@ -79,7 +86,7 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Relationship created between trust domain %q and trust domain %q\n", trustDomain1.String(), trustDomain2.String())
+		fmt.Printf("Relationship created between trust domains %s and %s\n", tdA, tdB)
 		return nil
 	},
 }

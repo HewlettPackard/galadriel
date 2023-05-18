@@ -199,13 +199,13 @@ components:
       type: object
       additionalProperties: false
       required:
-        - trust_domain_a_id
-        - trust_domain_b_id
+        - trust_domain_a_name
+        - trust_domain_b_name
       properties:
-        trust_domain_a_id:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
-        trust_domain_b_id:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+        trust_domain_a_name:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        trust_domain_b_name:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
     TrustDomainPut:
       type: object
       additionalProperties: false

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/spf13/cobra"
@@ -18,19 +17,22 @@ var tokenCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Short: "Generates a join token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := util.NewServerClient(defaultSocketPath)
+		client, err := util.NewServerClient(defaultSocketPath)
+		if err != nil {
+			return err
+		}
 
 		trustDomain, err := cmd.Flags().GetString("trustDomain")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
 
-		joinToken, err := c.GetJoinToken(context.Background(), trustDomain)
+		joinToken, err := client.GetJoinToken(context.Background(), trustDomain)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Token: %s", strings.ReplaceAll(joinToken.Token, "\"", ""))
+		fmt.Printf("Token: %s\n", joinToken.Token)
 		return nil
 	},
 }

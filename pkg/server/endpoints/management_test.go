@@ -198,8 +198,8 @@ func TestUDSPutRelationships(t *testing.T) {
 		}
 
 		reqBody := &admin.PutRelationshipJSONRequestBody{
-			TrustDomainAId: tdUUID1.UUID,
-			TrustDomainBId: tdUUID2.UUID,
+			TrustDomainAName: td1,
+			TrustDomainBName: td2,
 		}
 
 		// Setup
@@ -227,8 +227,8 @@ func TestUDSPutRelationships(t *testing.T) {
 		}
 
 		reqBody := &admin.PutRelationshipJSONRequestBody{
-			TrustDomainAId: tdUUID1.UUID,
-			TrustDomainBId: tdUUID2.UUID,
+			TrustDomainAName: td1,
+			TrustDomainBName: td2,
 		}
 
 		// Setup
@@ -409,7 +409,7 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, tdUUID1.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
@@ -436,13 +436,13 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
 
-		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, tdUUID1.UUID)
+		err := setup.Handler.PutTrustDomainByName(setup.EchoCtx, td1)
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Sprintf("trust domain exists: %q", tdUUID1.UUID)
+		expectedErrorMsg := fmt.Sprintf("trust domain exists: %s", td1)
 		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
@@ -17,6 +18,7 @@ import (
 
 const (
 	jsonContentType = "application/json"
+	baseURL         = "http://localhost/"
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
@@ -30,8 +32,23 @@ type ServerLocalClient interface {
 	GetJoinToken(ctx context.Context, trustDomain string) (*entity.JoinToken, error)
 }
 
-func NewServerClient(socketPath string) ServerLocalClient {
-	return &serverClient{client: &admin.Client{Server: socketPath}}
+func NewServerClient(socketPath string) (ServerLocalClient, error) {
+	clientOpt := admin.WithBaseURL(baseURL)
+
+	client, err := admin.NewClient(socketPath, clientOpt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate the Admin Client: %q", err)
+	}
+
+	t := &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", socketPath)
+		}}
+
+	client.Client = &http.Client{Transport: t}
+
+	return &serverClient{client: client}, nil
 }
 
 type serverClient struct {
@@ -100,7 +117,7 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomain *entit
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("request returned an error code %d: \n%s", res.StatusCode, body)
 	}
 
@@ -113,12 +130,8 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomain *entit
 }
 
 func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
-	relBytes, err := json.Marshal(rel)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal Relationship: %v", err)
-	}
-
-	res, err := c.client.PutRelationshipWithBody(ctx, jsonContentType, bytes.NewReader(relBytes))
+	payload := admin.PutRelationshipJSONRequestBody{TrustDomainAName: rel.TrustDomainAName.String(), TrustDomainBName: rel.TrustDomainBName.String()}
+	res, err := c.client.PutRelationship(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
@@ -129,7 +142,7 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusCreated {
 		return nil, errors.New(string(body))
 	}
 
