@@ -17,7 +17,7 @@ var tokenCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Short: "Generates a join token for provided trust domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		trustDomain, err := cmd.Flags().GetString("trustDomain")
+		trustDomain, err := cmd.Flags().GetString("trustdomain")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
@@ -39,6 +39,6 @@ var tokenCmd = &cobra.Command{
 
 func init() {
 	generateCmd.AddCommand(tokenCmd)
-	tokenCmd.PersistentFlags().StringP("trustDomain", "t", "", "A trust domain which the join token is bound to.")
+	tokenCmd.PersistentFlags().StringP("trustdomain", "t", "", "A trust domain which the join token is bound to.")
 	RootCmd.AddCommand(generateCmd)
 }
