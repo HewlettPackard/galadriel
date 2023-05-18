@@ -584,9 +584,11 @@ func TestBundlePut(t *testing.T) {
 	})
 
 	t.Run("Fail post bundle no authenticated trust domain", func(t *testing.T) {
+		sig := "test-signature"
+		cert := "test-certificate"
 		bundlePut := harvester.BundlePut{
-			Signature:          "bundle signature",
-			SigningCertificate: "certificate PEM",
+			Signature:          &sig,
+			SigningCertificate: &cert,
 			TrustBundle:        "a new bundle",
 			TrustDomain:        td1,
 		}
@@ -604,10 +606,6 @@ func TestBundlePut(t *testing.T) {
 		testInvalidBundleRequest(t, "TrustBundle", "", http.StatusBadRequest, "invalid bundle request: trust bundle is required")
 	})
 
-	t.Run("Fail post bundle missing bundle signature", func(t *testing.T) {
-		testInvalidBundleRequest(t, "Signature", "", http.StatusBadRequest, "invalid bundle request: bundle signature is required")
-	})
-
 	t.Run("Fail post bundle missing bundle trust domain", func(t *testing.T) {
 		testInvalidBundleRequest(t, "TrustDomain", "", http.StatusBadRequest, "invalid bundle request: bundle trust domain is required")
 	})
@@ -618,9 +616,11 @@ func TestBundlePut(t *testing.T) {
 }
 
 func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.TrustDomain, expectedStatusCode int, expectedResponseBody string) {
+	sig := "test-signature"
+	cert := "test-certificate"
 	bundlePut := harvester.BundlePut{
-		Signature:          "bundle signature",
-		SigningCertificate: "certificate PEM",
+		Signature:          &sig,
+		SigningCertificate: &cert,
 		TrustBundle:        "a new bundle",
 		Digest:             "test-digest",
 		TrustDomain:        td1,
@@ -640,16 +640,18 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 
 	storedBundle, err := setup.Handler.Datastore.FindBundleByTrustDomainID(context.Background(), td.ID.UUID)
 	require.NoError(t, err)
-	assert.Equal(t, bundlePut.Signature, string(storedBundle.Signature))
-	assert.Equal(t, bundlePut.SigningCertificate, string(storedBundle.SigningCertificate))
+	assert.Equal(t, *bundlePut.Signature, string(storedBundle.Signature))
+	assert.Equal(t, *bundlePut.SigningCertificate, string(storedBundle.SigningCertificate))
 	assert.Equal(t, bundlePut.TrustBundle, string(storedBundle.Data))
 	assert.Equal(t, td.ID.UUID, storedBundle.TrustDomainID)
 }
 
 func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interface{}, expectedStatusCode int, expectedErrorMessage string) {
+	sig := "test-signature"
+	cert := "test-certificate"
 	bundlePut := harvester.BundlePut{
-		Signature:          "test-signature",
-		SigningCertificate: "certificate PEM",
+		Signature:          &sig,
+		SigningCertificate: &cert,
 		TrustBundle:        "test trust bundle",
 		Digest:             "test-digest",
 		TrustDomain:        td1,

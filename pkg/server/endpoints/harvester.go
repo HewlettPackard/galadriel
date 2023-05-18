@@ -441,10 +441,6 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 		return errors.New("bundle digest is required")
 	}
 
-	if req.Signature == "" {
-		return errors.New("bundle signature is required")
-	}
-
 	return nil
 }
 

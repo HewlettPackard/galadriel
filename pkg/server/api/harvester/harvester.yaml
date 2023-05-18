@@ -203,11 +203,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - signature
         - digest
         - trust_domain
         - trust_bundle
-        - signing_certificate
       properties:
         trust_domain:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
