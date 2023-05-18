@@ -242,8 +242,8 @@ func TestUDSPutRelationships(t *testing.T) {
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHTTPErr.Code)
 
-		expectedErrorMsg := fmt.Sprintf("trust domain exists: %q", tdUUID2.UUID)
-		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
+		expectedErrorMsg := fmt.Errorf("trust domain does not exists")
+		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
 	})
 
 	// Should we test sending wrong body formats ?
@@ -442,8 +442,8 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Sprintf("trust domain exists: %s", td1)
-		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
+		expectedErrorMsg := fmt.Errorf("trust domain does not exists")
+		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
 	})
 }
 
@@ -483,7 +483,7 @@ func TestUDSGetJoinToken(t *testing.T) {
 		echoHttpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
 
-		expectedMsg := fmt.Errorf("trust domain exists: %q", td1)
+		expectedMsg := fmt.Errorf("trust domain '%s' does not exists", td1)
 		assert.Equal(t, expectedMsg.Error(), echoHttpErr.Message)
 	})
 }
