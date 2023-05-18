@@ -1,7 +1,6 @@
 package util
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,13 +22,13 @@ const (
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
-	CreateTrustDomain(ctx context.Context, trustDomain *entity.TrustDomain) (*entity.TrustDomain, error)
-	GetTrustDomainByName(ctx context.Context, trustDomainName string) (*entity.TrustDomain, error)
-	UpdateTrustDomainByName(ctx context.Context, trustDomainName string) (*entity.TrustDomain, error)
+	CreateTrustDomain(ctx context.Context, trustDomain api.TrustDomainName) (*entity.TrustDomain, error)
+	GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
+	UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
 	CreateRelationship(ctx context.Context, r *entity.Relationship) (*entity.Relationship, error)
 	GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error)
-	GetRelationships(ctx context.Context, consentStatus string, trustDomain string) (*entity.Relationship, error)
-	GetJoinToken(ctx context.Context, trustDomain string) (*entity.JoinToken, error)
+	GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error)
+	GetJoinToken(ctx context.Context, trustDomain api.TrustDomainName) (*entity.JoinToken, error)
 }
 
 func NewServerClient(socketPath string) (ServerLocalClient, error) {
@@ -55,7 +54,7 @@ type serverClient struct {
 	client *admin.Client
 }
 
-func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName string) (*entity.TrustDomain, error) {
+func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	res, err := c.client.GetTrustDomainByName(ctx, trustDomainName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
@@ -79,8 +78,9 @@ func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName
 	return trustDomain, nil
 }
 
-func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName string) (*entity.TrustDomain, error) {
-	res, err := c.client.PutTrustDomainByNameWithBody(ctx, trustDomainName, jsonContentType, bytes.NewReader([]byte(trustDomainName)))
+func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+	payload := api.TrustDomain{Name: trustDomainName}
+	res, err := c.client.PutTrustDomainByName(ctx, trustDomainName, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 	}
@@ -103,8 +103,8 @@ func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainN
 	return trustDomain, nil
 }
 
-func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomain *entity.TrustDomain) (*entity.TrustDomain, error) {
-	payload := admin.PutTrustDomainJSONRequestBody{Name: trustDomain.Name.String()}
+func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+	payload := admin.PutTrustDomainJSONRequestBody{Name: trustDomainName}
 
 	res, err := c.client.PutTrustDomain(ctx, payload)
 	if err != nil {
@@ -126,7 +126,7 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomain *entit
 		return nil, fmt.Errorf("failed to unmarshal trust domain: %v", err)
 	}
 
-	return trustDomain, nil
+	return trustDomainRes, nil
 }
 
 func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
@@ -153,8 +153,8 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 
 	return relationships, nil
 }
-func (c *serverClient) GetRelationships(ctx context.Context, consentStatus string, trustDomain string) (*entity.Relationship, error) {
-	payload := &admin.GetRelationshipsParams{Status: (*api.ConsentStatus)(&consentStatus), TrustDomainName: &trustDomain}
+func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{Status: (*api.ConsentStatus)(&consentStatus), TrustDomainName: &trustDomainName}
 
 	res, err := c.client.GetRelationships(ctx, payload)
 	if err != nil {
@@ -203,7 +203,7 @@ func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID)
 	return relationship, nil
 }
 
-func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName string) (*entity.JoinToken, error) {
+func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.JoinToken, error) {
 	res, err := c.client.GetJoinToken(ctx, trustDomainName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)

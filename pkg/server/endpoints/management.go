@@ -291,7 +291,7 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 	}
 
 	if td == nil {
-		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainName)
+		errMsg := fmt.Errorf("trust domain '%s' does not exists", trustDomainName)
 		return h.handleAndLog(errMsg, http.StatusBadRequest)
 	}
 

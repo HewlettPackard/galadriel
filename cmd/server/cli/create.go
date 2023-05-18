@@ -21,14 +21,9 @@ var createTrustDomainCmd = &cobra.Command{
 	Short: "Creates a new trust domain",
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		td, err := cmd.Flags().GetString("trustDomain")
+		trustDomain, err := cmd.Flags().GetString("trustDomain")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
-		}
-
-		trustDomain, err := spiffeid.TrustDomainFromString(td)
-		if err != nil {
-			return fmt.Errorf("failed parsing trust domain: %v", err)
 		}
 
 		client, err := util.NewServerClient(defaultSocketPath)
@@ -36,7 +31,7 @@ var createTrustDomainCmd = &cobra.Command{
 			return err
 		}
 
-		trustDomainRes, err := client.CreateTrustDomain(context.Background(), &entity.TrustDomain{Name: trustDomain})
+		trustDomainRes, err := client.CreateTrustDomain(context.Background(), trustDomain)
 		if err != nil {
 			return err
 		}
