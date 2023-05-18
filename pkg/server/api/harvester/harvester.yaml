@@ -324,9 +324,12 @@ components:
       required:
         - token
         - trustDomainID
+        - trustDomainName
       properties:
         trustDomainID:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+        trustDomainName:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
     JWTResult:

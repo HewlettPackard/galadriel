@@ -302,6 +302,7 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 
 func TestTCPOnboard(t *testing.T) {
 	t.Run("Successfully onboard a new agent", func(t *testing.T) {
+		// Arrange
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
@@ -311,14 +312,24 @@ func TestTCPOnboard(t *testing.T) {
 		params := harvester.OnboardParams{
 			JoinToken: token.Token,
 		}
+
+		// Act
 		err := harvesterTestSetup.Handler.Onboard(echoCtx, params)
 		assert.NoError(t, err)
 
+		// Assert
 		recorder := harvesterTestSetup.Recorder
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.NotEmpty(t, recorder.Body)
 
-		jwtToken := strings.ReplaceAll(recorder.Body.String(), "\"", "")
+		var result harvester.OnboardResult
+		err = json.Unmarshal(recorder.Body.Bytes(), &result)
+		assert.NoError(t, err)
+		assert.Equal(t, td.ID.UUID.String(), result.TrustDomainID.String())
+		assert.Equal(t, td.Name.String(), result.TrustDomainName)
+
+		assert.NotEmpty(t, result.Token)
+		jwtToken := strings.ReplaceAll(result.Token, "\"", "")
 		jwtToken = strings.ReplaceAll(jwtToken, "\n", "")
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
