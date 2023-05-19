@@ -468,7 +468,8 @@ func TestTCPBundleSync(t *testing.T) {
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						TrustBundle: string(bundleB.Data),
+						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 				},
@@ -488,11 +489,13 @@ func TestTCPBundleSync(t *testing.T) {
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						TrustBundle: string(bundleB.Data),
+						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 					tdC.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encoding.EncodeToBase64(bundleC.Data),
+						TrustBundle: string(bundleC.Data),
+						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
 					},
 				},
@@ -511,7 +514,8 @@ func TestTCPBundleSync(t *testing.T) {
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						TrustBundle: string(bundleB.Data),
+						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 				},
@@ -530,7 +534,8 @@ func TestTCPBundleSync(t *testing.T) {
 				},
 				Updates: harvester.TrustBundleSync{
 					tdC.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encoding.EncodeToBase64(bundleC.Data),
+						TrustBundle: string(bundleC.Data),
+						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
 					},
 				},
@@ -620,11 +625,12 @@ func TestBundlePut(t *testing.T) {
 func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.TrustDomain, expectedStatusCode int, expectedResponseBody string) {
 	sig := "test-signature"
 	cert := "test-certificate"
-	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte("a new bundle")))
+	bundle := "a new bundle"
+	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
 	bundlePut := harvester.BundlePut{
 		Signature:          &sig,
 		SigningCertificate: &cert,
-		TrustBundle:        "a new bundle",
+		TrustBundle:        bundle,
 		Digest:             digest,
 		TrustDomain:        td1,
 	}
@@ -652,11 +658,12 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interface{}, expectedStatusCode int, expectedErrorMessage string) {
 	sig := "test-signature"
 	cert := "test-certificate"
-	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte("test trust bundle")))
+	bundle := "test trust bundle"
+	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
 	bundlePut := harvester.BundlePut{
 		Signature:          &sig,
 		SigningCertificate: &cert,
-		TrustBundle:        "test trust bundle",
+		TrustBundle:        bundle,
 		Digest:             digest,
 		TrustDomain:        td1,
 	}

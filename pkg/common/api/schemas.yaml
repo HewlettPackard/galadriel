@@ -176,6 +176,7 @@ components:
         -----END CERTIFICATE-----
     Signature:
       type: string
+      description: base64 encoded signature of the bundle
       example: aG6ZX3aZf+6tg/yRDZdRSNtM39lzZWNyZXRJZD1JYW1TZWNyZXRJZCZjdXJyZW50VGltZVN0YW1wPTE1NzEyMTUwOTUmZXhwaXJlVGltZT0xODg2NTc1MDk1JnJhbmRvbT0yMjA2MjU=
   securitySchemes:
     harvester_auth:

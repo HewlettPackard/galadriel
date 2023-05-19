@@ -391,7 +391,8 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 		if !ok || encodedDigest != reqDigest {
 			// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 			updateItem := harvester.TrustBundleSyncItem{}
-			updateItem.TrustBundle = encoding.EncodeToBase64(bundle.Data)
+			updateItem.TrustBundle = string(bundle.Data)
+			updateItem.Digest = encoding.EncodeToBase64(bundle.Digest[:])
 			updateItem.Signature = encoding.EncodeToBase64(bundle.Signature)
 			resp.Updates[bundle.TrustDomainName.String()] = updateItem
 		}

@@ -358,16 +358,19 @@ components:
       type: object
       additionalProperties: false
       required:
-        - signature
         - trust_bundle
+        - digest
+        - signature
         - signing_certificate
       properties:
+        trust_bundle:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
+        digest:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
         signature:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
         signing_certificate:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
-        trust_bundle:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
   securitySchemes:
     harvester_auth:
       $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/harvester_auth'
