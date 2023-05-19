@@ -3,7 +3,6 @@ package catalog
 import (
 	"fmt"
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
-	"github.com/HewlettPackard/galadriel/pkg/common/keymanager/memory"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
@@ -39,8 +38,13 @@ type providerConfig struct {
 	Name    string   `hcl:",label"`
 	Options hcl.Body `hcl:",remain"`
 }
+
 type datastoreConfig struct {
 	ConnectionString string `hcl:"connection_string"`
+}
+
+type diskKeyManagerConfig struct {
+	KeysFilePath string `hcl:"keys_file_path"`
 }
 
 // New creates a new ProvidersRepository.
@@ -69,7 +73,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 		return fmt.Errorf("X509CA configuration is required")
 	}
 	if config.KeyManager == nil {
-		return fmt.Errorf("KeyManager configuration is required")
+		return fmt.Errorf("Key Manager configuration is required")
 	}
 	if config.Datastore == nil {
 		return fmt.Errorf("datastore configuration is required")
@@ -83,7 +87,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 
 	c.keyManager, err = loadKeyManager(config.KeyManager)
 	if err != nil {
-		return fmt.Errorf("error loading KeyManager: %w", err)
+		return fmt.Errorf("error loading Memory: %w", err)
 	}
 	c.datastore, err = loadDatastore(config.Datastore)
 	if err != nil {
@@ -121,11 +125,21 @@ func loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
 func loadKeyManager(c *providerConfig) (keymanager.KeyManager, error) {
 	switch c.Name {
 	case "memory":
-		km := memory.New(nil)
+		km := keymanager.NewMemoryKeyManager(nil)
+		return km, nil
+	case "disk":
+		kmConfig, err := decodeDiskKeyManagerConfig(c)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding disk key manager config: %w", err)
+		}
+		km, err := keymanager.NewDiskKeyManager(nil, kmConfig.KeysFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("error creating disk key manager: %w", err)
+		}
 		return km, nil
 	}
 
-	return nil, fmt.Errorf("unknown KeyManager provider: %s", c.Name)
+	return nil, fmt.Errorf("unknown Memory provider: %s", c.Name)
 }
 
 func loadDatastore(config *providerConfig) (db.Datastore, error) {
@@ -155,6 +169,14 @@ func loadDatastore(config *providerConfig) (db.Datastore, error) {
 
 func decodeDatastoreConfig(config *providerConfig) (*datastoreConfig, error) {
 	var dsConfig datastoreConfig
+	if err := gohcl.DecodeBody(config.Options, nil, &dsConfig); err != nil {
+		return nil, err
+	}
+	return &dsConfig, nil
+}
+
+func decodeDiskKeyManagerConfig(config *providerConfig) (*diskKeyManagerConfig, error) {
+	var dsConfig diskKeyManagerConfig
 	if err := gohcl.DecodeBody(config.Options, nil, &dsConfig); err != nil {
 		return nil, err
 	}

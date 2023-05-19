@@ -8,7 +8,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 )
 
-// KeyManager provides a common interface for managing keys.
+// Memory provides a common interface for managing keys.
 type KeyManager interface {
 	// GenerateKey generates a new key with the given ID and key type.
 	// If a key with that ID already exists, it is overwritten.
@@ -18,7 +18,7 @@ type KeyManager interface {
 	// an error is returned.
 	GetKey(ctx context.Context, id string) (Key, error)
 
-	// GetKeys returns all keys managed by the KeyManager.
+	// GetKeys returns all keys managed by the Memory.
 	GetKeys(ctx context.Context) ([]Key, error)
 }
 
