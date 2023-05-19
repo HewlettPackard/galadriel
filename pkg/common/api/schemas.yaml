@@ -27,7 +27,9 @@ components:
       description: base64 encoded SHA-256 digest of the bundle
       example: f0456d7aed088e791e4610c3c2ad63afe46e2e777988fdbc9270f15ec9711b42
     TrustBundle:
-      $ref: '#/components/schemas/Certificate'
+      type: string
+      description: SPIFFE Trust bundle in JSON format
+      example: '{"jwt_authorities":[{"expires_at":"1684516343","key_id":"AdTZc0c7zs96c6gvQxJB6QdE6DySuNfv","public_key":"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEx1PZRwfE3DZsOq2MB0O5PWfbszrapGNfm5EF/1owX5nIDNmjTib/Nyf7CeCvSLcEc30YpabvAbgLH8cs2hDz1A=="},{"expires_at":"1684518143","key_id":"fgVaDcaTAYazkG2Wf93WtGxmRdXfA0NB","public_key":"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErDSjicrnqSUnE2ye1JoufBDGLbtIMjJFVGKeHOtKT5uqlB/KT8N235XssXgTLQRMhzpADcMM4U/YlcvoykH5mg=="}],"refresh_hint":"0","sequence_number":"7","trust_domain":"td1"}'
     TrustDomain:
       type: object
       additionalProperties: false
@@ -89,7 +91,7 @@ components:
         trust_domain_b_consent:
           $ref: '#/components/schemas/ConsentStatus'
           default: pending
-        created_at: 
+        created_at:
           type: string
           format: date-time
           maxLength: 21
