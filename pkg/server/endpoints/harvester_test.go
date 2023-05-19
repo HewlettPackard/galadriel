@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"encoding/json"
-	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,9 +11,12 @@ import (
 	"testing"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/common/util/encoding"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"github.com/HewlettPackard/galadriel/test/fakes/fakejwtissuer"
 	"github.com/HewlettPackard/galadriel/test/jwttest"
 	gojwt "github.com/golang-jwt/jwt/v4"
@@ -43,9 +45,9 @@ var (
 	acceptedDeniedRelAC   = &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusDenied, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	acceptedAcceptedRelBC = &entity.Relationship{TrustDomainAID: tdB.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusAccepted, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 
-	bundleA = &entity.Bundle{Data: []byte("bundle-A"), Digest: []byte("bundle-digest-A"), Signature: []byte("signature-A"), TrustDomainName: tdA.Name, TrustDomainID: tdA.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	bundleB = &entity.Bundle{Data: []byte("bundle-B"), Digest: []byte("bundle-digest-B"), Signature: []byte("signature-B"), TrustDomainName: tdB.Name, TrustDomainID: tdB.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	bundleC = &entity.Bundle{Data: []byte("bundle-C"), Digest: []byte("bundle-digest-C"), Signature: []byte("signature-C"), TrustDomainName: tdC.Name, TrustDomainID: tdC.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	bundleA = &entity.Bundle{Data: []byte("bundle-A"), Digest: cryptoutil.CalculateDigest([]byte("bundle-A")), Signature: []byte("signature-A"), TrustDomainName: tdA.Name, TrustDomainID: tdA.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	bundleB = &entity.Bundle{Data: []byte("bundle-B"), Digest: cryptoutil.CalculateDigest([]byte("bundle-B")), Signature: []byte("signature-B"), TrustDomainName: tdB.Name, TrustDomainID: tdB.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	bundleC = &entity.Bundle{Data: []byte("bundle-C"), Digest: cryptoutil.CalculateDigest([]byte("bundle-C")), Signature: []byte("signature-C"), TrustDomainName: tdC.Name, TrustDomainID: tdC.ID.UUID, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 )
 
 type HarvesterTestSetup struct {
@@ -438,14 +440,14 @@ func TestTCPBundleSync(t *testing.T) {
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
-					tdB.Name.String(): encodeToBase64(bundleB.Digest),
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
 			expected: harvester.BundleSyncResult{
 				State: harvester.BundlesDigests{
-					tdB.Name.String(): encodeToBase64(bundleB.Digest),
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 				Updates: harvester.TrustBundleSync{},
 			},
@@ -456,18 +458,18 @@ func TestTCPBundleSync(t *testing.T) {
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
 				State: map[string]api.BundleDigest{
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
 			expected: harvester.BundleSyncResult{
 				State: harvester.BundlesDigests{
-					tdB.Name.String(): encodeToBase64(bundleB.Digest),
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encodeToBase64(bundleB.Data),
-						Signature:   encodeToBase64(bundleB.Signature),
+						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 				},
 			},
@@ -481,17 +483,17 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 			expected: harvester.BundleSyncResult{
 				State: harvester.BundlesDigests{
-					tdB.Name.String(): encodeToBase64(bundleB.Digest),
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encodeToBase64(bundleB.Data),
-						Signature:   encodeToBase64(bundleB.Signature),
+						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 					tdC.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encodeToBase64(bundleC.Data),
-						Signature:   encodeToBase64(bundleC.Signature),
+						TrustBundle: encoding.EncodeToBase64(bundleC.Data),
+						Signature:   encoding.EncodeToBase64(bundleC.Signature),
 					},
 				},
 			},
@@ -505,12 +507,12 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 			expected: harvester.BundleSyncResult{
 				State: harvester.BundlesDigests{
-					tdB.Name.String(): encodeToBase64(bundleB.Digest),
+					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 				},
 				Updates: harvester.TrustBundleSync{
 					tdB.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encodeToBase64(bundleB.Data),
-						Signature:   encodeToBase64(bundleB.Signature),
+						TrustBundle: encoding.EncodeToBase64(bundleB.Data),
+						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
 				},
 			},
@@ -524,12 +526,12 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 			expected: harvester.BundleSyncResult{
 				State: harvester.BundlesDigests{
-					tdC.Name.String(): encodeToBase64(bundleC.Digest),
+					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 				Updates: harvester.TrustBundleSync{
 					tdC.Name.String(): harvester.TrustBundleSyncItem{
-						TrustBundle: encodeToBase64(bundleC.Data),
-						Signature:   encodeToBase64(bundleC.Signature),
+						TrustBundle: encoding.EncodeToBase64(bundleC.Data),
+						Signature:   encoding.EncodeToBase64(bundleC.Signature),
 					},
 				},
 			},
@@ -618,11 +620,12 @@ func TestBundlePut(t *testing.T) {
 func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.TrustDomain, expectedStatusCode int, expectedResponseBody string) {
 	sig := "test-signature"
 	cert := "test-certificate"
+	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte("a new bundle")))
 	bundlePut := harvester.BundlePut{
 		Signature:          &sig,
 		SigningCertificate: &cert,
 		TrustBundle:        "a new bundle",
-		Digest:             "test-digest",
+		Digest:             digest,
 		TrustDomain:        td1,
 	}
 
@@ -649,11 +652,12 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interface{}, expectedStatusCode int, expectedErrorMessage string) {
 	sig := "test-signature"
 	cert := "test-certificate"
+	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte("test trust bundle")))
 	bundlePut := harvester.BundlePut{
 		Signature:          &sig,
 		SigningCertificate: &cert,
 		TrustBundle:        "test trust bundle",
-		Digest:             "test-digest",
+		Digest:             digest,
 		TrustDomain:        td1,
 	}
 	reflect.ValueOf(&bundlePut).Elem().FieldByName(fieldName).Set(reflect.ValueOf(fieldValue))

@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,10 +9,12 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
+	"github.com/HewlettPackard/galadriel/pkg/common/util/encoding"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	gojwt "github.com/golang-jwt/jwt/v4"
@@ -383,15 +384,15 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 		}
 
 		// encode digest to base64 to compare with the one in the request
-		encodedDigest := encodeToBase64(bundle.Digest[:])
+		encodedDigest := encoding.EncodeToBase64(bundle.Digest[:])
 
 		// Look up the bundle digest in the request
 		reqDigest, ok := req.State[bundle.TrustDomainName.String()]
 		if !ok || encodedDigest != reqDigest {
 			// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 			updateItem := harvester.TrustBundleSyncItem{}
-			updateItem.TrustBundle = encodeToBase64(bundle.Data)
-			updateItem.Signature = encodeToBase64(bundle.Signature)
+			updateItem.TrustBundle = encoding.EncodeToBase64(bundle.Data)
+			updateItem.Signature = encoding.EncodeToBase64(bundle.Signature)
 			resp.Updates[bundle.TrustDomainName.String()] = updateItem
 		}
 
@@ -441,9 +442,13 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 		return errors.New("bundle digest is required")
 	}
 
-	return nil
-}
+	decodedDigest, err := encoding.DecodeFromBase64(req.Digest)
+	if err != nil {
+		return fmt.Errorf("failed decoding bundle digest: %w", err)
+	}
+	if err := cryptoutil.ValidateBundleDigest([]byte(req.TrustBundle), decodedDigest); err != nil {
+		return fmt.Errorf("failed validating bundle digest: %w", err)
+	}
 
-func encodeToBase64(data []byte) string {
-	return base64.StdEncoding.EncodeToString(data)
+	return nil
 }

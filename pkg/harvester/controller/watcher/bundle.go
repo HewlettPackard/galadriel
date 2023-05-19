@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -159,7 +160,7 @@ func buildSyncBundlesRequest(ctx context.Context, spire spire.SpireServer) (*com
 			continue
 		}
 
-		digests[td] = util.GetDigest(x509b)
+		digests[td] = cryptoutil.CalculateDigest(x509b)
 	}
 
 	state := &common.SyncBundleRequest{State: digests}
