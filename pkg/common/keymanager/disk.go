@@ -68,8 +68,8 @@ func (d *Disk) loadKeysFromDisk() error {
 		return fmt.Errorf("failed to unmarshal keys from disk: %w", err)
 	}
 
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 
 	for id, keyBytes := range keys {
 		signer, err := convertToSigner([]byte(keyBytes))
@@ -89,8 +89,8 @@ func (d *Disk) loadKeysFromDisk() error {
 
 // SaveKeysToDisk saves the keys in the key manager to disk.
 func (d *Disk) saveKeysToDisk() error {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
 	keys := make(map[string]string)
 	for id, entry := range d.entries {
