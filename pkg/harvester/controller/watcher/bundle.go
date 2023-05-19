@@ -110,7 +110,7 @@ func hasNewBundle(ctx context.Context, currentDigest []byte, spire spire.SpireSe
 		logger.Errorf("Failed to marshal spire X.509 bundle: %v", err)
 		return nil, nil, false
 	}
-	spireDigest := util.GetDigest(b)
+	spireDigest := cryptoutil.CalculateDigest(b)
 
 	if !bytes.Equal(currentDigest, spireDigest) {
 		return spireBundle, spireDigest, true
