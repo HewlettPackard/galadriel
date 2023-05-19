@@ -73,7 +73,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 		return fmt.Errorf("X509CA configuration is required")
 	}
 	if config.KeyManager == nil {
-		return fmt.Errorf("Key Manager configuration is required")
+		return fmt.Errorf("KeyManager configuration is required")
 	}
 	if config.Datastore == nil {
 		return fmt.Errorf("datastore configuration is required")
@@ -87,7 +87,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 
 	c.keyManager, err = loadKeyManager(config.KeyManager)
 	if err != nil {
-		return fmt.Errorf("error loading Memory: %w", err)
+		return fmt.Errorf("error loading KeyManager: %w", err)
 	}
 	c.datastore, err = loadDatastore(config.Datastore)
 	if err != nil {
@@ -130,16 +130,16 @@ func loadKeyManager(c *providerConfig) (keymanager.KeyManager, error) {
 	case "disk":
 		kmConfig, err := decodeDiskKeyManagerConfig(c)
 		if err != nil {
-			return nil, fmt.Errorf("error decoding disk key manager config: %w", err)
+			return nil, fmt.Errorf("error decoding disk KeyManager config: %w", err)
 		}
 		km, err := keymanager.NewDiskKeyManager(nil, kmConfig.KeysFilePath)
 		if err != nil {
-			return nil, fmt.Errorf("error creating disk key manager: %w", err)
+			return nil, fmt.Errorf("error creating disk KeyManager: %w", err)
 		}
 		return km, nil
 	}
 
-	return nil, fmt.Errorf("unknown Memory provider: %s", c.Name)
+	return nil, fmt.Errorf("unknown KeyManager provider: %s", c.Name)
 }
 
 func loadDatastore(config *providerConfig) (db.Datastore, error) {
