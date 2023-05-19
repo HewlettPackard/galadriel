@@ -13,10 +13,21 @@ func (b BundlePut) ToEntity() (*entity.Bundle, error) {
 		return nil, fmt.Errorf("malformed trust domain[%v]: %w", b.TrustDomain, err)
 	}
 
+	var sig []byte
+	if b.Signature != nil {
+		sig = []byte(*b.Signature)
+	}
+
+	var cert []byte
+	if b.SigningCertificate != nil {
+		cert = []byte(*b.SigningCertificate)
+	}
+
 	return &entity.Bundle{
 		Data:               []byte(b.TrustBundle),
-		Signature:          []byte(b.Signature),
+		Digest:             []byte(b.Digest),
+		Signature:          sig,
 		TrustDomainName:    td,
-		SigningCertificate: []byte(b.SigningCertificate),
+		SigningCertificate: cert,
 	}, nil
 }

@@ -298,8 +298,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		// Create first Data - trustDomain-1
 		req1 := &entity.Bundle{
 			Data:               []byte{1, 2, 3},
+			Digest:             []byte("test-digest"),
 			Signature:          []byte{4, 2},
-			SignatureAlgorithm: "SHA256WithRSA",
 			SigningCertificate: []byte{50, 60},
 			TrustDomainID:      td1.ID.UUID,
 		}
@@ -308,8 +308,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.NoError(t, err)
 		assert.NotNil(t, b1)
 		assert.Equal(t, req1.Data, b1.Data)
+		assert.Equal(t, req1.Digest, b1.Digest)
 		assert.Equal(t, req1.Signature, b1.Signature)
-		assert.Equal(t, req1.SignatureAlgorithm, b1.SignatureAlgorithm)
 		assert.Equal(t, req1.SigningCertificate, b1.SigningCertificate)
 		assert.Equal(t, req1.TrustDomainID, b1.TrustDomainID)
 
@@ -321,8 +321,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		// Create second Data -> trustDomain-2
 		req2 := &entity.Bundle{
 			Data:               []byte{10, 20, 30},
+			Digest:             []byte("test-digest-2"),
 			Signature:          []byte{40, 20},
-			SignatureAlgorithm: "SHA256WithRSA",
 			SigningCertificate: []byte{80, 90},
 			TrustDomainID:      td2.ID.UUID,
 		}
@@ -331,8 +331,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.NoError(t, err)
 		assert.NotNil(t, b1)
 		assert.Equal(t, req2.Data, b2.Data)
+		assert.Equal(t, req2.Digest, b2.Digest)
 		assert.Equal(t, req2.Signature, b2.Signature)
-		assert.Equal(t, req2.SignatureAlgorithm, b2.SignatureAlgorithm)
 		assert.Equal(t, req2.SigningCertificate, b2.SigningCertificate)
 		assert.Equal(t, req2.TrustDomainID, b2.TrustDomainID)
 
@@ -352,16 +352,16 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 
 		// Update Data
 		b1.Data = []byte{'a', 'b', 'c'}
+		b1.Digest = []byte("test-digest-3")
 		b1.Signature = []byte{'f', 'g', 'h'}
-		b1.SignatureAlgorithm = "SHA512WithRSA"
 		b1.SigningCertificate = []byte{'f', 'g', 'h'}
 
 		updated, err := ds.CreateOrUpdateBundle(ctx, b1)
 		assert.NoError(t, err)
 		assert.NotNil(t, updated)
 		assert.Equal(t, b1.Data, updated.Data)
+		assert.Equal(t, b1.Digest, updated.Digest)
 		assert.Equal(t, b1.Signature, updated.Signature)
-		assert.Equal(t, b1.SignatureAlgorithm, updated.SignatureAlgorithm)
 		assert.Equal(t, b1.SigningCertificate, updated.SigningCertificate)
 		assert.Equal(t, b1.TrustDomainID, updated.TrustDomainID)
 
@@ -411,8 +411,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		// Create Data
 		b1 := &entity.Bundle{
 			Data:               []byte{1, 2, 3},
+			Digest:             []byte("test-digest-1"),
 			Signature:          []byte{4, 2},
-			SignatureAlgorithm: "SHA512WithRSA",
 			SigningCertificate: []byte{50, 60},
 			TrustDomainID:      td1.ID.UUID,
 		}
@@ -423,8 +423,8 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		// Create second Data associated to same trustDomain
 		b2 := &entity.Bundle{
 			Data:               []byte{10, 20, 30},
+			Digest:             []byte("test-digest-2"),
 			Signature:          []byte{40, 20},
-			SignatureAlgorithm: "SHA512WithRSA",
 			SigningCertificate: []byte{80, 90},
 			TrustDomainID:      td1.ID.UUID,
 		}
