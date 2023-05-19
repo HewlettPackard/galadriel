@@ -15,6 +15,8 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 )
 
+const keyFilePerm = 0600
+
 // Disk extends the Base KeyManager to store keys in disk.
 type Disk struct {
 	Base
@@ -112,7 +114,7 @@ func (d *Disk) saveKeysToDisk() error {
 		return fmt.Errorf("failed to serialize keys: %w", err)
 	}
 
-	if err := os.WriteFile(d.keysFilePath, data, 0600); err != nil {
+	if err := os.WriteFile(d.keysFilePath, data, keyFilePerm); err != nil {
 		return fmt.Errorf("failed to write keys to disk: %w", err)
 	}
 
