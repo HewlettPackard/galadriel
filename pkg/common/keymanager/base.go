@@ -14,7 +14,7 @@ import (
 // Base is a base implementation of KeyManager that can be embedded into
 // other KeyManager implementations (e.g. memory and disk).
 type Base struct {
-	mu sync.RWMutex
+	mu *sync.RWMutex
 
 	generator Generator
 	entries   map[string]*KeyEntry
@@ -43,6 +43,7 @@ func New(config *Config) *Base {
 		config.Generator = &defaultGenerator{}
 	}
 	return &Base{
+		mu:        &sync.RWMutex{},
 		generator: config.Generator,
 		entries:   make(map[string]*KeyEntry),
 	}
