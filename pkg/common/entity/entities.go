@@ -51,9 +51,9 @@ type JoinToken struct {
 // Bundle represents a SPIFFE Trust bundle along with its digest.
 type Bundle struct {
 	ID                 uuid.NullUUID
-	Data               []byte
-	Signature          []byte
-	SignatureAlgorithm string
+	Data               []byte // Raw bundle data.
+	Digest             []byte // SHA-256 digest of the bundle data.
+	Signature          []byte // Raw signature of the bundle data.
 	SigningCertificate []byte
 	TrustDomainID      uuid.UUID
 	TrustDomainName    spiffeid.TrustDomain

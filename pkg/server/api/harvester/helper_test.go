@@ -18,11 +18,13 @@ func TestBundlePutToEntity(t *testing.T) {
 	})
 
 	t.Run("Full fill correctly the bundle entity model", func(t *testing.T) {
+		sig := "test-signature"
+		cert := "test-certificate"
 		bundlePut := BundlePut{
-			Signature:          "a fancy big signature",
+			Signature:          &sig,
 			TrustBundle:        "a really big bundle",
 			TrustDomain:        "test.com",
-			SigningCertificate: "a really secure certificate",
+			SigningCertificate: &cert,
 		}
 
 		bundle, err := bundlePut.ToEntity()
@@ -31,7 +33,7 @@ func TestBundlePutToEntity(t *testing.T) {
 
 		assert.Equal(t, bundlePut.TrustDomain, bundle.TrustDomainName.String())
 		assert.Equal(t, []byte(bundlePut.TrustBundle), bundle.Data)
-		assert.Equal(t, []byte(bundlePut.Signature), bundle.Signature)
-		assert.Equal(t, []byte(bundlePut.SigningCertificate), bundle.SigningCertificate)
+		assert.Equal(t, []byte(*bundlePut.Signature), bundle.Signature)
+		assert.Equal(t, []byte(*bundlePut.SigningCertificate), bundle.SigningCertificate)
 	})
 }

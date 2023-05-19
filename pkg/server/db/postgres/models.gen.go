@@ -60,8 +60,8 @@ type Bundle struct {
 	ID                 pgtype.UUID
 	TrustDomainID      pgtype.UUID
 	Data               []byte
+	Digest             []byte
 	Signature          []byte
-	SignatureAlgorithm sql.NullString
 	SigningCertificate []byte
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
