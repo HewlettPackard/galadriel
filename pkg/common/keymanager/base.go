@@ -12,7 +12,7 @@ import (
 )
 
 // Base is a base implementation of KeyManager that can be embedded into
-// other Memory implementations (e.g. memory and disk).
+// other KeyManager implementations (e.g. memory and disk).
 type Base struct {
 	mu sync.RWMutex
 
