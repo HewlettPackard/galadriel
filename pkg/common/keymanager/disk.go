@@ -94,7 +94,6 @@ func (d *Disk) saveKeysToDisk() error {
 
 	keys := make(map[string]string)
 	for id, entry := range d.entries {
-		// Encode private key as PEM block
 		keyBytes, err := x509.MarshalPKCS8PrivateKey(entry.PrivateKey)
 		if err != nil {
 			return fmt.Errorf("failed to marshal private key: %w", err)
