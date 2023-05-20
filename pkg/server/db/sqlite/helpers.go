@@ -94,8 +94,8 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 	return &entity.Bundle{
 		ID:                 nullID,
 		Data:               b.Data,
+		Digest:             b.Digest,
 		Signature:          b.Signature,
-		SignatureAlgorithm: b.SignatureAlgorithm.String,
 		SigningCertificate: b.SigningCertificate,
 		TrustDomainID:      tdID,
 		CreatedAt:          b.CreatedAt,
