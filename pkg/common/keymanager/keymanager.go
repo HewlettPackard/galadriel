@@ -8,7 +8,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 )
 
-// Memory provides a common interface for managing keys.
+// KeyManager provides a common interface for managing keys.
 type KeyManager interface {
 	// GenerateKey generates a new key with the given ID and key type.
 	// If a key with that ID already exists, it is overwritten.

@@ -89,7 +89,7 @@ func (d *Disk) loadKeysFromDisk() error {
 	return nil
 }
 
-// SaveKeysToDisk saves the keys in the key manager to disk.
+// saveKeysToDisk saves the keys in the key manager to disk.
 func (d *Disk) saveKeysToDisk() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
