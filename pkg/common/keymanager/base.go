@@ -11,7 +11,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 )
 
-// base is a base implementation of KeyManager that can be embedded into
+// base implementation of KeyManager that can be embedded into
 // other KeyManager implementations (e.g. memory and disk).
 type base struct {
 	mu *sync.RWMutex
