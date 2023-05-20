@@ -19,7 +19,7 @@ var (
 
 func Setup(t *testing.T) (*JWTCA, *DefaultJWTValidator) {
 	ctx := context.Background()
-	km := keymanager.New(&keymanager.Config{})
+	km := keymanager.NewMemoryKeyManager(nil)
 	config := ValidatorConfig{
 		KeyManager:       km,
 		ExpectedAudience: expAud,

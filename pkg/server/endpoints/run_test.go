@@ -84,7 +84,7 @@ func newEndpointTestConfig(t *testing.T) *Config {
 	err = ca.Configure(c)
 	require.NoError(t, err)
 
-	km := keymanager.New(&keymanager.Config{})
+	km := keymanager.NewMemoryKeyManager(nil)
 
 	cat := fakeCatalog{
 		x509ca:     ca,

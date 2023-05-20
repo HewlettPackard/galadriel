@@ -17,9 +17,9 @@ import (
 
 const keyFilePerm = 0600
 
-// Disk extends the Base KeyManager to store keys in disk.
+// Disk extends the base KeyManager to store keys in disk.
 type Disk struct {
-	Base
+	base
 
 	keysFilePath string
 }
@@ -29,10 +29,10 @@ func NewDiskKeyManager(generator Generator, keysFilePath string) (*Disk, error) 
 	c := &Config{
 		Generator: generator,
 	}
-	base := New(c)
+	base := newBase(c)
 
 	diskKeyManager := &Disk{
-		Base:         *base,
+		base:         *base,
 		keysFilePath: keysFilePath,
 	}
 
@@ -46,7 +46,7 @@ func NewDiskKeyManager(generator Generator, keysFilePath string) (*Disk, error) 
 
 // GenerateKey generates a new key and stores it in disk.
 func (d *Disk) GenerateKey(ctx context.Context, keyID string, keyType cryptoutil.KeyType) (Key, error) {
-	key, err := d.Base.GenerateKey(ctx, keyID, keyType)
+	key, err := d.base.GenerateKey(ctx, keyID, keyType)
 	if err != nil {
 		return nil, err
 	}
