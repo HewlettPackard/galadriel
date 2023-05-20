@@ -18,7 +18,7 @@ const (
 	baseURL                   = "http://localhost/"
 	errFailedRequest          = "failed to send request: %v"
 	errReadResponseBody       = "failed to read response body: %v"
-	errStatusCodeMsg          = "request returned an error code %d: \n%s"
+	errStatusCodeMsg          = "request returned an error code %d"
 	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
 	errUnmarshalTrustDomains  = "failed to unmarshal trust domain: %v"
 	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
@@ -65,7 +65,7 @@ func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainN
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName ap
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.C
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID)
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.Tru
 	}
 	defer res.Body.Close()
 
-	body, err := readBodyAndStatusCode(res)
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -221,14 +221,14 @@ func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
 	return relationship, nil
 }
 
-func readBodyAndStatusCode(res *http.Response) ([]byte, error) {
+func readResponse(res *http.Response) ([]byte, error) {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode)
+	}
+
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf(errReadResponseBody, err)
-	}
-
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode, body)
 	}
 
 	return body, nil

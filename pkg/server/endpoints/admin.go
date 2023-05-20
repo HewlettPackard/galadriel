@@ -102,7 +102,10 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
-	eRelationship := reqBody.ToEntity()
+	eRelationship, err := reqBody.ToEntity()
+	if err != nil {
+		return err
+	}
 
 	dbTd1, err := h.lookupTrustDomain(ctx, eRelationship.TrustDomainAName.String(), http.StatusBadRequest)
 	if err != nil {
@@ -291,7 +294,7 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 	}
 
 	if td == nil {
-		errMsg := fmt.Errorf("trust domain '%s' does not exists", trustDomainName)
+		errMsg := fmt.Errorf("trust domain %q does not exists", trustDomainName)
 		return h.handleAndLog(errMsg, http.StatusBadRequest)
 	}
 
@@ -341,7 +344,10 @@ func (h *AdminAPIHandlers) findTrustDomainByName(ctx context.Context, trustDomai
 }
 
 func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName, code int) (*entity.TrustDomain, error) {
-	tdName := spiffeid.RequireTrustDomainFromString(trustDomainName)
+	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
+	if err != nil {
+		return nil, fmt.Errorf("malformed trust domain[%q]: %v", trustDomainName, err)
+	}
 
 	td, err := h.Datastore.FindTrustDomainByName(ctx, tdName)
 	if err != nil {
@@ -351,7 +357,7 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	}
 
 	if td == nil {
-		errMsg := fmt.Errorf("trust domain does not exists")
+		errMsg := fmt.Errorf("trust domain %q does not exists", tdName.String())
 		return nil, h.handleAndLog(errMsg, code)
 	}
 

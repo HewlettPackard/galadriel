@@ -18,7 +18,8 @@ func TestRelationshipRequestToEntity(t *testing.T) {
 			TrustDomainBName: td2,
 		}
 
-		r := releationshipRequest.ToEntity()
+		r, err := releationshipRequest.ToEntity()
+		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
 		assert.Equal(t, releationshipRequest.TrustDomainAName, r.TrustDomainAName.String())

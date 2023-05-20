@@ -242,7 +242,7 @@ func TestUDSPutRelationships(t *testing.T) {
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHTTPErr.Code)
 
-		expectedErrorMsg := fmt.Errorf("trust domain does not exists")
+		expectedErrorMsg := fmt.Errorf("trust domain %q does not exists", td2)
 		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
 	})
 
@@ -442,7 +442,7 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Errorf("trust domain does not exists")
+		expectedErrorMsg := fmt.Errorf("trust domain %q does not exists", td1)
 		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
 	})
 }
@@ -483,7 +483,7 @@ func TestUDSGetJoinToken(t *testing.T) {
 		echoHttpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
 
-		expectedMsg := fmt.Errorf("trust domain '%s' does not exists", td1)
+		expectedMsg := fmt.Errorf("trust domain %q does not exists", td1)
 		assert.Equal(t, expectedMsg.Error(), echoHttpErr.Message)
 	})
 }
