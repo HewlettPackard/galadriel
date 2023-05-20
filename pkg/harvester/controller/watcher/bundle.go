@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common"
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
@@ -109,7 +110,7 @@ func hasNewBundle(ctx context.Context, currentDigest []byte, spire spire.SpireSe
 		logger.Errorf("Failed to marshal spire X.509 bundle: %v", err)
 		return nil, nil, false
 	}
-	spireDigest := util.GetDigest(b)
+	spireDigest := cryptoutil.CalculateDigest(b)
 
 	if !bytes.Equal(currentDigest, spireDigest) {
 		return spireBundle, spireDigest, true
@@ -159,7 +160,7 @@ func buildSyncBundlesRequest(ctx context.Context, spire spire.SpireServer) (*com
 			continue
 		}
 
-		digests[td] = util.GetDigest(x509b)
+		digests[td] = cryptoutil.CalculateDigest(x509b)
 	}
 
 	state := &common.SyncBundleRequest{State: digests}
