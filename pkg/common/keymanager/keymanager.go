@@ -18,7 +18,7 @@ type KeyManager interface {
 	// an error is returned.
 	GetKey(ctx context.Context, id string) (Key, error)
 
-	// GetKeys returns all keys managed by the KeyManager.
+	// GetKeys returns all keys managed by the Memory.
 	GetKeys(ctx context.Context) ([]Key, error)
 }
 
