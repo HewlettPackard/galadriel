@@ -7,11 +7,21 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-func (r RelationshipRequest) ToEntity() *entity.Relationship {
-	return &entity.Relationship{
-		TrustDomainAID: r.TrustDomainAId,
-		TrustDomainBID: r.TrustDomainBId,
+func (r RelationshipRequest) ToEntity() (*entity.Relationship, error) {
+	tdA, err := spiffeid.TrustDomainFromString(r.TrustDomainAName)
+	if err != nil {
+		return nil, fmt.Errorf("malformed trust domain[%q]: %v", r.TrustDomainAName, err)
 	}
+
+	tdB, err := spiffeid.TrustDomainFromString(r.TrustDomainBName)
+	if err != nil {
+		return nil, fmt.Errorf("malformed trust domain[%q]: %v", r.TrustDomainBName, err)
+	}
+
+	return &entity.Relationship{
+		TrustDomainAName: tdA,
+		TrustDomainBName: tdB,
+	}, nil
 }
 
 func (td TrustDomainPut) ToEntity() (*entity.TrustDomain, error) {
