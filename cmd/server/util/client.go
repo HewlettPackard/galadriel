@@ -234,7 +234,7 @@ func readResponse(res *http.Response) ([]byte, error) {
 		// Unmarshal Error received from API
 		var errorMsg ErrorMessage
 		if err := json.Unmarshal(body, &errorMsg); err != nil {
-			return nil, fmt.Errorf("failed to unsmarshal error message: %v", err)
+			return nil, fmt.Errorf("failed to unmarshal error message: %v", err)
 		}
 
 		return nil, fmt.Errorf(errorMsg.Message)
