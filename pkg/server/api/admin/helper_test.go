@@ -3,22 +3,27 @@ package admin
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	td1 = "test.com"
+	td2 = "test2.com"
 )
 
 func TestRelationshipRequestToEntity(t *testing.T) {
 	t.Run("Full fill correctly the relationship entity model", func(t *testing.T) {
 		releationshipRequest := RelationshipRequest{
-			TrustDomainAId: uuid.New(),
-			TrustDomainBId: uuid.New(),
+			TrustDomainAName: td1,
+			TrustDomainBName: td2,
 		}
 
-		r := releationshipRequest.ToEntity()
+		r, err := releationshipRequest.ToEntity()
+		assert.NoError(t, err)
 		assert.NotNil(t, r)
 
-		assert.Equal(t, releationshipRequest.TrustDomainAId, r.TrustDomainAID)
-		assert.Equal(t, releationshipRequest.TrustDomainBId, r.TrustDomainBID)
+		assert.Equal(t, releationshipRequest.TrustDomainAName, r.TrustDomainAName.String())
+		assert.Equal(t, releationshipRequest.TrustDomainBName, r.TrustDomainBName.String())
 	})
 }
 

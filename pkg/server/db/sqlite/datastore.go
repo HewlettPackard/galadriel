@@ -511,13 +511,10 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
 	id := uuid.New()
 	params := CreateBundleParams{
-		ID:        id.String(),
-		Data:      req.Data,
-		Signature: req.Signature,
-		SignatureAlgorithm: sql.NullString{
-			String: req.SignatureAlgorithm,
-			Valid:  true,
-		},
+		ID:                 id.String(),
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      req.TrustDomainID.String(),
 	}
@@ -532,13 +529,10 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 
 func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
 	params := UpdateBundleParams{
-		ID:        req.ID.UUID.String(),
-		Data:      req.Data,
-		Signature: req.Signature,
-		SignatureAlgorithm: sql.NullString{
-			String: req.SignatureAlgorithm,
-			Valid:  true,
-		},
+		ID:                 req.ID.UUID.String(),
+		Data:               req.Data,
+		Digest:             req.Digest,
+		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 	}
 

@@ -1,13 +1,13 @@
 -- name: CreateBundle :one
-INSERT INTO bundles(data, signature, signature_algorithm, signing_certificate, trust_domain_id)
+INSERT INTO bundles(data, digest, signature, signing_certificate, trust_domain_id)
 VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: UpdateBundle :one
 UPDATE bundles
 SET data                = $2,
-    signature           = $3,
-    signature_algorithm = $4,
+    digest              = $3,
+    signature           = $4,
     signing_certificate = $5,
     updated_at          = now()
 WHERE id = $1

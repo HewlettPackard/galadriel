@@ -1,176 +1,235 @@
 package util
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	"github.com/google/uuid"
 )
-
-// URL pattern to make http calls on local Unix domain socket,
-// the Host is required for the URL, but it's not relevant
 
 const (
-	localURL    = "http://local/%s"
-	contentType = "application/json"
-)
-
-var (
-	createTrustDomainURL  = fmt.Sprintf(localURL, "trust-domain")
-	listTrustDomainsURL   = fmt.Sprintf(localURL, "listTrustDomains")
-	createRelationshipURL = fmt.Sprintf(localURL, "createRelationship")
-	listRelationshipsURL  = fmt.Sprintf(localURL, "listRelationships")
-	joinTokenURL          = fmt.Sprintf(localURL, "trust-domain/%s/join-token")
+	baseURL                   = "http://localhost/"
+	errFailedRequest          = "failed to send request: %v"
+	errReadResponseBody       = "failed to read response body: %v"
+	errStatusCodeMsg          = "request returned an error code %d"
+	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
+	errUnmarshalTrustDomains  = "failed to unmarshal trust domain: %v"
+	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
 )
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
-	CreateTrustDomain(m *entity.TrustDomain) error
-	ListTrustDomains() ([]*entity.TrustDomain, error)
-	CreateRelationship(r *entity.Relationship) error
-	ListRelationships() ([]*entity.Relationship, error)
-	GenerateJoinToken(trustDomain spiffeid.TrustDomain) (string, error)
+	CreateTrustDomain(ctx context.Context, trustDomain api.TrustDomainName) (*entity.TrustDomain, error)
+	GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
+	UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
+	CreateRelationship(ctx context.Context, r *entity.Relationship) (*entity.Relationship, error)
+	GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error)
+	GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error)
+	GetJoinToken(ctx context.Context, trustDomain api.TrustDomainName) (*entity.JoinToken, error)
 }
 
-// TODO: improve this adding options for the transport, dialcontext, and http.Client.
-func NewServerClient(socketPath string) ServerLocalClient {
+func NewServerClient(socketPath string) (ServerLocalClient, error) {
+	clientOpt := admin.WithBaseURL(baseURL)
+
+	client, err := admin.NewClient(socketPath, clientOpt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate the Admin Client: %q", err)
+	}
+
 	t := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			var d net.Dialer
 			return d.DialContext(ctx, "unix", socketPath)
 		}}
-	c := &http.Client{
-		Transport: t,
-	}
 
-	return serverClient{client: c}
+	client.Client = &http.Client{Transport: t}
+
+	return &serverClient{client: client}, nil
 }
 
 type serverClient struct {
-	client *http.Client
+	client *admin.Client
 }
 
-func (c serverClient) CreateTrustDomain(m *entity.TrustDomain) error {
-	trustDomainBytes, err := json.Marshal(m)
+func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+	res, err := c.client.GetTrustDomainByName(ctx, trustDomainName)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf(errFailedRequest, err)
+	}
+	defer res.Body.Close()
+
+	body, err := readResponse(res)
+	if err != nil {
+		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, createTrustDomainURL, bytes.NewReader(trustDomainBytes))
+	trustDomain, err := unmarshalTrustDomain(body)
 	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	r, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if r.StatusCode != 200 {
-		return errors.New(string(body))
-	}
-
-	return nil
+	return trustDomain, nil
 }
 
-func (c serverClient) ListTrustDomains() ([]*entity.TrustDomain, error) {
-	r, err := c.client.Get(listTrustDomainsURL)
+func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+	payload := api.TrustDomain{Name: trustDomainName}
+	res, err := c.client.PutTrustDomainByName(ctx, trustDomainName, payload)
+	if err != nil {
+		return nil, fmt.Errorf(errFailedRequest, err)
+	}
+	defer res.Body.Close()
+
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
 
-	b, err := io.ReadAll(r.Body)
+	trustDomain, err := unmarshalTrustDomain(body)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.StatusCode != 200 {
-		return nil, errors.New(string(b))
-	}
-
-	var trustDomains []*entity.TrustDomain
-	if err = json.Unmarshal(b, &trustDomains); err != nil {
-		return nil, err
-	}
-
-	return trustDomains, nil
+	return trustDomain, nil
 }
 
-func (c serverClient) CreateRelationship(rel *entity.Relationship) error {
-	relBytes, err := json.Marshal(rel)
+func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+	payload := admin.PutTrustDomainJSONRequestBody{Name: trustDomainName}
+
+	res, err := c.client.PutTrustDomain(ctx, payload)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf(errFailedRequest, err)
 	}
+	defer res.Body.Close()
 
-	r, err := c.client.Post(createRelationshipURL, contentType, bytes.NewReader(relBytes))
+	body, err := readResponse(res)
 	if err != nil {
-		return fmt.Errorf("failed to create relationship: %v", err)
+		return nil, err
 	}
-	defer r.Body.Close()
 
-	b, err := io.ReadAll(r.Body)
+	trustDomain, err := unmarshalTrustDomain(body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if r.StatusCode != 200 {
-		return errors.New(string(b))
-	}
-
-	return nil
+	return trustDomain, nil
 }
 
-func (c serverClient) ListRelationships() ([]*entity.Relationship, error) {
-	r, err := c.client.Get(listRelationshipsURL)
+func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
+	payload := admin.PutRelationshipJSONRequestBody{TrustDomainAName: rel.TrustDomainAName.String(), TrustDomainBName: rel.TrustDomainBName.String()}
+	res, err := c.client.PutRelationship(ctx, payload)
+	if err != nil {
+		return nil, fmt.Errorf(errFailedRequest, err)
+	}
+	defer res.Body.Close()
+
+	body, err := readResponse(res)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
 
-	b, err := io.ReadAll(r.Body)
-
+	relationship, err := unmarshalRelationship(body)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.StatusCode != 200 {
-		return nil, errors.New(string(b))
-	}
+	return relationship, nil
+}
+func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{Status: (*api.ConsentStatus)(&consentStatus), TrustDomainName: &trustDomainName}
 
-	var rels []*entity.Relationship
-	if err = json.Unmarshal(b, &rels); err != nil {
+	res, err := c.client.GetRelationships(ctx, payload)
+	if err != nil {
+		return nil, fmt.Errorf(errFailedRequest, err)
+	}
+	defer res.Body.Close()
+
+	body, err := readResponse(res)
+	if err != nil {
 		return nil, err
 	}
 
-	return rels, nil
+	relationship, err := unmarshalRelationship(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return relationship, nil
 }
 
-func (c serverClient) GenerateJoinToken(td spiffeid.TrustDomain) (string, error) {
-	joinTokenURL := fmt.Sprintf(joinTokenURL, td)
-	r, err := c.client.Get(joinTokenURL)
+func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
+	res, err := c.client.GetRelationshipByID(ctx, relID)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf(errFailedRequest, err)
 	}
-	defer r.Body.Close()
+	defer res.Body.Close()
 
-	body, err := io.ReadAll(r.Body)
+	body, err := readResponse(res)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(body), nil
+	relationship, err := unmarshalRelationship(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return relationship, nil
+}
+
+func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.JoinToken, error) {
+	res, err := c.client.GetJoinToken(ctx, trustDomainName)
+	if err != nil {
+		return nil, fmt.Errorf(errFailedRequest, err)
+	}
+	defer res.Body.Close()
+
+	body, err := readResponse(res)
+	if err != nil {
+		return nil, err
+	}
+
+	var joinToken *entity.JoinToken
+	if err = json.Unmarshal(body, &joinToken); err != nil {
+		return nil, fmt.Errorf(errUnmarshalJoinToken, err)
+	}
+
+	return joinToken, nil
+}
+
+func unmarshalTrustDomain(body []byte) (*entity.TrustDomain, error) {
+	var trustDomain *entity.TrustDomain
+	if err := json.Unmarshal(body, &trustDomain); err != nil {
+		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
+	}
+
+	return trustDomain, nil
+}
+
+func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
+	var relationship *entity.Relationship
+	if err := json.Unmarshal(body, &relationship); err != nil {
+		return nil, fmt.Errorf(errUnmarshalRelationships, err)
+	}
+
+	return relationship, nil
+}
+
+func readResponse(res *http.Response) ([]byte, error) {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf(errReadResponseBody, err)
+	}
+
+	return body, nil
 }

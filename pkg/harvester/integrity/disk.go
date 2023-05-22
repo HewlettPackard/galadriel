@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
@@ -86,7 +85,7 @@ func (s *DiskSigner) Sign(payload []byte) ([]byte, []*x509.Certificate, error) {
 		return nil, nil, err
 	}
 
-	hashedPayload := sha256.Sum256(payload)
+	hashedPayload := cryptoutil.CalculateDigest(payload)
 	signedPayload, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hashedPayload[:])
 	if err != nil {
 		return nil, nil, err
@@ -99,7 +98,7 @@ func (s *DiskSigner) Sign(payload []byte) ([]byte, []*x509.Certificate, error) {
 // Verify checks if the signature of the given payload matches the expected signature.
 // It also verifies that the certificate provided in the signature is signed by a trusted root CA.
 func (v *DiskVerifier) Verify(payload, signature []byte, chain []*x509.Certificate) error {
-	hashed := sha256.Sum256(payload)
+	hashed := cryptoutil.CalculateDigest(payload)
 
 	roots := x509.NewCertPool()
 	for _, rootCert := range v.trustBundle {

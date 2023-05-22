@@ -102,17 +102,23 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 		err := fmt.Errorf("failed to read relationship put body: %v", err)
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
-	eRelationship := reqBody.ToEntity()
-
-	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainAID, http.StatusBadRequest)
+	eRelationship, err := reqBody.ToEntity()
 	if err != nil {
 		return err
 	}
 
-	_, err = h.lookupTrustDomain(ctx, eRelationship.TrustDomainBID, http.StatusBadRequest)
+	dbTd1, err := h.lookupTrustDomain(ctx, eRelationship.TrustDomainAName.String(), http.StatusBadRequest)
 	if err != nil {
 		return err
 	}
+
+	dbTd2, err := h.lookupTrustDomain(ctx, eRelationship.TrustDomainBName.String(), http.StatusBadRequest)
+	if err != nil {
+		return err
+	}
+
+	eRelationship.TrustDomainAID = dbTd1.ID.UUID
+	eRelationship.TrustDomainBID = dbTd2.ID.UUID
 
 	rel, err := h.Datastore.CreateOrUpdateRelationship(ctx, eRelationship)
 	if err != nil {
@@ -120,7 +126,7 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Created relationship between trust domains %s and %s", rel.TrustDomainAID, rel.TrustDomainBID)
+	h.Logger.Printf("Created relationship between trust domains %s and %s", dbTd1.Name.String(), dbTd2.Name.String())
 
 	response := api.RelationshipFromEntity(rel)
 	err = chttp.WriteResponse(echoCtx, http.StatusCreated, response)
@@ -179,7 +185,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	}
 
 	if td != nil {
-		err = fmt.Errorf("trust domain already exists: %q", dbTD.Name)
+		err = fmt.Errorf("trust domain already exists: %s", dbTD.Name.String())
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
@@ -189,7 +195,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Created trustDomain for trust domain: %s", dbTD.Name)
+	h.Logger.Printf("Created trustDomain: %s", dbTD.Name.String())
 
 	response := api.TrustDomainFromEntity(m)
 	err = chttp.WriteResponse(echoCtx, http.StatusCreated, response)
@@ -233,7 +239,7 @@ func (h *AdminAPIHandlers) GetTrustDomainByName(echoCtx echo.Context, trustDomai
 }
 
 // PutTrustDomainByName updates the trust domain - (PUT /trust-domain/{trustDomainName})
-func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomainID api.UUID) error {
+func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
 
 	reqBody := &admin.PutTrustDomainByNameJSONRequestBody{}
@@ -249,7 +255,7 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
-	_, err = h.lookupTrustDomain(ctx, trustDomainID, http.StatusNotFound)
+	_, err = h.lookupTrustDomain(ctx, trustDomainName, http.StatusNotFound)
 	if err != nil {
 		return err
 	}
@@ -288,7 +294,7 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 	}
 
 	if td == nil {
-		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainName)
+		errMsg := fmt.Errorf("trust domain %q does not exists", trustDomainName)
 		return h.handleAndLog(errMsg, http.StatusBadRequest)
 	}
 
@@ -337,8 +343,13 @@ func (h *AdminAPIHandlers) findTrustDomainByName(ctx context.Context, trustDomai
 	return td, nil
 }
 
-func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID uuid.UUID, code int) (*entity.TrustDomain, error) {
-	td, err := h.Datastore.FindTrustDomainByID(ctx, trustDomainID)
+func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName, code int) (*entity.TrustDomain, error) {
+	tdName, err := spiffeid.TrustDomainFromString(trustDomainName)
+	if err != nil {
+		return nil, fmt.Errorf("malformed trust domain[%q]: %v", trustDomainName, err)
+	}
+
+	td, err := h.Datastore.FindTrustDomainByName(ctx, tdName)
 	if err != nil {
 		msg := errors.New("error looking up trust domain")
 		errMsg := fmt.Errorf("%s: %w", msg, err)
@@ -346,7 +357,7 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainID 
 	}
 
 	if td == nil {
-		errMsg := fmt.Errorf("trust domain exists: %q", trustDomainID)
+		errMsg := fmt.Errorf("trust domain %q does not exists", tdName.String())
 		return nil, h.handleAndLog(errMsg, code)
 	}
 
