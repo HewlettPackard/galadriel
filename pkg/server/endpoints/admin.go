@@ -122,7 +122,6 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 
 	rel, err := h.Datastore.CreateOrUpdateRelationship(ctx, eRelationship)
 	if err != nil {
-		err = fmt.Errorf("failed creating relationship: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
@@ -185,7 +184,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	}
 
 	if td != nil {
-		err = fmt.Errorf("trust domain already exists: %s", dbTD.Name.String())
+		err = fmt.Errorf("trust domain %q already exists", dbTD.Name.String())
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
