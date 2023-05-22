@@ -18,11 +18,14 @@ const (
 	baseURL                   = "http://localhost/"
 	errFailedRequest          = "failed to send request: %v"
 	errReadResponseBody       = "failed to read response body: %v"
-	errStatusCodeMsg          = "request returned an error code %d"
 	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
 	errUnmarshalTrustDomains  = "failed to unmarshal trust domain: %v"
 	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
 )
+
+type ErrorMessage struct {
+	Message string
+}
 
 // ServerLocalClient represents a local client of the Galadriel Server.
 type ServerLocalClient interface {
@@ -40,7 +43,7 @@ func NewServerClient(socketPath string) (ServerLocalClient, error) {
 
 	client, err := admin.NewClient(socketPath, clientOpt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to instantiate the Admin Client: %q", err)
+		return nil, fmt.Errorf("failed to instantiate the Admin Client: %v", err)
 	}
 
 	t := &http.Transport{
@@ -222,13 +225,19 @@ func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
 }
 
 func readResponse(res *http.Response) ([]byte, error) {
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf(errStatusCodeMsg, res.StatusCode)
-	}
-
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf(errReadResponseBody, err)
+	}
+
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		// Unmarshal Error received from API
+		var errorMsg ErrorMessage
+		if err := json.Unmarshal(body, &errorMsg); err != nil {
+			return nil, fmt.Errorf("failed to unsmarshal error message: %v", err)
+		}
+
+		return nil, fmt.Errorf(errorMsg.Message)
 	}
 
 	return body, nil

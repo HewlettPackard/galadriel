@@ -347,7 +347,8 @@ func TestUDSPutTrustDomain(t *testing.T) {
 		echoHttpErr := err.(*echo.HTTPError)
 
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
-		assert.ErrorContains(t, echoHttpErr, "trust domain already exists")
+		expectedErrorMsg := fmt.Errorf("trust domain %q already exists", td1)
+		assert.Equal(t, expectedErrorMsg.Error(), echoHttpErr.Message)
 	})
 }
 
