@@ -185,7 +185,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	}
 
 	if td != nil {
-		err = fmt.Errorf("trust domain already exists: %s", dbTD.Name.String())
+		err = fmt.Errorf("trust domain %q already exists", dbTD.Name.String())
 		return h.handleAndLog(err, http.StatusBadRequest)
 	}
 
