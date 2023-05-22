@@ -48,6 +48,11 @@ var createRelationshipCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := util.NewServerClient(defaultSocketPath)
+		if err != nil {
+			return err
+		}
+
 		tdA, err := cmd.Flags().GetString("trustDomainA")
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain A flag: %v", err)
@@ -68,11 +73,6 @@ var createRelationshipCmd = &cobra.Command{
 			return fmt.Errorf("failed parsing trust domain: %v", err)
 		}
 
-		client, err := util.NewServerClient(defaultSocketPath)
-		if err != nil {
-			return err
-		}
-
 		_, err = client.CreateRelationship(context.Background(), &entity.Relationship{
 			TrustDomainAName: trustDomain1,
 			TrustDomainBName: trustDomain2,
@@ -81,7 +81,7 @@ var createRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Relationship created between trust domains %q and %q\n", tdA, tdB)
+		fmt.Printf("Relationship created between trust domains %s and %s\n", tdA, tdB)
 		return nil
 	},
 }
