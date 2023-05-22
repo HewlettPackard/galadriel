@@ -1,4 +1,4 @@
-package memory
+package keymanager
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	km := New(nil)
+	km := newBase(nil)
 	assert.NotNil(t, km)
 }
 
 func TestKeyManager(t *testing.T) {
-	km := New(nil)
+	km := newBase(nil)
 	ctx := context.Background()
 
 	key1, err := km.GenerateKey(ctx, "foo", cryptoutil.RSA2048)

@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setup() (*Base, context.Context) {
-	b := New(&Config{})
+func setup() (*base, context.Context) {
+	b := newBase(&Config{})
 	ctx := context.Background()
 	return b, ctx
 }

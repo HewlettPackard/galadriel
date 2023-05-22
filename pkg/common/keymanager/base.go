@@ -11,10 +11,10 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 )
 
-// Base is a base implementation of KeyManager that can be embedded into
+// base implementation of KeyManager that can be embedded into
 // other KeyManager implementations (e.g. memory and disk).
-type Base struct {
-	mu sync.RWMutex
+type base struct {
+	mu *sync.RWMutex
 
 	generator Generator
 	entries   map[string]*KeyEntry
@@ -28,21 +28,22 @@ type KeyEntry struct {
 	id         string
 }
 
-// Config is the configuration for a Base KeyManager.
+// Config is the configuration for a base KeyManager.
 type Config struct {
 	// Optional Key Generator
 	Generator Generator
 }
 
-// New creates a new Base KeyManager.
-func New(config *Config) *Base {
+// newBase creates a new base KeyManager.
+func newBase(config *Config) *base {
 	if config == nil {
 		config = &Config{}
 	}
 	if config.Generator == nil {
 		config.Generator = &defaultGenerator{}
 	}
-	return &Base{
+	return &base{
+		mu:        &sync.RWMutex{},
 		generator: config.Generator,
 		entries:   make(map[string]*KeyEntry),
 	}
@@ -68,7 +69,7 @@ func (k *KeyEntry) Signer() crypto.Signer {
 }
 
 // GenerateKey creates a new key pair and stores it in the KeyManager.
-func (b *Base) GenerateKey(ctx context.Context, keyID string, keyType cryptoutil.KeyType) (Key, error) {
+func (b *base) GenerateKey(ctx context.Context, keyID string, keyType cryptoutil.KeyType) (Key, error) {
 	if keyID == "" {
 		return nil, errors.New("key id is required")
 	}
@@ -89,7 +90,7 @@ func (b *Base) GenerateKey(ctx context.Context, keyID string, keyType cryptoutil
 	return newEntry, nil
 }
 
-func (b *Base) GetKey(ctx context.Context, id string) (Key, error) {
+func (b *base) GetKey(ctx context.Context, id string) (Key, error) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -101,7 +102,7 @@ func (b *Base) GetKey(ctx context.Context, id string) (Key, error) {
 	return entry, nil
 }
 
-func (b *Base) GetKeys(ctx context.Context) ([]Key, error) {
+func (b *base) GetKeys(ctx context.Context) ([]Key, error) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -113,7 +114,7 @@ func (b *Base) GetKeys(ctx context.Context) ([]Key, error) {
 	return keys, nil
 }
 
-func (b *Base) generateKeyEntry(keyID string, keyType cryptoutil.KeyType) (*KeyEntry, error) {
+func (b *base) generateKeyEntry(keyID string, keyType cryptoutil.KeyType) (*KeyEntry, error) {
 	var err error
 	var privateKey crypto.Signer
 

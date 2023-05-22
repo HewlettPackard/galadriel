@@ -31,7 +31,7 @@ func SetupMiddleware(t *testing.T) *AuthNTestSetup {
 	logger := logrus.New()
 	fakeDB := fakedatastore.NewFakeDB()
 
-	km := keymanager.New(&keymanager.Config{})
+	km := keymanager.NewMemoryKeyManager(nil)
 	c := jwt.ValidatorConfig{
 		KeyManager:       km,
 		ExpectedAudience: []string{"test"},
