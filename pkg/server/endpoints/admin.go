@@ -122,7 +122,6 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 
 	rel, err := h.Datastore.CreateOrUpdateRelationship(ctx, eRelationship)
 	if err != nil {
-		err = fmt.Errorf("failed creating relationship: %v", err)
 		return h.handleAndLog(err, http.StatusInternalServerError)
 	}
 
