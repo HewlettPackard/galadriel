@@ -10,7 +10,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spire"
 	"github.com/sirupsen/logrus"
@@ -19,7 +18,9 @@ import (
 
 var logger = logrus.WithField(telemetry.SubsystemName, telemetry.HarvesterController)
 
-func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) util.RunnableTask {
+type RunnableTask func(context.Context) error
+
+func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) RunnableTask {
 	return func(ctx context.Context) error {
 		t := time.NewTicker(interval)
 		var currentDigest []byte
@@ -55,7 +56,7 @@ func BuildSelfBundleWatcher(interval time.Duration, server client.GaladrielServe
 	}
 }
 
-func BuildFederatedBundlesWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) util.RunnableTask {
+func BuildFederatedBundlesWatcher(interval time.Duration, server client.GaladrielServerClient, spire spire.SpireServer) RunnableTask {
 	return func(ctx context.Context) error {
 		t := time.NewTicker(interval)
 

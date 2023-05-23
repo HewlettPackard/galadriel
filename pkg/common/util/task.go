@@ -3,53 +3,64 @@ package util
 import (
 	"context"
 	"fmt"
+	"log"
 	"runtime/debug"
 	"sync"
 )
 
-type RunnableTask func(context.Context) error
-
-// RunTasks runs all the given tasks concurrently and waits for all of them to be completed.
-// If one task is canceled, all the other tasks are canceled.
-func RunTasks(ctx context.Context, tasks ...RunnableTask) error {
+// RunTasks concurrently executes multiple tasks and ensures resilience by handling errors and panics.
+// It creates a cancelable context for the tasks, launches them as separate goroutines, and captures
+// any panics or errors that occur. The function waits for all tasks to complete or until an error occurs.
+// If a task is canceled due to the parent context being canceled, it returns the corresponding error.
+// If any task returns an error, that error is returned. Otherwise, it returns nil to indicate success.
+// This function is useful for concurrently executing independent tasks while maintaining application resilience.
+// Errors and panics are logged using the standard log package.
+func RunTasks(ctx context.Context, tasks ...func(context.Context) error) error {
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(ctx)
-	defer func() {
-		cancel()
-		wg.Wait()
-	}()
-
-	errch := make(chan error, len(tasks))
-
-	runTask := func(task RunnableTask) (err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("panic: %v\n%s\n", r, string(debug.Stack())) //nolint: revive // newlines are intentional
-			}
-			wg.Done()
-		}()
-		return task(ctx)
-	}
-
 	wg.Add(len(tasks))
+
+	errCh := make(chan error, len(tasks))
+
+	// Create a cancelable context for all the tasks
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	for _, task := range tasks {
-		task := task
-		go func() {
-			errch <- runTask(task)
-		}()
-	}
-
-	for complete := 0; complete < len(tasks); {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case err := <-errch:
-			if err != nil {
+		go func(task func(context.Context) error) {
+			defer wg.Done()
+			var panicErr error
+			err := func() (err error) {
+				defer func() {
+					if r := recover(); r != nil {
+						panicErr = fmt.Errorf("Panic occurred: %v\n%s", r, debug.Stack())
+					}
+				}()
+				err = task(ctx)
 				return err
+			}()
+			if panicErr != nil {
+				log.Println(panicErr.Error())
+				errCh <- panicErr
+			} else if err != nil {
+				log.Printf("Error occurred: %v\n", err)
+				errCh <- err
 			}
-			complete++
-		}
+		}(task)
 	}
 
-	return nil
+	// Wait for all tasks to complete or an error occurs
+	wg.Wait()
+
+	// Check if an error occurred during any of the tasks
+	select {
+	case <-ctx.Done():
+		// If the context was canceled, return the corresponding error
+		return ctx.Err()
+	case err := <-errCh:
+		// If an error occurred, return the error
+		return err
+	default:
+		// All tasks completed successfully
+		return nil
+	}
 }
