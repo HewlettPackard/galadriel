@@ -39,7 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BundlePut'
+              $ref: '#/components/schemas/BundlePutRequest'
         required: true
       responses:
         '200':
@@ -67,7 +67,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BundleSyncBody'
+              $ref: '#/components/schemas/BundleSyncPostRequest'
         required: true
       responses:
         '200':
@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BundleSyncResult'
+                $ref: '#/components/schemas/BundleSyncPostResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -107,7 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OnboardResult'
+                $ref: '#/components/schemas/HarvesterOnboardResponse'
         default:
           $ref: '#/components/responses/Default'
   /trust-domain/{trustDomainName}/jwt:
@@ -129,7 +129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JWTResult'
+                $ref: '#/components/schemas/JwtGetResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -159,7 +159,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchRelationship'
+              $ref: '#/components/schemas/RelationshipPatchRequest'
         required: true
       responses:
         '200':
@@ -196,7 +196,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RelationshipGet'
+                $ref: '#/components/schemas/RelationshipGetResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -211,7 +211,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    PatchRelationship:
+    RelationshipPatchRequest:
       type: object
       additionalProperties: false
       required:
@@ -219,7 +219,7 @@ components:
       properties:
         consent_status:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
-    BundlePut:
+    BundlePutRequest:
       type: object
       additionalProperties: false
       required:
@@ -237,10 +237,10 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
         digest:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
-    TrustBundleSync:
+    TrustBundleSyncResponse:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/TrustBundleSyncItem'
+        $ref: '#/components/schemas/TrustBundleSyncResponseItem'
       example:
         trust_domain_1: {
           signature: "NLHJupZn8KxFoJmSiJDCP+UuoSJOlhMK1HYIjc6YP75ve15PcMJ7zq1JLRXFzXtM0zf0ScLbZ1nYYGvQmgW+GJAx5PsmSq3m1kjrx0fFJD0EDqVZhazoYIos84Pa8qG/cWe05s1rHoYY53wO231ZGktkH56KnydHD2wwefyQCpA=",
@@ -268,7 +268,7 @@ components:
             c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
             -----END CERTIFICATE-----"
         }
-    BundleSyncBody:
+    BundleSyncPostRequest:
       type: object
       additionalProperties: false
       required:
@@ -276,7 +276,7 @@ components:
       properties:
         state:
           $ref: '#/components/schemas/BundlesDigests'
-    BundleSyncResult:
+    BundleSyncPostResponse:
       type: object
       additionalProperties: false
       required:
@@ -286,8 +286,8 @@ components:
         state:
           $ref: '#/components/schemas/BundlesDigests'
         updates:
-          $ref: '#/components/schemas/TrustBundleSync'
-    OnboardResult:
+          $ref: '#/components/schemas/TrustBundleSyncResponse'
+    HarvesterOnboardResponse:
       type: object
       additionalProperties: false
       required:
@@ -301,7 +301,7 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
-    JWTResult:
+    JwtGetResponse:
       type: object
       additionalProperties: false
       required:
@@ -309,7 +309,7 @@ components:
       properties:
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
-    RelationshipGet:
+    RelationshipGetResponse:
       type: array
       items:
         $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
@@ -322,7 +322,7 @@ components:
         trust_domain_1: "883358270705e6f74e0abe21a4cc56e82906894b111e8c9b3ac6b235930ce64d"
         trust_domain_2: "d8ae2cb8eee5eab8c11f3b3439ea4a2a4091e06646827821ee196b7568a414cd"
         trust_domain_3: "154f6f7f94a6027275c4ef6b3ebe0476e159bbad3d0ff0632d414bece9dce56b"
-    TrustBundleSyncItem:
+    TrustBundleSyncResponseItem:
       type: object
       additionalProperties: false
       required:

@@ -307,7 +307,7 @@ func TestUDSPutTrustDomain(t *testing.T) {
 	trustDomainPath := "/trust-domain"
 	t.Run("Successfully create a new trust domain", func(t *testing.T) {
 		description := "A test trust domain"
-		reqBody := &admin.TrustDomainPut{
+		reqBody := &admin.TrustDomainPutRequest{
 			Name:        td1,
 			Description: &description,
 		}
@@ -331,7 +331,7 @@ func TestUDSPutTrustDomain(t *testing.T) {
 	})
 
 	t.Run("Should not allow creating trust domain with the same name of one already created", func(t *testing.T) {
-		reqBody := &admin.TrustDomainPut{
+		reqBody := &admin.TrustDomainPutRequest{
 			Name: td1,
 		}
 
@@ -468,11 +468,11 @@ func TestUDSGetJoinToken(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
-		apiJToken := admin.JoinTokenResult{}
-		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiJToken)
+		jtResp := admin.JoinTokenGetResponse{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &jtResp)
 		assert.NoError(t, err)
 
-		assert.NotEmpty(t, apiJToken)
+		assert.NotEmpty(t, jtResp)
 	})
 
 	t.Run("Raise a bad request when trying to generates a join token for the trust domain that does not exists", func(t *testing.T) {

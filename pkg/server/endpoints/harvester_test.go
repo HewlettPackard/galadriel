@@ -260,7 +260,7 @@ func TestTCPPatchRelationshipRelationshipID(t *testing.T) {
 }
 
 func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain), trustDomain *entity.TrustDomain, relationship *entity.Relationship, status api.ConsentStatus) {
-	requestBody := &harvester.PatchRelationship{
+	requestBody := &harvester.RelationshipPatchRequest{
 		ConsentStatus: status,
 	}
 
@@ -328,7 +328,7 @@ func TestTCPOnboard(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.NotEmpty(t, recorder.Body)
 
-		var result harvester.OnboardResult
+		var result harvester.HarvesterOnboardResponse
 		err = json.Unmarshal(recorder.Body.Bytes(), &result)
 		assert.NoError(t, err)
 		assert.Equal(t, td.ID.UUID.String(), result.TrustDomainID.String())
@@ -438,43 +438,43 @@ func TestTCPBundleSync(t *testing.T) {
 		name          string
 		trustDomain   string
 		relationships []*entity.Relationship
-		bundleState   harvester.BundleSyncBody
-		expected      harvester.BundleSyncResult
+		bundleState   harvester.BundleSyncPostRequest
+		expected      harvester.BundleSyncPostResponse
 	}{
 		{
 			name:          "Successfully sync no new bundles",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
-			bundleState: harvester.BundleSyncBody{
+			bundleState: harvester.BundleSyncPostRequest{
 				State: map[string]api.BundleDigest{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
-			expected: harvester.BundleSyncResult{
+			expected: harvester.BundleSyncPostResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSync{},
+				Updates: harvester.TrustBundleSyncResponse{},
 			},
 		},
 		{
 			name:          "Successfully sync one new bundle for one approved relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
-			bundleState: harvester.BundleSyncBody{
+			bundleState: harvester.BundleSyncPostRequest{
 				State: map[string]api.BundleDigest{
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
-			expected: harvester.BundleSyncResult{
+			expected: harvester.BundleSyncPostResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSync{
-					tdB.Name.String(): harvester.TrustBundleSyncItem{
+				Updates: harvester.TrustBundleSyncResponse{
+					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
@@ -486,21 +486,21 @@ func TestTCPBundleSync(t *testing.T) {
 			name:          "Successfully sync two new bundles for two approved relationships",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
-			bundleState: harvester.BundleSyncBody{
+			bundleState: harvester.BundleSyncPostRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.BundleSyncResult{
+			expected: harvester.BundleSyncPostResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSync{
-					tdB.Name.String(): harvester.TrustBundleSyncItem{
+				Updates: harvester.TrustBundleSyncResponse{
+					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
-					tdC.Name.String(): harvester.TrustBundleSyncItem{
+					tdC.Name.String(): harvester.TrustBundleSyncResponseItem{
 						TrustBundle: string(bundleC.Data),
 						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
@@ -512,15 +512,15 @@ func TestTCPBundleSync(t *testing.T) {
 			name:          "Successfully sync one new bundle for one approved relationship, not including the pending relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, pendingRelAC, acceptedAcceptedRelBC},
-			bundleState: harvester.BundleSyncBody{
+			bundleState: harvester.BundleSyncPostRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.BundleSyncResult{
+			expected: harvester.BundleSyncPostResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 				},
-				Updates: harvester.TrustBundleSync{
-					tdB.Name.String(): harvester.TrustBundleSyncItem{
+				Updates: harvester.TrustBundleSyncResponse{
+					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
@@ -532,15 +532,15 @@ func TestTCPBundleSync(t *testing.T) {
 			name:          "Successfully sync one new bundle for one approved relationship, not including the denied relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedDeniedRelAC, deniedAcceptedRelAB, acceptedAcceptedRelBC},
-			bundleState: harvester.BundleSyncBody{
+			bundleState: harvester.BundleSyncPostRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.BundleSyncResult{
+			expected: harvester.BundleSyncPostResponse{
 				State: harvester.BundlesDigests{
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSync{
-					tdC.Name.String(): harvester.TrustBundleSyncItem{
+				Updates: harvester.TrustBundleSyncResponse{
+					tdC.Name.String(): harvester.TrustBundleSyncResponseItem{
 						TrustBundle: string(bundleC.Data),
 						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
@@ -568,7 +568,7 @@ func TestTCPBundleSync(t *testing.T) {
 			assert.Equal(t, http.StatusOK, recorder.Code)
 			assert.NoError(t, err)
 
-			var bundles harvester.BundleSyncResult
+			var bundles harvester.BundleSyncPostResponse
 			err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
 			require.NoError(t, err)
 
@@ -600,7 +600,7 @@ func TestBundlePut(t *testing.T) {
 	t.Run("Fail post bundle no authenticated trust domain", func(t *testing.T) {
 		sig := "test-signature"
 		cert := "test-certificate"
-		bundlePut := harvester.BundlePut{
+		bundlePut := harvester.BundlePutRequest{
 			Signature:          &sig,
 			SigningCertificate: &cert,
 			TrustBundle:        "a new bundle",
@@ -634,7 +634,7 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
 	sig := encoding.EncodeToBase64([]byte("test-signature"))
 	cert := encoding.EncodeToBase64([]byte("test-signing-certificate"))
-	bundlePut := harvester.BundlePut{
+	bundlePut := harvester.BundlePutRequest{
 		Signature:          &sig,
 		SigningCertificate: &cert,
 		TrustBundle:        bundle,
@@ -668,7 +668,7 @@ func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interfa
 	cert := "test-certificate"
 	bundle := "test trust bundle"
 	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
-	bundlePut := harvester.BundlePut{
+	bundlePut := harvester.BundlePutRequest{
 		Signature:          &sig,
 		SigningCertificate: &cert,
 		TrustBundle:        bundle,

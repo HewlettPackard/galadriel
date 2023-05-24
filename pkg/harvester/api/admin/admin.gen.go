@@ -26,8 +26,8 @@ const (
 	Harvester_authScopes = "harvester_auth.Scopes"
 )
 
-// PatchRelationship defines model for PatchRelationship.
-type PatchRelationship struct {
+// RelationshipPatchRequest defines model for RelationshipPatchRequest.
+type RelationshipPatchRequest struct {
 	ConsentStatus externalRef0.ConsentStatus `json:"consent_status"`
 }
 
@@ -40,7 +40,7 @@ type GetRelationshipsParams struct {
 }
 
 // PatchRelationshipJSONRequestBody defines body for PatchRelationship for application/json ContentType.
-type PatchRelationshipJSONRequestBody = PatchRelationship
+type PatchRelationshipJSONRequestBody = RelationshipPatchRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -533,25 +533,25 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xW227bOBD9FYHbR91sJ26iN2+dtAay3aBpXzbwGrQ0ktiVKIYcxTUC/ftiKN8Uuc2l",
-	"XWCfTIvkzJlzDsl5YHFVqkqCRMOiB6bBqEoasH+mkPK6QBrGlUSQdsiVKkTMUVQy+GoqSd9MnEPJafRG",
-	"Q8oi9luwjxu0syaYKHGhdaVZ0zQuS8DEWiiKwyJmJ5zJ9czZQ6BVm70UeredQCSJoJ28uNaVAo2CIKe8",
-	"MOAydfCJoCdAv2mlS44sYkLi+IS5rOTfRFmXLDo9P3dZKWT7bxCGLsO1gnYpZKBZ47ISjOGZjQTfeKkK",
-	"mp84S+A1irQuHLAVbJe5+3wGtZBZm/AKZIY5i4YHSTbzVK2Gu1poSFh02+Le553v1lfLrxAjYXpHPEm8",
-	"QY61rRUkVXBLGunqHhJGNEthBwpkQnnmvcQuu+YY55+gsKqaXKgXc2yBLMwOyY980IXdr7sT61jdP4NU",
-	"A0dIFhy7Sg7D4cALB94o/ByeRaMwCsO/DkVMOIKHooRHOg6OsCmSpxj48mU2pZWoa4OLpCq5kAu+2JT+",
-	"Qv56YV6dX/ISntr6mbZM7Y6PtPxxlOWvqWL52iqWr62iVsl/7IxHRhd0Kg/82IFwTNRjFH3XQ9+V5diB",
-	"skx2qh6l/Ow0HZ94p28Hb72T0/HQW47S2BvG5+NROh7zlI8PWahrC+aAgNHYZYojgqb7/e/b0DvnXjp/",
-	"OGu83fjkGePBsHnD+lzSOZNptX2ceGxla7Vn7wXm9ZIY1QWLWI6oTBQEmf3sx1UZfIBVAYjXPP6H6yTI",
-	"eMETLaBgvZfp/XbK+cD1PRgE7fzBJc+gBIn2yTIKYpFuHkWfuawQMUgDB4gmisc5OEM/7KCKgmC1Wvnc",
-	"zvqVzoLNVhNczd5dfLy58IZ+6OdYWmQo0KpzDBMB8Zw/FUgajWyie9CmrWLgh/5gQDEqBZIrQRr7oT9i",
-	"VqXcXo6BPrhY7ZcMLK10g9qJWULZAT91FlIIzUtA0IZFtw9MUMq7GvSauVsG4s55d5/ZMzx+K+Zut0cZ",
-	"huGL+hOBUD75QHXel2bnPa41Xx9rXm7qOAZjqAvYMdUaaddAHUu3KyTYdlq244G41gLXlsh8K++C13So",
-	"bufEgKnLkus1i9iVMOhgDk5HObIg8oy0YF2l5pShK3PwcPh3Nm0IrqKGoK98v0/oSd9lZjZ1qrQHkLmt",
-	"Q8h4e4N0YbDDyxJ1Dc91TPsqtEa5q8Hg71Wy/mU9bJ+BI344nHfaPsbBylmCs7nhe8U1P2nr57v5/+Te",
-	"SRyDwmBKLarpOMTZaGd+5GSbTt9vnde964sq5kVeGfTNimcZaF9UAVciuB8xQrGJ+tiwE+fmenZ5eeHY",
-	"DsFpW4S9RztfG7e/u1OEMBvrKw10i9kZOhB8m+USkg3jTsc0S8AVgHRwVXWQmD2ULh3NvPk3AAD//w4x",
-	"IU3MDQAA",
+	"H4sIAAAAAAAC/8xW23LbNhD9FQ6aR94k2UrMNzWyE824qcdOXupRNRC5JJGSIAwsrWg8/PfOgrqQllxf",
+	"ms70SRBx2bPnHCz2gcVVqSoJEg2LHpgGoyppwP6ZQsrrAmkYVxJB2iFXqhAxR1HJ4LupJH0zcQ4lp9E7",
+	"DSmL2C/B/tygnTXBRIlzrSvNmqZxWQIm1kLROSxidsKZXM2cPQRatdlLR++2E4gkEbSTF1e6UqBREOSU",
+	"FwZcpjqfCHoC9JtWuuTIIiYkjk+Yy0r+Q5R1yaLTszOXlUK2/wZh6DJcK2iXQgaaNS4rwRie2ZPgBy9V",
+	"QfMTZwm8RpHWhQM2g+0ydx/PoBYyawNegswwZ9GwE2QzT9lquKuFhoRFty3ufdz5bn21/A4xEqaPxJPE",
+	"G+RY21xBUga3pJGu7iFhRLMUdqBAJhRnfhDYZddQWEFNLtRr6dXAEZIFxz41w3A48MKBNwq/hh+iURiF",
+	"4R9dVhKO4KEo4RExgyPwRPKctb59m01pJera4CKpSi7kgi/ilqDndvd5PDzmzfElL+G5rV9py9Tu+ELL",
+	"H5+y/DlZLN+axfKtWdQq+Y+d8ejGCLJ5x489CMdEPUbRkx56UpZjN7N7oa44xvk13NVg8NW1y4ZYmN0N",
+	"f4UBDupJ76xjqK3+Pa1GKf9wmo5PvNP3g/feyel46C1HaewN47PxKB2PecrHXe3q2lLYkW00dpniiKCp",
+	"zP95G3pn3EvnDx8abzc+ecF4MGzesUMHUHWQabV9o3hsKW4dyz4JzOsl+UAXLGI5ojJREGT2sx9XZfAZ",
+	"VgUgXvH4L66TIOMFT7SAgh08UJ+2U85nru/BIGjnNy55BiVItC+XURCLdPM2+sxlhYhBGuggmige5+AM",
+	"/bCHKgqC1WrlczvrVzoLNltNcDn7eP7l5twb+qGfY2mRoUCrzjFMBMRzflcgaTSyge5BmzaLgR/6gwGd",
+	"USmQXAnS2A/9EbMq5dZjge64137JwNJK1rQTs4SiA173FtIRmpeAoA2Lbh+YoJB3Neg1c7cMxD2Tui9s",
+	"HR5be+72W5VhGL6qTREI5bP3qfcqNjvvca35+lgPc1PHMRhDzcCOqdZIuz7qWLhdIsG24bKND8S1Fri2",
+	"ROZbeRe8pkt1OycGTF2WXK9ZxC6FQQdzcHrKkQWRZ6QF6ys1pwh9mYOH7t/ZtCG4ikrXofKbitZh50D6",
+	"PjOzqVOlBwCZ2zqEjLc3SB8G6xYx1DW81DHtW9YaxZbeX6tk/dNa2Sfr+xFbdNc6bfV1sHKW4Gyep4Mc",
+	"m3/p7peb+v9k4kkcg8JgSg2r6RnF2Uho/snQNpy+3xqwX/KLKuZFXhn0zYpnGWhfVAFXIrgfMUKxOfWx",
+	"byfOzdXs4uLcse2N0/Y3e6v2vjbu4e5eEsJsboDSQMXMztC94NsoF5BsGHd6plkCrgCkg6uqh8TsofTp",
+	"aObN3wEAAP//b0VswNoNAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

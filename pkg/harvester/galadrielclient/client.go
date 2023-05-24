@@ -204,7 +204,7 @@ func (c *client) UpdateRelationship(ctx context.Context, relationshipID uuid.UUI
 		return nil, errors.New("relationship id cannot be empty")
 	}
 
-	request := harvester.PatchRelationship{
+	request := harvester.RelationshipPatchRequest{
 		ConsentStatus: api.ConsentStatus(consentStatus),
 	}
 
@@ -248,7 +248,7 @@ func (c *client) SyncBundles(ctx context.Context, bundles []*entity.Bundle) ([]*
 	for _, b := range bundles {
 		digests[b.TrustDomainName.String()] = util.EncodeToString(b.Digest)
 	}
-	syncRequest := harvester.BundleSyncBody{
+	syncRequest := harvester.BundleSyncPostRequest{
 		State: digests,
 	}
 
@@ -267,7 +267,7 @@ func (c *client) SyncBundles(ctx context.Context, bundles []*entity.Bundle) ([]*
 		return nil, nil, fmt.Errorf("failed to sync bundles: %s", string(body))
 	}
 
-	syncResult := &harvester.BundleSyncResult{}
+	syncResult := &harvester.BundleSyncPostResponse{}
 	if err := json.Unmarshal(body, syncResult); err != nil {
 		return nil, nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
@@ -305,7 +305,7 @@ func (c *client) PostBundle(ctx context.Context, bundle *entity.Bundle) error {
 
 	sig := util.EncodeToString(bundle.Signature)
 	cert := util.EncodeToString(bundle.SigningCertificate)
-	bundlePut := harvester.BundlePut{
+	bundlePut := harvester.BundlePutRequest{
 		TrustBundle:        string(bundle.Data),
 		Digest:             util.EncodeToString(bundle.Digest),
 		Signature:          &sig,
@@ -360,12 +360,12 @@ func (c *client) onboard(ctx context.Context, token string) error {
 		return fmt.Errorf("failed to onboard: %s", string(body))
 	}
 
-	onboardResult := &harvester.OnboardResult{}
-	if err := json.Unmarshal(body, onboardResult); err != nil {
+	onboardResponse := &harvester.HarvesterOnboardResponse{}
+	if err := json.Unmarshal(body, onboardResponse); err != nil {
 		return fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
 
-	jwtToken := onboardResult.Token
+	jwtToken := onboardResponse.Token
 	if jwtToken == "" {
 		return fmt.Errorf("empty JWT token in onboard response")
 	}
@@ -388,12 +388,12 @@ func (c *client) getNewJWTToken(ctx context.Context) error {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	jwtResult := &harvester.JWTResult{}
-	if err := json.Unmarshal(body, jwtResult); err != nil {
+	jwtResponse := &harvester.JwtGetResponse{}
+	if err := json.Unmarshal(body, jwtResponse); err != nil {
 		return fmt.Errorf("failed to unmarshal response body: %v", err)
 	}
 
-	jwtToken := jwtResult.Token
+	jwtToken := jwtResponse.Token
 	if jwtToken == "" {
 		return fmt.Errorf("empty JWT token in response from server")
 	}
@@ -473,7 +473,7 @@ func (c *client) startJWTTokenRotation(ctx context.Context) {
 	}
 }
 
-func createEntityBundle(trustDomainName string, b *harvester.TrustBundleSyncItem) (*entity.Bundle, error) {
+func createEntityBundle(trustDomainName string, b *harvester.TrustBundleSyncResponseItem) (*entity.Bundle, error) {
 	td, err := spiffeid.TrustDomainFromString(trustDomainName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse trust domain: %v", err)

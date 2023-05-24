@@ -80,7 +80,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TrustDomainPut'
+              $ref: '#/components/schemas/TrustDomainPutRequest'
       responses:
         '201':
           description: Created
@@ -128,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RelationshipRequest'
+              $ref: '#/components/schemas/RelationshipCreateRequest'
         required: true
       responses:
         '200':
@@ -192,7 +192,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JoinTokenResult'
+                $ref: '#/components/schemas/JoinTokenGetResponse'
         default:
           $ref: '#/components/responses/Default'
 
@@ -205,7 +205,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    RelationshipRequest:
+    RelationshipCreateRequest:
       type: object
       additionalProperties: false
       required:
@@ -216,7 +216,7 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         trust_domain_b_name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-    TrustDomainPut:
+    TrustDomainPutRequest:
       type: object
       additionalProperties: false
       required:
@@ -229,7 +229,7 @@ components:
           example: "Trust domain that represent the entity X"
         name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-    JoinTokenResult:
+    JoinTokenGetResponse:
       type: object
       additionalProperties: false
       required:

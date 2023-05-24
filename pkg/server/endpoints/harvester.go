@@ -123,7 +123,7 @@ func (h *HarvesterAPIHandlers) PatchRelationship(echoCtx echo.Context, trustDoma
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusUnauthorized)
 	}
 
-	var patchRequest harvester.PatchRelationship
+	var patchRequest harvester.RelationshipPatchRequest
 	if err := chttp.ParseRequestBodyToStruct(echoCtx, &patchRequest); err != nil {
 		msg := "error reading body"
 		err := fmt.Errorf("%s: %w", msg, err)
@@ -254,7 +254,7 @@ func (h *HarvesterAPIHandlers) Onboard(echoCtx echo.Context, trustDomainName api
 
 	h.Logger.WithField(telemetry.TrustDomain, tdName.String()).Debug("Harvester onboarded successfully")
 
-	resp := &harvester.OnboardResult{
+	resp := &harvester.HarvesterOnboardResponse{
 		Token:           jwtToken,
 		TrustDomainID:   trustDomain.ID.UUID,
 		TrustDomainName: trustDomain.Name.String(),
@@ -313,7 +313,7 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context, trustDomainN
 		return chttp.LogAndRespondWithError(h.Logger, err, msg, http.StatusInternalServerError)
 	}
 
-	jwtResp := harvester.JWTResult{Token: newToken}
+	jwtResp := harvester.JwtGetResponse{Token: newToken}
 
 	h.Logger.WithField(telemetry.TrustDomain, subject).Debug("Issue new JWT token")
 
@@ -330,7 +330,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// Get the request body
-	var req harvester.BundleSyncBody
+	var req harvester.BundleSyncPostRequest
 	if err := chttp.ParseRequestBodyToStruct(echoCtx, &req); err != nil {
 		msg := "failed to parse request body"
 		err := fmt.Errorf("%s: %w", msg, err)
@@ -422,10 +422,10 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	return nil
 }
 
-func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.BundleSyncBody) (*harvester.BundleSyncResult, error) {
-	resp := &harvester.BundleSyncResult{
+func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.BundleSyncPostRequest) (*harvester.BundleSyncPostResponse, error) {
+	resp := &harvester.BundleSyncPostResponse{
 		State:   make(map[string]api.BundleDigest, len(relationships)),
-		Updates: make(harvester.TrustBundleSync),
+		Updates: make(harvester.TrustBundleSyncResponse),
 	}
 
 	for _, relationship := range relationships {
@@ -458,7 +458,7 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 
 		// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 		if !ok || !bytes.Equal(bundle.Digest[:], decodedReqDigest) {
-			updateItem := harvester.TrustBundleSyncItem{}
+			updateItem := harvester.TrustBundleSyncResponseItem{}
 			updateItem.TrustBundle = string(bundle.Data)
 			updateItem.Digest = encoding.EncodeToBase64(bundle.Digest[:])
 			updateItem.Signature = encoding.EncodeToBase64(bundle.Signature)
