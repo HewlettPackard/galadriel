@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -41,6 +42,7 @@ func ParseRequestBodyToStruct(ctx echo.Context, targetStruct interface{}) error 
 
 // LogAndRespondWithError logs the error and returns an HTTP error.
 func LogAndRespondWithError(logger logrus.FieldLogger, err error, errorMessage string, statusCode int) error {
+	errorMessage = sanitize(errorMessage)
 	if err != nil {
 		logger.Errorf("%s: %v", errorMessage, err)
 	} else {
@@ -51,4 +53,10 @@ func LogAndRespondWithError(logger logrus.FieldLogger, err error, errorMessage s
 		Code:    statusCode,
 		Message: errorMessage,
 	}
+}
+
+func sanitize(val string) string {
+	// Newlines and non-printable characters can be disruptive to logs
+	invalidCharsRegex := regexp.MustCompile(`[\x00-\x1F\x7F]`)
+	return invalidCharsRegex.ReplaceAllString(val, "")
 }
