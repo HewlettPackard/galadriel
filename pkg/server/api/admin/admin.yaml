@@ -128,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRelationshipRequest'
+              $ref: '#/components/schemas/PutRelationshipRequest'
         required: true
       responses:
         '200':
@@ -205,7 +205,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    CreateRelationshipRequest:
+    PutRelationshipRequest:
       type: object
       additionalProperties: false
       required:

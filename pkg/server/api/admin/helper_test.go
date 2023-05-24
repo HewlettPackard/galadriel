@@ -13,7 +13,7 @@ const (
 
 func TestRelationshipRequestToEntity(t *testing.T) {
 	t.Run("Full fill correctly the relationship entity model", func(t *testing.T) {
-		releationshipRequest := CreateRelationshipRequest{
+		releationshipRequest := PutRelationshipRequest{
 			TrustDomainAName: td1,
 			TrustDomainBName: td2,
 		}
