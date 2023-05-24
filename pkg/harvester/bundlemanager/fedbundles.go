@@ -81,16 +81,22 @@ func (s *FederatedSyncer) Run(ctx context.Context) error {
 func (s *FederatedSyncer) syncFederatedBundles(ctx context.Context) error {
 	s.logger.Debug("Syncing federated bundles with Galadriel Server")
 
-	spireCtx, cancel := context.WithTimeout(ctx, spireCallTimeout)
-	defer cancel()
+	spireCtx, spireCancel := context.WithTimeout(ctx, spireCallTimeout)
+	if spireCancel == nil {
+		return fmt.Errorf("failed to create context for SPIRE call")
+	}
+	defer spireCancel()
 
 	fedBundlesInSPIRE, err := s.fetchSPIREFederatedBundles(spireCtx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch federated bundles from SPIRE Server: %w", err)
 	}
 
-	galadrielCtx, cancel := context.WithTimeout(ctx, galadrielCallTimeout)
-	defer cancel()
+	galadrielCtx, galadrielCancel := context.WithTimeout(ctx, galadrielCallTimeout)
+	if galadrielCancel == nil {
+		return fmt.Errorf("failed to create context for Galadriel call")
+	}
+	defer galadrielCancel()
 
 	bundles, digests, err := s.galadrielClient.SyncBundles(galadrielCtx, fedBundlesInSPIRE)
 	if err != nil {
