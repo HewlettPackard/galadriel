@@ -63,7 +63,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RelationshipPatchRequest'
+              $ref: '#/components/schemas/PatchRelationshipRequest'
         required: true
       responses:
         '200':
@@ -86,7 +86,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    RelationshipPatchRequest:
+    PatchRelationshipRequest:
       type: object
       additionalProperties: false
       required:

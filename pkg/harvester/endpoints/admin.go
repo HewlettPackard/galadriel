@@ -45,7 +45,7 @@ func (h AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.Ge
 func (h AdminAPIHandlers) PatchRelationship(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
-	reqBody := &admin.RelationshipPatchRequest{}
+	reqBody := &admin.PatchRelationshipRequest{}
 	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
 	if err != nil {
 		msg := "failed to read relationship patch body"

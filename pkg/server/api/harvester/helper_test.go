@@ -10,7 +10,7 @@ import (
 
 func TestBundlePutToEntity(t *testing.T) {
 	t.Run("Does not allow wrong trust domain names", func(t *testing.T) {
-		bundlePut := BundlePutRequest{
+		bundlePut := PutBundleRequest{
 			TrustDomain: "a wrong trust domain",
 		}
 
@@ -24,7 +24,7 @@ func TestBundlePutToEntity(t *testing.T) {
 		digest := cryptoutil.CalculateDigest([]byte(bundleData))
 		sig := encoding.EncodeToBase64([]byte("test-signature"))
 		cert := encoding.EncodeToBase64([]byte("test-certificate"))
-		bundlePut := BundlePutRequest{
+		bundlePut := PutBundleRequest{
 			TrustBundle:        bundleData,
 			Digest:             encoding.EncodeToBase64(digest),
 			Signature:          &sig,

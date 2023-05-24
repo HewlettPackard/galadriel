@@ -39,7 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BundlePutRequest'
+              $ref: '#/components/schemas/PutBundleRequest'
         required: true
       responses:
         '200':
@@ -67,7 +67,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BundleSyncPostRequest'
+              $ref: '#/components/schemas/PostBundleSyncRequest'
         required: true
       responses:
         '200':
@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BundleSyncPostResponse'
+                $ref: '#/components/schemas/PostTrustBundleSyncResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -107,7 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HarvesterOnboardResponse'
+                $ref: '#/components/schemas/OnboardHarvesterResponse'
         default:
           $ref: '#/components/responses/Default'
   /trust-domain/{trustDomainName}/jwt:
@@ -129,7 +129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JwtGetResponse'
+                $ref: '#/components/schemas/GetJwtResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -159,7 +159,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RelationshipPatchRequest'
+              $ref: '#/components/schemas/PatchRelationshipRequest'
         required: true
       responses:
         '200':
@@ -196,7 +196,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RelationshipGetResponse'
+                $ref: '#/components/schemas/GetRelationshipResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -211,7 +211,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    RelationshipPatchRequest:
+    PatchRelationshipRequest:
       type: object
       additionalProperties: false
       required:
@@ -219,7 +219,7 @@ components:
       properties:
         consent_status:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
-    BundlePutRequest:
+    PutBundleRequest:
       type: object
       additionalProperties: false
       required:
@@ -268,7 +268,7 @@ components:
             c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
             -----END CERTIFICATE-----"
         }
-    BundleSyncPostRequest:
+    PostBundleSyncRequest:
       type: object
       additionalProperties: false
       required:
@@ -276,7 +276,7 @@ components:
       properties:
         state:
           $ref: '#/components/schemas/BundlesDigests'
-    BundleSyncPostResponse:
+    PostTrustBundleSyncResponse:
       type: object
       additionalProperties: false
       required:
@@ -287,7 +287,7 @@ components:
           $ref: '#/components/schemas/BundlesDigests'
         updates:
           $ref: '#/components/schemas/TrustBundleSyncResponse'
-    HarvesterOnboardResponse:
+    OnboardHarvesterResponse:
       type: object
       additionalProperties: false
       required:
@@ -301,7 +301,7 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
-    JwtGetResponse:
+    GetJwtResponse:
       type: object
       additionalProperties: false
       required:
@@ -309,7 +309,7 @@ components:
       properties:
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JWT'
-    RelationshipGetResponse:
+    GetRelationshipResponse:
       type: array
       items:
         $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'

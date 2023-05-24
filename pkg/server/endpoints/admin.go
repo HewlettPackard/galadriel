@@ -314,7 +314,7 @@ func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName ap
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	response := admin.JoinTokenGetResponse{
+	response := admin.JoinTokenResponse{
 		Token: token,
 	}
 	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)

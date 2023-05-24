@@ -8,7 +8,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-func (b BundlePutRequest) ToEntity() (*entity.Bundle, error) {
+func (b PutBundleRequest) ToEntity() (*entity.Bundle, error) {
 	td, err := spiffeid.TrustDomainFromString(b.TrustDomain)
 	if err != nil {
 		return nil, fmt.Errorf("malformed trust domain[%v]: %w", b.TrustDomain, err)

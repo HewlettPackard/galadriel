@@ -204,7 +204,7 @@ func (c *client) UpdateRelationship(ctx context.Context, relationshipID uuid.UUI
 		return nil, errors.New("relationship id cannot be empty")
 	}
 
-	request := harvester.RelationshipPatchRequest{
+	request := harvester.PatchRelationshipRequest{
 		ConsentStatus: api.ConsentStatus(consentStatus),
 	}
 
@@ -248,7 +248,7 @@ func (c *client) SyncBundles(ctx context.Context, bundles []*entity.Bundle) ([]*
 	for _, b := range bundles {
 		digests[b.TrustDomainName.String()] = util.EncodeToString(b.Digest)
 	}
-	syncRequest := harvester.BundleSyncPostRequest{
+	syncRequest := harvester.PostBundleSyncRequest{
 		State: digests,
 	}
 
@@ -267,7 +267,7 @@ func (c *client) SyncBundles(ctx context.Context, bundles []*entity.Bundle) ([]*
 		return nil, nil, fmt.Errorf("failed to sync bundles: %s", string(body))
 	}
 
-	syncResult := &harvester.BundleSyncPostResponse{}
+	syncResult := &harvester.PostTrustBundleSyncResponse{}
 	if err := json.Unmarshal(body, syncResult); err != nil {
 		return nil, nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
@@ -305,7 +305,7 @@ func (c *client) PostBundle(ctx context.Context, bundle *entity.Bundle) error {
 
 	sig := util.EncodeToString(bundle.Signature)
 	cert := util.EncodeToString(bundle.SigningCertificate)
-	bundlePut := harvester.BundlePutRequest{
+	bundlePut := harvester.PutBundleRequest{
 		TrustBundle:        string(bundle.Data),
 		Digest:             util.EncodeToString(bundle.Digest),
 		Signature:          &sig,
@@ -360,7 +360,7 @@ func (c *client) onboard(ctx context.Context, token string) error {
 		return fmt.Errorf("failed to onboard: %s", string(body))
 	}
 
-	onboardResponse := &harvester.HarvesterOnboardResponse{}
+	onboardResponse := &harvester.OnboardHarvesterResponse{}
 	if err := json.Unmarshal(body, onboardResponse); err != nil {
 		return fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
@@ -388,7 +388,7 @@ func (c *client) getNewJWTToken(ctx context.Context) error {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	jwtResponse := &harvester.JwtGetResponse{}
+	jwtResponse := &harvester.GetJwtResponse{}
 	if err := json.Unmarshal(body, jwtResponse); err != nil {
 		return fmt.Errorf("failed to unmarshal response body: %v", err)
 	}

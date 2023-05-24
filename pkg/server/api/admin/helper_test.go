@@ -13,7 +13,7 @@ const (
 
 func TestRelationshipRequestToEntity(t *testing.T) {
 	t.Run("Full fill correctly the relationship entity model", func(t *testing.T) {
-		releationshipRequest := RelationshipCreateRequest{
+		releationshipRequest := CreateRelationshipRequest{
 			TrustDomainAName: td1,
 			TrustDomainBName: td2,
 		}
@@ -31,7 +31,7 @@ func TestTrustDomainPutToEntity(t *testing.T) {
 	t.Run("Does not allow wrong trust domain names", func(t *testing.T) {
 		description := "a cool description"
 
-		tdPut := TrustDomainPutRequest{
+		tdPut := PutTrustDomainRequest{
 			Name:        "A wrong trust domain name",
 			Description: &description,
 		}
@@ -44,7 +44,7 @@ func TestTrustDomainPutToEntity(t *testing.T) {
 	t.Run("Full fill correctly the trust domain entity model", func(t *testing.T) {
 		description := "a cool description"
 
-		tdPut := TrustDomainPutRequest{
+		tdPut := PutTrustDomainRequest{
 			Name:        "trust.com",
 			Description: &description,
 		}
