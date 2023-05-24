@@ -102,7 +102,7 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 }
 
 func (e *Endpoints) startTCPListener(ctx context.Context) error {
-	e.Logger.Debug("Starting TCP Listener")
+	e.Logger.Debug("Starting TCP listener")
 
 	server := echo.New()
 	server.HideBanner = true
@@ -145,20 +145,20 @@ func (e *Endpoints) startTCPListener(ctx context.Context) error {
 
 	select {
 	case err := <-errChan:
-		log.WithError(err).Error("TCP Listener stopped prematurely")
+		log.WithError(err).Error("TCP listener stopped prematurely")
 		return err
 	case <-ctx.Done():
-		log.Info("Stopping TCP Listener")
+		log.Info("Stopping TCP listener")
 		err = httpServer.Close()
 		if err != nil {
-			log.WithError(err).Error("Error closing TCP Listener")
+			log.WithError(err).Error("Error closing TCP listener")
 		}
 		err = server.Close()
 		if err != nil {
 			e.Logger.WithError(err).Error("Error closing Echo Server")
 		}
 		<-errChan
-		log.Info("TCP Server stopped")
+		log.Info("TCP listener stopped")
 		return nil
 	}
 }
