@@ -473,7 +473,7 @@ func (c *client) startJWTTokenRotation(ctx context.Context) {
 	}
 }
 
-func createEntityBundle(trustDomainName string, b *harvester.TrustBundleSyncResponseItem) (*entity.Bundle, error) {
+func createEntityBundle(trustDomainName string, b *harvester.BundlesUpdatesItem) (*entity.Bundle, error) {
 	td, err := spiffeid.TrustDomainFromString(trustDomainName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse trust domain: %v", err)

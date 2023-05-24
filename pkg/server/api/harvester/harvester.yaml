@@ -237,10 +237,29 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
         digest:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
-    TrustBundleSyncResponse:
+    PostBundleSyncRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+    PostBundleSyncResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - state
+        - updates
+      properties:
+        state:
+          $ref: '#/components/schemas/BundlesDigests'
+        updates:
+          $ref: '#/components/schemas/BundlesUpdates'
+    BundlesUpdates:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/TrustBundleSyncResponseItem'
+        $ref: '#/components/schemas/BundlesUpdatesItem'
       example:
         trust_domain_1: {
           signature: "NLHJupZn8KxFoJmSiJDCP+UuoSJOlhMK1HYIjc6YP75ve15PcMJ7zq1JLRXFzXtM0zf0ScLbZ1nYYGvQmgW+GJAx5PsmSq3m1kjrx0fFJD0EDqVZhazoYIos84Pa8qG/cWe05s1rHoYY53wO231ZGktkH56KnydHD2wwefyQCpA=",
@@ -268,25 +287,6 @@ components:
             c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
             -----END CERTIFICATE-----"
         }
-    PostBundleSyncRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - state
-      properties:
-        state:
-          $ref: '#/components/schemas/BundlesDigests'
-    PostBundleSyncResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - state
-        - updates
-      properties:
-        state:
-          $ref: '#/components/schemas/BundlesDigests'
-        updates:
-          $ref: '#/components/schemas/TrustBundleSyncResponse'
     OnboardHarvesterResponse:
       type: object
       additionalProperties: false
@@ -322,7 +322,7 @@ components:
         trust_domain_1: "883358270705e6f74e0abe21a4cc56e82906894b111e8c9b3ac6b235930ce64d"
         trust_domain_2: "d8ae2cb8eee5eab8c11f3b3439ea4a2a4091e06646827821ee196b7568a414cd"
         trust_domain_3: "154f6f7f94a6027275c4ef6b3ebe0476e159bbad3d0ff0632d414bece9dce56b"
-    TrustBundleSyncResponseItem:
+    BundlesUpdatesItem:
       type: object
       additionalProperties: false
       required:

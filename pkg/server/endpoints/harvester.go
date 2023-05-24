@@ -425,7 +425,7 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.PostBundleSyncRequest) (*harvester.PostBundleSyncResponse, error) {
 	resp := &harvester.PostBundleSyncResponse{
 		State:   make(map[string]api.BundleDigest, len(relationships)),
-		Updates: make(harvester.TrustBundleSyncResponse),
+		Updates: make(harvester.BundlesUpdates),
 	}
 
 	for _, relationship := range relationships {
@@ -458,7 +458,7 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 
 		// The bundle digest in the request is different from the stored one, so the bundle needs to be updated
 		if !ok || !bytes.Equal(bundle.Digest[:], decodedReqDigest) {
-			updateItem := harvester.TrustBundleSyncResponseItem{}
+			updateItem := harvester.BundlesUpdatesItem{}
 			updateItem.TrustBundle = string(bundle.Data)
 			updateItem.Digest = encoding.EncodeToBase64(bundle.Digest[:])
 			updateItem.Signature = encoding.EncodeToBase64(bundle.Signature)

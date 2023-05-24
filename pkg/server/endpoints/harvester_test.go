@@ -456,7 +456,7 @@ func TestTCPBundleSync(t *testing.T) {
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSyncResponse{},
+				Updates: harvester.BundlesUpdates{},
 			},
 		},
 		{
@@ -473,8 +473,8 @@ func TestTCPBundleSync(t *testing.T) {
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSyncResponse{
-					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
+				Updates: harvester.BundlesUpdates{
+					tdB.Name.String(): harvester.BundlesUpdatesItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
@@ -494,13 +494,13 @@ func TestTCPBundleSync(t *testing.T) {
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSyncResponse{
-					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
+				Updates: harvester.BundlesUpdates{
+					tdB.Name.String(): harvester.BundlesUpdatesItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
 					},
-					tdC.Name.String(): harvester.TrustBundleSyncResponseItem{
+					tdC.Name.String(): harvester.BundlesUpdatesItem{
 						TrustBundle: string(bundleC.Data),
 						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
@@ -519,8 +519,8 @@ func TestTCPBundleSync(t *testing.T) {
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 				},
-				Updates: harvester.TrustBundleSyncResponse{
-					tdB.Name.String(): harvester.TrustBundleSyncResponseItem{
+				Updates: harvester.BundlesUpdates{
+					tdB.Name.String(): harvester.BundlesUpdatesItem{
 						TrustBundle: string(bundleB.Data),
 						Digest:      encoding.EncodeToBase64(bundleB.Digest),
 						Signature:   encoding.EncodeToBase64(bundleB.Signature),
@@ -539,8 +539,8 @@ func TestTCPBundleSync(t *testing.T) {
 				State: harvester.BundlesDigests{
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
-				Updates: harvester.TrustBundleSyncResponse{
-					tdC.Name.String(): harvester.TrustBundleSyncResponseItem{
+				Updates: harvester.BundlesUpdates{
+					tdC.Name.String(): harvester.BundlesUpdatesItem{
 						TrustBundle: string(bundleC.Data),
 						Digest:      encoding.EncodeToBase64(bundleC.Digest),
 						Signature:   encoding.EncodeToBase64(bundleC.Signature),
