@@ -75,7 +75,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostTrustBundleSyncResponse'
+                $ref: '#/components/schemas/PostBundleSyncResponse'
         default:
           $ref: '#/components/responses/Default'
       security:
@@ -276,7 +276,7 @@ components:
       properties:
         state:
           $ref: '#/components/schemas/BundlesDigests'
-    PostTrustBundleSyncResponse:
+    PostBundleSyncResponse:
       type: object
       additionalProperties: false
       required:

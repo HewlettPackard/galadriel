@@ -267,7 +267,7 @@ func (c *client) SyncBundles(ctx context.Context, bundles []*entity.Bundle) ([]*
 		return nil, nil, fmt.Errorf("failed to sync bundles: %s", string(body))
 	}
 
-	syncResult := &harvester.PostTrustBundleSyncResponse{}
+	syncResult := &harvester.PostBundleSyncResponse{}
 	if err := json.Unmarshal(body, syncResult); err != nil {
 		return nil, nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}

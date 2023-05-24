@@ -422,8 +422,8 @@ func (h *HarvesterAPIHandlers) BundlePut(echoCtx echo.Context, trustDomainName a
 	return nil
 }
 
-func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.PostBundleSyncRequest) (*harvester.PostTrustBundleSyncResponse, error) {
-	resp := &harvester.PostTrustBundleSyncResponse{
+func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *entity.TrustDomain, relationships []*entity.Relationship, req harvester.PostBundleSyncRequest) (*harvester.PostBundleSyncResponse, error) {
+	resp := &harvester.PostBundleSyncResponse{
 		State:   make(map[string]api.BundleDigest, len(relationships)),
 		Updates: make(harvester.TrustBundleSyncResponse),
 	}

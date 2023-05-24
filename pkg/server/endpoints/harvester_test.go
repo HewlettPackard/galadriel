@@ -439,7 +439,7 @@ func TestTCPBundleSync(t *testing.T) {
 		trustDomain   string
 		relationships []*entity.Relationship
 		bundleState   harvester.PostBundleSyncRequest
-		expected      harvester.PostTrustBundleSyncResponse
+		expected      harvester.PostBundleSyncResponse
 	}{
 		{
 			name:          "Successfully sync no new bundles",
@@ -451,7 +451,7 @@ func TestTCPBundleSync(t *testing.T) {
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
-			expected: harvester.PostTrustBundleSyncResponse{
+			expected: harvester.PostBundleSyncResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
@@ -468,7 +468,7 @@ func TestTCPBundleSync(t *testing.T) {
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
 			},
-			expected: harvester.PostTrustBundleSyncResponse{
+			expected: harvester.PostBundleSyncResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
@@ -489,7 +489,7 @@ func TestTCPBundleSync(t *testing.T) {
 			bundleState: harvester.PostBundleSyncRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.PostTrustBundleSyncResponse{
+			expected: harvester.PostBundleSyncResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
@@ -515,7 +515,7 @@ func TestTCPBundleSync(t *testing.T) {
 			bundleState: harvester.PostBundleSyncRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.PostTrustBundleSyncResponse{
+			expected: harvester.PostBundleSyncResponse{
 				State: harvester.BundlesDigests{
 					tdB.Name.String(): encoding.EncodeToBase64(bundleB.Digest),
 				},
@@ -535,7 +535,7 @@ func TestTCPBundleSync(t *testing.T) {
 			bundleState: harvester.PostBundleSyncRequest{
 				State: map[string]api.BundleDigest{},
 			},
-			expected: harvester.PostTrustBundleSyncResponse{
+			expected: harvester.PostBundleSyncResponse{
 				State: harvester.BundlesDigests{
 					tdC.Name.String(): encoding.EncodeToBase64(bundleC.Digest),
 				},
@@ -568,7 +568,7 @@ func TestTCPBundleSync(t *testing.T) {
 			assert.Equal(t, http.StatusOK, recorder.Code)
 			assert.NoError(t, err)
 
-			var bundles harvester.PostTrustBundleSyncResponse
+			var bundles harvester.PostBundleSyncResponse
 			err = json.Unmarshal(recorder.Body.Bytes(), &bundles)
 			require.NoError(t, err)
 
