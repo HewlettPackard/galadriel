@@ -71,8 +71,11 @@ func (s *SpireBundleSyncer) Run(ctx context.Context) error {
 func (s *SpireBundleSyncer) syncSPIREBundle(ctx context.Context) error {
 	s.logger.Debug("Checking SPIRE Server for a new bundle")
 
-	spireCtx, cancel := context.WithTimeout(ctx, spireCallTimeout)
-	defer cancel()
+	spireCtx, spireCancel := context.WithTimeout(ctx, spireCallTimeout)
+	if spireCancel == nil {
+		return fmt.Errorf("failed to create context for SPIRE call")
+	}
+	defer spireCancel()
 
 	// Fetch SPIRE bundle
 	bundle, err := s.spireClient.GetBundle(spireCtx)
@@ -93,8 +96,11 @@ func (s *SpireBundleSyncer) syncSPIREBundle(ctx context.Context) error {
 		return fmt.Errorf("failed to create bundle to upload: %w", err)
 	}
 
-	galadrielCtx, cancel := context.WithTimeout(ctx, galadrielCallTimeout)
-	defer cancel()
+	galadrielCtx, galadrielCancel := context.WithTimeout(ctx, galadrielCallTimeout)
+	if galadrielCancel == nil {
+		return fmt.Errorf("failed to create context for Galadriel Server call")
+	}
+	defer galadrielCancel()
 
 	// Upload the bundle to Galadriel Server
 	err = s.galadrielClient.PostBundle(galadrielCtx, b)
