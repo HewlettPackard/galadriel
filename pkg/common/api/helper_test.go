@@ -107,7 +107,7 @@ func TestRelationshipToEntity(t *testing.T) {
 	require.Equal(t, trustDomainBId, ent.TrustDomainBID)
 	require.Equal(t, trustDomainAName, ent.TrustDomainAName.String())
 	require.Equal(t, trustDomainBName, ent.TrustDomainBName.String())
-	require.Equal(t, entity.ConsentStatusAccepted, ent.TrustDomainAConsent)
+	require.Equal(t, entity.ConsentStatusApproved, ent.TrustDomainAConsent)
 	require.Equal(t, entity.ConsentStatusDenied, ent.TrustDomainBConsent)
 
 	// Test invalid trust domain A name
@@ -134,7 +134,7 @@ func TestRelationshipFromEntity(t *testing.T) {
 		TrustDomainAID:      uuid.New(),
 		TrustDomainBID:      uuid.New(),
 		TrustDomainAConsent: entity.ConsentStatusPending,
-		TrustDomainBConsent: entity.ConsentStatusAccepted,
+		TrustDomainBConsent: entity.ConsentStatusApproved,
 	}
 
 	r := RelationshipFromEntity(&eRelationship)

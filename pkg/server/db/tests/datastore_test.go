@@ -187,7 +187,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Equal(t, relationship2, stored)
 
 		// Update relationship
-		relationship1.TrustDomainAConsent = entity.ConsentStatusAccepted
+		relationship1.TrustDomainAConsent = entity.ConsentStatusApproved
 		relationship1.TrustDomainBConsent = entity.ConsentStatusDenied
 		updated1, err := ds.CreateOrUpdateRelationship(ctx, relationship1)
 		assert.NoError(t, err)

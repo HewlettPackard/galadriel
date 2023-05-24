@@ -346,7 +346,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// filer out the relationships whose consent status is not "approved" by the authenticated trust domain
-	relationships = entity.FilterRelationships(relationships, entity.ConsentStatusAccepted, &authTD.ID.UUID)
+	relationships = entity.FilterRelationships(relationships, entity.ConsentStatusApproved, &authTD.ID.UUID)
 
 	resp, err := h.getBundleSyncResult(ctx, authTD, relationships, req)
 	if err != nil {

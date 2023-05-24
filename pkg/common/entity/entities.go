@@ -10,7 +10,7 @@ import (
 type ConsentStatus string
 
 const (
-	ConsentStatusAccepted ConsentStatus = "approved"
+	ConsentStatusApproved ConsentStatus = "approved"
 	ConsentStatusDenied   ConsentStatus = "denied"
 	ConsentStatusPending  ConsentStatus = "pending"
 )
