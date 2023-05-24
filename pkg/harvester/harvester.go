@@ -79,6 +79,7 @@ func (h *Harvester) Run(ctx context.Context) error {
 		Logger:          h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Harvester),
 	})
 	if err != nil {
+		h.c.Logger.Error("Harvester could not connect to Server. Needs to be re-onboarded with new join token")
 		return fmt.Errorf("failed to create Galadriel Server client: %w", err)
 	}
 

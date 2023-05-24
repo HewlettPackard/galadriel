@@ -130,6 +130,10 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		return nil, errors.New("harvester is not onboarded to Galadriel Server. A join token is required")
 	}
 
+	client.logger.Debug("Requesting a new JWT token from Galadriel Server")
+	if err := client.getNewJWTToken(ctx); err != nil {
+		return nil, fmt.Errorf("could not connect using existing JWT token: %v", err)
+	}
 	go client.startJWTTokenRotation(ctx)
 
 	return client, nil
@@ -395,7 +399,7 @@ func (c *client) getNewJWTToken(ctx context.Context) error {
 
 	jwtToken := jwtResponse.Token
 	if jwtToken == "" {
-		return fmt.Errorf("empty JWT token in response from server")
+		return fmt.Errorf("JWT token could not be renewed")
 	}
 
 	c.logger.Info("JWT token updated")

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	http2 "github.com/HewlettPackard/galadriel/pkg/common/http"
+	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/labstack/echo/v4"
@@ -34,27 +34,27 @@ func (m *AuthenticationMiddleware) Authenticate(bearerToken string, echoCtx echo
 	claims, err := m.jwtValidator.ValidateToken(ctx, bearerToken)
 	if err != nil {
 		msg := "invalid JWT authentication token"
-		return false, http2.LogAndRespondWithError(m.logger, err, msg, http.StatusUnauthorized)
+		return false, chttp.LogAndRespondWithError(m.logger, err, msg, http.StatusUnauthorized)
 	}
 
 	subject := claims.Subject
 	if subject == "" {
-		return false, http2.LogAndRespondWithError(m.logger, err, "invalid token: missing subject", http.StatusUnauthorized)
+		return false, chttp.LogAndRespondWithError(m.logger, err, "invalid token: missing subject", http.StatusUnauthorized)
 	}
 
 	tdName, err := spiffeid.TrustDomainFromString(subject)
 	if err != nil {
-		return false, http2.LogAndRespondWithError(m.logger, err, "invalid token: invalid trust domain name", http.StatusUnauthorized)
+		return false, chttp.LogAndRespondWithError(m.logger, err, "invalid token: invalid trust domain name", http.StatusUnauthorized)
 	}
 
 	td, err := m.datastore.FindTrustDomainByName(ctx, tdName)
 	if err != nil {
-		return false, http2.LogAndRespondWithError(m.logger, err, "invalid token: trust domain not found", http.StatusUnauthorized)
+		return false, chttp.LogAndRespondWithError(m.logger, err, "invalid token: trust domain not found", http.StatusUnauthorized)
 	}
 
 	if td == nil {
 		msg := fmt.Sprintf("trust domain not found: %q", tdName)
-		return false, http2.LogAndRespondWithError(m.logger, nil, msg, http.StatusUnauthorized)
+		return false, chttp.LogAndRespondWithError(m.logger, nil, msg, http.StatusUnauthorized)
 	}
 
 	// set the authenticated trust domain ID in the echo context
