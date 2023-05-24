@@ -91,7 +91,6 @@ func ParseCertificate(pemBytes []byte) (*x509.Certificate, error) {
 func ParseCertificates(pemBytes []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
 	block, rest := pem.Decode(pemBytes)
-	fmt.Println("block", block, "rest", rest)
 	for block != nil {
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
