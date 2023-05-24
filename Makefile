@@ -217,4 +217,3 @@ generate-api-code: $(SPEC_FILES)
 	cd ./pkg/server/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
 	cd ./pkg/server/api/harvester; $(GOPATH)/bin/oapi-codegen -config harvester.cfg.yaml harvester.yaml
 	cd ./pkg/harvester/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
-	cd ./pkg/harvester/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
