@@ -1,19 +1,19 @@
 -include Makefile-poc.mk
 
-DIR := ${CURDIR}
+DIR := $(CURDIR)
 
 .DEFAULT_GOAL = help
 
-E:=@
+E := @
 ifeq ($(V),1)
-	E=
+	E =
 endif
 
 cyan := $(shell which tput > /dev/null && tput setaf 6 2>/dev/null || echo "")
 reset := $(shell which tput > /dev/null && tput sgr0 2>/dev/null || echo "")
-bold  := $(shell which tput > /dev/null && tput bold 2>/dev/null || echo "")
+bold := $(shell which tput > /dev/null && tput bold 2>/dev/null || echo "")
 
-.PHONY: default 
+.PHONY: default
 
 default: build
 
@@ -22,32 +22,31 @@ all: build test
 ############################################################################
 # OS/ARCH detection
 ############################################################################
-os1=$(shell uname -s)
-os2=
+os1 := $(shell uname -s)
+os2 :=
 ifeq ($(os1),Darwin)
-os1=darwin
-os2=osx
+os1 := darwin
+os2 := osx
 else ifeq ($(os1),Linux)
-os1=linux
-os2=linux
+os1 := linux
+os2 := linux
 else ifeq (,$(findstring MYSYS_NT-10-0-, $(os1)))
-os1=windows
-os2=windows
+os1 := windows
+os2 := windows
 else
 $(error unsupported OS: $(os1))
 endif
 
-arch1=$(shell uname -m)
+arch1 := $(shell uname -m)
 ifeq ($(arch1),x86_64)
-arch2=amd64
+arch2 := amd64
 else ifeq ($(arch1),aarch64)
-arch2=arm64
+arch2 := arm64
 else ifeq ($(arch1),arm64)
-arch2=arm64
+arch2 := arm64
 else
 $(error unsupported ARCH: $(arch1))
 endif
-
 
 ############################################################################
 # Vars
@@ -56,35 +55,35 @@ endif
 build_dir := $(DIR)/.build/$(os1)-$(arch1)
 
 go_version_full := $(shell cat .go-version)
-go_version := $(go_version_full:.0=)
+go_version := $(subst .0,,$(go_version_full))
 go_dir := $(build_dir)/go/$(go_version)
 
 ifeq ($(os1),windows)
-	go_bin_dir = $(go_dir)/go/bin
-	go_url = https://storage.googleapis.com/golang/go$(go_version).$(os1)-$(arch2).zip
-	exe=".exe"
-else 
-	go_bin_dir = $(go_dir)/bin
-	go_url = https://storage.googleapis.com/golang/go$(go_version).$(os1)-$(arch2).tar.gz
-	exe=
+go_bin_dir := $(go_dir)/go/bin
+go_url := https://storage.googleapis.com/golang/go$(go_version).$(os1)-$(arch2).zip
+exe := .exe
+else
+go_bin_dir := $(go_dir)/bin
+go_url := https://storage.googleapis.com/golang/go$(go_version).$(os1)-$(arch2).tar.gz
+exe :=
 endif
 
 go_path := PATH="$(go_bin_dir):$(PATH)"
 
-oapi_codegen_version = 1.12.4
-oapi_codegen_dir = $(build_dir)/protoc/$(protoc_version):q
+oapi_codegen_version := 1.12.4
+oapi_codegen_dir := $(build_dir)/protoc/$(protoc_version)
 
-server_sqlc_config_file = $(DIR)/pkg/server/db/sqlc.yaml
+server_sqlc_config_file := $(DIR)/pkg/server/db/sqlc.yaml
 
-sqlc_dir = $(build_dir)/sqlc/$(sqlc_version)
-sqlc_bin = $(sqlc_dir)/sqlc
-sqlc_version = 1.18.0
+sqlc_dir := $(build_dir)/sqlc/$(sqlc_version)
+sqlc_bin := $(sqlc_dir)/sqlc
+sqlc_version := 1.18.0
 ifeq ($(os1),windows)
-	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_windows_amd64.zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(sqlc_version)/sqlc_$(sqlc_version)_windows_amd64.zip
 else ifeq ($(os1),darwin)
-	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_darwin_$(arch2).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(sqlc_version)/sqlc_$(sqlc_version)_darwin_$(arch2).zip
 else
-	sqlc_url = https://github.com/kyleconroy/sqlc/releases/download/v${sqlc_version}/sqlc_${sqlc_version}_linux_amd64.zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(sqlc_version)/sqlc_$(sqlc_version)_linux_amd64.zip
 endif
 
 go-check:
@@ -113,8 +112,8 @@ $(sqlc_bin):
 
 # The following vars are used in rule construction
 comma := ,
-null  :=
-space := $(null) 
+null :=
+space := $(null)
 
 .PHONY: build
 
@@ -125,7 +124,7 @@ build: bin/galadriel-harvester bin/galadriel-server
 define binary_rule
 .PHONY: $1
 $1: | go-check bin/
-	@echo Building $1...
+	@echo "Building $1..."
 	$(E)$(go_path) go build -o $1 $2
 endef
 
@@ -137,9 +136,8 @@ $(eval $(call binary_rule,bin/galadriel-server,cmd/server/main.go))
 bin/:
 	@mkdir -p $@
 
-CONTAINER_OPTIONS = docker podman
-CONTAINER_EXEC := $(foreach exec,$(CONTAINER_OPTIONS),\
-     $(if $(shell which $(exec)),$(exec)))
+CONTAINER_OPTIONS := docker podman
+CONTAINER_EXEC := $(shell command -v $(CONTAINER_OPTIONS) 2> /dev/null)
 
 server-run: build
 	./bin/galadriel-server run
@@ -176,16 +174,17 @@ docker-build: docker-build-server docker-build-harvester
 #------------------------------------------------------------------------
 
 # VARIABLES
-NAME = Galadriel
-VERSION = 0.1.0
-AUTHOR=HPE
+NAME := Galadriel
+VERSION := 0.1.0
+AUTHOR := HPE
 
 # COLORS
 GREEN := $(shell tput -Txterm setaf 2)
 RESET := $(shell tput -Txterm sgr0)
 
-TARGET_MAX_CHAR_NUM=30
+TARGET_MAX_CHAR_NUM := 30
 
+## Shows help.
 ## Shows help.
 help:
 	@echo "$(bold)Usage:$(reset) make $(cyan)<target>$(reset)"
@@ -200,20 +199,21 @@ help:
 	@echo "  $(cyan)all$(reset)                                   - build all Galadriel binaries, and run unit tests"
 	@echo
 	@echo "$(bold)Code generation:$(reset)"
-	@echo "  $(cyan)generate$(reset)                              - generate datastore sql and api boileplate code"
+	@echo "  $(cyan)generate-sql-code$(reset)                   - generate SQL code using sqlc"
+	@echo "  $(cyan)generate-api-code$(reset)                          - generate API code using oapi-codegen"
 
-### Code generation ####
-.PHONY: generate-sqlc-server generete-spec
+.PHONY: generate-sql-code generate-api-code
 
-# Run sqlc to generate sql code
-generate-sqlc-code: install-sqlc run-generate-sqlc
-
-run-generate-sqlc:
+# Run sqlc to generate SQL code for the server
+generate-sql-code: install-sqlc $(server_sqlc_config_file)
+	@echo "Generating server SQL code..."
 	$(sqlc_bin) generate --file $(server_sqlc_config_file)
 
-# Run oapi-codegen to generate api code
-generate-spec:
+# Specify the input specification files as prerequisites for generate-api-code
+generate-api-code: $(SPEC_FILES)
+	@echo "Generating API code..."
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v$(oapi_codegen_version)
 	cd ./pkg/common/api; $(GOPATH)/bin/oapi-codegen -config schemas.cfg.yaml schemas.yaml
 	cd ./pkg/server/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
 	cd ./pkg/server/api/harvester; $(GOPATH)/bin/oapi-codegen -config harvester.cfg.yaml harvester.yaml
+	cd ./pkg/harvester/api/admin; $(GOPATH)/bin/oapi-codegen -config admin.cfg.yaml admin.yaml
