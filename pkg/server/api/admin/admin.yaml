@@ -196,7 +196,6 @@ paths:
         default:
           $ref: '#/components/responses/Default'
 
-
 components:
   responses:
     Default:
@@ -238,4 +237,3 @@ components:
       properties:
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JoinToken'
-    

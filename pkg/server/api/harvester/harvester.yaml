@@ -19,8 +19,8 @@ tags:
     description: Operations for trust domain onboarding
   - name: Relationships
     description: Operations related to relationship between trust domains
-paths:
 
+paths:
   /trust-domain/{trustDomainName}/bundles:
     put:
       tags:
@@ -266,58 +266,6 @@ components:
             +Sb/fAAoimxW2HsXbuniA2IbwkbNMrr0+OhPbJZBO31EqdW1Zw52h9xXtcS7AuLF
             dBbsmjWXFJEW33LDMEQ3fjZiSRcqhgfVxMIftQziEl1tV8G7QJXrikM6aouLYFSN
             c3J4tJ0/59cCdhGX0oeRwvL3LFX8J46u1FF4cfBsnboYlMEf3YKOBOXmixaHaeg=
-            -----END CERTIFICATE-----"
-        }
-        trust_domain_2: {
-          signature: "Qzhyxrvx6bNd/GoRuau0oPnxoU2fJe6lsGb2NI+xKU+kXUP6iuZfw5f9QEhlgfLd8Qdgt73jEpmp64lhjd4H/1RkbXgFdRsf/HXCpQ/AoqouRsEhpymIhwLfc4cAJCJiKxg1zsrP+11O5z91vdTspoubUZaRtFxC+C1oB2+7cUo=",
-          trust_bundle: "",
-          signing_certificate: "-----BEGIN CERTIFICATE-----
-            MIIDuzCCAqMCFEM/Xy4GcExnHXoY7fl832Eo6B1ZMA0GCSqGSIb3DQEBCwUAMIGZ
-            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
-            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
-            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
-            ZXRpZmljYXRlMB4XDTIzMDMyMTE4MzkyNloXDTMzMDMxODE4MzkyNlowgZkxCzAJ
-            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
-            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
-            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
-            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZIusQR6ED2QWR
-            AsKhje19VUVCcnYMiFUDdkTFbHSMKv1aGG4qEX5pzipQgqheNrTx5oblOYZ7jC08
-            oftXD7k3e6ZZa/Vn3G5aeEKGL32c2jKsw+BF8J7hQnUW7yh8tP2r0ryPvDvH+gdh
-            n7FQSLpFH2f9rVijudkN/OkDHhN7KAphvMAn4crcV+s6PxCyZnTZvpiibFk4kURd
-            aC2yDIachYGEA8lhPxY3f7HK/8BaEnm3n+BBv6MzdhSjvyxpf/xc7VX0XSnkDPZh
-            pnzjb9eOzskOvOkXXZelo03BK6PRe/uhafW3jw99nLAyoJJaxTDF8PYlJdMVxge6
-            2sv1ifRDAgMBAAEwDQYJKoZIhvcNAQELBQADggEBALOZZ0SgoVVxUeKqOV0N6JFB
-            GS59tkpa/5LsWQSY1dWo8cQ0wdp9ky1HzXyPWZmxS+ycJtNRhWZXCGggMINrGILs
-            DZtskC5qlVyVA/KhiRuEbc2tIfZ4N//RuQGH72760v/Z8aoWRPl3AIMXlU078ONG
-            gY3lo+01VNtvub49BUvq/1tm/TRehTmwUUEHQvLQ8FznDzYciHdSZNc7OeWAhMxO
-            KJmLdQb727qWuRLp2+shiybO6pjnn5/MjBykVbFoNqJBadugUDhHlg/WOFciOtX6
-            9PatHplOTWuk9v+8CrMFlJ0yFiC31esFT/PYhyTTyQDqd2AoTMdl5sms539z5a8=
-            -----END CERTIFICATE-----"
-        }
-        trust_domain_3: {
-          signature: "b4bbWIOjkuYeezMFiWV3bOC4rZqQaAEl0zdcilU+MH5eEGDTdomO9ENktSl/7Y8cqvFJUFBwlpFzhXA+J7VWGhSz74uKSdTTT4fwF8qp0rLu0hLYFim0R4rOJNFwg2uwUOyYD4sgn5IKfZZQZa8dYePTugTxTpRyQojUzn81Bmo=",
-          trust_bundle: "",
-          signing_certificate: "-----BEGIN CERTIFICATE-----
-            MIIDuzCCAqMCFBc8ujvmmPOV65hK4IgtwtKu7nQGMA0GCSqGSIb3DQEBCwUAMIGZ
-            MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
-            KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
-            BgNVBAsMFUhQRSBHYWxhZHJpZWwgUHJvamVjdDEbMBkGA1UEAwwSc2FtcGxlLWNy
-            ZXRpZmljYXRlMB4XDTIzMDMyMTE4NDAwM1oXDTMzMDMxODE4NDAwM1owgZkxCzAJ
-            BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEQMA4GA1UEBwwHSG91c3RvbjErMCkG
-            A1UECgwiSGV3bGV0dCBQYWNrYXJkIEVudGVycHJpc2UgQ29tcGFueTEeMBwGA1UE
-            CwwVSFBFIEdhbGFkcmllbCBQcm9qZWN0MRswGQYDVQQDDBJzYW1wbGUtY3JldGlm
-            aWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDY/AYU++prtBhN
-            q12AAk57TdNYgdEL6S3tN+nonrglo09Du+yqrDuqAhPvtcF1FtWSbOPVBbmIEH6v
-            r7gNVsADB4dP9+VRIbaTYNnpsV99qr1Ww6vWtOnvMHbPhvVPJnnFqGfZtnRcvvD4
-            llSNtpAZ3QOFfrXZ3lGUaj2vOu7nxwK8pgUi8uz67eRsHLmI4S+C8qSOfXjGuFmh
-            783mWaXQQy7s5UgiiGVWCwsQe8M1q+lxCVZWY3WYyeO+SERbB8/LMw9Si5YFkSbd
-            W6PT2Rx/veYxEPlrM+Kb36ljKzmcd8Wwe0pI05mQjd1tGKet983ZRH5cEnHBQwgC
-            qagF7RtzAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAM84v9m/B4b21UM7hfY4SRuv
-            npEQd5pSSVhRZ11N4X+12Ya3y67hyNj7q35tVAIMmjc4mX75D4dvOpPZkMEW/kXr
-            q+yOl3k7L/wuvzWFiIBC/kjQ8B5NvwAbd1wpf2qjjQGOrVH08MiXOZORx989WtTf
-            0vLW18ON1IwPvPA+FvBfcKzJCleN53UiimAjXq112q+kvw7LUZdC3zeE0fPn0uE9
-            qO6WhlUWekdGtVBxqo8zLYeBQcxLBMxEsSeY9N3U7sLXp/iuY4Mh5vfhyHzQs/FQ
-            MEyeHS1S1VKJcWKBv517E1O+zWM5gmC07O60MjZdyWjXbjQOoQQl/EAUL3Z4wAQ=
             -----END CERTIFICATE-----"
         }
     BundleSyncBody:
