@@ -11,7 +11,10 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-const kidHeader = "kid"
+const (
+	kidHeader     = "kid"
+	defaultJWTTTL = 10 * time.Minute
+)
 
 // Issuer is the interface used to sign JWTs.
 type Issuer interface {
@@ -66,6 +69,9 @@ func NewJWTCA(c *Config) (*JWTCA, error) {
 }
 
 func (ca *JWTCA) IssueJWT(ctx context.Context, params *JWTParams) (string, error) {
+	if params.TTL == 0 {
+		params.TTL = defaultJWTTTL
+	}
 	expiresAt := ca.clk.Now().Add(params.TTL)
 	now := ca.clk.Now()
 

@@ -27,7 +27,6 @@ import (
 const (
 	authTrustDomainKey = "trust_domain"
 	authClaimsKey      = "auth_claims"
-	defaultJWTTTL      = time.Hour
 )
 
 type HarvesterAPIHandlers struct {
@@ -305,7 +304,6 @@ func (h *HarvesterAPIHandlers) GetNewJWTToken(echoCtx echo.Context, trustDomainN
 		// the new JWT token has the same subject as the received token
 		Subject:  subject,
 		Audience: []string{constants.GaladrielServerName},
-		TTL:      defaultJWTTTL,
 	}
 
 	newToken, err := h.jwtIssuer.IssueJWT(ctx, &params)

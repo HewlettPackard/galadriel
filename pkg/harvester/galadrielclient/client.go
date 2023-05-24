@@ -30,7 +30,7 @@ const (
 	scheme          = "https://"
 	jsonContentType = "application/json"
 
-	jwtRotationInterval = 30 * time.Minute
+	jwtRotationInterval = 5 * time.Minute
 	onboardPath         = "/trust-domain/onboard"
 	tokenFile           = "jwt-token"
 	tokenFileMode       = 0600
