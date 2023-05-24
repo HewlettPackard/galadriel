@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 // WriteResponse parses a struct into a json and writes in the response
@@ -36,4 +37,18 @@ func ParseRequestBodyToStruct(ctx echo.Context, targetStruct interface{}) error 
 	}
 
 	return ctx.Bind(targetStruct)
+}
+
+// LogAndRespondWithError logs the error and returns an HTTP error.
+func LogAndRespondWithError(logger logrus.FieldLogger, err error, errorMessage string, statusCode int) error {
+	if err != nil {
+		logger.Errorf("%s: %v", errorMessage, err)
+	} else {
+		logger.Error(errorMessage)
+	}
+
+	return &echo.HTTPError{
+		Code:    statusCode,
+		Message: errorMessage,
+	}
 }

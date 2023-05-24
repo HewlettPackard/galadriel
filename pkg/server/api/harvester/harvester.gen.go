@@ -97,28 +97,25 @@ type TrustBundleSyncItem struct {
 // Default defines model for Default.
 type Default = externalRef0.ApiError
 
-// GetRelationshipsParams defines parameters for GetRelationships.
-type GetRelationshipsParams struct {
-	ConsentStatus *externalRef0.ConsentStatus `form:"consentStatus,omitempty" json:"consentStatus,omitempty"`
-
-	// TrustDomainName relationship status from a Trust Domain perspective
-	TrustDomainName externalRef0.TrustDomainName `form:"trustDomainName" json:"trustDomainName"`
-}
-
 // OnboardParams defines parameters for Onboard.
 type OnboardParams struct {
 	// JoinToken Join token to be used for onboarding
 	JoinToken string `form:"joinToken" json:"joinToken"`
 }
 
-// PatchRelationshipJSONRequestBody defines body for PatchRelationship for application/json ContentType.
-type PatchRelationshipJSONRequestBody = PatchRelationship
+// GetRelationshipsParams defines parameters for GetRelationships.
+type GetRelationshipsParams struct {
+	ConsentStatus *externalRef0.ConsentStatus `form:"consentStatus,omitempty" json:"consentStatus,omitempty"`
+}
 
 // BundlePutJSONRequestBody defines body for BundlePut for application/json ContentType.
 type BundlePutJSONRequestBody = BundlePut
 
 // BundleSyncJSONRequestBody defines body for BundleSync for application/json ContentType.
 type BundleSyncJSONRequestBody = BundleSyncBody
+
+// PatchRelationshipJSONRequestBody defines body for PatchRelationship for application/json ContentType.
+type PatchRelationshipJSONRequestBody = PatchRelationship
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -193,20 +190,6 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// GetRelationships request
-	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PatchRelationship request with any body
-	PatchRelationshipWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PatchRelationship(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetNewJWTToken request
-	GetNewJWTToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Onboard request
-	Onboard(ctx context.Context, params *OnboardParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// BundlePut request with any body
 	BundlePutWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -216,66 +199,20 @@ type ClientInterface interface {
 	BundleSyncWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BundleSync(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body BundleSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
 
-func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRelationshipsRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// GetNewJWTToken request
+	GetNewJWTToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PatchRelationshipWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchRelationshipRequestWithBody(c.Server, relationshipID, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// Onboard request
+	Onboard(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *OnboardParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) PatchRelationship(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchRelationshipRequest(c.Server, relationshipID, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// GetRelationships request
+	GetRelationships(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) GetNewJWTToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetNewJWTTokenRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
+	// PatchRelationship request with any body
+	PatchRelationshipWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-func (c *Client) Onboard(ctx context.Context, params *OnboardParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewOnboardRequest(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
+	PatchRelationship(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) BundlePutWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -326,180 +263,64 @@ func (c *Client) BundleSync(ctx context.Context, trustDomainName externalRef0.Tr
 	return c.Client.Do(req)
 }
 
-// NewGetRelationshipsRequest generates requests for GetRelationships
-func NewGetRelationshipsRequest(server string, params *GetRelationshipsParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) GetNewJWTToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNewJWTTokenRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/relationships")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	queryValues := queryURL.Query()
-
-	if params.ConsentStatus != nil {
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "consentStatus", runtime.ParamLocationQuery, *params.ConsentStatus); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-	}
-
-	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "trustDomainName", runtime.ParamLocationQuery, params.TrustDomainName); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
-		}
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewPatchRelationshipRequest calls the generic PatchRelationship builder with application/json body
-func NewPatchRelationshipRequest(server string, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+func (c *Client) Onboard(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *OnboardParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOnboardRequest(c.Server, trustDomainName, params)
 	if err != nil {
 		return nil, err
 	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPatchRelationshipRequestWithBody(server, relationshipID, "application/json", bodyReader)
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
-// NewPatchRelationshipRequestWithBody generates requests for PatchRelationship with any type of body
-func NewPatchRelationshipRequestWithBody(server string, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, relationshipID)
+func (c *Client) GetRelationships(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRelationshipsRequest(c.Server, trustDomainName, params)
 	if err != nil {
 		return nil, err
 	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/relationships/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PATCH", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewGetNewJWTTokenRequest generates requests for GetNewJWTToken
-func NewGetNewJWTTokenRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) PatchRelationshipWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipRequestWithBody(c.Server, trustDomainName, relationshipID, contentType, body)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/trust-domain/jwt")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
-// NewOnboardRequest generates requests for Onboard
-func NewOnboardRequest(server string, params *OnboardParams) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
+func (c *Client) PatchRelationship(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipRequest(c.Server, trustDomainName, relationshipID, body)
 	if err != nil {
 		return nil, err
 	}
-
-	operationPath := fmt.Sprintf("/trust-domain/onboard")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
 		return nil, err
 	}
-
-	queryValues := queryURL.Query()
-
-	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "joinToken", runtime.ParamLocationQuery, params.JoinToken); err != nil {
-		return nil, err
-	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-		return nil, err
-	} else {
-		for k, v := range parsed {
-			for _, v2 := range v {
-				queryValues.Add(k, v2)
-			}
-		}
-	}
-
-	queryURL.RawQuery = queryValues.Encode()
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return c.Client.Do(req)
 }
 
 // NewBundlePutRequest calls the generic BundlePut builder with application/json body
@@ -596,6 +417,198 @@ func NewBundleSyncRequestWithBody(server string, trustDomainName externalRef0.Tr
 	return req, nil
 }
 
+// NewGetNewJWTTokenRequest generates requests for GetNewJWTToken
+func NewGetNewJWTTokenRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s/jwt", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOnboardRequest generates requests for Onboard
+func NewOnboardRequest(server string, trustDomainName externalRef0.TrustDomainName, params *OnboardParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s/onboard", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if queryFrag, err := runtime.StyleParamWithLocation("form", true, "joinToken", runtime.ParamLocationQuery, params.JoinToken); err != nil {
+		return nil, err
+	} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+		return nil, err
+	} else {
+		for k, v := range parsed {
+			for _, v2 := range v {
+				queryValues.Add(k, v2)
+			}
+		}
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetRelationshipsRequest generates requests for GetRelationships
+func NewGetRelationshipsRequest(server string, trustDomainName externalRef0.TrustDomainName, params *GetRelationshipsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s/relationships", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if params.ConsentStatus != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "consentStatus", runtime.ParamLocationQuery, *params.ConsentStatus); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchRelationshipRequest calls the generic PatchRelationship builder with application/json body
+func NewPatchRelationshipRequest(server string, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchRelationshipRequestWithBody(server, trustDomainName, relationshipID, "application/json", bodyReader)
+}
+
+// NewPatchRelationshipRequestWithBody generates requests for PatchRelationship with any type of body
+func NewPatchRelationshipRequestWithBody(server string, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, relationshipID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s/relationships/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -639,20 +652,6 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// GetRelationships request
-	GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
-
-	// PatchRelationship request with any body
-	PatchRelationshipWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
-
-	PatchRelationshipWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
-
-	// GetNewJWTToken request
-	GetNewJWTTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNewJWTTokenResponse, error)
-
-	// Onboard request
-	OnboardWithResponse(ctx context.Context, params *OnboardParams, reqEditors ...RequestEditorFn) (*OnboardResponse, error)
-
 	// BundlePut request with any body
 	BundlePutWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BundlePutResponse, error)
 
@@ -662,17 +661,30 @@ type ClientWithResponsesInterface interface {
 	BundleSyncWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BundleSyncResponse, error)
 
 	BundleSyncWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body BundleSyncJSONRequestBody, reqEditors ...RequestEditorFn) (*BundleSyncResponse, error)
+
+	// GetNewJWTToken request
+	GetNewJWTTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetNewJWTTokenResponse, error)
+
+	// Onboard request
+	OnboardWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *OnboardParams, reqEditors ...RequestEditorFn) (*OnboardResponse, error)
+
+	// GetRelationships request
+	GetRelationshipsWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
+
+	// PatchRelationship request with any body
+	PatchRelationshipWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
+
+	PatchRelationshipWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error)
 }
 
-type GetRelationshipsResponse struct {
+type BundlePutResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *RelationshipGet
 	JSONDefault  *externalRef0.ApiError
 }
 
 // Status returns HTTPResponse.Status
-func (r GetRelationshipsResponse) Status() string {
+func (r BundlePutResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -680,22 +692,22 @@ func (r GetRelationshipsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetRelationshipsResponse) StatusCode() int {
+func (r BundlePutResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PatchRelationshipResponse struct {
+type BundleSyncResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *externalRef0.Relationship
+	JSON200      *BundleSyncResult
 	JSONDefault  *externalRef0.ApiError
 }
 
 // Status returns HTTPResponse.Status
-func (r PatchRelationshipResponse) Status() string {
+func (r BundleSyncResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -703,7 +715,7 @@ func (r PatchRelationshipResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PatchRelationshipResponse) StatusCode() int {
+func (r BundleSyncResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -756,14 +768,15 @@ func (r OnboardResponse) StatusCode() int {
 	return 0
 }
 
-type BundlePutResponse struct {
+type GetRelationshipsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *RelationshipGet
 	JSONDefault  *externalRef0.ApiError
 }
 
 // Status returns HTTPResponse.Status
-func (r BundlePutResponse) Status() string {
+func (r GetRelationshipsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -771,22 +784,22 @@ func (r BundlePutResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r BundlePutResponse) StatusCode() int {
+func (r GetRelationshipsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type BundleSyncResponse struct {
+type PatchRelationshipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *BundleSyncResult
+	JSON200      *externalRef0.Relationship
 	JSONDefault  *externalRef0.ApiError
 }
 
 // Status returns HTTPResponse.Status
-func (r BundleSyncResponse) Status() string {
+func (r PatchRelationshipResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -794,55 +807,11 @@ func (r BundleSyncResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r BundleSyncResponse) StatusCode() int {
+func (r PatchRelationshipResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
-}
-
-// GetRelationshipsWithResponse request returning *GetRelationshipsResponse
-func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error) {
-	rsp, err := c.GetRelationships(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetRelationshipsResponse(rsp)
-}
-
-// PatchRelationshipWithBodyWithResponse request with arbitrary body returning *PatchRelationshipResponse
-func (c *ClientWithResponses) PatchRelationshipWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
-	rsp, err := c.PatchRelationshipWithBody(ctx, relationshipID, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePatchRelationshipResponse(rsp)
-}
-
-func (c *ClientWithResponses) PatchRelationshipWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
-	rsp, err := c.PatchRelationship(ctx, relationshipID, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePatchRelationshipResponse(rsp)
-}
-
-// GetNewJWTTokenWithResponse request returning *GetNewJWTTokenResponse
-func (c *ClientWithResponses) GetNewJWTTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNewJWTTokenResponse, error) {
-	rsp, err := c.GetNewJWTToken(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetNewJWTTokenResponse(rsp)
-}
-
-// OnboardWithResponse request returning *OnboardResponse
-func (c *ClientWithResponses) OnboardWithResponse(ctx context.Context, params *OnboardParams, reqEditors ...RequestEditorFn) (*OnboardResponse, error) {
-	rsp, err := c.Onboard(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseOnboardResponse(rsp)
 }
 
 // BundlePutWithBodyWithResponse request with arbitrary body returning *BundlePutResponse
@@ -879,27 +848,64 @@ func (c *ClientWithResponses) BundleSyncWithResponse(ctx context.Context, trustD
 	return ParseBundleSyncResponse(rsp)
 }
 
-// ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
-func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsResponse, error) {
+// GetNewJWTTokenWithResponse request returning *GetNewJWTTokenResponse
+func (c *ClientWithResponses) GetNewJWTTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetNewJWTTokenResponse, error) {
+	rsp, err := c.GetNewJWTToken(ctx, trustDomainName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNewJWTTokenResponse(rsp)
+}
+
+// OnboardWithResponse request returning *OnboardResponse
+func (c *ClientWithResponses) OnboardWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *OnboardParams, reqEditors ...RequestEditorFn) (*OnboardResponse, error) {
+	rsp, err := c.Onboard(ctx, trustDomainName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOnboardResponse(rsp)
+}
+
+// GetRelationshipsWithResponse request returning *GetRelationshipsResponse
+func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error) {
+	rsp, err := c.GetRelationships(ctx, trustDomainName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRelationshipsResponse(rsp)
+}
+
+// PatchRelationshipWithBodyWithResponse request with arbitrary body returning *PatchRelationshipResponse
+func (c *ClientWithResponses) PatchRelationshipWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
+	rsp, err := c.PatchRelationshipWithBody(ctx, trustDomainName, relationshipID, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchRelationshipResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchRelationshipWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID, body PatchRelationshipJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipResponse, error) {
+	rsp, err := c.PatchRelationship(ctx, trustDomainName, relationshipID, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchRelationshipResponse(rsp)
+}
+
+// ParseBundlePutResponse parses an HTTP response from a BundlePutWithResponse call
+func ParseBundlePutResponse(rsp *http.Response) (*BundlePutResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetRelationshipsResponse{
+	response := &BundlePutResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RelationshipGet
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest externalRef0.ApiError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -912,22 +918,22 @@ func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsRespons
 	return response, nil
 }
 
-// ParsePatchRelationshipResponse parses an HTTP response from a PatchRelationshipWithResponse call
-func ParsePatchRelationshipResponse(rsp *http.Response) (*PatchRelationshipResponse, error) {
+// ParseBundleSyncResponse parses an HTTP response from a BundleSyncWithResponse call
+func ParseBundleSyncResponse(rsp *http.Response) (*BundleSyncResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PatchRelationshipResponse{
+	response := &BundleSyncResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest externalRef0.Relationship
+		var dest BundleSyncResult
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1011,20 +1017,27 @@ func ParseOnboardResponse(rsp *http.Response) (*OnboardResponse, error) {
 	return response, nil
 }
 
-// ParseBundlePutResponse parses an HTTP response from a BundlePutWithResponse call
-func ParseBundlePutResponse(rsp *http.Response) (*BundlePutResponse, error) {
+// ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
+func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &BundlePutResponse{
+	response := &GetRelationshipsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RelationshipGet
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest externalRef0.ApiError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1037,22 +1050,22 @@ func ParseBundlePutResponse(rsp *http.Response) (*BundlePutResponse, error) {
 	return response, nil
 }
 
-// ParseBundleSyncResponse parses an HTTP response from a BundleSyncWithResponse call
-func ParseBundleSyncResponse(rsp *http.Response) (*BundleSyncResponse, error) {
+// ParsePatchRelationshipResponse parses an HTTP response from a PatchRelationshipWithResponse call
+func ParsePatchRelationshipResponse(rsp *http.Response) (*PatchRelationshipResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &BundleSyncResponse{
+	response := &PatchRelationshipResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BundleSyncResult
+		var dest externalRef0.Relationship
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1072,103 +1085,29 @@ func ParseBundleSyncResponse(rsp *http.Response) (*BundleSyncResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// List the relationships.
-	// (GET /relationships)
-	GetRelationships(ctx echo.Context, params GetRelationshipsParams) error
-	// Accept/Denies relationship requests
-	// (PATCH /relationships/{relationshipID})
-	PatchRelationship(ctx echo.Context, relationshipID externalRef0.UUID) error
-	// Get a renewed JWT token with the same claims as the original one
-	// (GET /trust-domain/jwt)
-	GetNewJWTToken(ctx echo.Context) error
-	// Onboarding a new Trust Domain in the Galadriel Server
-	// (GET /trust-domain/onboard)
-	Onboard(ctx echo.Context, params OnboardParams) error
 	// Upload a new trust bundle to the server
 	// (PUT /trust-domain/{trustDomainName}/bundles)
 	BundlePut(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Synchronizes federated bundles with Galadriel Server
 	// (POST /trust-domain/{trustDomainName}/bundles/sync)
 	BundleSync(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// Get a renewed JWT token with the same claims as the original one
+	// (GET /trust-domain/{trustDomainName}/jwt)
+	GetNewJWTToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// Onboarding a new Trust Domain in the Galadriel Server
+	// (GET /trust-domain/{trustDomainName}/onboard)
+	Onboard(ctx echo.Context, trustDomainName externalRef0.TrustDomainName, params OnboardParams) error
+	// List the relationships.
+	// (GET /trust-domain/{trustDomainName}/relationships)
+	GetRelationships(ctx echo.Context, trustDomainName externalRef0.TrustDomainName, params GetRelationshipsParams) error
+	// Accept/Denies relationship requests
+	// (PATCH /trust-domain/{trustDomainName}/relationships/{relationshipID})
+	PatchRelationship(ctx echo.Context, trustDomainName externalRef0.TrustDomainName, relationshipID externalRef0.UUID) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
-}
-
-// GetRelationships converts echo context to params.
-func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
-	var err error
-
-	ctx.Set(Harvester_authScopes, []string{""})
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetRelationshipsParams
-	// ------------- Optional query parameter "consentStatus" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "consentStatus", ctx.QueryParams(), &params.ConsentStatus)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter consentStatus: %s", err))
-	}
-
-	// ------------- Required query parameter "trustDomainName" -------------
-
-	err = runtime.BindQueryParameter("form", true, true, "trustDomainName", ctx.QueryParams(), &params.TrustDomainName)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetRelationships(ctx, params)
-	return err
-}
-
-// PatchRelationship converts echo context to params.
-func (w *ServerInterfaceWrapper) PatchRelationship(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "relationshipID" -------------
-	var relationshipID externalRef0.UUID
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, ctx.Param("relationshipID"), &relationshipID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipID: %s", err))
-	}
-
-	ctx.Set(Harvester_authScopes, []string{""})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PatchRelationship(ctx, relationshipID)
-	return err
-}
-
-// GetNewJWTToken converts echo context to params.
-func (w *ServerInterfaceWrapper) GetNewJWTToken(ctx echo.Context) error {
-	var err error
-
-	ctx.Set(Harvester_authScopes, []string{""})
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetNewJWTToken(ctx)
-	return err
-}
-
-// Onboard converts echo context to params.
-func (w *ServerInterfaceWrapper) Onboard(ctx echo.Context) error {
-	var err error
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params OnboardParams
-	// ------------- Required query parameter "joinToken" -------------
-
-	err = runtime.BindQueryParameter("form", true, true, "joinToken", ctx.QueryParams(), &params.JoinToken)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter joinToken: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.Onboard(ctx, params)
-	return err
 }
 
 // BundlePut converts echo context to params.
@@ -1207,6 +1146,102 @@ func (w *ServerInterfaceWrapper) BundleSync(ctx echo.Context) error {
 	return err
 }
 
+// GetNewJWTToken converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNewJWTToken(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	ctx.Set(Harvester_authScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetNewJWTToken(ctx, trustDomainName)
+	return err
+}
+
+// Onboard converts echo context to params.
+func (w *ServerInterfaceWrapper) Onboard(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OnboardParams
+	// ------------- Required query parameter "joinToken" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "joinToken", ctx.QueryParams(), &params.JoinToken)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter joinToken: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.Onboard(ctx, trustDomainName, params)
+	return err
+}
+
+// GetRelationships converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	ctx.Set(Harvester_authScopes, []string{""})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetRelationshipsParams
+	// ------------- Optional query parameter "consentStatus" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "consentStatus", ctx.QueryParams(), &params.ConsentStatus)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter consentStatus: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetRelationships(ctx, trustDomainName, params)
+	return err
+}
+
+// PatchRelationship converts echo context to params.
+func (w *ServerInterfaceWrapper) PatchRelationship(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	// ------------- Path parameter "relationshipID" -------------
+	var relationshipID externalRef0.UUID
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "relationshipID", runtime.ParamLocationPath, ctx.Param("relationshipID"), &relationshipID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter relationshipID: %s", err))
+	}
+
+	ctx.Set(Harvester_authScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PatchRelationship(ctx, trustDomainName, relationshipID)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1235,143 +1270,143 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
-	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.PatchRelationship)
-	router.GET(baseURL+"/trust-domain/jwt", wrapper.GetNewJWTToken)
-	router.GET(baseURL+"/trust-domain/onboard", wrapper.Onboard)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName/bundles", wrapper.BundlePut)
 	router.POST(baseURL+"/trust-domain/:trustDomainName/bundles/sync", wrapper.BundleSync)
+	router.GET(baseURL+"/trust-domain/:trustDomainName/jwt", wrapper.GetNewJWTToken)
+	router.GET(baseURL+"/trust-domain/:trustDomainName/onboard", wrapper.Onboard)
+	router.GET(baseURL+"/trust-domain/:trustDomainName/relationships", wrapper.GetRelationships)
+	router.PATCH(baseURL+"/trust-domain/:trustDomainName/relationships/:relationshipID", wrapper.PatchRelationship)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

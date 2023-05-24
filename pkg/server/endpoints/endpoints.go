@@ -1,4 +1,3 @@
-// TODO: rename this file to endpoints.go
 package endpoints
 
 import (
@@ -8,6 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"net"
 	"net/http"
@@ -57,6 +57,16 @@ type Endpoints struct {
 	}
 }
 
+// Config represents the configuration of the Galadriel Server Endpoints
+type Config struct {
+	TCPAddress   *net.TCPAddr
+	LocalAddress net.Addr
+	JWTIssuer    jwt.Issuer
+	JWTValidator jwt.Validator
+	Catalog      catalog.Catalog
+	Logger       logrus.FieldLogger
+}
+
 type certificateSource struct {
 	mu   sync.RWMutex
 	cert *tls.Certificate
@@ -79,9 +89,10 @@ func New(c *Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
+	e.Logger.Debug("Initializing API endpoints")
 	err := util.RunTasks(ctx,
-		e.runTCPServer,
-		e.runUDSServer,
+		e.startTCPListener,
+		e.startUDSListener,
 	)
 	if errors.Is(err, context.Canceled) {
 		err = nil
@@ -90,7 +101,9 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 	return err
 }
 
-func (e *Endpoints) runTCPServer(ctx context.Context) error {
+func (e *Endpoints) startTCPListener(ctx context.Context) error {
+	e.Logger.Debug("Starting TCP Listener")
+
 	server := echo.New()
 	server.HideBanner = true
 	server.HidePort = true
@@ -116,10 +129,14 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 		TLSConfig: tlsConfig,
 	}
 
-	e.Logger.Infof("Starting secure Galadriel Server TCP listening on %s", e.TCPAddress.String())
+	log := e.Logger.WithFields(logrus.Fields{
+		telemetry.Network: e.TCPAddress.Network(),
+		telemetry.Address: e.TCPAddress.String()})
+
 	errChan := make(chan error)
 	go func() {
 		e.triggerListeningHook()
+		log.Info("Started TCP listener")
 		// certificate and key are embedded in the TLS config
 		errChan <- httpServer.ListenAndServeTLS("", "")
 	}()
@@ -127,63 +144,69 @@ func (e *Endpoints) runTCPServer(ctx context.Context) error {
 	go e.startTLSCertificateRotation(ctx, errChan)
 
 	select {
-	case err = <-errChan:
-		e.Logger.WithError(err).Error("TCP Server stopped prematurely")
+	case err := <-errChan:
+		log.WithError(err).Error("TCP Listener stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping TCP Server")
+		log.Info("Stopping TCP Listener")
 		err = httpServer.Close()
 		if err != nil {
-			e.Logger.WithError(err).Error("Error closing HTTP TCP Server")
+			log.WithError(err).Error("Error closing TCP Listener")
 		}
 		err = server.Close()
 		if err != nil {
 			e.Logger.WithError(err).Error("Error closing Echo Server")
 		}
 		<-errChan
-		e.Logger.Info("TCP Server stopped")
+		log.Info("TCP Server stopped")
 		return nil
 	}
 }
 
-func (e *Endpoints) runUDSServer(ctx context.Context) error {
+func (e *Endpoints) startUDSListener(ctx context.Context) error {
+	e.Logger.Debug("Starting UDS listener")
 	server := echo.New()
 
 	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
 	if err != nil {
-		return fmt.Errorf("error listening on uds: %w", err)
+		return fmt.Errorf("error listening on UDS: %w", err)
 	}
 	defer l.Close()
 
 	e.addUDSHandlers(server)
 
-	e.Logger.Infof("Starting UDS Server on %s", e.LocalAddr.String())
+	log := e.Logger.WithFields(logrus.Fields{
+		telemetry.Network: e.LocalAddr.Network(),
+		telemetry.Address: e.LocalAddr.String()})
+
 	errChan := make(chan error)
 	go func() {
+		log.Info("Started UDS listener")
 		errChan <- server.Server.Serve(l)
 	}()
 
 	select {
 	case err = <-errChan:
-		e.Logger.WithError(err).Error("Local Server stopped prematurely")
+		log.WithError(err).Error("Local listener stopped prematurely")
 		return err
 	case <-ctx.Done():
-		e.Logger.Info("Stopping UDS Server")
-		server.Close()
+		log.Info("Stopping UDS listener")
+		err := server.Close()
+		if err != nil {
+			log.WithError(err).Error("Error closing UDS listener")
+		}
 		<-errChan
-		e.Logger.Info("UDS Server stopped")
+		log.Info("UDS listener stopped")
 		return nil
 	}
 }
 
 func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
-	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(logger, e.Datastore))
+	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(e.Logger, e.Datastore))
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(logger, e.Datastore, e.jwtIssuer, e.jwtValidator))
+	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(e.Logger, e.Datastore, e.jwtIssuer, e.jwtValidator))
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
@@ -219,7 +242,7 @@ func (t *certificateSource) getTLSCertificate() *tls.Certificate {
 }
 
 func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan chan error) {
-	e.Logger.Info("Starting TLS certificate rotator")
+	e.Logger.Info("Started TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
 	certRotationInterval := defaultTTL / 2
@@ -228,7 +251,7 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 	for {
 		select {
 		case <-ticker.C:
-			e.Logger.Info("Rotating Server TLS certificate")
+			e.Logger.Debug("Rotating Server TLS certificate")
 			cert, err := e.getTLSCertificate(ctx)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to rotate Server TLS certificate: %w", err)

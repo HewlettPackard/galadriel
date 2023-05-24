@@ -1,4 +1,4 @@
-package spire
+package spireclient
 
 import (
 	"crypto"
@@ -193,10 +193,31 @@ func protoToBatchSetFederatedBundleResult(in *bundlev1.BatchSetFederatedBundleRe
 	return out, nil
 }
 
-func protoToFederatedBundles(in *bundlev1.ListFederatedBundlesResponse) ([]*spiffebundle.Bundle, error) {
+func protoToBatchDeleteFederatedBundleResult(in *bundlev1.BatchDeleteFederatedBundleResponse) ([]*BatchDeleteFederatedBundleStatus, error) {
+	var out []*BatchDeleteFederatedBundleStatus
+
+	for _, r := range in.GetResults() {
+		if r.Status == nil {
+			return nil, errors.New("call returned no status")
+		}
+
+		bs := &BatchDeleteFederatedBundleStatus{
+			TrustDomain: r.TrustDomain,
+			Status: &Status{
+				Message: r.Status.GetMessage(),
+				Code:    codes.Code(r.Status.GetCode()),
+			},
+		}
+		out = append(out, bs)
+	}
+
+	return out, nil
+}
+
+func protoToSpiffeBundles(resp *bundlev1.ListFederatedBundlesResponse) ([]*spiffebundle.Bundle, error) {
 	var out []*spiffebundle.Bundle
 
-	for _, b := range in.Bundles {
+	for _, b := range resp.Bundles {
 		bundle, err := protoToBundle(b)
 		if err != nil {
 			return nil, err

@@ -1,4 +1,4 @@
-package spire
+package spireclient
 
 import (
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
@@ -14,6 +14,11 @@ type Status struct {
 type BatchSetFederatedBundleStatus struct {
 	Bundle *spiffebundle.Bundle
 	Status *Status
+}
+
+type BatchDeleteFederatedBundleStatus struct {
+	TrustDomain string
+	Status      *Status
 }
 
 type BatchGetFederatedBundleStatus struct {

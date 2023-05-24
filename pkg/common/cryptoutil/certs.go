@@ -87,6 +87,22 @@ func ParseCertificate(pemBytes []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
+// ParseCertificates parses a list of x509.Certificates from the given PEM bytes.
+func ParseCertificates(pemBytes []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	block, rest := pem.Decode(pemBytes)
+	fmt.Println("block", block, "rest", rest)
+	for block != nil {
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing certificate: %w", err)
+		}
+		certs = append(certs, cert)
+		block, rest = pem.Decode(rest)
+	}
+	return certs, nil
+}
+
 // EncodeCertificate encodes the given x509.Certificate into PEM format.
 func EncodeCertificate(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: certType, Bytes: cert.Raw})

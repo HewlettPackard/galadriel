@@ -6,8 +6,6 @@ RETURNING *;
 -- name: UpdateTrustDomain :one
 UPDATE trust_domains
 SET description         = $2,
-    harvester_spiffe_id = $3,
-    onboarding_bundle   = $4,
     updated_at          = now()
 WHERE id = $1
 RETURNING *;

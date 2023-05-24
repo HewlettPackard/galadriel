@@ -49,9 +49,9 @@ var (
 	entTD3       = &entity.TrustDomain{ID: tdUUID3, Name: spiffeTD3}
 	trustDomains = []*entity.TrustDomain{entTD1, entTD2, entTD3}
 
-	rel1          = &entity.Relationship{ID: r1ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD2, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Pending)}
-	rel2          = &entity.Relationship{ID: r2ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Accepted)}
-	rel3          = &entity.Relationship{ID: r3ID, TrustDomainAID: entTD2.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD2, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Accepted), TrustDomainBConsent: entity.ConsentStatus(api.Denied)}
+	rel1          = &entity.Relationship{ID: r1ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD2, TrustDomainAConsent: entity.ConsentStatus(api.Approved), TrustDomainBConsent: entity.ConsentStatus(api.Pending)}
+	rel2          = &entity.Relationship{ID: r2ID, TrustDomainAID: entTD1.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD1, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Approved)}
+	rel3          = &entity.Relationship{ID: r3ID, TrustDomainAID: entTD2.ID.UUID, TrustDomainBID: tdUUID3.UUID, TrustDomainAName: spiffeTD2, TrustDomainBName: spiffeTD3, TrustDomainAConsent: entity.ConsentStatus(api.Approved), TrustDomainBConsent: entity.ConsentStatus(api.Denied)}
 	rel4          = &entity.Relationship{ID: r4ID, TrustDomainAID: entTD3.ID.UUID, TrustDomainBID: tdUUID1.UUID, TrustDomainAName: spiffeTD3, TrustDomainBName: spiffeTD1, TrustDomainAConsent: entity.ConsentStatus(api.Denied), TrustDomainBConsent: entity.ConsentStatus(api.Denied)}
 	rel5          = &entity.Relationship{ID: r5ID, TrustDomainAID: entTD3.ID.UUID, TrustDomainBID: tdUUID2.UUID, TrustDomainAName: spiffeTD3, TrustDomainBName: spiffeTD2, TrustDomainAConsent: entity.ConsentStatus(api.Pending), TrustDomainBConsent: entity.ConsentStatus(api.Pending)}
 	relationships = []*entity.Relationship{rel1, rel2, rel3, rel4, rel5}
@@ -110,7 +110,7 @@ func (setup *ManagementTestSetup) Refresh() {
 
 func TestGetRelationships(t *testing.T) {
 	tdName := td1
-	statusAccepted := api.Accepted
+	statusAccepted := api.Approved
 	statusPending := api.Pending
 	statusDenied := api.Denied
 
@@ -118,7 +118,7 @@ func TestGetRelationships(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName}, 3, rel1, rel2, rel4)
 	})
 
-	t.Run("Successfully filter by status accepted", func(t *testing.T) {
+	t.Run("Successfully filter by status approved", func(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusAccepted}, 3, rel1, rel2, rel3)
 	})
 
@@ -130,7 +130,7 @@ func TestGetRelationships(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusDenied}, 3, rel2, rel3, rel4)
 	})
 
-	t.Run("Successfully filter by status accepted and trust domain", func(t *testing.T) {
+	t.Run("Successfully filter by status approved and trust domain", func(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, rel1)
 	})
 
@@ -152,8 +152,8 @@ func TestGetRelationships(t *testing.T) {
 		assert.Empty(t, setup.Recorder.Body)
 
 		expectedMsg := fmt.Sprintf(
-			"status filter %q is not supported, accepted values [%v, %v, %v]",
-			randomFilter, api.Accepted, api.Denied, api.Pending,
+			"status filter %q is not supported, approved values [%v, %v, %v]",
+			randomFilter, api.Approved, api.Denied, api.Pending,
 		)
 
 		assert.ErrorContains(t, err, expectedMsg)
@@ -239,11 +239,11 @@ func TestUDSPutRelationships(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, setup.Recorder.Body.Bytes())
 
-		echoHTTPErr := err.(*echo.HTTPError)
-		assert.Equal(t, http.StatusBadRequest, echoHTTPErr.Code)
+		echoHttpErr := err.(*echo.HTTPError)
+		assert.Equal(t, http.StatusNotFound, echoHttpErr.Code)
 
-		expectedErrorMsg := fmt.Errorf("trust domain %q does not exists", td2)
-		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
+		expectedErrorMsg := fmt.Sprintf("trust domain does not exist: %q", td2)
+		assert.Equal(t, expectedErrorMsg, echoHttpErr.Message)
 	})
 
 	// Should we test sending wrong body formats ?
@@ -347,8 +347,8 @@ func TestUDSPutTrustDomain(t *testing.T) {
 		echoHttpErr := err.(*echo.HTTPError)
 
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
-		expectedErrorMsg := fmt.Errorf("trust domain %q already exists", td1)
-		assert.Equal(t, expectedErrorMsg.Error(), echoHttpErr.Message)
+		expectedErrorMsg := fmt.Sprintf("trust domain already exists: %q", td1)
+		assert.Equal(t, expectedErrorMsg, echoHttpErr.Message)
 	})
 }
 
@@ -376,7 +376,7 @@ func TestUDSGetTrustDomainByName(t *testing.T) {
 		assert.Equal(t, tdUUID1.UUID, apiTrustDomain.Id)
 	})
 
-	t.Run("Raise a not found when trying to retrieve a trust domain that does not exists", func(t *testing.T) {
+	t.Run("Raise a not found when trying to retrieve a trust domain that does not exist", func(t *testing.T) {
 		completePath := fmt.Sprintf(trustDomainPath, tdUUID1.UUID)
 
 		// Setup
@@ -387,7 +387,7 @@ func TestUDSGetTrustDomainByName(t *testing.T) {
 
 		echoHttpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHttpErr.Code)
-		assert.Equal(t, "trust domain does not exists", echoHttpErr.Message)
+		assert.Equal(t, fmt.Sprintf("trust domain does not exist: %q", td1), echoHttpErr.Message)
 	})
 }
 
@@ -443,8 +443,8 @@ func TestUDSPutTrustDomainByName(t *testing.T) {
 
 		echoHTTPErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusNotFound, echoHTTPErr.Code)
-		expectedErrorMsg := fmt.Errorf("trust domain %q does not exists", td1)
-		assert.Equal(t, expectedErrorMsg.Error(), echoHTTPErr.Message)
+		expectedErrorMsg := fmt.Sprintf("trust domain does not exist: %q", td1)
+		assert.Equal(t, expectedErrorMsg, echoHTTPErr.Message)
 	})
 }
 
@@ -461,7 +461,10 @@ func TestUDSGetJoinToken(t *testing.T) {
 		setup := NewManagementTestSetup(t, http.MethodGet, completePath, nil)
 		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
 
-		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1)
+		params := admin.GetJoinTokenParams{
+			Ttl: 600,
+		}
+		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1, params)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
@@ -478,14 +481,17 @@ func TestUDSGetJoinToken(t *testing.T) {
 		// Setup
 		setup := NewManagementTestSetup(t, http.MethodGet, completePath, nil)
 
-		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1)
+		params := admin.GetJoinTokenParams{
+			Ttl: 600,
+		}
+		err := setup.Handler.GetJoinToken(setup.EchoCtx, td1, params)
 		assert.Error(t, err)
 
 		echoHttpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
 
-		expectedMsg := fmt.Errorf("trust domain %q does not exists", td1)
-		assert.Equal(t, expectedMsg.Error(), echoHttpErr.Message)
+		expectedMsg := fmt.Sprintf("trust domain does not exist: %q", td1)
+		assert.Equal(t, expectedMsg, echoHttpErr.Message)
 	})
 }
 

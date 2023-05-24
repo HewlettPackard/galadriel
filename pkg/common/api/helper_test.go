@@ -34,18 +34,14 @@ func TestTrustDomainToEntity(t *testing.T) {
 
 	t.Run("Full fill correctly the entity model", func(t *testing.T) {
 		description := "A description"
-		harvesterSpiffeID := "spiffe://trust.domain/workload-teste"
-		onboardingBundle := "think that I am a bundle"
 		trustDomainName := "trust.com"
 
 		td := TrustDomain{
-			Id:                uuid.New(),
-			CreatedAt:         time.Now(),
-			UpdatedAt:         time.Now(),
-			Description:       &description,
-			Name:              trustDomainName,
-			OnboardingBundle:  &onboardingBundle,
-			HarvesterSpiffeId: &harvesterSpiffeID,
+			Id:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Description: &description,
+			Name:        trustDomainName,
 		}
 
 		etd, err := td.ToEntity()
@@ -57,28 +53,20 @@ func TestTrustDomainToEntity(t *testing.T) {
 		assert.Equal(t, td.CreatedAt, etd.CreatedAt)
 		assert.Equal(t, td.UpdatedAt, etd.UpdatedAt)
 		assert.Equal(t, *td.Description, etd.Description)
-		assert.Equal(t, []byte(*td.OnboardingBundle), etd.OnboardingBundle)
-		assert.Equal(t, *td.HarvesterSpiffeId, etd.HarvesterSpiffeID.String())
 	})
 }
 
 func TestTrustDomainFromEntity(t *testing.T) {
 	uuid := uuid.NullUUID{UUID: uuid.New(), Valid: true}
 	description := "a really cool description"
-	onboardingBundle := []byte("think that I am a bundle")
 	trustDomain := spiffeid.RequireTrustDomainFromString("trust.com")
 
-	harversterSpiffeId, err := spiffeid.FromString("spiffe://trust.domain/workload-teste")
-	assert.NoError(t, err)
-
 	etd := entity.TrustDomain{
-		ID:                uuid,
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
-		Name:              trustDomain,
-		Description:       description,
-		OnboardingBundle:  onboardingBundle,
-		HarvesterSpiffeID: harversterSpiffeId,
+		ID:          uuid,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Name:        trustDomain,
+		Description: description,
 	}
 
 	td := TrustDomainFromEntity(&etd)
@@ -89,15 +77,13 @@ func TestTrustDomainFromEntity(t *testing.T) {
 	assert.Equal(t, etd.CreatedAt, td.CreatedAt)
 	assert.Equal(t, etd.UpdatedAt, td.UpdatedAt)
 	assert.Equal(t, etd.Description, *td.Description)
-	assert.Equal(t, etd.OnboardingBundle, []byte(*td.OnboardingBundle))
-	assert.Equal(t, etd.HarvesterSpiffeID.String(), *td.HarvesterSpiffeId)
 }
 
 func TestRelationshipToEntity(t *testing.T) {
 	// Arrange
 	id := uuid.New()
-	trustDomainAName := "example.org"
-	trustDomainBName := "example.com"
+	trustDomainAName := "td1"
+	trustDomainBName := "td2"
 	trustDomainAId := uuid.New()
 	trustDomainBId := uuid.New()
 
@@ -107,7 +93,7 @@ func TestRelationshipToEntity(t *testing.T) {
 		TrustDomainBName:    &trustDomainBName,
 		TrustDomainAId:      trustDomainAId,
 		TrustDomainBId:      trustDomainBId,
-		TrustDomainAConsent: Accepted,
+		TrustDomainAConsent: Approved,
 		TrustDomainBConsent: Denied,
 	}
 
@@ -169,15 +155,15 @@ func TestMapRelationships(t *testing.T) {
 			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: "accepted",
-			TrustDomainBConsent: "accepted",
+			TrustDomainAConsent: "approved",
+			TrustDomainBConsent: "approved",
 		},
 		{
 			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
 			TrustDomainAConsent: "denied",
-			TrustDomainBConsent: "accepted",
+			TrustDomainBConsent: "approved",
 		},
 	}
 

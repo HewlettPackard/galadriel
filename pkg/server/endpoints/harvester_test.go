@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -126,10 +127,10 @@ func SetupJoinToken(t *testing.T, ds db.Datastore, td uuid.UUID) *entity.JoinTok
 }
 
 func TestTCPGetRelationships(t *testing.T) {
-	t.Run("Successfully get accepted relationships", func(t *testing.T) {
+	t.Run("Successfully get approved relationships", func(t *testing.T) {
 		testGetRelationships(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, trustDomain)
-		}, api.Accepted, tdA, 2)
+		}, api.Approved, tdA, 2)
 	})
 
 	t.Run("Successfully get denied relationships", func(t *testing.T) {
@@ -158,11 +159,10 @@ func TestTCPGetRelationships(t *testing.T) {
 		tdName := tdA.Name.String()
 		status := api.ConsentStatus("invalid")
 		params := harvester.GetRelationshipsParams{
-			TrustDomainName: tdName,
-			ConsentStatus:   &status,
+			ConsentStatus: &status,
 		}
 
-		err := setup.Handler.GetRelationships(echoCtx, params)
+		err := setup.Handler.GetRelationships(echoCtx, tdName, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
 		assert.Contains(t, err.(*echo.HTTPError).Message, "invalid consent status: \"invalid\"")
@@ -173,11 +173,9 @@ func TestTCPGetRelationships(t *testing.T) {
 		echoCtx := setup.EchoCtx
 
 		tdName := tdA.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: tdName,
-		}
+		params := harvester.GetRelationshipsParams{}
 
-		err := setup.Handler.GetRelationships(echoCtx, params)
+		err := setup.Handler.GetRelationships(echoCtx, tdName, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
 		assert.Contains(t, err.(*echo.HTTPError).Message, "no authenticated trust domain")
@@ -189,11 +187,9 @@ func TestTCPGetRelationships(t *testing.T) {
 		setup.EchoCtx.Set(authTrustDomainKey, tdA)
 
 		tdName := tdB.Name.String()
-		params := harvester.GetRelationshipsParams{
-			TrustDomainName: tdName,
-		}
+		params := harvester.GetRelationshipsParams{}
 
-		err := setup.Handler.GetRelationships(echoCtx, params)
+		err := setup.Handler.GetRelationships(echoCtx, tdName, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
 		assert.Contains(t, err.(*echo.HTTPError).Message, "request trust domain \"td-b.org\" does not match authenticated trust domain \"td-a.org\"")
@@ -211,11 +207,10 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 
 	tdName := trustDomain.Name.String()
 	params := harvester.GetRelationshipsParams{
-		TrustDomainName: tdName,
-		ConsentStatus:   &status,
+		ConsentStatus: &status,
 	}
 
-	err := setup.Handler.GetRelationships(echoCtx, params)
+	err := setup.Handler.GetRelationships(echoCtx, tdName, params)
 	assert.NoError(t, err)
 
 	recorder := setup.Recorder
@@ -242,22 +237,22 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 }
 
 func TestTCPPatchRelationshipRelationshipID(t *testing.T) {
-	t.Run("Successfully patch pending relationship to accepted", func(t *testing.T) {
+	t.Run("Successfully patch pending relationship to approved", func(t *testing.T) {
 		testPatchRelationship(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, tdA)
-		}, tdA, pendingRelAC, api.Accepted)
+		}, tdA, pendingRelAC, api.Approved)
 	})
 	t.Run("Successfully patch pending relationship to denied", func(t *testing.T) {
 		testPatchRelationship(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, tdA)
 		}, tdA, pendingRelAC, api.Denied)
 	})
-	t.Run("Successfully patch pending relationship to accepted with other trust domain", func(t *testing.T) {
+	t.Run("Successfully patch pending relationship to approved with other trust domain", func(t *testing.T) {
 		testPatchRelationship(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, tdC)
-		}, tdC, pendingRelAC, api.Accepted)
+		}, tdC, pendingRelAC, api.Approved)
 	})
-	t.Run("Successfully patch accepted relationship to denied", func(t *testing.T) {
+	t.Run("Successfully patch approved relationship to denied", func(t *testing.T) {
 		testPatchRelationship(t, func(setup *HarvesterTestSetup, trustDomain *entity.TrustDomain) {
 			setup.EchoCtx.Set(authTrustDomainKey, tdB)
 		}, tdB, acceptedAcceptedRelBC, api.Denied)
@@ -277,12 +272,11 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 
 	f(setup, trustDomain)
 
-	err := setup.Handler.PatchRelationship(echoCtx, relationship.ID.UUID)
+	err := setup.Handler.PatchRelationship(echoCtx, trustDomain.Name.String(), relationship.ID.UUID)
 	assert.NoError(t, err)
 
 	recorder := setup.Recorder
 	assert.Equal(t, http.StatusOK, recorder.Code)
-	assert.Empty(t, recorder.Body)
 	assert.Equal(t, status, status)
 
 	// lookup relationship to assert that it was updated
@@ -298,6 +292,18 @@ func testPatchRelationship(t *testing.T, f func(setup *HarvesterTestSetup, trust
 		// the other trust domain's consent status should not have changed
 		assert.Equal(t, relationship.TrustDomainAConsent, rel.TrustDomainAConsent)
 	}
+
+	var resp api.Relationship
+	err = json.Unmarshal(recorder.Body.Bytes(), &resp)
+	expected := api.MapRelationships(relationship)[0]
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp)
+	assert.Equal(t, expected.Id, resp.Id)
+	assert.Equal(t, expected.TrustDomainAId, resp.TrustDomainAId)
+	assert.Equal(t, expected.TrustDomainBId, resp.TrustDomainBId)
+	assert.Equal(t, expected.TrustDomainAName, resp.TrustDomainAName)
+	assert.Equal(t, expected.TrustDomainBName, resp.TrustDomainBName)
+	assert.Equal(t, expected.TrustDomainAConsent, resp.TrustDomainAConsent)
 }
 
 func TestTCPOnboard(t *testing.T) {
@@ -314,7 +320,7 @@ func TestTCPOnboard(t *testing.T) {
 		}
 
 		// Act
-		err := harvesterTestSetup.Handler.Onboard(echoCtx, params)
+		err := harvesterTestSetup.Handler.Onboard(echoCtx, td.Name.String(), params)
 		assert.NoError(t, err)
 
 		// Assert
@@ -333,23 +339,23 @@ func TestTCPOnboard(t *testing.T) {
 		jwtToken = strings.ReplaceAll(jwtToken, "\n", "")
 		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
 	})
-	t.Run("Onboard without join token fails", func(t *testing.T) {
+	t.Run("onboard without join token fails", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
-		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
+		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
 
 		params := harvester.OnboardParams{
 			JoinToken: "", // Empty join token
 		}
-		err := harvesterTestSetup.Handler.Onboard(echoCtx, params)
+		err := harvesterTestSetup.Handler.Onboard(echoCtx, td.Name.String(), params)
 		require.Error(t, err)
 
 		httpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
 		assert.Contains(t, httpErr.Message, "join token is required")
 	})
-	t.Run("Onboard with join token that does not exist fails", func(t *testing.T) {
+	t.Run("onboard with join token that does not exist fails", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
@@ -359,14 +365,14 @@ func TestTCPOnboard(t *testing.T) {
 		params := harvester.OnboardParams{
 			JoinToken: "never-created-token",
 		}
-		err := harvesterTestSetup.Handler.Onboard(echoCtx, params)
+		err := harvesterTestSetup.Handler.Onboard(echoCtx, td.Name.String(), params)
 		require.Error(t, err)
 
 		httpErr := err.(*echo.HTTPError)
 		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
 		assert.Contains(t, httpErr.Message, "token not found")
 	})
-	t.Run("Onboard with join token that was used", func(t *testing.T) {
+	t.Run("onboard with join token that was used", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, onboardPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
@@ -376,11 +382,11 @@ func TestTCPOnboard(t *testing.T) {
 		params := harvester.OnboardParams{
 			JoinToken: token.Token,
 		}
-		err := harvesterTestSetup.Handler.Onboard(echoCtx, params)
+		err := harvesterTestSetup.Handler.Onboard(echoCtx, td.Name.String(), params)
 		require.NoError(t, err)
 
 		// repeat the request with the same token
-		err = harvesterTestSetup.Handler.Onboard(echoCtx, params)
+		err = harvesterTestSetup.Handler.Onboard(echoCtx, td.Name.String(), params)
 		require.Error(t, err)
 
 		httpErr := err.(*echo.HTTPError)
@@ -394,7 +400,7 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
-		SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
+		td := SetupTrustDomain(t, harvesterTestSetup.Handler.Datastore)
 
 		var claims gojwt.RegisteredClaims
 		_, err := gojwt.ParseWithClaims(harvesterTestSetup.JWTIssuer.Token, &claims, func(*gojwt.Token) (interface{}, error) {
@@ -403,7 +409,7 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 		assert.NoError(t, err)
 		echoCtx.Set(authClaimsKey, &claims)
 
-		err = harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
+		err = harvesterTestSetup.Handler.GetNewJWTToken(echoCtx, td.Name.String())
 		assert.NoError(t, err)
 
 		recorder := harvesterTestSetup.Recorder
@@ -412,13 +418,14 @@ func TestTCPGetNewJWTToken(t *testing.T) {
 
 		jwtToken := strings.ReplaceAll(recorder.Body.String(), "\"", "")
 		jwtToken = strings.ReplaceAll(jwtToken, "\n", "")
-		assert.Equal(t, harvesterTestSetup.JWTIssuer.Token, jwtToken)
+		expected := fmt.Sprintf("{token:%s}", harvesterTestSetup.JWTIssuer.Token)
+		assert.Equal(t, expected, jwtToken)
 	})
 	t.Run("Fails if no JWT token was sent", func(t *testing.T) {
 		harvesterTestSetup := NewHarvesterTestSetup(t, http.MethodGet, jwtPath, nil)
 		echoCtx := harvesterTestSetup.EchoCtx
 
-		err := harvesterTestSetup.Handler.GetNewJWTToken(echoCtx)
+		err := harvesterTestSetup.Handler.GetNewJWTToken(echoCtx, "td1")
 		require.Error(t, err)
 
 		assert.Equal(t, http.StatusUnauthorized, err.(*echo.HTTPError).Code)
@@ -453,7 +460,7 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name:          "Successfully sync one new bundle for one accepted relationship",
+			name:          "Successfully sync one new bundle for one approved relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
@@ -476,7 +483,7 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name:          "Successfully sync two new bundles for two accepted relationships",
+			name:          "Successfully sync two new bundles for two approved relationships",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, acceptedDeniedRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
@@ -502,7 +509,7 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name:          "Successfully sync one new bundle for one accepted relationship, not including the pending relationship",
+			name:          "Successfully sync one new bundle for one approved relationship, not including the pending relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedPendingRelAB, pendingRelAC, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
@@ -522,7 +529,7 @@ func TestTCPBundleSync(t *testing.T) {
 			},
 		},
 		{
-			name:          "Successfully sync one new bundle for one accepted relationship, not including the denied relationship",
+			name:          "Successfully sync one new bundle for one approved relationship, not including the denied relationship",
 			trustDomain:   tdA.Name.String(),
 			relationships: []*entity.Relationship{acceptedDeniedRelAC, deniedAcceptedRelAB, acceptedAcceptedRelBC},
 			bundleState: harvester.BundleSyncBody{
@@ -623,10 +630,10 @@ func TestBundlePut(t *testing.T) {
 }
 
 func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.TrustDomain, expectedStatusCode int, expectedResponseBody string) {
-	sig := "test-signature"
-	cert := "test-certificate"
 	bundle := "a new bundle"
 	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
+	sig := encoding.EncodeToBase64([]byte("test-signature"))
+	cert := encoding.EncodeToBase64([]byte("test-signing-certificate"))
 	bundlePut := harvester.BundlePut{
 		Signature:          &sig,
 		SigningCertificate: &cert,
@@ -649,9 +656,10 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 
 	storedBundle, err := setup.Handler.Datastore.FindBundleByTrustDomainID(context.Background(), td.ID.UUID)
 	require.NoError(t, err)
-	assert.Equal(t, *bundlePut.Signature, string(storedBundle.Signature))
-	assert.Equal(t, *bundlePut.SigningCertificate, string(storedBundle.SigningCertificate))
 	assert.Equal(t, bundlePut.TrustBundle, string(storedBundle.Data))
+	assert.Equal(t, digest, encoding.EncodeToBase64(storedBundle.Digest))
+	assert.Equal(t, sig, encoding.EncodeToBase64(storedBundle.Signature))
+	assert.Equal(t, cert, encoding.EncodeToBase64(storedBundle.SigningCertificate))
 	assert.Equal(t, td.ID.UUID, storedBundle.TrustDomainID)
 }
 

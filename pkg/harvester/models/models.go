@@ -1,7 +1,9 @@
-package common
+package models
 
 import (
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
@@ -29,6 +31,31 @@ type SyncBundleResponse struct {
 
 // PostBundleRequest represents the request to submit the local SPIRE Server's bundle.
 type PostBundleRequest struct {
-	// TrustBundle is the latest watched SPIRE Server trust bundle.
 	*entity.Bundle `json:"state"`
+}
+
+// ConvertSPIFFEBundleToEntityBundle converts a SPIFFE bundle to a Galadriel bundle.
+func ConvertSPIFFEBundleToEntityBundle(spiffeBundle *spiffebundle.Bundle) (*entity.Bundle, error) {
+	bytes, err := spiffeBundle.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	bundle := &entity.Bundle{
+		TrustDomainName: spiffeBundle.TrustDomain(),
+		Data:            bytes,
+		Digest:          cryptoutil.CalculateDigest(bytes),
+	}
+
+	return bundle, nil
+}
+
+// ConvertEntityBundleToSPIFFEBundle converts a Galadriel bundle to a SPIFFE bundle.
+func ConvertEntityBundleToSPIFFEBundle(galadrielBundle *entity.Bundle) (*spiffebundle.Bundle, error) {
+	bundle, err := spiffebundle.Parse(galadrielBundle.TrustDomainName, galadrielBundle.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return bundle, nil
 }

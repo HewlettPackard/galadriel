@@ -10,19 +10,17 @@ import (
 type ConsentStatus string
 
 const (
-	ConsentStatusAccepted ConsentStatus = "accepted"
+	ConsentStatusAccepted ConsentStatus = "approved"
 	ConsentStatusDenied   ConsentStatus = "denied"
 	ConsentStatusPending  ConsentStatus = "pending"
 )
 
 type TrustDomain struct {
-	ID                uuid.NullUUID
-	Name              spiffeid.TrustDomain
-	Description       string
-	HarvesterSpiffeID spiffeid.ID
-	OnboardingBundle  []byte
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID          uuid.NullUUID
+	Name        spiffeid.TrustDomain
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Relationship struct {

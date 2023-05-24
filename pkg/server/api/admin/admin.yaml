@@ -176,6 +176,16 @@ paths:
           required: true
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        - name: ttl
+          in: query
+          description: Time-to-Live (TTL) in seconds for the join token
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 86400
+            default: 3600
       responses:
         '200':
           description: Successful operation
@@ -185,6 +195,7 @@ paths:
                 $ref: '#/components/schemas/JoinTokenResult'
         default:
           $ref: '#/components/responses/Default'
+
 
 components:
   responses:

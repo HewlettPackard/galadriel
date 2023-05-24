@@ -3,6 +3,8 @@ package harvester
 import (
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/pkg/common/util/encoding"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,11 +20,14 @@ func TestBundlePutToEntity(t *testing.T) {
 	})
 
 	t.Run("Full fill correctly the bundle entity model", func(t *testing.T) {
-		sig := "test-signature"
-		cert := "test-certificate"
+		bundleData := "test-bundle"
+		digest := cryptoutil.CalculateDigest([]byte(bundleData))
+		sig := encoding.EncodeToBase64([]byte("test-signature"))
+		cert := encoding.EncodeToBase64([]byte("test-certificate"))
 		bundlePut := BundlePut{
+			TrustBundle:        bundleData,
+			Digest:             encoding.EncodeToBase64(digest),
 			Signature:          &sig,
-			TrustBundle:        "a really big bundle",
 			TrustDomain:        "test.com",
 			SigningCertificate: &cert,
 		}
@@ -33,7 +38,8 @@ func TestBundlePutToEntity(t *testing.T) {
 
 		assert.Equal(t, bundlePut.TrustDomain, bundle.TrustDomainName.String())
 		assert.Equal(t, []byte(bundlePut.TrustBundle), bundle.Data)
-		assert.Equal(t, []byte(*bundlePut.Signature), bundle.Signature)
-		assert.Equal(t, []byte(*bundlePut.SigningCertificate), bundle.SigningCertificate)
+		assert.Equal(t, digest, bundle.Digest)
+		assert.Equal(t, []byte("test-signature"), bundle.Signature)
+		assert.Equal(t, []byte("test-certificate"), bundle.SigningCertificate)
 	})
 }

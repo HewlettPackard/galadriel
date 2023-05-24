@@ -16,7 +16,7 @@ import (
 type ConsentStatus string
 
 const (
-	ConsentStatusAccepted ConsentStatus = "accepted"
+	ConsentStatusApproved ConsentStatus = "approved"
 	ConsentStatusDenied   ConsentStatus = "denied"
 	ConsentStatusPending  ConsentStatus = "pending"
 )
@@ -88,11 +88,9 @@ type Relationship struct {
 }
 
 type TrustDomain struct {
-	ID                pgtype.UUID
-	Name              string
-	Description       sql.NullString
-	HarvesterSpiffeID sql.NullString
-	OnboardingBundle  []byte
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID          pgtype.UUID
+	Name        string
+	Description sql.NullString
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

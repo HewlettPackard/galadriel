@@ -21,7 +21,6 @@ require (
 	github.com/spiffe/go-spiffe/v2 v2.1.4
 	github.com/spiffe/spire-api-sdk v1.6.4
 	github.com/stretchr/testify v1.8.3
-	golang.org/x/crypto v0.9.0
 	google.golang.org/grpc v1.55.0
 )
 
@@ -86,6 +85,7 @@ require (
 	github.com/zclconf/go-cty v1.12.1 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect

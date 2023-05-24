@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
@@ -14,6 +15,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 // TODO: consider making this a configuration option
@@ -24,21 +26,29 @@ type Server struct {
 	config *Config
 }
 
+// Config conveys configurations for the Galadriel Server
+type Config struct {
+	TCPAddress      *net.TCPAddr
+	LocalAddress    net.Addr
+	Logger          logrus.FieldLogger
+	ProvidersConfig *catalog.ProvidersConfig
+}
+
 // New creates a new instance of the Galadriel Server.
 func New(config *Config) *Server {
 	return &Server{config: config}
 }
 
-// Run starts running the Galadriel Server, starting its endpoints.
+// Run starts the Galadriel Server, initializing the components and listening for incoming requests.
+// It performs the following steps:
+// 1. Loads catalogs from the providers configuration.
+// 2. Creates a JWT issuer based on the key manager from the catalogs.
+// 3. Sets up a JWT validator.
+// 4. Creates the endpoints server, which handles incoming requests.
+// 5. Starts the endpoints server and listens for requests until the context is canceled.
 func (s *Server) Run(ctx context.Context) error {
-	// TODO: this method doesn't add any logic, move run() logic here
-	if err := s.run(ctx); err != nil {
-		return err
-	}
-	return nil
-}
+	s.config.Logger.Info("Starting Galadriel Server")
 
-func (s *Server) run(ctx context.Context) error {
 	cat := catalog.New()
 	err := cat.LoadFromProvidersConfig(s.config.ProvidersConfig)
 	if err != nil {

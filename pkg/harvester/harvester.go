@@ -4,84 +4,117 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/client"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/controller"
+	"github.com/HewlettPackard/galadriel/pkg/common/util/fileutil"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/bundlemanager"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/endpoints"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/galadrielclient"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/spireclient"
+	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-const jwtRotationInterval = 12 * time.Hour
-
-// Harvester represents a Galadriel Harvester
+// Harvester represents the Harvester agent.
+// It starts the bundle manager and the endpoints.
 type Harvester struct {
-	controller controller.HarvesterController //nolint:unused
-	client     client.GaladrielServerClient
-	config     *Config
+	c *Config
 }
 
-// New creates a new instances of Harvester with the given configuration.
-func New(config *Config) *Harvester {
+// Config conveys the configuration of the Harvester.
+type Config struct {
+	TrustDomain                  spiffeid.TrustDomain
+	LocalAddress                 net.Addr
+	ServerAddress                *net.TCPAddr
+	LocalSpireAddress            net.Addr
+	JoinToken                    string
+	BundleUpdatesInterval        time.Duration
+	FederatedBundlesPollInterval time.Duration
+	SpireBundlePollInterval      time.Duration
+	ServerTrustBundlePath        string
+	DataDir                      string
+	Logger                       logrus.FieldLogger
+	ProvidersConfig              *catalog.ProvidersConfig
+}
+
+func New(cfg *Config) *Harvester {
 	return &Harvester{
-		config: config,
+		c: cfg,
 	}
 }
 
-// Run starts running the Harvester.
+// Run starts the Harvester and orchestrates the main functionality.
+// It performs the following steps:
+// - Loads catalogs from the providers configuration.
+// - Creates the data directory if it does not exist.
+// - Creates a client for Galadriel Server.
+// - Onboards the Harvester to Galadriel Server if it is not already onboarded.
+// - Creates a SPIRE client using the provided SPIRE address.
+// - Creates, configures and run the Harvester endpoints.
+// - Creates and runs the BundleManager responsible for bundles synchronization.
 func (h *Harvester) Run(ctx context.Context) error {
-	h.config.Logger.Info("Starting Harvester")
+	h.c.Logger.Info("Starting Harvester")
 
-	if h.config.JoinToken == "" {
-		return errors.New("token is required to connect the Harvester to the Galadriel Server")
+	cat := catalog.New()
+	err := cat.LoadFromProvidersConfig(h.c.ProvidersConfig)
+	if err != nil {
+		return fmt.Errorf("failed to load catalogs from providers config: %w", err)
 	}
 
-	galadrielClient, err := client.NewGaladrielServerClient(h.config.ServerAddress, h.config.ServerTrustBundlePath)
+	err = fileutil.CreateDirIfNotExist(h.c.DataDir)
+	if err != nil {
+		return fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	galadrielClient, err := galadrielclient.NewClient(ctx, &galadrielclient.Config{
+		TrustDomain:     h.c.TrustDomain,
+		ServerAddress:   h.c.ServerAddress,
+		TrustBundlePath: h.c.ServerTrustBundlePath,
+		DataDir:         h.c.DataDir,
+		JoinToken:       h.c.JoinToken,
+		Logger:          h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Harvester),
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create Galadriel Server client: %w", err)
 	}
-	h.client = galadrielClient
 
-	err = galadrielClient.Onboard(ctx, h.config.JoinToken)
+	spireClient, err := spireclient.NewSpireClient(ctx, h.c.LocalSpireAddress)
 	if err != nil {
-		return fmt.Errorf("failed to connect to Galadriel Server: %w", err)
+		return fmt.Errorf("failed to create SPIRE client: %w", err)
 	}
 
-	config := &controller.Config{
-		GaladrielServerClient: galadrielClient,
-		SpireSocketPath:       h.config.LocalSpireAddress,
-		BundleUpdatesInterval: h.config.BundleUpdatesInterval,
-		Logger:                h.config.Logger.WithField(telemetry.SubsystemName, telemetry.HarvesterController),
-	}
-	c, err := controller.NewHarvesterController(ctx, config)
+	ep, err := endpoints.New(&endpoints.Config{
+		LocalAddress: h.c.LocalAddress,
+		Client:       galadrielClient,
+		Logger:       h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create Harvester endpoints: %w", err)
 	}
 
-	err = util.RunTasks(ctx, c.Run, h.startJWTTokenRotation)
+	bundleManager := bundlemanager.NewBundleManager(&bundlemanager.Config{
+		SpireClient:                  spireClient,
+		GaladrielClient:              galadrielClient,
+		FederatedBundlesPollInterval: h.c.FederatedBundlesPollInterval,
+		SpireBundlePollInterval:      h.c.SpireBundlePollInterval,
+		BundleSigner:                 cat.GetBundleSigner(),
+		BundleVerifiers:              cat.GetBundleVerifiers(),
+		Logger:                       h.c.Logger,
+	})
+
+	tasks := []func(ctx context.Context) error{
+		ep.ListenAndServe,
+		bundleManager.Run,
+	}
+
+	err = util.RunTasks(ctx, tasks...)
 	if errors.Is(err, context.Canceled) {
-		err = nil
+		return nil
 	}
+
 	return err
-}
-
-func (h *Harvester) startJWTTokenRotation(ctx context.Context) error {
-	h.config.Logger.Info("Starting JWT token rotator")
-
-	ticker := time.NewTicker(jwtRotationInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			h.config.Logger.Info("Requesting a new JWT token from Galadriel Server")
-			err := h.client.GetNewJWTToken(ctx)
-			if err != nil {
-				h.config.Logger.Errorf("Error getting new JWT token: %v", err)
-				return err
-			}
-		case <-ctx.Done():
-			h.config.Logger.Info("Stopped JWT token rotator")
-			return nil
-		}
-	}
 }

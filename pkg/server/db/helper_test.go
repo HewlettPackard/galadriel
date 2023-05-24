@@ -25,7 +25,7 @@ func TestPopulateTrustDomainNames(t *testing.T) {
 	db.WithTrustDomains(tdA, tdB, tdC)
 	db.WithRelationships(rels...)
 
-	updatedRelationships, err := PopulateTrustDomainNames(ctx, db, rels)
+	updatedRelationships, err := PopulateTrustDomainNames(ctx, db, rels...)
 	assert.NoError(t, err)
 
 	for _, r := range updatedRelationships {

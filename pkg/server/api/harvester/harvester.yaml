@@ -81,7 +81,7 @@ paths:
       security:
         - harvester_auth: [ ]
 
-  /trust-domain/onboard:
+  /trust-domain/{trustDomainName}/onboard:
     get:
       tags:
         - Onboard
@@ -89,6 +89,12 @@ paths:
       description: It uses a join token to authorize the harvester in the Galadriel Server and get its JWT Access Token
       operationId: Onboard
       parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         - name: joinToken
           in: query
           description: Join token to be used for onboarding
@@ -104,12 +110,19 @@ paths:
                 $ref: '#/components/schemas/OnboardResult'
         default:
           $ref: '#/components/responses/Default'
-  /trust-domain/jwt:
+  /trust-domain/{trustDomainName}/jwt:
     get:
       operationId: GetNewJWTToken
       tags:
         - JWT Token
       summary: Get a renewed JWT token with the same claims as the original one
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
       responses:
         '200':
           description: Successful operation
@@ -122,13 +135,19 @@ paths:
       security:
         - harvester_auth: [ ]
 
-  /relationships/{relationshipID}:
+  /trust-domain/{trustDomainName}/relationships/{relationshipID}:
     patch:
       tags:
         - Relationships
       summary: Accept/Denies relationship requests
       operationId: PatchRelationship
       parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         - name: relationshipID
           in: path
           description: ID of the relationship
@@ -154,22 +173,23 @@ paths:
       security:
         - harvester_auth: [ ]
 
-  /relationships:
+  /trust-domain/{trustDomainName}/relationships:
     get:
       tags:
         - Relationships
       summary: List the relationships.
+      operationId: GetRelationships
       parameters:
-        - name: consentStatus
-          in: query
-          schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
         - name: trustDomainName
-          in: query
+          in: path
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: relationship status from a Trust Domain perspective
           required: true
+        - name: consentStatus
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
       responses:
         '200':
           description: Successful operation

@@ -4,8 +4,6 @@ CREATE TABLE IF NOT EXISTS trust_domains
     id                  text PRIMARY KEY,
     name                TEXT      NOT NULL UNIQUE,
     description         TEXT,
-    harvester_spiffe_id TEXT,
-    onboarding_bundle   BLOB,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
