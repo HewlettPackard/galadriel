@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	defaultSocketPath = "/tmp/galadriel-server/api.sock"
-	defaultPort       = 8085
-	defaultAddress    = "0.0.0.0"
-	defaultLogLevel   = "INFO"
+	// TODO: These defaults should be moved close to where they are used (Server, Endpoints).
+	defaultPort     = 8085
+	defaultAddress  = "0.0.0.0"
+	defaultLogLevel = "INFO"
 )
 
 // Config holds the configuration for the Galadriel server.
@@ -119,10 +119,6 @@ func (c *Config) setDefaults() {
 
 	if c.Server.ListenPort == 0 {
 		c.Server.ListenPort = defaultPort
-	}
-
-	if c.Server.SocketPath == "" {
-		c.Server.SocketPath = defaultSocketPath
 	}
 
 	if c.Server.LogLevel == "" {

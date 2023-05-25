@@ -37,6 +37,7 @@ func TestLoadConfig(t *testing.T) {
 
 	cmd := &cobra.Command{}
 	cmd.Flags().String("config", tempFile.Name(), "")
+	cmd.Flags().String("socketPath", "/test.api", "")
 
 	config, err := LoadConfig(cmd)
 

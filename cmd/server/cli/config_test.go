@@ -66,7 +66,6 @@ func TestNew(t *testing.T) {
 				Server: &serverConfig{
 					ListenAddress: defaultAddress,
 					ListenPort:    defaultPort,
-					SocketPath:    defaultSocketPath,
 					LogLevel:      defaultLogLevel,
 				},
 			},

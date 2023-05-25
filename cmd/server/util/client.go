@@ -23,22 +23,28 @@ const (
 	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
 )
 
+// GaladrielAPIClient represents an API client for the Galadriel Server.
+type GaladrielAPIClient interface {
+	CreateTrustDomain(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
+	GetTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
+	UpdateTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
+	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
+	GetRelationshipByID(context.Context, uuid.UUID) (*entity.Relationship, error)
+	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) (*entity.Relationship, error)
+	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
+}
+
 type ErrorMessage struct {
 	Message string
 }
 
-// ServerLocalClient represents a local client of the Galadriel Server.
-type ServerLocalClient interface {
-	CreateTrustDomain(ctx context.Context, trustDomain api.TrustDomainName) (*entity.TrustDomain, error)
-	GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
-	UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error)
-	CreateRelationship(ctx context.Context, r *entity.Relationship) (*entity.Relationship, error)
-	GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error)
-	GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error)
-	GetJoinToken(ctx context.Context, trustDomain api.TrustDomainName) (*entity.JoinToken, error)
+type serverAPIClient struct {
+	client *admin.Client
 }
 
-func NewServerClient(socketPath string) (ServerLocalClient, error) {
+// NewUDSClient creates a Galadriel API client that connects to the Galadriel Server
+// using a Unix Domain Socket (UDS) specified by the socketPath parameter.
+func NewUDSClient(socketPath string) (GaladrielAPIClient, error) {
 	clientOpt := admin.WithBaseURL(baseURL)
 
 	client, err := admin.NewClient(socketPath, clientOpt)
@@ -54,14 +60,10 @@ func NewServerClient(socketPath string) (ServerLocalClient, error) {
 
 	client.Client = &http.Client{Transport: t}
 
-	return &serverClient{client: client}, nil
+	return &serverAPIClient{client: client}, nil
 }
 
-type serverClient struct {
-	client *admin.Client
-}
-
-func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *serverAPIClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	res, err := c.client.GetTrustDomainByName(ctx, trustDomainName)
 	if err != nil {
 		return nil, fmt.Errorf(errFailedRequest, err)
@@ -81,7 +83,7 @@ func (c *serverClient) GetTrustDomainByName(ctx context.Context, trustDomainName
 	return trustDomain, nil
 }
 
-func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *serverAPIClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	payload := api.TrustDomain{Name: trustDomainName}
 	res, err := c.client.PutTrustDomainByName(ctx, trustDomainName, payload)
 	if err != nil {
@@ -102,7 +104,7 @@ func (c *serverClient) UpdateTrustDomainByName(ctx context.Context, trustDomainN
 	return trustDomain, nil
 }
 
-func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *serverAPIClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	payload := admin.PutTrustDomainJSONRequestBody{Name: trustDomainName}
 
 	res, err := c.client.PutTrustDomain(ctx, payload)
@@ -124,7 +126,7 @@ func (c *serverClient) CreateTrustDomain(ctx context.Context, trustDomainName ap
 	return trustDomain, nil
 }
 
-func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
+func (c *serverAPIClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
 	payload := admin.PutRelationshipJSONRequestBody{TrustDomainAName: rel.TrustDomainAName.String(), TrustDomainBName: rel.TrustDomainBName.String()}
 	res, err := c.client.PutRelationship(ctx, payload)
 	if err != nil {
@@ -144,8 +146,8 @@ func (c *serverClient) CreateRelationship(ctx context.Context, rel *entity.Relat
 
 	return relationship, nil
 }
-func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
-	payload := &admin.GetRelationshipsParams{Status: (*api.ConsentStatus)(&consentStatus), TrustDomainName: &trustDomainName}
+func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{Status: &consentStatus, TrustDomainName: &trustDomainName}
 
 	res, err := c.client.GetRelationships(ctx, payload)
 	if err != nil {
@@ -166,7 +168,7 @@ func (c *serverClient) GetRelationships(ctx context.Context, consentStatus api.C
 	return relationship, nil
 }
 
-func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
+func (c *serverAPIClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
 	res, err := c.client.GetRelationshipByID(ctx, relID)
 	if err != nil {
 		return nil, fmt.Errorf(errFailedRequest, err)
@@ -186,9 +188,9 @@ func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID)
 	return relationship, nil
 }
 
-func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.JoinToken, error) {
-	// TODO: this will be refactored in a follow-up PR
-	res, err := c.client.GetJoinToken(ctx, trustDomainName, nil)
+func (c *serverAPIClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName, ttl int32) (*entity.JoinToken, error) {
+	params := &admin.GetJoinTokenParams{Ttl: ttl}
+	res, err := c.client.GetJoinToken(ctx, trustDomainName, params)
 	if err != nil {
 		return nil, fmt.Errorf(errFailedRequest, err)
 	}

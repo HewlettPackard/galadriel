@@ -47,9 +47,9 @@ You can find the default Galadriel Server configuration file at `conf/server/ser
 # Galadriel Harvester Configuration File
 You can find the default Galadriel Harvester configuration file at `conf/harvester/harvester.conf`
 
-| Configuration | Description | Required | Default
-|--|--|--|--|
+| Configuration | Description | Required | Default                            
+|--|--|--|------------------------------------|
 | `spire_socket_path` | SPIRE Server Socket of the instance to manage. | | /tmp/spire-server/private/api.sock |
-| `server_address` | Upstream Galadriel Server DNS name or IP address with port. | Yes | |
-| `bundle_updates_interval` | Sets how often to check for bundle rotation. | | 30s |
-| `log_level` | Application log level. One of: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `PANIC` | | INFO |
+| `server_address` | Upstream Galadriel Server DNS name or IP address with port. | Yes |                                    |
+| `federated_bundles_poll_interval` | Sets how often to check for bundle rotation. | | 2m                                 |
+| `log_level` | Application log level. One of: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `PANIC` | | INFO                               |

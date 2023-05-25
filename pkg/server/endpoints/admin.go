@@ -19,6 +19,9 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
+// DefaultTokenTTL is the default TTL for tokens in seconds.
+const DefaultTokenTTL = 600
+
 type AdminAPIHandlers struct {
 	Logger    logrus.FieldLogger
 	Datastore db.Datastore

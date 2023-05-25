@@ -28,18 +28,18 @@ type Endpoints struct {
 
 // Config represents the configuration of the Harvester Endpoints.
 type Config struct {
-	LocalAddress net.Addr
-	Client       galadrielclient.Client
-	Logger       logrus.FieldLogger
+	HarvesterListenAddress net.Addr // UDS socket address the Harvester will listen on
+	Client                 galadrielclient.Client
+	Logger                 logrus.FieldLogger
 }
 
 func New(cfg *Config) (*Endpoints, error) {
-	if err := util.PrepareLocalAddr(cfg.LocalAddress); err != nil {
+	if err := util.PrepareLocalAddr(cfg.HarvesterListenAddress); err != nil {
 		return nil, err
 	}
 
 	return &Endpoints{
-		localAddress: cfg.LocalAddress,
+		localAddress: cfg.HarvesterListenAddress,
 		client:       cfg.Client,
 		logger:       cfg.Logger,
 	}, nil

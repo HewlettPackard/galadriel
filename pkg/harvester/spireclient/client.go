@@ -12,7 +12,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const listFederatedBundlesPageSize = 100
+const (
+	listFederatedBundlesPageSize = 100
+	defaultSocketPath            = "/tmp/spire-server/private/api.sock"
+)
 
 // Client is an interface for interacting with a SPIRE Server, providing methods for trust bundle retrieval,
 // setting federation bundles, and deleting federation bundles.
@@ -28,6 +31,12 @@ type spireServerClient struct {
 }
 
 func NewSpireClient(ctx context.Context, addr net.Addr) (Client, error) {
+	if addr == nil {
+		addr = &net.UnixAddr{
+			Name: defaultSocketPath,
+			Net:  "unix",
+		}
+	}
 	clientConn, err := dialSocket(ctx, addr)
 	if err != nil {
 		return nil, err
