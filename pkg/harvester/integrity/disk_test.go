@@ -53,7 +53,7 @@ func TestDiskSignerAndVerifierUsingIntermediateCA(t *testing.T) {
 	require.NoError(t, err)
 
 	// create key pair for intermediate CA
-	intermediateKey, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
+	intermediateKey, err := cryptoutil.GenerateSigner(cryptoutil.DefaultKeyType)
 	require.NoError(t, err)
 	intermediateCaTemplate, err := cryptoutil.CreateCATemplate(clk, intermediateKey.Public(), pkix.Name{CommonName: "test-intermediate-ca"}, 1*time.Hour)
 	require.NoError(t, err)
