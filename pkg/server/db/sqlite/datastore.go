@@ -452,20 +452,12 @@ func (d *Datastore) createTrustDomain(ctx context.Context, req *entity.TrustDoma
 
 func (d *Datastore) updateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
 	params := UpdateTrustDomainParams{
-		ID:               req.ID.UUID.String(),
-		OnboardingBundle: req.OnboardingBundle,
+		ID: req.ID.UUID.String(),
 	}
 
 	if req.Description != "" {
 		params.Description = sql.NullString{
 			String: req.Description,
-			Valid:  true,
-		}
-	}
-
-	if !req.HarvesterSpiffeID.IsZero() {
-		params.HarvesterSpiffeID = sql.NullString{
-			String: req.HarvesterSpiffeID.String(),
 			Valid:  true,
 		}
 	}

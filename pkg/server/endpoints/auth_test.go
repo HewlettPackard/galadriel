@@ -2,15 +2,16 @@ package endpoints
 
 import (
 	"context"
-	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
+	"github.com/HewlettPackard/galadriel/test/fakes/fakedatastore"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
@@ -69,9 +70,12 @@ func TestAuthenticate(t *testing.T) {
 	t.Run("Authorized tokens must be able to pass authn verification", func(t *testing.T) {
 		authnSetup := SetupMiddleware(t)
 
+		td := entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("spiffe://test.com")}
+		authnSetup.FakeDatabase.WithTrustDomains(&td)
+
 		token, err := authnSetup.JWTIssuer.IssueJWT(context.Background(), &jwt.JWTParams{
 			Issuer:   "test",
-			Subject:  spiffeid.RequireTrustDomainFromString("spiffe://test.com/test"),
+			Subject:  td.Name,
 			Audience: []string{"test"},
 			TTL:      5 * time.Minute,
 		})

@@ -13,7 +13,7 @@ func TestFilterRelationships(t *testing.T) {
 			ID:                  uuid.NullUUID{UUID: uuid.New(), Valid: true},
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
-			TrustDomainAConsent: "accepted",
+			TrustDomainAConsent: "approved",
 			TrustDomainBConsent: "denied",
 		},
 		{
@@ -21,12 +21,12 @@ func TestFilterRelationships(t *testing.T) {
 			TrustDomainAID:      uuid.New(),
 			TrustDomainBID:      uuid.New(),
 			TrustDomainAConsent: "denied",
-			TrustDomainBConsent: "accepted",
+			TrustDomainBConsent: "approved",
 		},
 	}
 
 	trustDomain := relationships[0].TrustDomainAID
-	status := ConsentStatus("accepted")
+	status := ConsentStatus("approved")
 
 	// Call FilterRelationships
 	filtered := FilterRelationships(relationships, status, &trustDomain)

@@ -104,7 +104,7 @@ components:
     ConsentStatus:
       type: string
       enum:
-        - accepted
+        - approved
         - denied
         - pending
     JoinToken:

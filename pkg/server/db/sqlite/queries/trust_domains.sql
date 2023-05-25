@@ -6,8 +6,6 @@ RETURNING *;
 -- name: UpdateTrustDomain :one
 UPDATE trust_domains
 SET description         = ?,
-    harvester_spiffe_id = ?,
-    onboarding_bundle   = ?,
     updated_at          = datetime('now')
 WHERE id = ?
 RETURNING *;

@@ -13,7 +13,7 @@ import (
 const createTrustDomain = `-- name: CreateTrustDomain :one
 INSERT INTO trust_domains(id, name, description)
 VALUES (?, ?, ?)
-RETURNING id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
+RETURNING id, name, description, created_at, updated_at
 `
 
 type CreateTrustDomainParams struct {
@@ -29,8 +29,6 @@ func (q *Queries) CreateTrustDomain(ctx context.Context, arg CreateTrustDomainPa
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.HarvesterSpiffeID,
-		&i.OnboardingBundle,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -49,7 +47,7 @@ func (q *Queries) DeleteTrustDomain(ctx context.Context, id string) error {
 }
 
 const findTrustDomainByID = `-- name: FindTrustDomainByID :one
-SELECT id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
+SELECT id, name, description, created_at, updated_at
 FROM trust_domains
 WHERE id = ?
 `
@@ -61,8 +59,6 @@ func (q *Queries) FindTrustDomainByID(ctx context.Context, id string) (TrustDoma
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.HarvesterSpiffeID,
-		&i.OnboardingBundle,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -70,7 +66,7 @@ func (q *Queries) FindTrustDomainByID(ctx context.Context, id string) (TrustDoma
 }
 
 const findTrustDomainByName = `-- name: FindTrustDomainByName :one
-SELECT id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
+SELECT id, name, description, created_at, updated_at
 FROM trust_domains
 WHERE name = ?
 `
@@ -82,8 +78,6 @@ func (q *Queries) FindTrustDomainByName(ctx context.Context, name string) (Trust
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.HarvesterSpiffeID,
-		&i.OnboardingBundle,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -91,7 +85,7 @@ func (q *Queries) FindTrustDomainByName(ctx context.Context, name string) (Trust
 }
 
 const listTrustDomains = `-- name: ListTrustDomains :many
-SELECT id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
+SELECT id, name, description, created_at, updated_at
 FROM trust_domains
 ORDER BY name
 `
@@ -109,8 +103,6 @@ func (q *Queries) ListTrustDomains(ctx context.Context) ([]TrustDomain, error) {
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.HarvesterSpiffeID,
-			&i.OnboardingBundle,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -130,34 +122,23 @@ func (q *Queries) ListTrustDomains(ctx context.Context) ([]TrustDomain, error) {
 const updateTrustDomain = `-- name: UpdateTrustDomain :one
 UPDATE trust_domains
 SET description         = ?,
-    harvester_spiffe_id = ?,
-    onboarding_bundle   = ?,
     updated_at          = datetime('now')
 WHERE id = ?
-RETURNING id, name, description, harvester_spiffe_id, onboarding_bundle, created_at, updated_at
+RETURNING id, name, description, created_at, updated_at
 `
 
 type UpdateTrustDomainParams struct {
-	Description       sql.NullString
-	HarvesterSpiffeID sql.NullString
-	OnboardingBundle  []byte
-	ID                string
+	Description sql.NullString
+	ID          string
 }
 
 func (q *Queries) UpdateTrustDomain(ctx context.Context, arg UpdateTrustDomainParams) (TrustDomain, error) {
-	row := q.queryRow(ctx, q.updateTrustDomainStmt, updateTrustDomain,
-		arg.Description,
-		arg.HarvesterSpiffeID,
-		arg.OnboardingBundle,
-		arg.ID,
-	)
+	row := q.queryRow(ctx, q.updateTrustDomainStmt, updateTrustDomain, arg.Description, arg.ID)
 	var i TrustDomain
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.HarvesterSpiffeID,
-		&i.OnboardingBundle,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"fmt"
-
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
@@ -22,23 +20,14 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 	}
 
 	result := &entity.TrustDomain{
-		ID:               id,
-		Name:             trustDomain,
-		OnboardingBundle: td.OnboardingBundle,
-		CreatedAt:        td.CreatedAt,
-		UpdatedAt:        td.UpdatedAt,
+		ID:        id,
+		Name:      trustDomain,
+		CreatedAt: td.CreatedAt,
+		UpdatedAt: td.UpdatedAt,
 	}
 
 	if td.Description.Valid {
 		result.Description = td.Description.String
-	}
-
-	if td.HarvesterSpiffeID.Valid {
-		id, err := spiffeid.FromStringf(td.HarvesterSpiffeID.String)
-		if err != nil {
-			return nil, fmt.Errorf("cannot convert model to entity: %v", err)
-		}
-		result.HarvesterSpiffeID = id
 	}
 
 	return result, nil

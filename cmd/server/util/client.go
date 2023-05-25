@@ -187,7 +187,8 @@ func (c *serverClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID)
 }
 
 func (c *serverClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.JoinToken, error) {
-	res, err := c.client.GetJoinToken(ctx, trustDomainName)
+	// TODO: this will be refactored in a follow-up PR
+	res, err := c.client.GetJoinToken(ctx, trustDomainName, nil)
 	if err != nil {
 		return nil, fmt.Errorf(errFailedRequest, err)
 	}
