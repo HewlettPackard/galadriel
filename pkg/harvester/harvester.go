@@ -89,9 +89,9 @@ func (h *Harvester) Run(ctx context.Context) error {
 	}
 
 	ep, err := endpoints.New(&endpoints.Config{
-		HarvesterListenAddress: h.c.HarvesterSocketPath,
-		Client:                 galadrielClient,
-		Logger:                 h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
+		LocalAddress: h.c.HarvesterSocketPath,
+		Client:       galadrielClient,
+		Logger:       h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create Harvester endpoints: %w", err)

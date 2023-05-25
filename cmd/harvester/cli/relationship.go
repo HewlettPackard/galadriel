@@ -26,7 +26,7 @@ managing the trust domain. The trust domain is under the management of the SPIRE
 and this Harvester agent facilitates secure communication with the Galadriel Server 
 to establish and manage federation relationships.
 
-Using the 'relationship' command, you can create, update, delete, and view relationships 
+Using the 'relationship' command, you can view, approve, and deny relationships 
 within the trust domain. These relationships enable secure communication 
 across trust boundaries within your distributed system.
 
