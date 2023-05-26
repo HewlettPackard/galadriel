@@ -19,8 +19,6 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-const ()
-
 type Config struct {
 	Harvester *harvesterConfig `hcl:"harvester,block"`
 	Providers *providersBlock  `hcl:"providers,block"`
