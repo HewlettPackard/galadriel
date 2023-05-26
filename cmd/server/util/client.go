@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
+	httputil "github.com/HewlettPackard/galadriel/cmd/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
@@ -15,9 +15,7 @@ import (
 )
 
 const (
-	baseURL                   = "http://localhost/"
 	errFailedRequest          = "failed to send request: %v"
-	errReadResponseBody       = "failed to read response body: %v"
 	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
 	errUnmarshalTrustDomains  = "failed to unmarshal trust domain: %v"
 	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
@@ -34,31 +32,25 @@ type GaladrielAPIClient interface {
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
 }
 
-type ErrorMessage struct {
-	Message string
-}
-
 type serverAPIClient struct {
 	client *admin.Client
 }
 
 // NewUDSClient creates a Galadriel API client that connects to the Galadriel Server
 // using a Unix Domain Socket (UDS) specified by the socketPath parameter.
-func NewUDSClient(socketPath string) (GaladrielAPIClient, error) {
-	clientOpt := admin.WithBaseURL(baseURL)
+func NewUDSClient(socketPath string, httpClient *http.Client) (GaladrielAPIClient, error) {
+	clientOpt := admin.WithBaseURL(cli.LocalhostURL)
 
 	client, err := admin.NewClient(socketPath, clientOpt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate the Admin Client: %v", err)
 	}
 
-	t := &http.Transport{
-		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, "unix", socketPath)
-		}}
+	if httpClient == nil {
+		httpClient = httputil.NewUDSHTTPClient(socketPath)
+	}
 
-	client.Client = &http.Client{Transport: t}
+	client.Client = httpClient
 
 	return &serverAPIClient{client: client}, nil
 }
@@ -70,7 +62,7 @@ func (c *serverAPIClient) GetTrustDomainByName(ctx context.Context, trustDomainN
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +83,7 @@ func (c *serverAPIClient) UpdateTrustDomainByName(ctx context.Context, trustDoma
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +105,7 @@ func (c *serverAPIClient) CreateTrustDomain(ctx context.Context, trustDomainName
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +126,7 @@ func (c *serverAPIClient) CreateRelationship(ctx context.Context, rel *entity.Re
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +147,7 @@ func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus ap
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +167,7 @@ func (c *serverAPIClient) GetRelationshipByID(ctx context.Context, relID uuid.UU
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +188,7 @@ func (c *serverAPIClient) GetJoinToken(ctx context.Context, trustDomainName api.
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -225,23 +217,4 @@ func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
 	}
 
 	return relationship, nil
-}
-
-func readResponse(res *http.Response) ([]byte, error) {
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
-	}
-
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		// Unmarshal Error received from API
-		var errorMsg ErrorMessage
-		if err := json.Unmarshal(body, &errorMsg); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal error message: %v", err)
-		}
-
-		return nil, fmt.Errorf(errorMsg.Message)
-	}
-
-	return body, nil
 }

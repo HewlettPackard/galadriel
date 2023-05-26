@@ -4,20 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/api/admin"
-	"io"
-	"net"
 	"net/http"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
+	httputil "github.com/HewlettPackard/galadriel/cmd/common/http"
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/api/admin"
 	"github.com/google/uuid"
 )
 
 const (
-	baseURL                   = "http://localhost/"
 	errFailedRequest          = "failed to send request: %v"
-	errReadResponseBody       = "failed to read response body: %v"
 	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
 )
 
@@ -27,31 +25,25 @@ type HarvesterAPIClient interface {
 	UpdateRelationship(context.Context, uuid.UUID, api.ConsentStatus) (*entity.Relationship, error)
 }
 
-type ErrorMessage struct {
-	Message string
-}
-
 type harvesterAPIClient struct {
 	client *admin.Client
 }
 
 // NewUDSClient creates a Harvester API client that connects to the Harvester
 // using a Unix Domain Socket (UDS) specified by the socketPath parameter.
-func NewUDSClient(socketPath string) (HarvesterAPIClient, error) {
-	clientOpt := admin.WithBaseURL(baseURL)
+func NewUDSClient(socketPath string, httpClient *http.Client) (HarvesterAPIClient, error) {
+	clientOpt := admin.WithBaseURL(cli.LocalhostURL)
 
 	client, err := admin.NewClient(socketPath, clientOpt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate the Admin Client: %v", err)
 	}
 
-	t := &http.Transport{
-		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, "unix", socketPath)
-		}}
+	if httpClient == nil {
+		httpClient = httputil.NewUDSHTTPClient(socketPath)
+	}
 
-	client.Client = &http.Client{Transport: t}
+	client.Client = httpClient
 
 	return &harvesterAPIClient{client: client}, nil
 }
@@ -65,7 +57,7 @@ func (h harvesterAPIClient) GetRelationships(ctx context.Context, status api.Con
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +88,7 @@ func (h harvesterAPIClient) UpdateRelationship(ctx context.Context, relationship
 	}
 	defer res.Body.Close()
 
-	body, err := readResponse(res)
+	body, err := httputil.ReadResponse(res)
 	if err != nil {
 		return nil, err
 	}
@@ -112,22 +104,4 @@ func (h harvesterAPIClient) UpdateRelationship(ctx context.Context, relationship
 	}
 
 	return rel, nil
-}
-
-func readResponse(res *http.Response) ([]byte, error) {
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf(errReadResponseBody, err)
-	}
-
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		var errorMsg ErrorMessage
-		if err := json.Unmarshal(body, &errorMsg); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal error message: %v", err)
-		}
-
-		return nil, fmt.Errorf(errorMsg.Message)
-	}
-
-	return body, nil
 }
