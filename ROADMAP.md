@@ -1,29 +1,33 @@
 # Roadmap
 
-## Milestones
+## Recently Completed
 
-### Proof of Concept (PoC)
+- APIs for Server and Harvester defined through Open API spec.
+- TLS enabled between Galadriel Server and Harvesters, using a disk-based upstream CA that the Server uses to sign its
+  certificate.
+- Secure Harvester introduction using a single-use join token.
+- Harvester authentication using JWT issued by the Server, which are rotated. The JWT is issued by the Server using
+  either an in-memory KeyManager or a disk-based KeyManager for generating the private keys.
+- Bundle signing and verification using a disk-based Signer and Verifier implementation.
+- Added support for SQLite and Postgres.
+- Simple implementation of the Federation Relationship approval flow.
+- Federated bundle synchronization across Harvesters based on configured and approved relationships.
+
+## Near-Term and Medium-Term
+
+- Support for SPIRE running in high-availability (HA) mode.
+- Support for Galadriel Server in high-availability (HA) mode.
+- Support for other upstream CAs for TLS certificates.
+- Support for other Key Management Systems (KMS) for the private keys used for JWT issuing.
+- Support for relationship consent signing.
+- Support for other bundle signers and verifiers, e.g., using Sigstore.
+- Telemetry, health checkers, alerts, and API versioning.
+
+## Long-Term
+
+### Initial Proof of Concept (PoC)
+
 - **Status**: Completed ([v0.1.0](https://github.com/HewlettPackard/galadriel/tree/v0.1.0/))
-- **Goal**: Exercise concepts about trust bundle exchange based on relationships. It will corroborate the feasibility of having a Harvester agent as a medium to manage federated relationships in SPIRE servers, the Server as a middle hub for exchange, and the relationship as a control for the exchange. 
-- **Result**:
-    - Server runs, and stores bundles and defined relationships in an ephemeral storage system.
-    - Server exposes local APIs for admins to register new members, generate access tokens for them, and define bidirectional 1:1 relationships.
-    - Server exposes public authenticated APIs for Harvesters.
-    - Harvester uses Server-generated access tokens to communicate with the Server.
-    - Harvester communicates with the SPIRE Server to fetch its bundle and to set foreign bundles.
-    - Harvester sends its collocated SPIRE bundle, and fetches and keeps in sync foreign bundles based on the defined relationships.
-
-### Minimum Viable Product (MVP)
-- **Status**: In Progress
-- **Goal**: Have a minimal product for early evaluation, that is is API based, and implements the security and core principles identified in the [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true).
-- **Result**:
-    - Server and Harvester APIs are well defined and documented.
-    - Harvester is securely introduced to the Server.
-    - One or more production-ready database systems are available to be used as backend storage.
-    - Multiple organizations can share the same Galadriel Server instance without data leak risks.
-    - Trust bundles are cryptographically signed and verified end-to-end.
-    - Galadriel supports SPIRE in an HA topology.
-    - Server and Harvester can be configured to emit metrics to an open telemetry standard.
-    - Harvester admins explicitly approve or deny memberships.
-    - Components and flows are thoroughly and continuously tested and exercised.
-    - There are deployment options for bare metal and Kubernetes.
+- **Goal**: Exercise concepts about trust bundle exchange based on relationships. This stage corroborates the
+  feasibility of having a Harvester agent as a medium to manage federated relationships in SPIRE servers, the Server as
+  a central hub for exchange, and the relationship as a control for the exchange.

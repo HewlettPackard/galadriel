@@ -1,23 +1,33 @@
-## Project Roles
+## Roles within the Galadriel Project
 
 ### Users
 
-These are individuals who 
-- Want to learn more about the Galadriel Project; 
-- Are existing users of Galadriel and its tools who wish to follow the project's progress.
+Users are individuals who:
+
+- Are interested in learning more about the Galadriel Project;
+- Are existing users of Galadriel and its tools, wanting to stay updated on the project's progress.
 
 ### Contributors
 
-These are individuals who wish to contribute code or ideas to Galadriel. Contributors submit code and ideas through GitHub issues or by creating pull requests.
+Contributors are individuals who have a desire to contribute to Galadriel. They provide contributions in the form of
+code or innovative ideas. Contributions are typically made through GitHub issues or by creating pull requests.
 
 ### Maintainers
 
-These are individuals who can approve submitted pull requests to be merged into the primary codebase. The project requires pull requests to be approved by at least two (2) maintainers. Once approved, a pull request can be merged by maintainers. A list of the current maintainers can be found in the [Codeowners](./CODEOWNERS) file.
+Maintainers are individuals with the authority to approve pull requests for merging into the primary codebase. To
+maintain the quality and integrity of the code, the Galadriel Project requires at least one maintainer to approve a
+pull request before it can be merged. The list of current maintainers is available in the [Codeowners](./CODEOWNERS)
+file.
 
 ## Change Review Process
 
-**All changes must be submitted as a GitHub Pull Request (PR)**
+**All changes must be submitted via GitHub Pull Request (PR)**
 
-The submitter of a pull request is responsible for responding to any feedback. While it remains open, the submitter is also responsible for ensuring the change is always in a state where it can be merged. Guidelines for submitting a pull request for approval can be found [here](/CONTRIBUTING.md).
+The submitter of a pull request bears the responsibility of addressing any feedback received. While the pull request is
+open, it is also the submitter's responsibility to ensure that the proposed change is always in a mergeable state. For
+guidelines on submitting a pull request for approval, please refer to the [Contributor's Guide](/CONTRIBUTING.md).
 
-**All changes must be approved by at least two (2) Maintainers**
+**All changes must garner approval from at least one Maintainer**
+
+Each proposed change must be approved by at least one maintainer before it can be merged into the primary codebase.
+This ensures that the code is thoroughly reviewed and maintains the high standards set by the Galadriel Project.
