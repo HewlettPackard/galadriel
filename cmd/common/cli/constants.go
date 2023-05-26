@@ -12,6 +12,4 @@ const (
 	LocalhostURL = "http://localhost/"
 
 	CommandTimeout = 5 * time.Second
-
-	DefaultLogLevel = "INFO"
 )

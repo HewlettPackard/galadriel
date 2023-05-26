@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/HewlettPackard/galadriel/cmd/common/cli"
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -67,7 +67,7 @@ func TestNew(t *testing.T) {
 				Server: &serverConfig{
 					ListenAddress: defaultAddress,
 					ListenPort:    defaultPort,
-					LogLevel:      cli.DefaultLogLevel,
+					LogLevel:      constants.DefaultLogLevel,
 				},
 			},
 		},

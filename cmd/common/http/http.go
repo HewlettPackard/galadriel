@@ -11,6 +11,8 @@ import (
 	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 )
 
+const ()
+
 type ErrorMessage struct {
 	Message string
 }

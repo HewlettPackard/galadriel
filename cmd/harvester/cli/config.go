@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/HewlettPackard/galadriel/cmd/common/cli"
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
@@ -100,7 +100,7 @@ func NewHarvesterConfig(c *Config) (*harvester.Config, error) {
 		hc.SpireBundlePollInterval = spireBundlePollInterval
 	}
 
-	serverTCPAddress, err := net.ResolveTCPAddr("tcp", c.Harvester.GaladrielServerAddress)
+	serverTCPAddress, err := net.ResolveTCPAddr(constants.TCPProtocol, c.Harvester.GaladrielServerAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve server address: %v", err)
 	}
@@ -152,6 +152,6 @@ func setDefaults(config *harvesterConfig) {
 	}
 
 	if config.LogLevel == "" {
-		config.LogLevel = cli.DefaultLogLevel
+		config.LogLevel = constants.DefaultLogLevel
 	}
 }
