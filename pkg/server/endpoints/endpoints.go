@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultTTL = 1 * time.Hour
+	serverCertificateTTL = 1 * time.Hour
 )
 
 // Server manages the UDS and TCP endpoints lifecycle
@@ -245,7 +245,7 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 	e.Logger.Info("Started TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
-	certRotationInterval := defaultTTL / 2
+	certRotationInterval := serverCertificateTTL / 2
 	ticker := time.NewTicker(certRotationInterval)
 	defer ticker.Stop()
 	for {
@@ -265,7 +265,7 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 }
 
 func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, error) {
-	privateKey, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
+	privateKey, err := cryptoutil.GenerateSigner(cryptoutil.DefaultKeyType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create private key: %w", err)
 	}
@@ -274,7 +274,7 @@ func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, er
 		Subject: pkix.Name{
 			CommonName: constants.GaladrielServerName,
 		},
-		TTL:       defaultTTL,
+		TTL:       serverCertificateTTL,
 		PublicKey: privateKey.Public(),
 		DNSNames:  []string{constants.GaladrielServerName},
 	}

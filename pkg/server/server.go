@@ -18,9 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// TODO: consider making this a configuration option
-const defaultKeyType = cryptoutil.RSA2048
-
 // Server represents a Galadriel Server.
 type Server struct {
 	config *Config
@@ -96,7 +93,7 @@ func (s *Server) createJWTIssuer(ctx context.Context, keyManager keymanager.KeyM
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate Key ID: %v", err)
 	}
-	key, err := keyManager.GenerateKey(ctx, keyID.String(), defaultKeyType)
+	key, err := keyManager.GenerateKey(ctx, keyID.String(), cryptoutil.DefaultKeyType)
 	if err != nil {
 		return nil, err
 	}

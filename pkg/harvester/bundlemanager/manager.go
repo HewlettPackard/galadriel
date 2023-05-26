@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	spireCallTimeout     = 10 * time.Second
-	galadrielCallTimeout = 2 * time.Minute
+	defaultFederatedBundlesPollInterval = 2 * time.Minute
+	defaultSpireBundlesPollInterval     = 1 * time.Minute
+	spireCallTimeout                    = 10 * time.Second
+	galadrielCallTimeout                = 2 * time.Minute
 )
 
 // BundleManager is responsible for managing the synchronization and watching of bundles.
@@ -41,6 +43,13 @@ type Config struct {
 
 // NewBundleManager creates a new BundleManager instance.
 func NewBundleManager(c *Config) *BundleManager {
+	if c.FederatedBundlesPollInterval == 0 {
+		c.FederatedBundlesPollInterval = defaultFederatedBundlesPollInterval
+	}
+	if c.SpireBundlePollInterval == 0 {
+		c.SpireBundlePollInterval = defaultSpireBundlesPollInterval
+	}
+
 	spireBundleSync := NewSpireSyncer(&SpireSyncerConfig{
 		GaladrielClient: c.GaladrielClient,
 		SpireClient:     c.SpireClient,

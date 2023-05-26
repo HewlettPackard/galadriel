@@ -21,3 +21,7 @@ func Execute() int {
 	}
 	return 0
 }
+
+func init() {
+	RootCmd.PersistentFlags().StringP("socketPath", "", defaultSocketPath, "Path to the Galadriel Harvester API socket")
+}

@@ -28,9 +28,9 @@ type Harvester struct {
 // Config conveys the configuration of the Harvester.
 type Config struct {
 	TrustDomain                  spiffeid.TrustDomain
-	LocalAddress                 net.Addr
-	ServerAddress                *net.TCPAddr
-	LocalSpireAddress            net.Addr
+	HarvesterSocketPath          net.Addr     // UDS socket address the Harvester will listen on
+	SpireSocketPath              net.Addr     // UDS socket address the SPIRE server listens on and Harvester will connect to
+	GaladrielServerAddress       *net.TCPAddr // TCP address the Galadriel Server listens on and Harvester will connect to
 	JoinToken                    string
 	BundleUpdatesInterval        time.Duration
 	FederatedBundlesPollInterval time.Duration
@@ -71,25 +71,25 @@ func (h *Harvester) Run(ctx context.Context) error {
 	}
 
 	galadrielClient, err := galadrielclient.NewClient(ctx, &galadrielclient.Config{
-		TrustDomain:     h.c.TrustDomain,
-		ServerAddress:   h.c.ServerAddress,
-		TrustBundlePath: h.c.ServerTrustBundlePath,
-		DataDir:         h.c.DataDir,
-		JoinToken:       h.c.JoinToken,
-		Logger:          h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Harvester),
+		TrustDomain:            h.c.TrustDomain,
+		GaladrielServerAddress: h.c.GaladrielServerAddress,
+		TrustBundlePath:        h.c.ServerTrustBundlePath,
+		DataDir:                h.c.DataDir,
+		JoinToken:              h.c.JoinToken,
+		Logger:                 h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Harvester),
 	})
 	if err != nil {
 		h.c.Logger.Error("Harvester could not connect to Server. Needs to be re-onboarded with new join token")
 		return fmt.Errorf("failed to create Galadriel Server client: %w", err)
 	}
 
-	spireClient, err := spireclient.NewSpireClient(ctx, h.c.LocalSpireAddress)
+	spireClient, err := spireclient.NewSpireClient(ctx, h.c.SpireSocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to create SPIRE client: %w", err)
 	}
 
 	ep, err := endpoints.New(&endpoints.Config{
-		LocalAddress: h.c.LocalAddress,
+		LocalAddress: h.c.HarvesterSocketPath,
 		Client:       galadrielClient,
 		Logger:       h.c.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints),
 	})

@@ -28,7 +28,7 @@ type Endpoints struct {
 
 // Config represents the configuration of the Harvester Endpoints.
 type Config struct {
-	LocalAddress net.Addr
+	LocalAddress net.Addr // UDS socket address the Harvester will listen on
 	Client       galadrielclient.Client
 	Logger       logrus.FieldLogger
 }

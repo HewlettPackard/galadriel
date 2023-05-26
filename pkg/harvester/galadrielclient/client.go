@@ -50,12 +50,12 @@ type Client interface {
 
 // Config is a struct that holds the configuration for the Galadriel Server client
 type Config struct {
-	TrustDomain     spiffeid.TrustDomain
-	ServerAddress   *net.TCPAddr
-	TrustBundlePath string
-	DataDir         string
-	JoinToken       string
-	Logger          logrus.FieldLogger
+	TrustDomain            spiffeid.TrustDomain
+	GaladrielServerAddress *net.TCPAddr
+	TrustBundlePath        string
+	DataDir                string
+	JoinToken              string
+	Logger                 logrus.FieldLogger
 }
 
 // client is a struct that implements the Client interface
@@ -78,7 +78,7 @@ type jwtProvider struct {
 // It Onboards the client to the Galadriel Server using the given joinToken.
 // If the client has already been onboarded, it will use the existing JWT token.
 func NewClient(ctx context.Context, cfg *Config) (Client, error) {
-	if cfg.ServerAddress == nil {
+	if cfg.GaladrielServerAddress == nil {
 		return nil, errors.New("server address cannot be nil")
 	}
 	if cfg.TrustBundlePath == "" {
@@ -98,10 +98,10 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 
 	c, err := createTLSClient(cfg.TrustBundlePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create TLS client for server %s: %w", cfg.ServerAddress, err)
+		return nil, fmt.Errorf("failed to create TLS client for server %s: %w", cfg.GaladrielServerAddress, err)
 	}
 
-	serverAddress := fmt.Sprintf("%s%s", scheme, cfg.ServerAddress.String())
+	serverAddress := fmt.Sprintf("%s%s", scheme, cfg.GaladrielServerAddress.String())
 
 	// Create harvester client
 	harvesterClient, err := harvester.NewClient(serverAddress,
