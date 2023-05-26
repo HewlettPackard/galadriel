@@ -4,7 +4,7 @@ info:
   description: |-
     Galadriel Harvester Management API specification.
   contact:
-    name: Github 
+    name: Github
     url: https://github.com/HewlettPackard/galadriel
   license:
     name: Apache 2.0

@@ -3,10 +3,10 @@ package spireclient
 import (
 	"context"
 	"fmt"
-	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"net"
 
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	bundlev1 "github.com/spiffe/spire-api-sdk/proto/spire/api/server/bundle/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

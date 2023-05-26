@@ -3,15 +3,15 @@ package bundlemanager
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/galadrielclient"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/integrity"
-	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
-	"time"
-
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spireclient"
 	"github.com/sirupsen/logrus"
+	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 )
 
 // SpireBundleSyncer is responsible for periodically fetching the bundle from the SPIRE Server,

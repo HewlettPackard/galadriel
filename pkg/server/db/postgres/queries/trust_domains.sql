@@ -5,8 +5,8 @@ RETURNING *;
 
 -- name: UpdateTrustDomain :one
 UPDATE trust_domains
-SET description         = $2,
-    updated_at          = now()
+SET description = $2,
+    updated_at  = now()
 WHERE id = $1
 RETURNING *;
 

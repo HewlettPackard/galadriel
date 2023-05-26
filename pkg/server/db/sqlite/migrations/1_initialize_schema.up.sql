@@ -1,11 +1,11 @@
 -- create tables
 CREATE TABLE IF NOT EXISTS trust_domains
 (
-    id                  text PRIMARY KEY,
-    name                TEXT      NOT NULL UNIQUE,
-    description         TEXT,
-    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id          text PRIMARY KEY,
+    name        TEXT      NOT NULL UNIQUE,
+    description TEXT,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS relationships
