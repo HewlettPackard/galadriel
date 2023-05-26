@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester"
@@ -18,9 +19,7 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-const (
-	defaultLogLevel = "INFO"
-)
+const ()
 
 type Config struct {
 	Harvester *harvesterConfig `hcl:"harvester,block"`
@@ -153,6 +152,6 @@ func setDefaults(config *harvesterConfig) {
 	}
 
 	if config.LogLevel == "" {
-		config.LogLevel = defaultLogLevel
+		config.LogLevel = cli.DefaultLogLevel
 	}
 }

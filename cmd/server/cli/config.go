@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server"
@@ -18,9 +19,8 @@ import (
 
 const (
 	// TODO: These defaults should be moved close to where they are used (Server, Endpoints).
-	defaultPort     = 8085
-	defaultAddress  = "0.0.0.0"
-	defaultLogLevel = "INFO"
+	defaultPort    = 8085
+	defaultAddress = "0.0.0.0"
 )
 
 // Config holds the configuration for the Galadriel server.
@@ -122,6 +122,6 @@ func (c *Config) setDefaults() {
 	}
 
 	if c.Server.LogLevel == "" {
-		c.Server.LogLevel = defaultLogLevel
+		c.Server.LogLevel = cli.DefaultLogLevel
 	}
 }

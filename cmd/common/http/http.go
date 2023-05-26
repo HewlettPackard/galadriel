@@ -17,7 +17,7 @@ type ErrorMessage struct {
 
 // NewUDSHTTPClient creates a new HTTP client configured to connect to a Unix
 // Domain Socket (UDS) specified by the provided socketPath. The returned
-// client uses a custom transport that dials via the UDS, and is set to have
+// client uses custom transport that dials via the UDS, and is set to have
 // a default timeout as specified in the cli.CommandTimeout.
 func NewUDSHTTPClient(socketPath string) *http.Client {
 	t := &http.Transport{
