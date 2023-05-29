@@ -3,9 +3,10 @@ package bundlemanager
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/integrity"
-	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/galadrielclient"
@@ -22,8 +23,8 @@ const (
 
 // BundleManager is responsible for managing the synchronization and watching of bundles.
 type BundleManager struct {
-	federatedBundlesSyncer *FederatedSyncer
-	spireBundleSyncer      *SpireBundleSyncer
+	federatedBundlesSynchronizer *FederatedSynchronizer
+	spireBundleSynchronizer      *SpireBundleSynchronizer
 }
 
 // Config holds the configuration for BundleManager.
@@ -50,33 +51,33 @@ func NewBundleManager(c *Config) *BundleManager {
 		c.SpireBundlePollInterval = defaultSpireBundlesPollInterval
 	}
 
-	spireBundleSync := NewSpireSyncer(&SpireSyncerConfig{
+	spireBundleSync := NewSpireSynchronizer(&SpireSynchronizerConfig{
 		GaladrielClient: c.GaladrielClient,
 		SpireClient:     c.SpireClient,
 		BundleSigner:    c.BundleSigner,
 		SyncInterval:    c.SpireBundlePollInterval,
-		Logger:          c.Logger.WithField(telemetry.SubsystemName, telemetry.SpireBundleSyncer),
+		Logger:          c.Logger.WithField(telemetry.SubsystemName, telemetry.SpireBundleSynchronizer),
 	})
 
-	fedBundlesSync := NewFederatedSyncer(&FederatedSyncerConfig{
+	fedBundlesSync := NewFederatedSynchronizer(&FederatedSynchronizerConfig{
 		GaladrielClient: c.GaladrielClient,
 		SpireClient:     c.SpireClient,
 		BundleVerifiers: c.BundleVerifiers,
 		SyncInterval:    c.FederatedBundlesPollInterval,
-		Logger:          c.Logger.WithField(telemetry.SubsystemName, telemetry.FederadBundlesSyncer),
+		Logger:          c.Logger.WithField(telemetry.SubsystemName, telemetry.FederatedBundlesSynchronizer),
 	})
 
 	return &BundleManager{
-		federatedBundlesSyncer: fedBundlesSync,
-		spireBundleSyncer:      spireBundleSync,
+		federatedBundlesSynchronizer: fedBundlesSync,
+		spireBundleSynchronizer:      spireBundleSync,
 	}
 }
 
 // Run runs the bundle synchronization processes.
 func (bm *BundleManager) Run(ctx context.Context) error {
 	tasks := []func(ctx context.Context) error{
-		bm.federatedBundlesSyncer.Run,
-		bm.spireBundleSyncer.Run,
+		bm.federatedBundlesSynchronizer.Run,
+		bm.spireBundleSynchronizer.Run,
 	}
 
 	err := util.RunTasks(ctx, tasks...)

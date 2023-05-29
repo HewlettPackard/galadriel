@@ -55,6 +55,7 @@ func (db *FakeDatabase) WithTrustDomains(trustDomains ...*entity.TrustDomain) {
 	}
 }
 
+// WithBundles overrides all bundles
 func (db *FakeDatabase) WithBundles(bundles ...*entity.Bundle) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
@@ -63,6 +64,41 @@ func (db *FakeDatabase) WithBundles(bundles ...*entity.Bundle) {
 	for _, b := range bundles {
 		db.bundles[b.ID.UUID] = b
 	}
+}
+
+// WithTokens overrides all tokens
+func (db *FakeDatabase) WithTokens(bundles ...*entity.JoinToken) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.tokens = make(map[uuid.UUID]*entity.JoinToken)
+	for _, jt := range bundles {
+		db.tokens[jt.ID.UUID] = jt
+	}
+}
+
+func (db *FakeDatabase) SetNextError(err error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+	db.errors = []error{err}
+}
+
+func (db *FakeDatabase) AppendNextError(err error) {
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	db.errors = append(db.errors, err)
+}
+
+func (db *FakeDatabase) getNextError() error {
+	if len(db.errors) == 0 {
+		return nil
+	}
+
+	err := db.errors[0]
+	db.errors = db.errors[1:]
+
+	return err
 }
 
 func (db *FakeDatabase) CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error) {
@@ -474,28 +510,4 @@ func (db *FakeDatabase) DeleteRelationship(ctx context.Context, relationshipID u
 	delete(db.relationships, uuid)
 
 	return nil
-}
-
-func (db *FakeDatabase) SetNextError(err error) {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-	db.errors = []error{err}
-}
-
-func (db *FakeDatabase) AppendNextError(err error) {
-	db.mutex.Lock()
-	defer db.mutex.Unlock()
-
-	db.errors = append(db.errors, err)
-}
-
-func (db *FakeDatabase) getNextError() error {
-	if len(db.errors) == 0 {
-		return nil
-	}
-
-	err := db.errors[0]
-	db.errors = db.errors[1:]
-
-	return err
 }

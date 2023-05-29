@@ -146,6 +146,7 @@ func (c *serverAPIClient) CreateRelationship(ctx context.Context, rel *entity.Re
 
 	return relationship, nil
 }
+
 func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
 	payload := &admin.GetRelationshipsParams{Status: &consentStatus, TrustDomainName: &trustDomainName}
 

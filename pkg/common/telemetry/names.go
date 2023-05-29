@@ -37,8 +37,8 @@ const (
 	// Endpoints represents functionality related to agent/server endpoints.
 	Endpoints = "endpoints"
 
-	// FederadBundlesSyncer represents the Federated Bundles Syncer subsystem.
-	FederadBundlesSyncer = "federated_bundles_syncer"
+	// FederatedBundlesSynchronizer represents the Federated Bundles Synchronizer subsystem.
+	FederatedBundlesSynchronizer = "federated_bundles_synchronizer"
 
 	// GaladrielServer represents the Galadriel server subsystem.
 	GaladrielServer = "galadriel_server"
@@ -46,8 +46,8 @@ const (
 	// Network represents a network name ("tcp", "udp").
 	Network = "network"
 
-	// SpireBundleSyncer represents the SPIRE Bundle Syncer subsystem.
-	SpireBundleSyncer = "spire_bundle_syncer"
+	// SpireBundleSynchronizer represents the SPIRE Bundle Synchronizer subsystem.
+	SpireBundleSynchronizer = "spire_bundle_synchronizer"
 
 	// SubsystemName represents a field for some subsystem name, such as an API or module.
 	SubsystemName = "subsystem_name"
