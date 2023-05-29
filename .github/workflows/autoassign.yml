@@ -7,7 +7,7 @@ permissions:  # added using https://github.com/step-security/secure-repo
   contents: read
 
 jobs:
-  add-reviews:
+  assign-owner:
     permissions:
       contents: read  # for kentaro-m/auto-assign-action to fetch config file
       pull-requests: write  # for kentaro-m/auto-assign-action to assign PR reviewers
