@@ -18,6 +18,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
+	"github.com/HewlettPackard/galadriel/pkg/common/diskutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
@@ -30,7 +31,6 @@ const (
 	jwtRotationInterval = 5 * time.Minute
 	onboardPath         = "/trust-domain/onboard"
 	tokenFile           = "jwt-token"
-	tokenFileMode       = 0600
 )
 
 var (
@@ -547,8 +547,7 @@ func (p *jwtStore) setToken(jwt string) {
 	p.mu.Unlock()
 
 	// Save the token to disk
-	err := p.saveToken()
-	if err != nil {
+	if err := p.saveToken(); err != nil {
 		p.logger.Errorf("Failed to save JWT token to disk: %v", err)
 	}
 }
@@ -581,5 +580,5 @@ func (p *jwtStore) saveToken() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return os.WriteFile(p.tokenFilePath, []byte(p.jwt), tokenFileMode)
+	return diskutil.AtomicWritePrivateFile(p.tokenFilePath, []byte(p.jwt))
 }
