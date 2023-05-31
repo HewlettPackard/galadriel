@@ -450,7 +450,7 @@ func createJWTTokenReqEditor(jp *jwtStore) harvester.RequestEditorFn {
 
 		token := jp.getToken()
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-		req.Header.Set("Content-Type", constants.ContentTypeJSON)
+		req.Header.Set("Content-Type", constants.JSONContentType)
 		return nil
 	}
 }
