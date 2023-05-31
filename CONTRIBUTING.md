@@ -30,7 +30,7 @@ merge rights).
 ## After your pull request is submitted
 
 Pull requests are approved according to the process described in our [governance
-policies](/GOVERNANCE.md). At least two other contributors must approve the pull request.
+policies](/GOVERNANCE.md). At least one maintainer must approve the pull request.
 
 Once your pull request is submitted, it's your responsibility to:
 
