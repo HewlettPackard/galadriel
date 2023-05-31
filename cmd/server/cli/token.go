@@ -55,7 +55,7 @@ trust domain and should only be shared with authorized individuals or entities.
 			return errors.New("invalid TTL")
 		}
 
-		client, err := util.NewUDSClient(socketPath, nil)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}

@@ -42,7 +42,7 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		client, err := util.NewUDSClient(socketPath, nil)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}

@@ -15,13 +15,13 @@ import (
 )
 
 const (
-	errFailedRequest          = "failed to send request: %v"
+	errorRequestFailed        = "failed to send request: %v"
 	errUnmarshalRelationships = "failed to unmarshal relationships: %v"
 	errUnmarshalTrustDomains  = "failed to unmarshal trust domain: %v"
 	errUnmarshalJoinToken     = "failed to unmarshal join token: %v"
 )
 
-// GaladrielAPIClient represents an API client for the Galadriel Server.
+// GaladrielAPIClient represents an API client for the Galadriel Server API.
 type GaladrielAPIClient interface {
 	CreateTrustDomain(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
 	GetTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
@@ -32,16 +32,16 @@ type GaladrielAPIClient interface {
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
 }
 
-type serverAPIClient struct {
+type galadrielAdminClient struct {
 	client *admin.Client
 }
 
-// NewUDSClient creates a Galadriel API client that connects to the Galadriel Server
+// NewGaladrielUDSClient creates a Galadriel API client that connects to the Galadriel Server
 // using a Unix Domain Socket (UDS) specified by the socketPath parameter.
-func NewUDSClient(socketPath string, httpClient *http.Client) (GaladrielAPIClient, error) {
-	clientOpt := admin.WithBaseURL(cli.LocalhostURL)
+func NewGaladrielUDSClient(socketPath string, httpClient *http.Client) (GaladrielAPIClient, error) {
+	baseURLOption := admin.WithBaseURL(cli.LocalhostURL)
 
-	client, err := admin.NewClient(socketPath, clientOpt)
+	adminClient, err := admin.NewClient(socketPath, baseURLOption)
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate the Admin Client: %v", err)
 	}
@@ -50,15 +50,15 @@ func NewUDSClient(socketPath string, httpClient *http.Client) (GaladrielAPIClien
 		httpClient = httputil.NewUDSHTTPClient(socketPath)
 	}
 
-	client.Client = httpClient
+	adminClient.Client = httpClient
 
-	return &serverAPIClient{client: client}, nil
+	return &galadrielAdminClient{client: adminClient}, nil
 }
 
-func (c *serverAPIClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *galadrielAdminClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	res, err := c.client.GetTrustDomainByName(ctx, trustDomainName)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -67,7 +67,7 @@ func (c *serverAPIClient) GetTrustDomainByName(ctx context.Context, trustDomainN
 		return nil, err
 	}
 
-	trustDomain, err := unmarshalTrustDomain(body)
+	trustDomain, err := unmarshalJSONToTrustDomain(body)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +75,11 @@ func (c *serverAPIClient) GetTrustDomainByName(ctx context.Context, trustDomainN
 	return trustDomain, nil
 }
 
-func (c *serverAPIClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *galadrielAdminClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	payload := api.TrustDomain{Name: trustDomainName}
 	res, err := c.client.PutTrustDomainByName(ctx, trustDomainName, payload)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -88,7 +88,7 @@ func (c *serverAPIClient) UpdateTrustDomainByName(ctx context.Context, trustDoma
 		return nil, err
 	}
 
-	trustDomain, err := unmarshalTrustDomain(body)
+	trustDomain, err := unmarshalJSONToTrustDomain(body)
 	if err != nil {
 		return nil, err
 	}
@@ -96,12 +96,12 @@ func (c *serverAPIClient) UpdateTrustDomainByName(ctx context.Context, trustDoma
 	return trustDomain, nil
 }
 
-func (c *serverAPIClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
+func (c *galadrielAdminClient) CreateTrustDomain(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
 	payload := admin.PutTrustDomainJSONRequestBody{Name: trustDomainName}
 
 	res, err := c.client.PutTrustDomain(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -110,7 +110,7 @@ func (c *serverAPIClient) CreateTrustDomain(ctx context.Context, trustDomainName
 		return nil, err
 	}
 
-	trustDomain, err := unmarshalTrustDomain(body)
+	trustDomain, err := unmarshalJSONToTrustDomain(body)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +118,11 @@ func (c *serverAPIClient) CreateTrustDomain(ctx context.Context, trustDomainName
 	return trustDomain, nil
 }
 
-func (c *serverAPIClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
+func (c *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *entity.Relationship) (*entity.Relationship, error) {
 	payload := admin.PutRelationshipJSONRequestBody{TrustDomainAName: rel.TrustDomainAName.String(), TrustDomainBName: rel.TrustDomainBName.String()}
 	res, err := c.client.PutRelationship(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -131,19 +131,19 @@ func (c *serverAPIClient) CreateRelationship(ctx context.Context, rel *entity.Re
 		return nil, err
 	}
 
-	relationship, err := unmarshalRelationship(body)
+	relationship, err := unmarshalJSONToRelationship(body)
 	if err != nil {
 		return nil, err
 	}
 
 	return relationship, nil
 }
-func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
+func (c *galadrielAdminClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
 	payload := &admin.GetRelationshipsParams{Status: &consentStatus, TrustDomainName: &trustDomainName}
 
 	res, err := c.client.GetRelationships(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -152,7 +152,7 @@ func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus ap
 		return nil, err
 	}
 
-	relationship, err := unmarshalRelationship(body)
+	relationship, err := unmarshalJSONToRelationship(body)
 	if err != nil {
 		return nil, err
 	}
@@ -160,10 +160,10 @@ func (c *serverAPIClient) GetRelationships(ctx context.Context, consentStatus ap
 	return relationship, nil
 }
 
-func (c *serverAPIClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
+func (c *galadrielAdminClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
 	res, err := c.client.GetRelationshipByID(ctx, relID)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -172,7 +172,7 @@ func (c *serverAPIClient) GetRelationshipByID(ctx context.Context, relID uuid.UU
 		return nil, err
 	}
 
-	relationship, err := unmarshalRelationship(body)
+	relationship, err := unmarshalJSONToRelationship(body)
 	if err != nil {
 		return nil, err
 	}
@@ -180,11 +180,11 @@ func (c *serverAPIClient) GetRelationshipByID(ctx context.Context, relID uuid.UU
 	return relationship, nil
 }
 
-func (c *serverAPIClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName, ttl int32) (*entity.JoinToken, error) {
+func (c *galadrielAdminClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName, ttl int32) (*entity.JoinToken, error) {
 	params := &admin.GetJoinTokenParams{Ttl: ttl}
 	res, err := c.client.GetJoinToken(ctx, trustDomainName, params)
 	if err != nil {
-		return nil, fmt.Errorf(errFailedRequest, err)
+		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
 	defer res.Body.Close()
 
@@ -201,7 +201,7 @@ func (c *serverAPIClient) GetJoinToken(ctx context.Context, trustDomainName api.
 	return joinToken, nil
 }
 
-func unmarshalTrustDomain(body []byte) (*entity.TrustDomain, error) {
+func unmarshalJSONToTrustDomain(body []byte) (*entity.TrustDomain, error) {
 	var trustDomain *entity.TrustDomain
 	if err := json.Unmarshal(body, &trustDomain); err != nil {
 		return nil, fmt.Errorf(errUnmarshalTrustDomains, err)
@@ -210,7 +210,7 @@ func unmarshalTrustDomain(body []byte) (*entity.TrustDomain, error) {
 	return trustDomain, nil
 }
 
-func unmarshalRelationship(body []byte) (*entity.Relationship, error) {
+func unmarshalJSONToRelationship(body []byte) (*entity.Relationship, error) {
 	var relationship *entity.Relationship
 	if err := json.Unmarshal(body, &relationship); err != nil {
 		return nil, fmt.Errorf(errUnmarshalRelationships, err)

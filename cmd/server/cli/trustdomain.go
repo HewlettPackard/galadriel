@@ -53,7 +53,7 @@ The 'create' command allows you to create a new trust domain in the Galadriel Se
 			return fmt.Errorf("trust domain name is required")
 		}
 
-		client, err := util.NewUDSClient(socketPath, nil)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}
