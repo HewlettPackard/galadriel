@@ -3,12 +3,12 @@ package bundlemanager
 import (
 	"context"
 	"errors"
-	"github.com/HewlettPackard/galadriel/pkg/common/util"
-	"github.com/HewlettPackard/galadriel/pkg/harvester/integrity"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
+	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/galadrielclient"
+	"github.com/HewlettPackard/galadriel/pkg/harvester/integrity"
 	"github.com/HewlettPackard/galadriel/pkg/harvester/spireclient"
 	"github.com/sirupsen/logrus"
 )

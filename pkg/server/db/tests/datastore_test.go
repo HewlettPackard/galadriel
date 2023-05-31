@@ -2,15 +2,16 @@ package tests
 
 import (
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
-	"time"
 )
 
 var (

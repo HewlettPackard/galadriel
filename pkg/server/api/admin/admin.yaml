@@ -4,7 +4,7 @@ info:
   description: |-
     Galadriel Server Management API specification.
   contact:
-    name: Github 
+    name: Github
     url: https://github.com/HewlettPackard/galadriel
   license:
     name: Apache 2.0
@@ -18,11 +18,11 @@ tags:
   - name: Relationships
     description: A relationship is the representation of a SPIFFE Federation Relationship between two Trust Domains
   - name: Join Token
-    description:  Representation of a join token bound to a Trust Domain.
-    
+    description: Representation of a join token bound to a Trust Domain.
+
 paths:
   /trust-domain/{trustDomainName}:
-    get: 
+    get:
       operationId: GetTrustDomainByName
       tags:
         - Trust Domain
@@ -59,7 +59,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'  
+              $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
       responses:
         '200':
           description: Successful operation

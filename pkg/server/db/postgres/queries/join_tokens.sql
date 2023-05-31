@@ -5,8 +5,8 @@ RETURNING *;
 
 -- name: UpdateJoinToken :one
 UPDATE join_tokens
-    SET used = $2,
-        updated_at = now()
+SET used       = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING *;
 

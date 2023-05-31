@@ -7,7 +7,7 @@ RETURNING *;
 UPDATE relationships
 SET trust_domain_a_consent = ?,
     trust_domain_b_consent = ?,
-    updated_at = CURRENT_TIMESTAMP
+    updated_at             = CURRENT_TIMESTAMP
 WHERE id = ?
 RETURNING *;
 
@@ -24,7 +24,8 @@ WHERE id = ?;
 -- name: FindRelationshipsByTrustDomainID :many
 SELECT *
 FROM relationships
-WHERE trust_domain_a_id = ? OR trust_domain_b_id = ?;
+WHERE trust_domain_a_id = ?
+   OR trust_domain_b_id = ?;
 
 -- name: ListRelationships :many
 SELECT *

@@ -6,15 +6,15 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"github.com/spiffe/spire-api-sdk/proto/spire/api/types"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
 	"math/big"
 	"testing"
 	"time"
 
 	bundlev1 "github.com/spiffe/spire-api-sdk/proto/spire/api/server/bundle/v1"
+	"github.com/spiffe/spire-api-sdk/proto/spire/api/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 type fakeBundleClient struct {
