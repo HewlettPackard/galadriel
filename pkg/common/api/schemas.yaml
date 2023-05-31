@@ -180,6 +180,16 @@ components:
       type: string
       description: base64 encoded signature of the bundle
       example: aG6ZX3aZf+6tg/yRDZdRSNtM39lzZWNyZXRJZD1JYW1TZWNyZXRJZCZjdXJyZW50VGltZVN0YW1wPTE1NzEyMTUwOTUmZXhwaXJlVGltZT0xODg2NTc1MDk1JnJhbmRvbT0yMjA2MjU=
+    Offset:
+      type: integer
+      minimum: 0
+      description: The number of items to skip before starting to collect the result set.
+    Limit:
+      type: integer
+      minimum: 1
+      maximum: 50
+      default: 20
+      description: The numbers of items to return.
   securitySchemes:
     harvester_auth:
       type: "http"
