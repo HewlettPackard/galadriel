@@ -19,15 +19,16 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// FederatedBundlesSynchronizer is responsible for periodically syncing the federated bundles in SPIRE Server
-// with the Federated bundles fetched from Galadriel Server.
-// This process involves:
-// 1. Fetching the federated bundles from Galadriel Server.
-// 2. Verifying the integrity of the bundles.
-// 3. Setting the new bundles to SPIRE Server.
-// 4. Deleting the bundles from SPIRE Server for relationships that no longer exist.
-// The deletion of bundles in SPIRE Server is done using the DISSOCIATE mode deletes the federated bundles
-// dissociating the registration entries from the federated trust domain.
+// FederatedBundlesSynchronizer is responsible for periodically synchronizing the federated bundles
+// in the SPIRE Server with those fetched from the Galadriel Server. The synchronization process consists of the following steps:
+// 1. Fetch the federated bundles from the Galadriel Server.
+// 2. Verify the integrity of these bundles using the provided bundle verifiers.
+// 3. Update the SPIRE Server with the new bundles.
+// 4. If any relationships no longer exist, remove the corresponding bundles from the SPIRE Server.
+//
+// The removal of bundles is done in DISSOCIATE mode, which dissociates the registration entries
+// from the non-existent federated trust domains. It also maintains a last-known state of federated
+// bundles fetched from the Galadriel Server to optimize synchronizations.
 type FederatedBundlesSynchronizer struct {
 	spireClient     spireclient.Client
 	galadrielClient galadrielclient.Client
@@ -36,7 +37,7 @@ type FederatedBundlesSynchronizer struct {
 	logger          logrus.FieldLogger
 
 	// last state of Federated Bundles fetched from Galadriel Server
-	lastFederatesBundlesDigests map[spiffeid.TrustDomain][]byte
+	lastFederatesBundleDigests map[spiffeid.TrustDomain][]byte
 }
 
 // FederatedBundlesSynchronizerConfig holds the configuration for FederatedBundlesSynchronizer.
@@ -58,8 +59,8 @@ func NewFederatedBundlesSynchronizer(config *FederatedBundlesSynchronizerConfig)
 	}
 }
 
-// Run starts the synchronization process.
-func (s *FederatedBundlesSynchronizer) Run(ctx context.Context) error {
+// StartSyncing starts the synchronization process.
+func (s *FederatedBundlesSynchronizer) StartSyncing(ctx context.Context) error {
 	s.logger.Info("Federated Bundles Synchronizer started")
 
 	ticker := time.NewTicker(s.syncInterval)
@@ -68,7 +69,7 @@ func (s *FederatedBundlesSynchronizer) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			if err := s.syncFederatedBundles(ctx); err != nil {
+			if err := s.synchronizeFederatedBundles(ctx); err != nil {
 				s.logger.Errorf("Failed to sync federated bundles with Galadriel Server: %v", err)
 			}
 		case <-ctx.Done():
@@ -78,40 +79,40 @@ func (s *FederatedBundlesSynchronizer) Run(ctx context.Context) error {
 	}
 }
 
-func (s *FederatedBundlesSynchronizer) syncFederatedBundles(ctx context.Context) error {
-	s.logger.Debug("Syncing federated bundles with Galadriel Server")
+func (s *FederatedBundlesSynchronizer) synchronizeFederatedBundles(ctx context.Context) error {
+	s.logger.Debug("Synchronize federated bundles with Galadriel Server")
 
-	spireCtx, spireCancel := context.WithTimeout(ctx, spireCallTimeout)
-	if spireCancel == nil {
+	spireCallCtx, spireCallCancel := context.WithTimeout(ctx, spireCallTimeout)
+	if spireCallCancel == nil {
 		return fmt.Errorf("failed to create context for SPIRE call")
 	}
-	defer spireCancel()
+	defer spireCallCancel()
 
-	fedBundlesInSPIRE, err := s.fetchSPIREFederatedBundles(spireCtx)
+	fedBundlesInSPIRE, err := s.fetchSPIREFederatedBundles(spireCallCtx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch federated bundles from SPIRE Server: %w", err)
 	}
 
-	galadrielCtx, galadrielCancel := context.WithTimeout(ctx, galadrielCallTimeout)
-	if galadrielCancel == nil {
+	galadrielCallCtx, galadrielCallCancel := context.WithTimeout(ctx, galadrielCallTimeout)
+	if galadrielCallCancel == nil {
 		return fmt.Errorf("failed to create context for Galadriel call")
 	}
-	defer galadrielCancel()
+	defer galadrielCallCancel()
 
-	bundles, digests, err := s.galadrielClient.SyncBundles(galadrielCtx, fedBundlesInSPIRE)
+	bundles, digests, err := s.galadrielClient.SyncBundles(galadrielCallCtx, fedBundlesInSPIRE)
 	if err != nil {
 		return fmt.Errorf("failed to sync federated bundles with Galadriel Server: %w", err)
 	}
 
 	// if the federated bundles have not changed since last server poll, skip the sync
-	if equalMaps(s.lastFederatesBundlesDigests, digests) {
+	if areMapsEqual(s.lastFederatesBundleDigests, digests) {
 		s.logger.Debug("Federated bundles have not changed")
 		return nil
 	}
 
 	bundlesToSet := make([]*spiffebundle.Bundle, 0)
 	for _, b := range bundles {
-		if err := s.verifyBundle(b); err != nil {
+		if err := s.validateBundleIntegrity(b); err != nil {
 			s.logger.Errorf("Failed to verify bundle for trust domain %q: %v", b.TrustDomainName, err)
 			continue // skip the bundle
 		}
@@ -125,21 +126,21 @@ func (s *FederatedBundlesSynchronizer) syncFederatedBundles(ctx context.Context)
 		bundlesToSet = append(bundlesToSet, spireBundle)
 	}
 
-	setStatuses, err := s.spireClient.SetFederatedBundles(spireCtx, bundlesToSet)
+	setStatuses, err := s.spireClient.SetFederatedBundles(spireCallCtx, bundlesToSet)
 	if err != nil {
 		s.logger.Errorf("Failed to set federated bundles in SPIRE Server: %v", err)
 	} else {
 		s.logFederatedBundleSetStatuses(setStatuses)
 	}
 
-	bundlesToDelete := s.getTrustDomainsToDelete(fedBundlesInSPIRE, digests)
+	bundlesToDelete := s.findTrustDomainsToDelete(fedBundlesInSPIRE, digests)
 	if len(bundlesToDelete) == 0 {
 		// No updates to be made, update the last state and return
-		s.lastFederatesBundlesDigests = digests
+		s.lastFederatesBundleDigests = digests
 		return nil
 	}
 
-	deleteStatuses, err := s.spireClient.DeleteFederatedBundles(spireCtx, bundlesToDelete)
+	deleteStatuses, err := s.spireClient.DeleteFederatedBundles(spireCallCtx, bundlesToDelete)
 	if err != nil {
 		s.logger.Errorf("Failed to delete federated bundles in SPIRE Server: %v", err)
 	} else {
@@ -147,13 +148,13 @@ func (s *FederatedBundlesSynchronizer) syncFederatedBundles(ctx context.Context)
 	}
 
 	// update the last state of federated bundles
-	s.lastFederatesBundlesDigests = digests
+	s.lastFederatesBundleDigests = digests
 
 	return nil
 }
 
-// getTrustDomainsToDelete returns a slice of trust domains to delete based on the provided bundles and digests map.
-func (s *FederatedBundlesSynchronizer) getTrustDomainsToDelete(bundles []*entity.Bundle, digests map[spiffeid.TrustDomain][]byte) []spiffeid.TrustDomain {
+// findTrustDomainsToDelete returns a slice of trust domains to delete based on the provided bundles and digests map.
+func (s *FederatedBundlesSynchronizer) findTrustDomainsToDelete(bundles []*entity.Bundle, digests map[spiffeid.TrustDomain][]byte) []spiffeid.TrustDomain {
 	trustDomainsToDelete := make([]spiffeid.TrustDomain, 0)
 	for _, b := range bundles {
 		if _, ok := digests[b.TrustDomainName]; !ok {
@@ -164,9 +165,9 @@ func (s *FederatedBundlesSynchronizer) getTrustDomainsToDelete(bundles []*entity
 	return trustDomainsToDelete
 }
 
-// verifyBundle verifies the bundle using the given verifiers.
+// validateBundleIntegrity verifies the bundle using the given verifiers.
 // If one of the verifiers can verify the bundle, it returns nil.
-func (s *FederatedBundlesSynchronizer) verifyBundle(bundle *entity.Bundle) error {
+func (s *FederatedBundlesSynchronizer) validateBundleIntegrity(bundle *entity.Bundle) error {
 	var certChain []*x509.Certificate
 	if len(bundle.SigningCertificate) > 0 {
 		var err error
@@ -231,7 +232,7 @@ func (s *FederatedBundlesSynchronizer) logFederatedBundleDeleteStatuses(deleteSt
 	}
 }
 
-func equalMaps(map1, map2 map[spiffeid.TrustDomain][]byte) bool {
+func areMapsEqual(map1, map2 map[spiffeid.TrustDomain][]byte) bool {
 	if len(map1) == 0 && len(map2) == 0 {
 		return true
 	}
