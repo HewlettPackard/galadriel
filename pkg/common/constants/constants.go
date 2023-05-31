@@ -2,7 +2,7 @@ package constants
 
 const (
 	TCPProtocol         = "tcp"
-	HTTPSScheme         = "https://"
+	HTTPSScheme         = "https"
 	DefaultLogLevel     = "INFO"
 	JSONContentType     = "application/json"
 	Galadriel           = "galadriel"

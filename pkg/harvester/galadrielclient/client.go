@@ -98,7 +98,7 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		return nil, fmt.Errorf("failed to create TLS client for server %s: %w", cfg.GaladrielServerAddress, err)
 	}
 
-	serverAddress := fmt.Sprintf("%s%s", constants.HTTPSScheme, cfg.GaladrielServerAddress.String())
+	serverAddress := fmt.Sprintf("%s://%s", constants.HTTPSScheme, cfg.GaladrielServerAddress.String())
 
 	// Create harvester client
 	harvesterClient, err := harvester.NewClient(serverAddress,
