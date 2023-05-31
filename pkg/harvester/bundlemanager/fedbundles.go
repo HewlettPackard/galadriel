@@ -37,7 +37,7 @@ type FederatedBundlesSynchronizer struct {
 	logger          logrus.FieldLogger
 
 	// last state of Federated Bundles fetched from Galadriel Server
-	lastFederatesBundleDigests map[spiffeid.TrustDomain][]byte
+	lastFederatedBundleDigests map[spiffeid.TrustDomain][]byte
 }
 
 // FederatedBundlesSynchronizerConfig holds the configuration for FederatedBundlesSynchronizer.
@@ -105,7 +105,7 @@ func (s *FederatedBundlesSynchronizer) synchronizeFederatedBundles(ctx context.C
 	}
 
 	// if the federated bundles have not changed since last server poll, skip the sync
-	if areMapsEqual(s.lastFederatesBundleDigests, digests) {
+	if areMapsEqual(s.lastFederatedBundleDigests, digests) {
 		s.logger.Debug("Federated bundles have not changed")
 		return nil
 	}
@@ -136,7 +136,7 @@ func (s *FederatedBundlesSynchronizer) synchronizeFederatedBundles(ctx context.C
 	bundlesToDelete := s.findTrustDomainsToDelete(fedBundlesInSPIRE, digests)
 	if len(bundlesToDelete) == 0 {
 		// No updates to be made, update the last state and return
-		s.lastFederatesBundleDigests = digests
+		s.lastFederatedBundleDigests = digests
 		return nil
 	}
 
@@ -148,7 +148,7 @@ func (s *FederatedBundlesSynchronizer) synchronizeFederatedBundles(ctx context.C
 	}
 
 	// update the last state of federated bundles
-	s.lastFederatesBundleDigests = digests
+	s.lastFederatedBundleDigests = digests
 
 	return nil
 }
