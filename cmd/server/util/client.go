@@ -138,6 +138,7 @@ func (c *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *enti
 
 	return relationship, nil
 }
+
 func (c *galadrielAdminClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
 	payload := &admin.GetRelationshipsParams{Status: &consentStatus, TrustDomainName: &trustDomainName}
 

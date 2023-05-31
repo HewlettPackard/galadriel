@@ -13,6 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
@@ -21,8 +24,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	adminapi "github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	harvesterapi "github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
-	"github.com/HewlettPackard/galadriel/pkg/server/catalog"
-	"github.com/HewlettPackard/galadriel/pkg/server/db"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
@@ -40,11 +42,10 @@ type Server interface {
 }
 
 type Endpoints struct {
-	// TODO: unexport these fields
-	TCPAddress *net.TCPAddr
-	LocalAddr  net.Addr
-	Datastore  db.Datastore
-	Logger     logrus.FieldLogger
+	tcpAddress *net.TCPAddr
+	localAddr  net.Addr
+	datastore  db.Datastore
+	logger     logrus.FieldLogger
 
 	x509CA       x509ca.X509CA
 	jwtIssuer    jwt.Issuer
@@ -78,10 +79,10 @@ func New(c *Config) (*Endpoints, error) {
 	}
 
 	return &Endpoints{
-		TCPAddress:   c.TCPAddress,
-		LocalAddr:    c.LocalAddress,
-		Datastore:    c.Catalog.GetDatastore(),
-		Logger:       c.Logger,
+		tcpAddress:   c.TCPAddress,
+		localAddr:    c.LocalAddress,
+		datastore:    c.Catalog.GetDatastore(),
+		logger:       c.Logger,
 		x509CA:       c.Catalog.GetX509CA(),
 		jwtIssuer:    c.JWTIssuer,
 		jwtValidator: c.JWTValidator,
@@ -89,7 +90,7 @@ func New(c *Config) (*Endpoints, error) {
 }
 
 func (e *Endpoints) ListenAndServe(ctx context.Context) error {
-	e.Logger.Debug("Initializing API endpoints")
+	e.logger.Debug("Initializing API endpoints")
 	err := util.RunTasks(ctx,
 		e.startTCPListener,
 		e.startUDSListener,
@@ -102,7 +103,7 @@ func (e *Endpoints) ListenAndServe(ctx context.Context) error {
 }
 
 func (e *Endpoints) startTCPListener(ctx context.Context) error {
-	e.Logger.Debug("Starting TCP listener")
+	e.logger.Debug("Starting TCP listener")
 
 	server := echo.New()
 	server.HideBanner = true
@@ -124,14 +125,14 @@ func (e *Endpoints) startTCPListener(ctx context.Context) error {
 	}
 
 	httpServer := http.Server{
-		Addr:      e.TCPAddress.String(),
+		Addr:      e.tcpAddress.String(),
 		Handler:   server, // set Echo as handler
 		TLSConfig: tlsConfig,
 	}
 
-	log := e.Logger.WithFields(logrus.Fields{
-		telemetry.Network: e.TCPAddress.Network(),
-		telemetry.Address: e.TCPAddress.String()})
+	log := e.logger.WithFields(logrus.Fields{
+		telemetry.Network: e.tcpAddress.Network(),
+		telemetry.Address: e.tcpAddress.String()})
 
 	errChan := make(chan error)
 	go func() {
@@ -155,7 +156,7 @@ func (e *Endpoints) startTCPListener(ctx context.Context) error {
 		}
 		err = server.Close()
 		if err != nil {
-			e.Logger.WithError(err).Error("Error closing Echo Server")
+			e.logger.WithError(err).Error("Error closing Echo Server")
 		}
 		<-errChan
 		log.Info("TCP listener stopped")
@@ -164,10 +165,10 @@ func (e *Endpoints) startTCPListener(ctx context.Context) error {
 }
 
 func (e *Endpoints) startUDSListener(ctx context.Context) error {
-	e.Logger.Debug("Starting UDS listener")
+	e.logger.Debug("Starting UDS listener")
 	server := echo.New()
 
-	l, err := net.Listen(e.LocalAddr.Network(), e.LocalAddr.String())
+	l, err := net.Listen(e.localAddr.Network(), e.localAddr.String())
 	if err != nil {
 		return fmt.Errorf("error listening on UDS: %w", err)
 	}
@@ -175,9 +176,9 @@ func (e *Endpoints) startUDSListener(ctx context.Context) error {
 
 	e.addUDSHandlers(server)
 
-	log := e.Logger.WithFields(logrus.Fields{
-		telemetry.Network: e.LocalAddr.Network(),
-		telemetry.Address: e.LocalAddr.String()})
+	log := e.logger.WithFields(logrus.Fields{
+		telemetry.Network: e.localAddr.Network(),
+		telemetry.Address: e.localAddr.String()})
 
 	errChan := make(chan error)
 	go func() {
@@ -202,16 +203,16 @@ func (e *Endpoints) startUDSListener(ctx context.Context) error {
 }
 
 func (e *Endpoints) addUDSHandlers(server *echo.Echo) {
-	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(e.Logger, e.Datastore))
+	adminapi.RegisterHandlers(server, NewAdminAPIHandlers(e.logger, e.datastore))
 }
 
 func (e *Endpoints) addTCPHandlers(server *echo.Echo) {
-	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(e.Logger, e.Datastore, e.jwtIssuer, e.jwtValidator))
+	harvesterapi.RegisterHandlers(server, NewHarvesterAPIHandlers(e.logger, e.datastore, e.jwtIssuer, e.jwtValidator))
 }
 
 func (e *Endpoints) addTCPMiddlewares(server *echo.Echo) {
-	logger := e.Logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
-	authNMiddleware := NewAuthenticationMiddleware(logger, e.Datastore, e.jwtValidator)
+	logger := e.logger.WithField(telemetry.SubsystemName, telemetry.Endpoints)
+	authNMiddleware := NewAuthenticationMiddleware(logger, e.datastore, e.jwtValidator)
 
 	skipOnboard := func(c echo.Context) bool {
 		return strings.Contains(c.Request().URL.Path, "/onboard")
@@ -242,7 +243,7 @@ func (t *certificateSource) getTLSCertificate() *tls.Certificate {
 }
 
 func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan chan error) {
-	e.Logger.Info("Started TLS certificate rotator")
+	e.logger.Info("Started TLS certificate rotator")
 
 	// Start a ticker that rotates the certificate every default interval
 	certRotationInterval := serverCertificateTTL / 2
@@ -251,14 +252,14 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 	for {
 		select {
 		case <-ticker.C:
-			e.Logger.Debug("Rotating Server TLS certificate")
+			e.logger.Debug("Rotating Server TLS certificate")
 			cert, err := e.getTLSCertificate(ctx)
 			if err != nil {
 				errChan <- fmt.Errorf("failed to rotate Server TLS certificate: %w", err)
 			}
 			e.certsStore.setTLSCertificate(cert)
 		case <-ctx.Done():
-			e.Logger.Info("Stopped Server TLS certificate rotator")
+			e.logger.Info("Stopped Server TLS certificate rotator")
 			return
 		}
 	}

@@ -95,7 +95,7 @@ func SetupTrustDomain(t *testing.T, ds db.Datastore) *entity.TrustDomain {
 		Name:        td,
 		Description: "Fake domain",
 	}
-	trustDomain, err := ds.CreateOrUpdateTrustDomain(context.TODO(), tdEntity)
+	trustDomain, err := ds.CreateOrUpdateTrustDomain(context.Background(), tdEntity)
 	require.NoError(t, err)
 
 	return trustDomain
@@ -108,7 +108,7 @@ func SetupBundle(t *testing.T, ds db.Datastore, td uuid.UUID) *entity.Bundle {
 		Signature:     []byte("test-signature"),
 	}
 
-	_, err := ds.CreateOrUpdateBundle(context.TODO(), bundle)
+	_, err := ds.CreateOrUpdateBundle(context.Background(), bundle)
 	require.NoError(t, err)
 
 	return bundle
@@ -120,7 +120,7 @@ func SetupJoinToken(t *testing.T, ds db.Datastore, td uuid.UUID) *entity.JoinTok
 		TrustDomainID: td,
 	}
 
-	joinToken, err := ds.CreateJoinToken(context.TODO(), jt)
+	joinToken, err := ds.CreateJoinToken(context.Background(), jt)
 	require.NoError(t, err)
 
 	return joinToken
