@@ -14,9 +14,9 @@ import (
 	"github.com/spiffe/go-spiffe/v2/bundle/spiffebundle"
 )
 
-// SpireBundleSyncer is responsible for periodically fetching the bundle from the SPIRE Server,
+// SpireBundleSynchronizer is responsible for periodically fetching the bundle from the SPIRE Server,
 // signing it, and uploading it to the Galadriel Server.
-type SpireBundleSyncer struct {
+type SpireBundleSynchronizer struct {
 	spireClient     spireclient.Client
 	galadrielClient galadrielclient.Client
 	bundleSigner    integrity.Signer
@@ -26,8 +26,8 @@ type SpireBundleSyncer struct {
 	lastSpireBundle *spiffebundle.Bundle // last bundle fetched from the SPIRE Server and uploaded to the Galadriel Server
 }
 
-// SpireSyncerConfig holds the configuration for SpireBundleSyncer.
-type SpireSyncerConfig struct {
+// SpireSynchronizerConfig holds the configuration for SpireBundleSynchronizer.
+type SpireSynchronizerConfig struct {
 	SpireClient     spireclient.Client
 	GaladrielClient galadrielclient.Client
 	BundleSigner    integrity.Signer
@@ -35,9 +35,9 @@ type SpireSyncerConfig struct {
 	Logger          logrus.FieldLogger
 }
 
-// NewSpireSyncer creates a new SpireBundleSyncer instance.
-func NewSpireSyncer(config *SpireSyncerConfig) *SpireBundleSyncer {
-	return &SpireBundleSyncer{
+// NewSpireSynchronizer creates a new SpireBundleSynchronizer instance.
+func NewSpireSynchronizer(config *SpireSynchronizerConfig) *SpireBundleSynchronizer {
+	return &SpireBundleSynchronizer{
 		spireClient:     config.SpireClient,
 		galadrielClient: config.GaladrielClient,
 		bundleSigner:    config.BundleSigner,
@@ -46,9 +46,9 @@ func NewSpireSyncer(config *SpireSyncerConfig) *SpireBundleSyncer {
 	}
 }
 
-// Run starts the SPIRE bundle syncer process.
-func (s *SpireBundleSyncer) Run(ctx context.Context) error {
-	s.logger.Info("SPIRE Bundle Syncer started")
+// Run starts the SPIRE bundle Synchronizer process.
+func (s *SpireBundleSynchronizer) Run(ctx context.Context) error {
+	s.logger.Info("SPIRE Bundle Synchronizer started")
 
 	ticker := time.NewTicker(s.syncInterval)
 	defer ticker.Stop()
@@ -61,14 +61,14 @@ func (s *SpireBundleSyncer) Run(ctx context.Context) error {
 				s.logger.Errorf("Failed to sync SPIRE bundle: %v", err)
 			}
 		case <-ctx.Done():
-			s.logger.Info("SPIRE Bundle Syncer stopped")
+			s.logger.Info("SPIRE Bundle Synchronizer stopped")
 			return nil
 		}
 	}
 }
 
 // syncSPIREBundle periodically checks the SPIRE Server for a new bundle, signs it, and uploads the signed bundle to the Galadriel Server.
-func (s *SpireBundleSyncer) syncSPIREBundle(ctx context.Context) error {
+func (s *SpireBundleSynchronizer) syncSPIREBundle(ctx context.Context) error {
 	s.logger.Debug("Checking SPIRE Server for a new bundle")
 
 	spireCtx, spireCancel := context.WithTimeout(ctx, spireCallTimeout)
@@ -115,7 +115,7 @@ func (s *SpireBundleSyncer) syncSPIREBundle(ctx context.Context) error {
 
 // generateBundleToUpload creates an entity.Bundle using the provided SPIRE bundle.
 // It marshals the SPIRE bundle, generates the bundle signature, and calculates the digest.
-func (s *SpireBundleSyncer) generateBundleToUpload(spireBundle *spiffebundle.Bundle) (*entity.Bundle, error) {
+func (s *SpireBundleSynchronizer) generateBundleToUpload(spireBundle *spiffebundle.Bundle) (*entity.Bundle, error) {
 	bundleBytes, err := spireBundle.Marshal()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal SPIRE bundle: %w", err)
