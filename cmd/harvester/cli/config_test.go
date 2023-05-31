@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,7 +75,7 @@ spire_bundle_poll_interval = "30m"
 					DataDir:                      "./data",
 					FederatedBundlesPollInterval: "1h",
 					SpireBundlePollInterval:      "30m",
-					LogLevel:                     defaultLogLevel,
+					LogLevel:                     constants.DefaultLogLevel,
 				},
 			},
 		},

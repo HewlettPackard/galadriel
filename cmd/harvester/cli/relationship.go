@@ -3,11 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/cmd/harvester/util"
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/google/uuid"
-	"strings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -43,23 +44,27 @@ var listRelationshipCmd = &cobra.Command{
 The 'list' command allows you to retrieve a list of relationships within the trust domain managed by the SPIRE Server and this Harvester.`,
 	Example: "relationship list -s approved",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		status, err := cmd.Flags().GetString("status")
+		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
 
-		client, err := util.NewUDSClient(socketPath)
+		client, err := util.NewUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}
 
 		consentStatus := api.ConsentStatus(status)
-		relationships, err := client.GetRelationships(context.Background(), consentStatus)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		relationships, err := client.GetRelationships(ctx, consentStatus)
 		if err != nil {
 			return err
 		}
@@ -99,34 +104,7 @@ approving it.
 `,
 	Example: "relationship approve --relationshipID <relationshipID>",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
-		if err != nil {
-			return fmt.Errorf("cannot get socket path flag: %v", err)
-		}
-
-		idStr, err := cmd.Flags().GetString("relationshipID")
-		if err != nil {
-			return fmt.Errorf("cannot relationship ID flag: %v", err)
-		}
-		relID, err := uuid.Parse(idStr)
-		if err != nil {
-			return fmt.Errorf("cannot parse relationship ID: %v", err)
-		}
-
-		client, err := util.NewUDSClient(socketPath)
-		if err != nil {
-			return err
-		}
-
-		rel, err := client.UpdateRelationship(context.Background(), relID, api.Approved)
-		if err != nil {
-			return err
-		}
-
-		fmt.Print("Successfully approved relationship.\n\n")
-		fmt.Printf("%s\n", rel.ConsoleString())
-
-		return nil
+		return modifyRelationship(cmd, args, api.Approved)
 	},
 }
 
@@ -148,35 +126,47 @@ trust your distributed system. Ensure that you carefully evaluate the relationsh
 before denying it.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
-		if err != nil {
-			return fmt.Errorf("cannot get socket path flag: %v", err)
-		}
-
-		idStr, err := cmd.Flags().GetString("relationshipID")
-		if err != nil {
-			return fmt.Errorf("cannot relationship ID flag: %v", err)
-		}
-		relID, err := uuid.Parse(idStr)
-		if err != nil {
-			return fmt.Errorf("cannot parse relationship ID: %v", err)
-		}
-
-		client, err := util.NewUDSClient(socketPath)
-		if err != nil {
-			return err
-		}
-
-		rel, err := client.UpdateRelationship(context.Background(), relID, api.Denied)
-		if err != nil {
-			return err
-		}
-
-		fmt.Print("Successfully denied relationship.\n\n")
-		fmt.Printf("%s\n", rel.ConsoleString())
-
-		return nil
+		return modifyRelationship(cmd, args, api.Denied)
 	},
+}
+
+func modifyRelationship(cmd *cobra.Command, args []string, action api.ConsentStatus) error {
+	socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+	if err != nil {
+		return fmt.Errorf("cannot get socket path flag: %v", err)
+	}
+
+	idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+	if err != nil {
+		return fmt.Errorf("cannot get relationship ID flag: %v", err)
+	}
+	relID, err := uuid.Parse(idStr)
+	if err != nil {
+		return fmt.Errorf("cannot parse relationship ID: %v", err)
+	}
+
+	client, err := util.NewUDSClient(socketPath, nil)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	rel, err := client.UpdateRelationship(ctx, relID, action)
+	if err != nil {
+		return err
+	}
+
+	switch action {
+	case api.Approved:
+		fmt.Print("Successfully approved relationship.\n\n")
+	case api.Denied:
+		fmt.Print("Successfully denied relationship.\n\n")
+	}
+	fmt.Printf("%s\n", rel.ConsoleString())
+
+	return nil
 }
 
 func init() {
@@ -185,21 +175,21 @@ func init() {
 	relationshipCmd.AddCommand(approveRelationshipCmd)
 	relationshipCmd.AddCommand(denyRelationshipCmd)
 
-	approveRelationshipCmd.Flags().StringP("relationshipID", "r", "", "Relationship ID to approve")
-	err := approveRelationshipCmd.MarkFlagRequired("relationshipID")
+	approveRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "Relationship ID to approve")
+	err := approveRelationshipCmd.MarkFlagRequired(cli.RelationshipIDFlagName)
 	if err != nil {
 		fmt.Printf("cannot mark relationshipID flag as required: %v", err)
 	}
 
-	denyRelationshipCmd.Flags().StringP("relationshipID", "r", "", "Relationship ID to deny")
-	err = denyRelationshipCmd.MarkFlagRequired("relationshipID")
+	denyRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "Relationship ID to deny")
+	err = denyRelationshipCmd.MarkFlagRequired(cli.RelationshipIDFlagName)
 	if err != nil {
 		fmt.Printf("cannot mark relationshipID flag as required: %v", err)
 	}
 
-	listRelationshipCmd.Flags().StringP("status", "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(validConsentStatusValues, ", ")))
+	listRelationshipCmd.Flags().StringP(cli.ConsentStatusFlagName, "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(validConsentStatusValues, ", ")))
 	listRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-		status, err := cmd.Flags().GetString("status")
+		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get status flag: %v", err)
 		}

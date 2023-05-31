@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
+
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/endpoints"
 	"github.com/spf13/cobra"
@@ -33,17 +35,17 @@ Please exercise caution when handling and sharing join tokens, as they grant acc
 trust domain and should only be shared with authorized individuals or entities.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		trustDomain, err := cmd.Flags().GetString("trustDomain")
+		trustDomain, err := cmd.Flags().GetString(cli.TrustDomainFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
 
-		ttlStr, err := cmd.Flags().GetString("ttl")
+		ttlStr, err := cmd.Flags().GetString(cli.TTLFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get TTL flag: %v", err)
 		}
@@ -53,12 +55,15 @@ trust domain and should only be shared with authorized individuals or entities.
 			return errors.New("invalid TTL")
 		}
 
-		client, err := util.NewUDSClient(socketPath)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}
 
-		joinToken, err := client.GetJoinToken(context.Background(), trustDomain, int32(ttl))
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		joinToken, err := client.GetJoinToken(ctx, trustDomain, int32(ttl))
 		if err != nil {
 			return err
 		}
@@ -73,10 +78,10 @@ func init() {
 
 	tokenCmd.AddCommand(generateTokenCmd)
 
-	generateTokenCmd.Flags().StringP("trustDomain", "t", "", "The trust domain to which the join token will be bound")
-	err := generateTokenCmd.MarkFlagRequired("trustDomain")
+	generateTokenCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The trust domain to which the join token will be bound")
+	err := generateTokenCmd.MarkFlagRequired(cli.TrustDomainFlagName)
 	if err != nil {
 		fmt.Printf("Error marking trustDomain flag as required: %v\n", err)
 	}
-	generateTokenCmd.Flags().StringP("ttl", "", fmt.Sprintf("%d", endpoints.DefaultTokenTTL), "Token TTL in seconds")
+	generateTokenCmd.Flags().StringP(cli.TTLFlagName, "", fmt.Sprintf("%d", endpoints.DefaultTokenTTL), "Token TTL in seconds")
 }

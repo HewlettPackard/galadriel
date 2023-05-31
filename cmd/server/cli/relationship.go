@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/spf13/cobra"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-const relationshipCommonText = `Manage federation relationships between SPIFFE trust domains with the 'relationship' command.
+const (
+	relationshipCommonText = `Manage federation relationships between SPIFFE trust domains with the 'relationship' command.
 Federation relationships in SPIFFE permit secure communication between workloads across different trust domains.`
+)
 
 var relationshipCmd = &cobra.Command{
 	Use:   "relationship",
@@ -34,17 +37,17 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 	Args: cobra.ExactArgs(0),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		client, err := util.NewUDSClient(socketPath)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}
 
-		tdA, err := cmd.Flags().GetString("trustDomainA")
+		tdA, err := cmd.Flags().GetString(cli.TrustDomainAFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain A flag: %v", err)
 		}
@@ -58,7 +61,7 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 			return err
 		}
 
-		tdB, err := cmd.Flags().GetString("trustDomainB")
+		tdB, err := cmd.Flags().GetString(cli.TrustDomainBFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain B flag: %v", err)
 		}
@@ -72,7 +75,10 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 			return err
 		}
 
-		_, err = client.CreateRelationship(context.Background(), &entity.Relationship{
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		_, err = client.CreateRelationship(ctx, &entity.Relationship{
 			TrustDomainAName: trustDomain1,
 			TrustDomainBName: trustDomain2,
 		})
@@ -133,6 +139,6 @@ func init() {
 	relationshipCmd.AddCommand(deleteRelationshipCmd)
 	relationshipCmd.AddCommand(updateRelationshipCmd)
 
-	createRelationshipCmd.Flags().StringP("trustDomainA", "a", "", "The name of a SPIFFE trust domain to participate in the relationship.")
-	createRelationshipCmd.Flags().StringP("trustDomainB", "b", "", "The name of a SPIFFE trust domain to participate in the relationship.")
+	createRelationshipCmd.Flags().StringP(cli.TrustDomainAFlagName, "a", "", "The name of a SPIFFE trust domain to participate in the relationship.")
+	createRelationshipCmd.Flags().StringP(cli.TrustDomainBFlagName, "b", "", "The name of a SPIFFE trust domain to participate in the relationship.")
 }
