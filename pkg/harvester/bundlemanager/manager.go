@@ -22,7 +22,7 @@ const (
 
 // BundleManager is responsible for managing the synchronization and watching of bundles.
 type BundleManager struct {
-	federatedBundlesSynchronizer *FederatedSynchronizer
+	federatedBundlesSynchronizer *FederatedBundlesSynchronizer
 	spireBundleSynchronizer      *SpireBundleSynchronizer
 }
 
@@ -58,7 +58,7 @@ func NewBundleManager(c *Config) *BundleManager {
 		Logger:          c.Logger.WithField(telemetry.SubsystemName, telemetry.SpireBundleSynchronizer),
 	})
 
-	fedBundlesSync := NewFederatedSynchronizer(&FederatedSynchronizerConfig{
+	fedBundlesSync := NewFederatedBundlesSynchronizer(&FederatedBundlesSynchronizerConfig{
 		GaladrielClient: c.GaladrielClient,
 		SpireClient:     c.SpireClient,
 		BundleVerifiers: c.BundleVerifiers,
