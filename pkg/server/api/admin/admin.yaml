@@ -118,7 +118,20 @@ paths:
           required: false
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/Offset'
-          description: TrustDomain
+        - name: startDate
+          in: query
+          required: false
+          description: Default value will be 30 days ago
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/Date'
+          example: 2021-01-30
+        - name: endDate
+          in: query
+          required: false
+          description: Default value will the current date
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/Date'
+          example: 2021-02-30
       responses:
         '200':
           description: Successful operation

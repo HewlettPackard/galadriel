@@ -190,6 +190,11 @@ components:
       maximum: 50
       default: 20
       description: The numbers of items to return.
+    Date:
+      type: string
+      format: date
+      maxLength: 21
+      example: "2021-01-30"
   securitySchemes:
     harvester_auth:
       type: "http"
