@@ -75,8 +75,8 @@ func NewBundleManager(c *Config) *BundleManager {
 // Run runs the bundle synchronization processes.
 func (bm *BundleManager) Run(ctx context.Context) error {
 	tasks := []func(ctx context.Context) error{
-		bm.federatedBundlesSynchronizer.Run,
-		bm.spireBundleSynchronizer.Run,
+		bm.federatedBundlesSynchronizer.StartSyncing,
+		bm.spireBundleSynchronizer.StartSyncing,
 	}
 
 	err := util.RunTasks(ctx, tasks...)
