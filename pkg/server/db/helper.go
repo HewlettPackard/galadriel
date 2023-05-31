@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 )
 

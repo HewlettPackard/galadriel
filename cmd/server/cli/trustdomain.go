@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
 	"github.com/spf13/cobra"
 )
@@ -38,12 +39,12 @@ The 'create' command allows you to create a new trust domain in the Galadriel Se
 ` + trustDomainCommonText + `
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		socketPath, err := cmd.Flags().GetString("socketPath")
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		trustDomain, err := cmd.Flags().GetString("trustDomain")
+		trustDomain, err := cmd.Flags().GetString(cli.TrustDomainFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
@@ -52,12 +53,15 @@ The 'create' command allows you to create a new trust domain in the Galadriel Se
 			return fmt.Errorf("trust domain name is required")
 		}
 
-		client, err := util.NewUDSClient(socketPath)
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
 		}
 
-		trustDomainRes, err := client.CreateTrustDomain(context.Background(), trustDomain)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		trustDomainRes, err := client.CreateTrustDomain(ctx, trustDomain)
 		if err != nil {
 			return err
 		}
@@ -113,8 +117,8 @@ func init() {
 	trustDomainCmd.AddCommand(deleteTrustDomainCmd)
 	trustDomainCmd.AddCommand(updateTrustDomainCmd)
 
-	createTrustDomainCmd.Flags().StringP("trustDomain", "t", "", "The trust domain name.")
-	err := createTrustDomainCmd.MarkFlagRequired("trustDomain")
+	createTrustDomainCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The trust domain name.")
+	err := createTrustDomainCmd.MarkFlagRequired(cli.TrustDomainFlagName)
 	if err != nil {
 		fmt.Printf("Error marking trustDomain flag as required: %v\n", err)
 	}

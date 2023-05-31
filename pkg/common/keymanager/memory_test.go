@@ -2,9 +2,9 @@ package keymanager
 
 import (
 	"context"
-	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/stretchr/testify/assert"
 )
 

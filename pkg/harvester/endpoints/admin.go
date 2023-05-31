@@ -2,6 +2,8 @@ package endpoints
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	chttp "github.com/HewlettPackard/galadriel/pkg/common/http"
@@ -9,7 +11,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/harvester/galadrielclient"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type AdminAPIHandlers struct {

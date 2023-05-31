@@ -5,13 +5,14 @@ RETURNING *;
 
 -- name: UpdateJoinToken :one
 UPDATE join_tokens
-SET used = ?,
+SET used       = ?,
     updated_at = datetime('now')
 WHERE id = ?
 RETURNING *;
 
 -- name: DeleteJoinToken :exec
-DELETE FROM join_tokens
+DELETE
+FROM join_tokens
 WHERE id = ?;
 
 -- name: FindJoinTokenByID :one

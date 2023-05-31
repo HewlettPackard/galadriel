@@ -8,9 +8,9 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/jmhodges/clock"
 )

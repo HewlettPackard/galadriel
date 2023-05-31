@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/pkg/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -86,7 +87,7 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.Flags().StringP("config", "c", defaultConfigPath, "Path to the Galadriel Server config file")
+	runCmd.Flags().StringP(cli.ConfigFlagName, "c", defaultConfigPath, "Path to the Galadriel Server config file")
 
 	RootCmd.AddCommand(runCmd)
 }
