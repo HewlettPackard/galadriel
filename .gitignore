@@ -1,26 +1,28 @@
+# Binaries
 /bin
-/vendor
-/test_results
-/artifacts
-/releases
 /out
+.artifacts
 .build*
+
+# Test Results
+/test_results
+
+# Temporary Files
 .tmp
 *.swp
 *.log
 *.out
 
-# Test binary, built with `go test -c`
+# Test Binaries
 *.test
 
-# Ignore binaries built using go build either from the root of the repo or
-# within the respective main packages.
+# Ignore Binaries Built with go build
 /harvester
 /server
 cmd/harvester/harvester
 cmd/server/server
 
-# Editor specific configuration
+# Editor Specific Configurations
 .idea
 .vscode
 
@@ -29,10 +31,13 @@ cmd/server/server
 .DS_Store
 .AppleDouble
 .LSOverride
+
 # Thumbnails
 ._*
 
 ### Linux ###
+# Temporary Files
 *~
-# Linux trash folder which might appear on any partition or disk
+
+# Linux Trash Folder
 .Trash-*
