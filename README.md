@@ -10,9 +10,8 @@ Project Galadriel, or just Galadriel, is an open source project that enables sca
 
 ### What Galadriel IS?
 - **Alternative approach to SPIRE Federation**: it's built on top of SPIRE APIs to facilitate foreign Trust Bundles management.
-- **Multi-tenant**: multiple organizations can leverage the same Galadriel deployment, while ensuring data and operations isolation.
 - **Federation at scale**: configuring multiple SPIRE Server federation should be easy and secure by default, that is Galadriel's main focus.
-- **Central hub**: it's a central place where federation relationships can be defined and audited.
+- **Central hub**: it's a central place where federation relationships can be defined and audited, and trust bundles can be securely stored and managed.
 
 ### What Galadriel IS NOT?
 - **A replacement of SPIRE/SPIFFE Federation**: it doesn't replace SPIRE Federation, it leverages what's already built in there.
@@ -22,8 +21,7 @@ Project Galadriel, or just Galadriel, is an open source project that enables sca
 
 ## Get started
 
-- Learn how to run the Proof of Concept (v0.1.0) [here](https://github.com/HewlettPackard/galadriel/blob/v0.1.0/doc/INSTRUCTIONS.md)
-- [Configuration and CLI Usage instructions](./doc/USAGE.md)
+ - TBD
 
 ## Contribute
 
