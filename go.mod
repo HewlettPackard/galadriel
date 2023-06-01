@@ -13,7 +13,7 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jmhodges/clock v1.2.0
 	github.com/labstack/echo/v4 v4.10.2
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.2
