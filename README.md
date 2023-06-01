@@ -1,4 +1,5 @@
 # Galadriel
+
 [![CodeQL](https://github.com/HewlettPackard/galadriel/actions/workflows/codeql.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/codeql.yml)
 [![PR Build](https://github.com/HewlettPackard/galadriel/actions/workflows/pr_build.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/pr_build.yml)
 [![Scorecards supply-chain security](https://github.com/HewlettPackard/galadriel/actions/workflows/scorecards.yml/badge.svg)](https://github.com/HewlettPackard/galadriel/actions/workflows/scorecards.yml)
@@ -6,35 +7,42 @@
 
 ---
 
-Project Galadriel, or just Galadriel, is an open source project that enables scalable and easy configuration of Federation relationships among SPIRE Servers. It works as a central hub for managing and auditing Federation relationships.
+Galadriel is an open-source project that enables scalable and easy configuration of Federation relationships among SPIRE Servers. It serves as a central hub for managing and auditing Federation relationships.
 
 ### What Galadriel IS?
-- **Alternative approach to SPIRE Federation**: it's built on top of SPIRE APIs to facilitate foreign Trust Bundles management.
-- **Federation at scale**: configuring multiple SPIRE Server federation should be easy and secure by default, that is Galadriel's main focus.
-- **Central hub**: it's a central place where federation relationships can be defined and audited, and trust bundles can be securely stored and managed.
+
+- **Alternative approach to SPIRE Federation**: Galadriel is built on top of SPIRE APIs to facilitate foreign Trust Bundles management.
+- **Federation at scale**: The main focus of Galadriel is to make the configuration of multiple SPIRE Server federations easy and secure by default.
+- **Central hub**:  Galadriel provides a centralized location for defining and auditing federation relationships. It also securely stores and manages trust bundles.
 
 ### What Galadriel IS NOT?
-- **A replacement of SPIRE/SPIFFE Federation**: it doesn't replace SPIRE Federation, it leverages what's already built in there.
-- **A SPIRE plugin**: it's deployed as a separate component, not as a SPIRE plugin.
+
+- **A replacement of SPIRE/SPIFFE Federation**: Galadriel does not replace SPIRE Federation but leverages the existing functionality.
+- **A SPIRE plugin**: Galadriel is deployed as a separate component and not as a SPIRE plugin.
 
 ---
 
 ## Get started
 
- - TBD
+- TBD
 
 ## Contribute
 
-Project Galadriel is an open source project under the [Apache 2 license](./LICENSE), and as such, any kind of contribution is welcome, being documentation, new features, bugfixing, issues, etc. Check out our [Contributing guidelines](./CONTRIBUTING.md) to learn how we manage contributions, and the [Governance policy](./GOVERNANCE.md) to learn about the different roles in the project.
+Galadriel is an open-source project licensed under the [Apache 2 license](./LICENSE). We welcome any kind of
+contribution, including documentation, new features, bug fixing, and reporting issues. Please refer to
+our [Contributing guidelines](./CONTRIBUTING.md) to learn how to contribute, and
+the [Governance policy](./GOVERNANCE.md) to understand the different roles in the project.
 
 ## Roadmap
 
-Project Galadriel has currently reached the Proof of Concept milestone ([v0.1.0](https://github.com/HewlettPackard/galadriel/blob/v0.1.0/doc/INSTRUCTIONS.md)). Refer to the [Roadmap](./ROADMAP.md) to learn what's next.
+Project Galadriel has currently reached the Proof of Concept milestone ([v0.1.0](https://github.com/HewlettPackard/galadriel/blob/v0.1.0/doc/INSTRUCTIONS.md)). Refer to
+the [Roadmap](./ROADMAP.md) to learn what's next.
 
 ## Want to know more?
 
 ### Design document
-Please feel free to check out our [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true), where you can find more information about the architecture and future plans for Galadriel. Comments and suggestions are welcome and highly appreciated.
+
+Please check out our [Design Document](https://docs.google.com/document/d/1nkiJV4PAV8Wx1oNvx4CT3IDtDRvUFSL8/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true) for more information about the architecture and future plans for Galadriel. We highly appreciate any comments and suggestions.
 
 ### Community Presentations & Blog Posts
 - SPIRE Bridge: an Alternative Approach to SPIFFE Federation - [Juliano Fantozzi](https://github.com/jufantozzi), [Maximiliano Churichi](https://github.com/mchurichi) / SPIFFE Community Day Fall 2022 (October 2022) / [video](https://www.youtube.com/watch?v=pHdOm4MdPHE), [slides](https://docs.google.com/presentation/d/1Cox9MNeZA1bD2aktg2HTMjcgGn_6Rbb0/edit?usp=sharing&ouid=106690422347586185642&rtpof=true&sd=true), [demo](https://github.com/HewlettPackard/galadriel/tree/v0.1.0/demos)
