@@ -107,17 +107,17 @@ paths:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: TrustDomain
-        - name: limit
+        - name: pageSize
           required: false
           in: query
           schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/Limit'
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageSize'
           description: TrustDomain
-        - name: offset
+        - name: pageNumber
           in: query
           required: false
           schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/Offset'
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageNumber'
         - name: startDate
           in: query
           required: false

@@ -58,24 +58,22 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	consentStatus := *params.ConsentStatus
-	switch consentStatus {
-	case "", api.Approved, api.Denied, api.Pending:
-	default:
-		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
-		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.ConsentStatus)
+	if err != nil {
+		return err
+	}
+
+	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	if err != nil {
+		return err
 	}
 
 	// get the relationships for the trust domain
-	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, *consentStatus, pageSize, pageNumber)
 	if err != nil {
 		msg := "error looking up relationships"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return chttp.LogAndRespondWithError(h.Logger, err, msg, http.StatusInternalServerError)
-	}
-
-	if consentStatus != "" {
-		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(consentStatus), &authTD.ID.UUID)
 	}
 
 	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships...)
@@ -338,7 +336,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// Look up relationships the authenticated trust domain has with other trust domains
-	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, "", 0, 0)
 	if err != nil {
 		msg := "failed to look up relationships"
 		err := fmt.Errorf("%s: %w", msg, err)

@@ -121,8 +121,8 @@ func (q *Queries) ListTrustDomains(ctx context.Context) ([]TrustDomain, error) {
 
 const updateTrustDomain = `-- name: UpdateTrustDomain :one
 UPDATE trust_domains
-SET description         = ?,
-    updated_at          = datetime('now')
+SET description = ?,
+    updated_at  = datetime('now')
 WHERE id = ?
 RETURNING id, name, description, created_at, updated_at
 `

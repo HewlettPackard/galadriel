@@ -374,7 +374,14 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 	return response, nil
 }
 
-func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+func (d *Datastore) FindRelationshipsByTrustDomainID(
+	ctx context.Context,
+	trustDomainID uuid.UUID,
+	trustDomainConsent entity.ConsentStatus,
+	pageSize int,
+	pageNumber int,
+) ([]*entity.Relationship, error) {
+
 	params := FindRelationshipsByTrustDomainIDParams{
 		TrustDomainAID: trustDomainID.String(),
 		TrustDomainBID: trustDomainID.String(),
@@ -399,7 +406,13 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustD
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
+func (d *Datastore) ListRelationships(
+	ctx context.Context,
+	trustDomainConsent entity.ConsentStatus,
+	pageSize int,
+	pageNumber int,
+) ([]*entity.Relationship, error) {
+
 	relationships, err := d.querier.ListRelationships(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)

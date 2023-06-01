@@ -20,7 +20,11 @@ import (
 )
 
 // DefaultTokenTTL is the default TTL for tokens in seconds.
-const DefaultTokenTTL = 600
+const (
+	DefaultTokenTTL   = 600
+	defaultPageSize   = 10
+	defaultPageNumber = 0
+)
 
 type AdminAPIHandlers struct {
 	Logger    logrus.FieldLogger
@@ -40,8 +44,18 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 	ctx := echoCtx.Request().Context()
 
 	var err error
-	var relationships []*entity.Relationship
 	var td *entity.TrustDomain
+	var relationships []*entity.Relationship
+
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
+	if err != nil {
+		return err
+	}
+
+	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	if err != nil {
+		return err
+	}
 
 	if params.TrustDomainName != nil {
 		td, err = h.findTrustDomainByName(ctx, *params.TrustDomainName)
@@ -50,33 +64,27 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 		}
 
-		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID)
+		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID, *consentStatus, pageSize, pageNumber)
 		if err != nil {
 			err = fmt.Errorf("failed looking up relationships: %v", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		relationships, err = h.Datastore.ListRelationships(ctx)
+		relationships, err = h.Datastore.ListRelationships(ctx, *consentStatus, pageSize, pageNumber)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 		}
 	}
 
-	if params.Status != nil {
-		switch *params.Status {
-		case api.Approved, api.Denied, api.Pending:
-		default:
-			err := fmt.Errorf("status filter %q is not supported, approved values [approved, denied, pending]", *params.Status)
-			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-		}
+	// if params.Status != nil {
 
-		var tdID *uuid.UUID
-		if td != nil {
-			tdID = &td.ID.UUID
-		}
-		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(*params.Status), tdID)
-	}
+	// 	var tdID *uuid.UUID
+	// 	if td != nil {
+	// 		tdID = &td.ID.UUID
+	// 	}
+	// 	relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(*params.Status), tdID)
+	// }
 
 	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships...)
 	if err != nil {

@@ -396,13 +396,27 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 	return response, nil
 }
 
-func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+func (d *Datastore) FindRelationshipsByTrustDomainID(
+	ctx context.Context,
+	trustDomainID uuid.UUID,
+	consentStatus entity.ConsentStatus,
+	pageSize int,
+	pageNumber int,
+) ([]*entity.Relationship, error) {
+
 	pgID, err := uuidToPgType(trustDomainID)
 	if err != nil {
 		return nil, err
 	}
 
-	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, pgID)
+	params := FindRelationshipsByTrustDomainIDParams{
+		TrustDomainAID:      pgID,
+		TrustDomainAConsent: ConsentStatus(consentStatus),
+		Offset:              int32(pageNumber),
+		Limit:               int32(pageSize),
+	}
+
+	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, params)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -422,10 +436,41 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustD
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
-	relationships, err := d.querier.ListRelationships(ctx)
+func (d *Datastore) ListRelationships(ctx context.Context,
+	trustDomainConsent entity.ConsentStatus,
+	pageSize int,
+	pageNumber int,
+) ([]*entity.Relationship, error) {
+
+	params := ListRelationshipsParams{
+		TrustDomainAConsent: ConsentStatus(trustDomainConsent),
+		Limit:               int32(pageSize),
+		Offset:              int32(pageNumber),
+	}
+
+	query := `
+	 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
+	 FROM relationships
+	`
+	args := []any{}
+	if params.TrustDomainAConsent != "" {
+		query += "WHERE trust_domain_a_consent = $1 OR trust_domain_b_consent = $1"
+		args = append(args, params.TrustDomainAConsent)
+	}
+
+	d.addPagination(query, 2)
+	args = append(args, params.Limit)
+	args = append(args, params.Offset)
+
+	rows, err := d.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
+	}
+
+	defer rows.Close()
+	relationships, err := d.relationshipsFromRows(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	result := make([]*entity.Relationship, len(relationships))
@@ -579,4 +624,35 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 	}
 
 	return &relationship, nil
+}
+
+func (d *Datastore) relationshipsFromRows(rows *sql.Rows) ([]Relationship, error) {
+	relationships := []Relationship{}
+	for rows.Next() {
+		var r Relationship
+		if err := rows.Scan(
+			&r.ID,
+			&r.TrustDomainAID,
+			&r.TrustDomainBID,
+			&r.TrustDomainAConsent,
+			&r.TrustDomainBConsent,
+			&r.CreatedAt,
+			&r.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		relationships = append(relationships, r)
+	}
+
+	return relationships, nil
+}
+
+func (d *Datastore) addPagination(query string, index int) string {
+	query += fmt.Sprintf(`
+	  LIMIT $%v
+	  OFFSET $%v
+	`, index, index+1)
+
+	return query
 }
