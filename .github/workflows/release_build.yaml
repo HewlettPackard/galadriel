@@ -8,7 +8,7 @@ env:
 
 permissions:
   contents: write
-  packages: write
+  actions: read
 
 jobs:
   build:
