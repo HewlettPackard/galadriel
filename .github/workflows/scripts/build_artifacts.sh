@@ -16,9 +16,7 @@ fi
 
 for architecture in "${supported_architectures[@]}"; do
   # Build the server and harvester binaries for the current architecture
-  if GOARCH=$architecture go build -o bin/galadriel-server ./cmd/server && \
-     GOARCH=$architecture go build -o bin/galadriel-harvester ./cmd/harvester; then
-
+  if GOARCH=$architecture make build; then
     echo "Artifacts successfully built for architecture: ${architecture}"
     tarball="galadriel-${version_tag}-linux-${architecture}-glibc.tar.gz"
 

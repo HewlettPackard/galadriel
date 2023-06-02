@@ -39,8 +39,14 @@ else
 $(error unsupported ARCH: $(arch1))
 endif
 
+# Define the default architecture (can be overridden by GOARCH)
+ARCH ?= $(GOARCH)
+ifeq ($(ARCH),)
+    ARCH := $(arch1)
+endif
+
 # Define build directories and URLs
-build_dir := $(DIR)/.build/$(os1)-$(arch1)
+build_dir := $(DIR)/.build/$(os1)-$(ARCH)
 go_dir := $(build_dir)/go/$(GO_VERSION)
 server_sqlc_config_file := $(DIR)/pkg/server/db/sqlc.yaml
 sqlc_dir := $(build_dir)/sqlc/$(SQLC_VERSION)
@@ -48,21 +54,21 @@ sqlc_bin := $(sqlc_dir)/sqlc
 
 ifeq ($(os1),windows)
 go_bin_dir := $(go_dir)/go/bin
-go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(arch2).zip
+go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(ARCH).zip
 exe := .exe
 else
 go_bin_dir := $(go_dir)/bin
-go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(arch2).tar.gz
+go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(ARCH).tar.gz
 exe :=
 endif
 
 # SQLC download URL
 ifeq ($(os1),windows)
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_windows_amd64.zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_windows_$(ARCH).zip
 else ifeq ($(os1),darwin)
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_darwin_$(arch2).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_darwin_$(ARCH).zip
 else
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux_amd64.zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux_$(ARCH).zip
 endif
 
 # Define Go path
@@ -86,9 +92,9 @@ bin/:
 
 # Go check and installation if necessary
 go-check:
-ifeq (go$(GO_VERSION), $(shell $(go_path) go version 2>/dev/null | cut -f3 -d' '))
-else
-	@echo "Installing go $(GO_VERSION)..."
+	@echo "Checking Go installation..."
+ifneq ($(ARCH),$(shell go env GOARCH))
+	@echo "Installing go $(GO_VERSION) ($(ARCH))..."
 	$(E)rm -rf $(dir $(go_dir))
 	$(E)mkdir -p $(go_dir)
 	$(E)curl -sSfL $(go_url) | tar xz -C $(go_dir) --strip-components=1
@@ -128,7 +134,6 @@ clean:
 	rm -f bin/galadriel-server
 	rm -rf out/coverage
 .PHONY: clean
-
 
 # Generate SQL and API code
 generate-sql-code: install-sqlc $(server_sqlc_config_file)
