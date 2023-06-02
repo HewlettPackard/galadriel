@@ -31,6 +31,14 @@ jobs:
       - name: Build Artifacts
         run: ./.github/workflows/scripts/build_artifacts.sh
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce   # v3.1.2
+        with:
+          name: release-artifacts
+          path: |
+            galadriel-*-linux-*-glibc.tar.gz
+            galadriel-*-linux-*-glibc.tar.gz.sha256sum.txt
+
   release:
     name: Release
     needs: build
@@ -39,10 +47,15 @@ jobs:
       contents: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: release-artifacts
 
       - name: Release
-        uses: softprops/action-gh-release@v26994186c0ac3ef5cae75ac16aa32e8153525f77  # v1
+        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77  # v1
         with:
           files: |
             galadriel-*-linux-*-glibc.tar.gz
