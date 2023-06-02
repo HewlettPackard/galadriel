@@ -20,16 +20,24 @@ func validatePaginationParams(
 	pageSize := defaultPageSize
 	pageNumber := defaultPageNumber
 
-	if pgSize != nil && (*pgSize < 0 || *pgSize > 100) {
-		errMsg := fmt.Errorf("page size %s is out of the accepted range [1 - 100]", *pgSize)
-		return 0, 0, chttp.LogAndRespondWithError(logger, errMsg, errMsg.Error(), http.StatusBadRequest)
+	if pgSize != nil {
+		pageSize = *pgSize
+		outOfLimits := pageSize <= 0 || pageSize > 100
+		if outOfLimits {
+			errMsg := fmt.Errorf("page size %v is out of the accepted range [1 - 100]", *pgSize)
+			return 0, 0, chttp.LogAndRespondWithError(logger, errMsg, errMsg.Error(), http.StatusBadRequest)
+		}
 	}
 
-	// We may need to revisit the page number limitation in the future
-	// This is just a first limitation to avoid crazy page numbers
-	if pgNumber != nil && (*pgNumber < 0 || *pgNumber > 100) {
-		errMsg := fmt.Errorf("page number %s is out of the accepted range [0 - 100]", *pgSize)
-		return 0, 0, chttp.LogAndRespondWithError(logger, errMsg, errMsg.Error(), http.StatusBadRequest)
+	if pgNumber != nil {
+		pageNumber = *pgNumber
+		// We may need to revisit the page number limitation in the future
+		// This is just a first limitation to avoid crazy page numbers iex: pageNumber=100000
+		outOfLimits := pageNumber < 0 || pageNumber > 100
+		if outOfLimits {
+			errMsg := fmt.Errorf("page number %v is out of the accepted range [0 - 100]", *pgSize)
+			return 0, 0, chttp.LogAndRespondWithError(logger, errMsg, errMsg.Error(), http.StatusBadRequest)
+		}
 	}
 
 	return pageSize, pageNumber, nil

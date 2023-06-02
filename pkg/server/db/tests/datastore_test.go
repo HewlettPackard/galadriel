@@ -197,19 +197,19 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		relationship1 = updated1
 
 		// Find relationship by trust domain IDs
-		rels, err := ds.FindRelationshipsByTrustDomainID(ctx, td2.ID.UUID, "", 0, 0)
+		rels, err := ds.FindRelationshipsByTrustDomainID(ctx, td2.ID.UUID, nil, 0, 0)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 2)
 		assert.Contains(t, rels, relationship1)
 		assert.Contains(t, rels, relationship2)
 
-		rels, err = ds.FindRelationshipsByTrustDomainID(ctx, td1.ID.UUID, "", 0, 0)
+		rels, err = ds.FindRelationshipsByTrustDomainID(ctx, td1.ID.UUID, nil, 0, 0)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 1)
 		assert.Contains(t, rels, relationship1)
 
 		// List all relationships
-		rels, err = ds.ListRelationships(ctx, "", 0, 0)
+		rels, err = ds.ListRelationships(ctx, nil, 0, 0)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 2)
 

@@ -377,7 +377,7 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 func (d *Datastore) FindRelationshipsByTrustDomainID(
 	ctx context.Context,
 	trustDomainID uuid.UUID,
-	trustDomainConsent entity.ConsentStatus,
+	trustDomainConsent *entity.ConsentStatus,
 	pageSize int,
 	pageNumber int,
 ) ([]*entity.Relationship, error) {
@@ -408,7 +408,7 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 
 func (d *Datastore) ListRelationships(
 	ctx context.Context,
-	trustDomainConsent entity.ConsentStatus,
+	trustDomainConsent *entity.ConsentStatus,
 	pageSize int,
 	pageNumber int,
 ) ([]*entity.Relationship, error) {

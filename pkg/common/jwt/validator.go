@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"crypto"
+	"errors"
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
@@ -65,12 +66,20 @@ func (v *DefaultJWTValidator) validAudience(claims *jwt.RegisteredClaims) bool {
 }
 
 func (v *DefaultJWTValidator) getPublicKey(ctx context.Context, t *jwt.Token) (crypto.PublicKey, error) {
-	kid := t.Header[kidHeader].(string)
+	if t != nil {
+		kid := ""
+		header, ok := t.Header[kidHeader]
+		if ok {
+			kid = header.(string)
+		}
 
-	key, err := v.keyManager.GetKey(ctx, kid)
-	if err != nil {
-		return nil, err
+		key, err := v.keyManager.GetKey(ctx, kid)
+		if err != nil {
+			return nil, fmt.Errorf("could not get kid: %w", err)
+		}
+
+		return key.Signer().Public(), nil
 	}
 
-	return key.Signer().Public(), nil
+	return nil, errors.New("jwt token not found")
 }

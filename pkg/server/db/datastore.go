@@ -28,7 +28,7 @@ type Datastore interface {
 	FindJoinToken(ctx context.Context, token string) (*entity.JoinToken, error)
 	CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error)
 	FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error)
-	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID, trustDomainConsent entity.ConsentStatus, pageSize int, pageNumber int) ([]*entity.Relationship, error)
-	ListRelationships(ctx context.Context, trustDomainConsent entity.ConsentStatus, pageSize int, pageNumber int) ([]*entity.Relationship, error)
+	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID, trustDomainConsent *entity.ConsentStatus, pageSize int, pageNumber int) ([]*entity.Relationship, error)
+	ListRelationships(ctx context.Context, trustDomainConsent *entity.ConsentStatus, pageSize int, pageNumber int) ([]*entity.Relationship, error)
 	DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error
 }

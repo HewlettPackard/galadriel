@@ -458,7 +458,7 @@ func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID
 func (db *FakeDatabase) FindRelationshipsByTrustDomainID(
 	ctx context.Context,
 	trustDomainID uuid.UUID,
-	trustDomainConsent entity.ConsentStatus,
+	trustDomainConsent *entity.ConsentStatus,
 	pageSize int,
 	pageNumber int,
 ) ([]*entity.Relationship, error) {
@@ -483,7 +483,13 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(
 	return relationships, nil
 }
 
-func (db *FakeDatabase) ListRelationships(ctx context.Context, trustDomainConsent entity.ConsentStatus, pageSize int, pageNumber int) ([]*entity.Relationship, error) {
+func (db *FakeDatabase) ListRelationships(
+	ctx context.Context,
+	trustDomainConsent *entity.ConsentStatus,
+	pageSize int,
+	pageNumber int,
+) ([]*entity.Relationship, error) {
+
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 

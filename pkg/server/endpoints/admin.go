@@ -64,27 +64,18 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 		}
 
-		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID, *consentStatus, pageSize, pageNumber)
+		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID, consentStatus, pageSize, pageNumber)
 		if err != nil {
 			err = fmt.Errorf("failed looking up relationships: %v", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		relationships, err = h.Datastore.ListRelationships(ctx, *consentStatus, pageSize, pageNumber)
+		relationships, err = h.Datastore.ListRelationships(ctx, consentStatus, pageSize, pageNumber)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 		}
 	}
-
-	// if params.Status != nil {
-
-	// 	var tdID *uuid.UUID
-	// 	if td != nil {
-	// 		tdID = &td.ID.UUID
-	// 	}
-	// 	relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(*params.Status), tdID)
-	// }
 
 	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships...)
 	if err != nil {

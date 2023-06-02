@@ -46,7 +46,7 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds db.Datastore, jwtIssuer jw
 	}
 }
 
-// GetRelationships lists all the relationships for a given trust domain name and consent status  - (GET /relationships)
+// GetRelationships lists all the relationships for a given trust domain name and consent status  - (GET /trust-domain/:trustDomainName/relationships)
 // The consent status is optional, if not provided, all relationships will be returned for a given trust domain. If the
 // consent status is provided, only relationships with the given consent status for the given trust domain will be returned.
 // The trust domain name provided should match the authenticated trust domain.
@@ -69,7 +69,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 	}
 
 	// get the relationships for the trust domain
-	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, *consentStatus, pageSize, pageNumber)
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, consentStatus, pageSize, pageNumber)
 	if err != nil {
 		msg := "error looking up relationships"
 		err := fmt.Errorf("%s: %w", msg, err)
@@ -336,7 +336,7 @@ func (h *HarvesterAPIHandlers) BundleSync(echoCtx echo.Context, trustDomainName 
 	}
 
 	// Look up relationships the authenticated trust domain has with other trust domains
-	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, "", 0, 0)
+	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID, nil, 0, 0)
 	if err != nil {
 		msg := "failed to look up relationships"
 		err := fmt.Errorf("%s: %w", msg, err)
