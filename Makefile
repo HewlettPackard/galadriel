@@ -40,7 +40,7 @@ $(error unsupported ARCH: $(arch1))
 endif
 
 # Define the default architecture (can be overridden by GOARCH)
-ARCH ?= $(GOARCH)
+ARCH ?= $(shell go env GOARCH)
 ifeq ($(ARCH),)
     ARCH := $(arch1)
 endif
@@ -52,23 +52,23 @@ server_sqlc_config_file := $(DIR)/pkg/server/db/sqlc.yaml
 sqlc_dir := $(build_dir)/sqlc/$(SQLC_VERSION)
 sqlc_bin := $(sqlc_dir)/sqlc
 
+exe :=
 ifeq ($(os1),windows)
 go_bin_dir := $(go_dir)/go/bin
-go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(ARCH).zip
+go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(arch2).zip
 exe := .exe
 else
 go_bin_dir := $(go_dir)/bin
-go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(ARCH).tar.gz
-exe :=
+go_url := https://storage.googleapis.com/golang/go$(GO_VERSION).$(os1)-$(arch2).tar.gz
 endif
 
 # SQLC download URL
 ifeq ($(os1),windows)
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_windows_$(ARCH).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_windows_$(arch2).zip
 else ifeq ($(os1),darwin)
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_darwin_$(ARCH).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_darwin-$(arch2).zip
 else
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux_$(ARCH).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux-$(arch2).zip
 endif
 
 # Define Go path
@@ -79,7 +79,7 @@ define binary_rule
 .PHONY: $1
 $1: | go-check bin/
 	@echo "Building $1..."
-	$(E)$(go_path) go build -o $1 $2
+	$(E)GOARCH=$(ARCH) $(go_path) go build -o $1$(exe) $2
 endef
 
 # Dynamically generate targets for each binary using the binary_rule template
@@ -93,7 +93,7 @@ bin/:
 # Go check and installation if necessary
 go-check:
 	@echo "Checking Go installation..."
-ifneq ($(ARCH),$(shell go env GOARCH))
+ifneq ($(GO_VERSION),$(shell go version | cut -d' ' -f3 | cut -d'o' -f2))
 	@echo "Installing go $(GO_VERSION) ($(ARCH))..."
 	$(E)rm -rf $(dir $(go_dir))
 	$(E)mkdir -p $(go_dir)
