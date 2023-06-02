@@ -14,13 +14,13 @@ jobs:
       contents: read
       actions: read
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - name: Setup go
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
       - name: Get dependencies
         run: go mod download
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v26994186c0ac3ef5cae75ac16aa32e8153525f77  # v1
         with:
           files: |
             galadriel-*-linux-*-glibc.tar.gz
