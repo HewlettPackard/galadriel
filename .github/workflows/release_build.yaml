@@ -6,6 +6,10 @@ on:
 env:
   GO_VERSION: 1.20.3
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     name: Build and Release
