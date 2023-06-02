@@ -6,23 +6,21 @@ on:
 env:
   GO_VERSION: 1.20.3
 
-permissions:
-  contents: write
-  actions: read
-
 jobs:
   build:
-    name: Build and Release
+    name: Build Artifacts
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      actions: read
     steps:
-      - name: Setup go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Checkout
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - name: Check out code
+        uses: actions/checkout@v2
 
       - name: Get dependencies
         run: go mod download
@@ -33,8 +31,18 @@ jobs:
       - name: Build Artifacts
         run: ./.github/workflows/scripts/build_artifacts.sh
 
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
       - name: Release
-        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
+        uses: softprops/action-gh-release@v1
         with:
           files: |
             galadriel-*-linux-*-glibc.tar.gz
