@@ -56,7 +56,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 		}
 	} else {
-		relationships, err = h.Datastore.ListRelationships(ctx)
+		relationships, err = h.Datastore.ListRelationships(ctx, nil)
 		if err != nil {
 			err = fmt.Errorf("failed listing relationships: %v", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)

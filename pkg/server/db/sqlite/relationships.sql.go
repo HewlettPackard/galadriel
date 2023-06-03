@@ -71,7 +71,8 @@ func (q *Queries) FindRelationshipByID(ctx context.Context, id string) (Relation
 const findRelationshipsByTrustDomainID = `-- name: FindRelationshipsByTrustDomainID :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
-WHERE trust_domain_a_id = ? OR trust_domain_b_id = ?
+WHERE trust_domain_a_id = ?
+   OR trust_domain_b_id = ?
 `
 
 type FindRelationshipsByTrustDomainIDParams struct {
@@ -110,14 +111,14 @@ func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, arg Find
 	return items, nil
 }
 
-const listRelationships = `-- name: ListRelationships :many
+const listAllRelationships = `-- name: ListAllRelationships :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListRelationships(ctx context.Context) ([]Relationship, error) {
-	rows, err := q.query(ctx, q.listRelationshipsStmt, listRelationships)
+func (q *Queries) ListAllRelationships(ctx context.Context) ([]Relationship, error) {
+	rows, err := q.query(ctx, q.listAllRelationshipsStmt, listAllRelationships)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +152,7 @@ const updateRelationship = `-- name: UpdateRelationship :one
 UPDATE relationships
 SET trust_domain_a_consent = ?,
     trust_domain_b_consent = ?,
-    updated_at = CURRENT_TIMESTAMP
+    updated_at             = CURRENT_TIMESTAMP
 WHERE id = ?
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `

@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/options"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
@@ -399,14 +401,42 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustD
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
-	relationships, err := d.querier.ListRelationships(ctx)
+func (d *Datastore) ListRelationships(ctx context.Context, opts *options.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
+	if opts == nil {
+		relationships, err := d.querier.ListAllRelationships(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed looking up relationships: %w", err)
+		}
+
+		return d.mapToEntity(relationships)
+	}
+
+	rows, err := db.ExecuteRelationshipsQuery(ctx, d.db, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
+	defer rows.Close()
 
-	result := make([]*entity.Relationship, len(relationships))
-	for i, m := range relationships {
+	var relationships []Relationship
+	for rows.Next() {
+		var m Relationship
+		if err := rows.Scan(&m.ID, &m.TrustDomainAID, &m.TrustDomainBID, &m.TrustDomainAConsent, &m.TrustDomainBConsent, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		relationships = append(relationships, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed during row iteration: %w", err)
+	}
+
+	return d.mapToEntity(relationships)
+}
+
+func (d *Datastore) mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
+	result := make([]*entity.Relationship, len(models))
+
+	for i, m := range models {
 		ent, err := m.ToEntity()
 		if err != nil {
 			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)

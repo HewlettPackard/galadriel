@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/options"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -476,7 +477,7 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, tr
 	return relationships, nil
 }
 
-func (db *FakeDatabase) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
+func (db *FakeDatabase) ListRelationships(ctx context.Context, options *options.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 

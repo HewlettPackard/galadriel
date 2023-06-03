@@ -72,7 +72,8 @@ func (q *Queries) FindRelationshipByID(ctx context.Context, id pgtype.UUID) (Rel
 const findRelationshipsByTrustDomainID = `-- name: FindRelationshipsByTrustDomainID :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
-WHERE trust_domain_a_id = $1 OR trust_domain_b_id = $1
+WHERE trust_domain_a_id = $1
+   OR trust_domain_b_id = $1
 `
 
 func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainAID pgtype.UUID) ([]Relationship, error) {
@@ -106,14 +107,14 @@ func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, trustDom
 	return items, nil
 }
 
-const listRelationships = `-- name: ListRelationships :many
+const listAllRelationships = `-- name: ListAllRelationships :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListRelationships(ctx context.Context) ([]Relationship, error) {
-	rows, err := q.query(ctx, q.listRelationshipsStmt, listRelationships)
+func (q *Queries) ListAllRelationships(ctx context.Context) ([]Relationship, error) {
+	rows, err := q.query(ctx, q.listAllRelationshipsStmt, listAllRelationships)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +148,7 @@ const updateRelationship = `-- name: UpdateRelationship :one
 UPDATE relationships
 SET trust_domain_a_consent = $2,
     trust_domain_b_consent = $3,
-    updated_at = now()
+    updated_at             = now()
 WHERE id = $1
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `

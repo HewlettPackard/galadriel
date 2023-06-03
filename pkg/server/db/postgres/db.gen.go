@@ -75,14 +75,14 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.findTrustDomainByNameStmt, err = db.PrepareContext(ctx, findTrustDomainByName); err != nil {
 		return nil, fmt.Errorf("error preparing query FindTrustDomainByName: %w", err)
 	}
+	if q.listAllRelationshipsStmt, err = db.PrepareContext(ctx, listAllRelationships); err != nil {
+		return nil, fmt.Errorf("error preparing query ListAllRelationships: %w", err)
+	}
 	if q.listBundlesStmt, err = db.PrepareContext(ctx, listBundles); err != nil {
 		return nil, fmt.Errorf("error preparing query ListBundles: %w", err)
 	}
 	if q.listJoinTokensStmt, err = db.PrepareContext(ctx, listJoinTokens); err != nil {
 		return nil, fmt.Errorf("error preparing query ListJoinTokens: %w", err)
-	}
-	if q.listRelationshipsStmt, err = db.PrepareContext(ctx, listRelationships); err != nil {
-		return nil, fmt.Errorf("error preparing query ListRelationships: %w", err)
 	}
 	if q.listTrustDomainsStmt, err = db.PrepareContext(ctx, listTrustDomains); err != nil {
 		return nil, fmt.Errorf("error preparing query ListTrustDomains: %w", err)
@@ -189,6 +189,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing findTrustDomainByNameStmt: %w", cerr)
 		}
 	}
+	if q.listAllRelationshipsStmt != nil {
+		if cerr := q.listAllRelationshipsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listAllRelationshipsStmt: %w", cerr)
+		}
+	}
 	if q.listBundlesStmt != nil {
 		if cerr := q.listBundlesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listBundlesStmt: %w", cerr)
@@ -197,11 +202,6 @@ func (q *Queries) Close() error {
 	if q.listJoinTokensStmt != nil {
 		if cerr := q.listJoinTokensStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listJoinTokensStmt: %w", cerr)
-		}
-	}
-	if q.listRelationshipsStmt != nil {
-		if cerr := q.listRelationshipsStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing listRelationshipsStmt: %w", cerr)
 		}
 	}
 	if q.listTrustDomainsStmt != nil {
@@ -285,9 +285,9 @@ type Queries struct {
 	findRelationshipsByTrustDomainIDStmt *sql.Stmt
 	findTrustDomainByIDStmt              *sql.Stmt
 	findTrustDomainByNameStmt            *sql.Stmt
+	listAllRelationshipsStmt             *sql.Stmt
 	listBundlesStmt                      *sql.Stmt
 	listJoinTokensStmt                   *sql.Stmt
-	listRelationshipsStmt                *sql.Stmt
 	listTrustDomainsStmt                 *sql.Stmt
 	updateBundleStmt                     *sql.Stmt
 	updateJoinTokenStmt                  *sql.Stmt
@@ -316,9 +316,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		findRelationshipsByTrustDomainIDStmt: q.findRelationshipsByTrustDomainIDStmt,
 		findTrustDomainByIDStmt:              q.findTrustDomainByIDStmt,
 		findTrustDomainByNameStmt:            q.findTrustDomainByNameStmt,
+		listAllRelationshipsStmt:             q.listAllRelationshipsStmt,
 		listBundlesStmt:                      q.listBundlesStmt,
 		listJoinTokensStmt:                   q.listJoinTokensStmt,
-		listRelationshipsStmt:                q.listRelationshipsStmt,
 		listTrustDomainsStmt:                 q.listTrustDomainsStmt,
 		updateBundleStmt:                     q.updateBundleStmt,
 		updateJoinTokenStmt:                  q.updateJoinTokenStmt,

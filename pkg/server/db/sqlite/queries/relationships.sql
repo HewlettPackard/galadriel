@@ -27,7 +27,7 @@ FROM relationships
 WHERE trust_domain_a_id = ?
    OR trust_domain_b_id = ?;
 
--- name: ListRelationships :many
+-- name: ListAllRelationships :many
 SELECT *
 FROM relationships
 ORDER BY created_at DESC;
