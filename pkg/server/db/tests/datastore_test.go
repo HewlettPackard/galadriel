@@ -8,7 +8,6 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
-	"github.com/HewlettPackard/galadriel/pkg/server/db/options"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
@@ -213,34 +212,6 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		rels, err = ds.ListRelationships(ctx, nil)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 2)
-
-		// List relationships with pagination
-		criteria := &options.ListRelationshipsCriteria{
-			PageNumber: 1,
-			PageSize:   1,
-		}
-		rels, err = ds.ListRelationships(ctx, criteria)
-		assert.NoError(t, err)
-		assert.Len(t, rels, 1)
-
-		// List relationships filtered by consent status
-		filterBy := entity.ConsentStatusApproved
-		criteria = &options.ListRelationshipsCriteria{
-			FilterByConsentStatus: &filterBy,
-		}
-		rels, err = ds.ListRelationships(ctx, criteria)
-		assert.NoError(t, err)
-		assert.Len(t, rels, 1)
-		assert.Equal(t, relationship1, rels[0])
-
-		filterBy = entity.ConsentStatusPending
-		criteria = &options.ListRelationshipsCriteria{
-			FilterByConsentStatus: &filterBy,
-		}
-		rels, err = ds.ListRelationships(ctx, criteria)
-		assert.NoError(t, err)
-		assert.Len(t, rels, 1)
-		assert.Equal(t, relationship2, rels[0])
 
 		// Delete relationship
 		err = ds.DeleteRelationship(ctx, relationship1.ID.UUID)

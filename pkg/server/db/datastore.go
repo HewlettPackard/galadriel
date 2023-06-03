@@ -9,6 +9,13 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
+type Engine string
+
+const (
+	Postgres Engine = "postgres"
+	SQLite   Engine = "sqlite"
+)
+
 type Datastore interface {
 	CreateOrUpdateTrustDomain(ctx context.Context, req *entity.TrustDomain) (*entity.TrustDomain, error)
 	DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UUID) error

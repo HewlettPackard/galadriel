@@ -411,7 +411,7 @@ func (d *Datastore) ListRelationships(ctx context.Context, opts *options.ListRel
 		return d.mapToEntity(relationships)
 	}
 
-	rows, err := db.ExecuteRelationshipsQuery(ctx, d.db, opts)
+	rows, err := db.ExecuteRelationshipsQuery(ctx, d.db, opts, db.SQLite)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
