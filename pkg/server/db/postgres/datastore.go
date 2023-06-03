@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
-	"github.com/HewlettPackard/galadriel/pkg/server/db/options"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -424,17 +425,8 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustD
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context, opts *options.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
-	if opts == nil {
-		relationships, err := d.querier.ListAllRelationships(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed looking up relationships: %w", err)
-		}
-
-		return d.mapToEntity(relationships)
-	}
-
-	rows, err := db.ExecuteRelationshipsQuery(ctx, d.db, opts, db.Postgres)
+func (d *Datastore) ListRelationships(ctx context.Context, criteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
+	rows, err := db.ExecuteListRelationshipsQuery(ctx, d.db, criteria, db.Postgres)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
@@ -453,21 +445,7 @@ func (d *Datastore) ListRelationships(ctx context.Context, opts *options.ListRel
 		return nil, fmt.Errorf("failed during row iteration: %w", err)
 	}
 
-	return d.mapToEntity(relationships)
-}
-
-func (d *Datastore) mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
-	result := make([]*entity.Relationship, len(models))
-
-	for i, m := range models {
-		ent, err := m.ToEntity()
-		if err != nil {
-			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
-		}
-		result[i] = ent
-	}
-
-	return result, nil
+	return mapToEntity(relationships)
 }
 
 func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
@@ -578,9 +556,26 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		return nil, err
 	}
 
+	if req.TrustDomainAConsent == "" {
+		req.TrustDomainAConsent = entity.ConsentStatusPending
+	}
+	if req.TrustDomainBConsent == "" {
+		req.TrustDomainBConsent = entity.ConsentStatusPending
+	}
+	if req.CreatedAt.IsZero() {
+		req.CreatedAt = time.Now()
+	}
+	if req.UpdatedAt.IsZero() {
+		req.UpdatedAt = time.Now()
+	}
+
 	params := CreateRelationshipParams{
-		TrustDomainAID: pgTrustDomainAID,
-		TrustDomainBID: pgTrustDomainBID,
+		TrustDomainAID:      pgTrustDomainAID,
+		TrustDomainBID:      pgTrustDomainBID,
+		TrustDomainAConsent: ConsentStatus(req.TrustDomainAConsent),
+		TrustDomainBConsent: ConsentStatus(req.TrustDomainBConsent),
+		CreatedAt:           req.CreatedAt,
+		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
@@ -609,4 +604,18 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 	}
 
 	return &relationship, nil
+}
+
+func mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
+	result := make([]*entity.Relationship, len(models))
+
+	for i, m := range models {
+		ent, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+		}
+		result[i] = ent
+	}
+
+	return result, nil
 }

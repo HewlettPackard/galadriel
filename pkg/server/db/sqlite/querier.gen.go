@@ -26,7 +26,6 @@ type Querier interface {
 	FindRelationshipsByTrustDomainID(ctx context.Context, arg FindRelationshipsByTrustDomainIDParams) ([]Relationship, error)
 	FindTrustDomainByID(ctx context.Context, id string) (TrustDomain, error)
 	FindTrustDomainByName(ctx context.Context, name string) (TrustDomain, error)
-	ListAllRelationships(ctx context.Context) ([]Relationship, error)
 	ListBundles(ctx context.Context) ([]Bundle, error)
 	ListJoinTokens(ctx context.Context) ([]JoinToken, error)
 	ListTrustDomains(ctx context.Context) ([]TrustDomain, error)

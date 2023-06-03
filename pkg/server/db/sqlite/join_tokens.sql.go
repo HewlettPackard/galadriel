@@ -44,7 +44,8 @@ func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams
 }
 
 const deleteJoinToken = `-- name: DeleteJoinToken :exec
-DELETE FROM join_tokens
+DELETE
+FROM join_tokens
 WHERE id = ?
 `
 
@@ -172,7 +173,7 @@ func (q *Queries) ListJoinTokens(ctx context.Context) ([]JoinToken, error) {
 
 const updateJoinToken = `-- name: UpdateJoinToken :one
 UPDATE join_tokens
-SET used = ?,
+SET used       = ?,
     updated_at = datetime('now')
 WHERE id = ?
 RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
