@@ -76,6 +76,8 @@ func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListR
 	return query.Where(conditions)
 }
 
+// The following functions use a different syntax for Postgres due to an issue with Squirrel library:
+// https://github.com/Masterminds/squirrel/issues/358
 func buildConsentCondition(consentStatus entity.ConsentStatus, dbType Engine) squirrel.Sqlizer {
 	if dbType == Postgres {
 		return squirrel.Or{

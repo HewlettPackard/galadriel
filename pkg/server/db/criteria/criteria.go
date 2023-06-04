@@ -20,9 +20,9 @@ const (
 // If only one of the filter criteria is set, the relationships will be filtered based on that criterion alone.
 // If none of the filter criteria are set, all relationships will be returned without any filtering.
 type ListRelationshipsCriteria struct {
-	PageNumber            uint                  // Page number for pagination
-	PageSize              uint                  // Number of items per page
+	PageNumber            uint                  // Page number for pagination (0 for no pagination)
+	PageSize              uint                  // Number of items per page (0 for no pagination)
 	FilterByConsentStatus *entity.ConsentStatus // Filter relationships by consent status (optional)
 	FilterByTrustDomainID uuid.NullUUID         // Filter relationships by trust domain ID (optional)
-	OrderByCreatedAt      OrderDirection        // Order relationships by created at (ascending or descending)
+	OrderByCreatedAt      OrderDirection        // Order relationships by created at (ascending, descending, or no order)
 }
