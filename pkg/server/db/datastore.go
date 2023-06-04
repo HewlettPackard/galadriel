@@ -13,7 +13,7 @@ type Engine string
 
 const (
 	Postgres Engine = "postgres"
-	SQLite   Engine = "sqlite"
+	SQLite   Engine = "sqlite3"
 )
 
 type Datastore interface {
