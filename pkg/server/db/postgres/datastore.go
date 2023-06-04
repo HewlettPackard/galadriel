@@ -33,16 +33,16 @@ func NewDatastore(connString string) (*Datastore, error) {
 		return nil, fmt.Errorf("failed to parse Postgres Connection URL: %w", err)
 	}
 
-	db := stdlib.OpenDB(*c)
+	openDB := stdlib.OpenDB(*c)
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(db); err != nil {
+	if err = validateAndMigrateSchema(openDB); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
 	return &Datastore{
-		db:      db,
-		querier: New(db),
+		db:      openDB,
+		querier: New(openDB),
 	}, nil
 }
 

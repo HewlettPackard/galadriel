@@ -27,25 +27,25 @@ type Datastore struct {
 // parsing the connString.
 // The connString should be a file path to the SQLite database file.
 func NewDatastore(connString string) (*Datastore, error) {
-	db, err := sql.Open("sqlite3", connString)
+	openDB, err := sql.Open("sqlite3", connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}
 
 	// enable foreign key constraint enforcement
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	_, err = openDB.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		return nil, fmt.Errorf("failed to enable foreign key constraint enforcement: %w", err)
 	}
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(db); err != nil {
+	if err = validateAndMigrateSchema(openDB); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
 	return &Datastore{
-		db:      db,
-		querier: New(db),
+		db:      openDB,
+		querier: New(openDB),
 	}, nil
 }
 
