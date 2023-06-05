@@ -4,6 +4,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	defaultSocketPath = "/tmp/galadriel-harvester/api.sock"
+	defaultConfigPath = "conf/harvester/harvester.conf"
+)
+
 type harvesterCLI struct {
 	logger logrus.FieldLogger
 }

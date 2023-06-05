@@ -7,12 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/pkg/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
-
-const defaultConfigPath = "conf/server/server.conf"
 
 func NewRunCmd() *cobra.Command {
 	return &cobra.Command{
@@ -33,6 +32,7 @@ func NewRunCmd() *cobra.Command {
 
 			err = s.Run(ctx)
 			if err != nil {
+				config.Logger.WithError(err).Error("Server crashed")
 				return err
 			}
 
@@ -43,13 +43,14 @@ func NewRunCmd() *cobra.Command {
 }
 
 func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
+	socketPath, err := cmd.Flags().GetString("socketPath")
+	if err != nil {
+		return nil, fmt.Errorf("cannot read flag socketPath: %w", err)
+	}
+
 	configPath, err := cmd.Flags().GetString("config")
 	if err != nil {
 		return nil, fmt.Errorf("cannot read flag config: %w", err)
-	}
-
-	if configPath == "" {
-		configPath = defaultConfigPath
 	}
 
 	configFile, err := os.Open(configPath)
@@ -61,6 +62,11 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 	c, err := ParseConfig(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	// If the socketPath flag is set, override the config file
+	if socketPath != "" {
+		c.Server.SocketPath = socketPath
 	}
 
 	sc, err := NewServerConfig(c)
@@ -81,7 +87,7 @@ func LoadConfig(cmd *cobra.Command) (*server.Config, error) {
 
 func init() {
 	runCmd := NewRunCmd()
-	runCmd.Flags().StringP("config", "c", defaultConfigPath, "config file path")
+	runCmd.Flags().StringP(cli.ConfigFlagName, "c", defaultConfigPath, "Path to the Galadriel Server config file")
 
 	RootCmd.AddCommand(runCmd)
 }

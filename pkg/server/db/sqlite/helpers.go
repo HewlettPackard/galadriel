@@ -24,23 +24,14 @@ func (td TrustDomain) ToEntity() (*entity.TrustDomain, error) {
 	}
 
 	result := &entity.TrustDomain{
-		ID:               nullID,
-		Name:             trustDomain,
-		OnboardingBundle: td.OnboardingBundle,
-		CreatedAt:        td.CreatedAt,
-		UpdatedAt:        td.UpdatedAt,
+		ID:        nullID,
+		Name:      trustDomain,
+		CreatedAt: td.CreatedAt,
+		UpdatedAt: td.UpdatedAt,
 	}
 
 	if td.Description.Valid {
 		result.Description = td.Description.String
-	}
-
-	if td.HarvesterSpiffeID.Valid {
-		id, err := spiffeid.FromStringf(td.HarvesterSpiffeID.String)
-		if err != nil {
-			return nil, fmt.Errorf("cannot convert model to entity: %v", err)
-		}
-		result.HarvesterSpiffeID = id
 	}
 
 	return result, nil

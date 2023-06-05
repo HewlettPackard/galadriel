@@ -8,12 +8,15 @@ import (
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
-	"math/big"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/jmhodges/clock"
 )
+
+// TODO: this should be configurable through a property in the provider in the harvester conf file, based on the bundle TTL to be signed.
+const signingCertTTL = 24 * 30 * time.Hour
 
 var ErrInvalidSignature = errors.New("invalid signature")
 
@@ -59,17 +62,21 @@ func (s *DiskSigner) Sign(payload []byte) ([]byte, []*x509.Certificate, error) {
 	now := s.clk.Now()
 
 	// generate a new private key for signing
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	key, err := cryptoutil.GenerateSigner(cryptoutil.DefaultKeyType)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	serial, err := cryptoutil.NewSerialNumber()
+	if err != nil {
+		return nil, nil, err
+	}
 	// generate a new certificate for the public key signed by the CA private key
 	template := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "galadriel"},
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: constants.Galadriel},
 		NotBefore:             now,
-		NotAfter:              now.Add(24 * 30 * time.Hour),
+		NotAfter:              now.Add(signingCertTTL),
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: true,
 		IsCA:                  false,
@@ -86,12 +93,14 @@ func (s *DiskSigner) Sign(payload []byte) ([]byte, []*x509.Certificate, error) {
 	}
 
 	hashedPayload := cryptoutil.CalculateDigest(payload)
-	signedPayload, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hashedPayload[:])
+
+	signedPayload, err := key.Sign(rand.Reader, hashedPayload[:], crypto.SHA256)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	chain := []*x509.Certificate{cert, s.caCert}
+
 	return signedPayload, chain, nil
 }
 
@@ -99,6 +108,10 @@ func (s *DiskSigner) Sign(payload []byte) ([]byte, []*x509.Certificate, error) {
 // It also verifies that the certificate provided in the signature is signed by a trusted root CA.
 func (v *DiskVerifier) Verify(payload, signature []byte, chain []*x509.Certificate) error {
 	hashed := cryptoutil.CalculateDigest(payload)
+
+	if len(chain) == 0 || chain[0] == nil {
+		return fmt.Errorf("signing certificate is missing")
+	}
 
 	roots := x509.NewCertPool()
 	for _, rootCert := range v.trustBundle {

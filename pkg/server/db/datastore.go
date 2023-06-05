@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"

@@ -4,6 +4,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	defaultSocketPath = "/tmp/galadriel-server/api.sock"
+	defaultConfigPath = "conf/server/server.conf"
+)
+
 type serverCLI struct {
 	logger logrus.FieldLogger
 }

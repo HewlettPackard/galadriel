@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -20,4 +21,8 @@ func Execute() int {
 		return 1
 	}
 	return 0
+}
+
+func init() {
+	RootCmd.PersistentFlags().StringP(cli.SocketPathFlagName, "", defaultSocketPath, "Path to the Galadriel Server API socket")
 }

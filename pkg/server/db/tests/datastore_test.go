@@ -2,15 +2,16 @@ package tests
 
 import (
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
-	"time"
 )
 
 var (
@@ -72,8 +73,6 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 
 		// Update trust domain
 		td1.Description = "updated_description"
-		td1.HarvesterSpiffeID = spiffeid.RequireFromString("spiffe://domain/test")
-		td1.OnboardingBundle = []byte{1, 2, 3}
 
 		updated1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
 		assert.NoError(t, err)
@@ -84,8 +83,6 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.NoError(t, err)
 		assert.Equal(t, td1.ID, stored.ID)
 		assert.Equal(t, td1.Description, stored.Description)
-		assert.Equal(t, td1.HarvesterSpiffeID, stored.HarvesterSpiffeID)
-		assert.Equal(t, td1.OnboardingBundle, stored.OnboardingBundle)
 
 		// Find trust domain by name
 		td1 = updated1
@@ -191,7 +188,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Equal(t, relationship2, stored)
 
 		// Update relationship
-		relationship1.TrustDomainAConsent = entity.ConsentStatusAccepted
+		relationship1.TrustDomainAConsent = entity.ConsentStatusApproved
 		relationship1.TrustDomainBConsent = entity.ConsentStatusDenied
 		updated1, err := ds.CreateOrUpdateRelationship(ctx, relationship1)
 		assert.NoError(t, err)

@@ -2,16 +2,16 @@ package catalog
 
 import (
 	"fmt"
-	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
-	"github.com/HewlettPackard/galadriel/test/certtest"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/jmhodges/clock"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
+	"github.com/HewlettPackard/galadriel/test/certtest"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/jmhodges/clock"
+	"github.com/stretchr/testify/require"
 )
 
 var hclConfigTemplate = `

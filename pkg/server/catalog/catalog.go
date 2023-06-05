@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"

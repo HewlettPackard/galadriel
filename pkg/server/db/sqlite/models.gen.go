@@ -41,11 +41,9 @@ type Relationship struct {
 }
 
 type TrustDomain struct {
-	ID                string
-	Name              string
-	Description       sql.NullString
-	HarvesterSpiffeID sql.NullString
-	OnboardingBundle  []byte
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID          string
+	Name        string
+	Description sql.NullString
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

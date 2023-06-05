@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server"
@@ -17,10 +18,9 @@ import (
 )
 
 const (
-	defaultSocketPath = "/tmp/galadriel-server/api.sock"
-	defaultPort       = 8085
-	defaultAddress    = "0.0.0.0"
-	defaultLogLevel   = "INFO"
+	// TODO: These defaults should be moved close to where they are used (Server, Endpoints).
+	defaultPort    = 8085
+	defaultAddress = "0.0.0.0"
 )
 
 // Config holds the configuration for the Galadriel server.
@@ -57,27 +57,28 @@ func ParseConfig(config io.Reader) (*Config, error) {
 }
 
 // NewServerConfig creates a server.Config object from a cli.Config.
+// It returns a *server.Config and an error if any.
 func NewServerConfig(c *Config) (*server.Config, error) {
 	sc := &server.Config{}
 
 	addrPort := fmt.Sprintf("%s:%d", c.Server.ListenAddress, c.Server.ListenPort)
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addrPort)
+	tcpAddr, err := net.ResolveTCPAddr(constants.TCPProtocol, addrPort)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve TCP address %s: %w", addrPort, err)
 	}
 
 	sc.TCPAddress = tcpAddr
 
 	socketAddr, err := util.GetUnixAddrWithAbsPath(c.Server.SocketPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Unix address from path %s: %w", c.Server.SocketPath, err)
 	}
 
 	sc.LocalAddress = socketAddr
 
 	logLevel, err := logrus.ParseLevel(c.Server.LogLevel)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse log level: %v", err)
+		return nil, fmt.Errorf("failed to parse log level %s: %w", c.Server.LogLevel, err)
 	}
 	logger := logrus.New()
 	logger.SetLevel(logLevel)
@@ -121,11 +122,7 @@ func (c *Config) setDefaults() {
 		c.Server.ListenPort = defaultPort
 	}
 
-	if c.Server.SocketPath == "" {
-		c.Server.SocketPath = defaultSocketPath
-	}
-
 	if c.Server.LogLevel == "" {
-		c.Server.LogLevel = defaultLogLevel
+		c.Server.LogLevel = constants.DefaultLogLevel
 	}
 }

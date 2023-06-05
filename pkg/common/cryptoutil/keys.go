@@ -15,6 +15,10 @@ import (
 )
 
 const (
+	// DefaultKeyType is the default key type used for generating new keys in Galadriel.
+	// TODO: investigate where this should be configurable. For now, this default type is centralized in this constant.
+	DefaultKeyType = RSA2048
+
 	rsaPrivateKeyType = "RSA PRIVATE KEY"
 	ecPrivateKeyType  = "EC PRIVATE KEY"
 )

@@ -478,20 +478,12 @@ func (d *Datastore) updateTrustDomain(ctx context.Context, req *entity.TrustDoma
 	}
 
 	params := UpdateTrustDomainParams{
-		ID:               pgID,
-		OnboardingBundle: req.OnboardingBundle,
+		ID: pgID,
 	}
 
 	if req.Description != "" {
 		params.Description = sql.NullString{
 			String: req.Description,
-			Valid:  true,
-		}
-	}
-
-	if !req.HarvesterSpiffeID.IsZero() {
-		params.HarvesterSpiffeID = sql.NullString{
-			String: req.HarvesterSpiffeID.String(),
 			Valid:  true,
 		}
 	}

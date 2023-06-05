@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: Galadriel Harvester API - OpenAPI 3.0
+  description: |-
+    Galadriel Harvester Management API specification.
+  contact:
+    name: Github
+    url: https://github.com/HewlettPackard/galadriel
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+servers:
+  - url: https://localhost.swagger.io/api/v3
+tags:
+  - name: Trust Domain
+    description: A SPIFFE Trust Domain
+  - name: Relationships
+    description: A relationship is the representation of a SPIFFE Federation Relationship between two Trust Domains
+
+paths:
+  /relationships:
+    get:
+      tags:
+        - Relationships
+      summary: List the relationships.
+      operationId: GetRelationships
+      parameters:
+        - name: consentStatus
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+
+  /relationships/{relationshipID}:
+    patch:
+      tags:
+        - Relationships
+      summary: Accept/Denies relationship requests
+      operationId: PatchRelationship
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      requestBody:
+        description: Relationship status to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRelationshipRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+        default:
+          $ref: '#/components/responses/Default'
+      security:
+        - harvester_auth: [ ]
+
+components:
+  responses:
+    Default:
+      description: Error API responses
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
+  schemas:
+    PatchRelationshipRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_status
+      properties:
+        consent_status:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'

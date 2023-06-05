@@ -1,0 +1,23 @@
+name: 'Auto Assign'
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+permissions:  # added using https://github.com/step-security/secure-repo
+  contents: read
+
+jobs:
+  assign-owner:
+    permissions:
+      contents: read  # for kentaro-m/auto-assign-action to fetch config file
+      pull-requests: write  # for kentaro-m/auto-assign-action to assign PR reviewers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+
+      - uses: kentaro-m/auto-assign-action@3e986bf9c274729de0d85191da42484917883328 # v1.2.5
+        with:
+          configuration-path: '.github/auto-assign.yml'

@@ -42,6 +42,13 @@ func TestParseCertificate(t *testing.T) {
 	require.NotNil(t, cert)
 }
 
+func TestParseCertificates(t *testing.T) {
+	chain, err := ParseCertificates(readFile(t, certChainPath))
+	require.NoError(t, err)
+	require.NotNil(t, chain)
+	require.Len(t, chain, 2)
+}
+
 func TestEncodeCertificates(t *testing.T) {
 	cert, err := LoadCertificate(certPath)
 	require.NoError(t, err)

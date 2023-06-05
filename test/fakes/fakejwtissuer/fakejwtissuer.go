@@ -3,13 +3,14 @@ package fakejwtissuer
 import (
 	"context"
 	"crypto"
+	"testing"
+	"time"
+
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/jwt"
 	"github.com/HewlettPackard/galadriel/test/jwttest"
 	"github.com/jmhodges/clock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 // JWTIssuer is a fake implementation of the JWTIssuer interface.

@@ -4,7 +4,7 @@ info:
   description: |-
     Galadriel Server Management API specification.
   contact:
-    name: Github 
+    name: Github
     url: https://github.com/HewlettPackard/galadriel
   license:
     name: Apache 2.0
@@ -18,11 +18,11 @@ tags:
   - name: Relationships
     description: A relationship is the representation of a SPIFFE Federation Relationship between two Trust Domains
   - name: Join Token
-    description:  Representation of a join token bound to a Trust Domain.
-    
+    description: Representation of a join token bound to a Trust Domain.
+
 paths:
   /trust-domain/{trustDomainName}:
-    get: 
+    get:
       operationId: GetTrustDomainByName
       tags:
         - Trust Domain
@@ -59,7 +59,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'  
+              $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
       responses:
         '200':
           description: Successful operation
@@ -80,7 +80,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TrustDomainPut'
+              $ref: '#/components/schemas/PutTrustDomainRequest'
       responses:
         '201':
           description: Created
@@ -128,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RelationshipRequest'
+              $ref: '#/components/schemas/PutRelationshipRequest'
         required: true
       responses:
         '200':
@@ -176,13 +176,23 @@ paths:
           required: true
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+        - name: ttl
+          in: query
+          description: Time-to-Live (TTL) in seconds for the join token
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 86400
+            default: 3600
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JoinTokenResult'
+                $ref: '#/components/schemas/JoinTokenResponse'
         default:
           $ref: '#/components/responses/Default'
 
@@ -195,7 +205,7 @@ components:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
   schemas:
-    RelationshipRequest:
+    PutRelationshipRequest:
       type: object
       additionalProperties: false
       required:
@@ -206,7 +216,7 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
         trust_domain_b_name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-    TrustDomainPut:
+    PutTrustDomainRequest:
       type: object
       additionalProperties: false
       required:
@@ -219,7 +229,7 @@ components:
           example: "Trust domain that represent the entity X"
         name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-    JoinTokenResult:
+    JoinTokenResponse:
       type: object
       additionalProperties: false
       required:
@@ -227,4 +237,3 @@ components:
       properties:
         token:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/JoinToken'
-    

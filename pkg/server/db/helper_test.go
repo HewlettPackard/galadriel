@@ -20,12 +20,12 @@ func TestPopulateTrustDomainNames(t *testing.T) {
 	tdC := &entity.TrustDomain{Name: spiffeid.RequireTrustDomainFromString("td-c.org"), ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	rel1 := &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	rel2 := &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdC.ID.UUID, TrustDomainAConsent: entity.ConsentStatusPending, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
-	rel3 := &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusAccepted, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
+	rel3 := &entity.Relationship{TrustDomainAID: tdA.ID.UUID, TrustDomainBID: tdB.ID.UUID, TrustDomainAConsent: entity.ConsentStatusApproved, TrustDomainBConsent: entity.ConsentStatusPending, ID: uuid.NullUUID{UUID: uuid.New(), Valid: true}}
 	rels := []*entity.Relationship{rel1, rel2, rel3}
 	db.WithTrustDomains(tdA, tdB, tdC)
 	db.WithRelationships(rels...)
 
-	updatedRelationships, err := PopulateTrustDomainNames(ctx, db, rels)
+	updatedRelationships, err := PopulateTrustDomainNames(ctx, db, rels...)
 	assert.NoError(t, err)
 
 	for _, r := range updatedRelationships {

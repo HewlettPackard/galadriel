@@ -37,7 +37,7 @@ func CreateTestSelfSignedCACertificate(t *testing.T, clk clock.Clock) (*x509.Cer
 func CreateTestIntermediateCACertificate(t *testing.T, clk clock.Clock, parent *x509.Certificate, parentKey crypto.PrivateKey, cn string) (*x509.Certificate, crypto.PrivateKey) {
 	name := pkix.Name{CommonName: cn}
 
-	signer, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
+	signer, err := cryptoutil.GenerateSigner(cryptoutil.DefaultKeyType)
 	require.NoError(t, err)
 
 	template, err := cryptoutil.CreateCATemplate(clk, signer.Public(), name, oneHour)
