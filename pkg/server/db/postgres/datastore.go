@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -30,16 +33,16 @@ func NewDatastore(connString string) (*Datastore, error) {
 		return nil, fmt.Errorf("failed to parse Postgres Connection URL: %w", err)
 	}
 
-	db := stdlib.OpenDB(*c)
+	openDB := stdlib.OpenDB(*c)
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(db); err != nil {
+	if err = validateAndMigrateSchema(openDB); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
 	return &Datastore{
-		db:      db,
-		querier: New(db),
+		db:      openDB,
+		querier: New(openDB),
 	}, nil
 }
 
@@ -399,9 +402,6 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 func (d *Datastore) FindRelationshipsByTrustDomainID(
 	ctx context.Context,
 	trustDomainID uuid.UUID,
-	consentStatus *entity.ConsentStatus,
-	pageSize int,
-	pageNumber int,
 ) ([]*entity.Relationship, error) {
 
 	pgID, err := uuidToPgType(trustDomainID)
@@ -409,27 +409,32 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 		return nil, err
 	}
 
-	args := []any{pgID}
-	query := `
-	SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
-	FROM relationships
-	WHERE trust_domain_a_id = $1 OR trust_domain_b_id = $1`
+	// args := []any{pgID}
+	// query := `
+	// SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
+	// FROM relationships
+	// WHERE trust_domain_a_id = $1 OR trust_domain_b_id = $1`
 
-	if consentStatus != nil {
-		query += " AND ( trust_domain_a_consent = $2 OR trust_domain_b_consent = $2 )"
-		args = append(args, *consentStatus)
-		query, args = d.addPagination(query, args, pageSize, pageNumber, 3)
-	} else {
-		query, args = d.addPagination(query, args, pageSize, pageNumber, 2)
-	}
+	// if consentStatus != nil {
+	// 	query += " AND ( trust_domain_a_consent = $2 OR trust_domain_b_consent = $2 )"
+	// 	args = append(args, *consentStatus)
+	// 	query, args = d.addPagination(query, args, pageSize, pageNumber, 3)
+	// } else {
+	// 	query, args = d.addPagination(query, args, pageSize, pageNumber, 2)
+	// }
 
-	rows, err := d.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed looking up relationships: %w", err)
-	}
+	// rows, err := d.db.QueryContext(ctx, query, args...)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed looking up relationships: %w", err)
+	// }
 
-	defer rows.Close()
-	relationships, err := d.relationshipsFromRows(rows)
+	// defer rows.Close()
+	// relationships, err := d.relationshipsFromRows(rows)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, FindRelationshipsByTrustDomainIDParams{TrustDomainAID: pgID})
 	if err != nil {
 		return nil, err
 	}
@@ -453,47 +458,27 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context,
-	trustDomainConsent *entity.ConsentStatus,
-	pageSize int,
-	pageNumber int,
-) ([]*entity.Relationship, error) {
-
-	query := `
-	 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
-	 FROM relationships
-	`
-	args := []any{}
-	if trustDomainConsent != nil {
-		query += "WHERE trust_domain_a_consent = $1 OR trust_domain_b_consent = $1"
-		args = append(args, *trustDomainConsent)
-
-		query, args = d.addPagination(query, args, pageSize, pageNumber, 2)
-	} else {
-		query, args = d.addPagination(query, args, pageSize, pageNumber, 1)
-	}
-
-	rows, err := d.db.QueryContext(ctx, query, args...)
+func (d *Datastore) ListRelationships(ctx context.Context, criteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
+	rows, err := db.ExecuteListRelationshipsQuery(ctx, d.db, criteria, db.Postgres)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
-
 	defer rows.Close()
-	relationships, err := d.relationshipsFromRows(rows)
-	if err != nil {
-		return nil, err
-	}
 
-	result := make([]*entity.Relationship, len(relationships))
-	for i, m := range relationships {
-		ent, err := m.ToEntity()
-		if err != nil {
-			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+	var relationships []Relationship
+	for rows.Next() {
+		var m Relationship
+		if err := rows.Scan(&m.ID, &m.TrustDomainAID, &m.TrustDomainBID, &m.TrustDomainAConsent, &m.TrustDomainBConsent, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		result[i] = ent
+		relationships = append(relationships, m)
 	}
 
-	return result, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed during row iteration: %w", err)
+	}
+
+	return mapToEntity(relationships)
 }
 
 func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
@@ -604,9 +589,26 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		return nil, err
 	}
 
+	if req.TrustDomainAConsent == "" {
+		req.TrustDomainAConsent = entity.ConsentStatusPending
+	}
+	if req.TrustDomainBConsent == "" {
+		req.TrustDomainBConsent = entity.ConsentStatusPending
+	}
+	if req.CreatedAt.IsZero() {
+		req.CreatedAt = time.Now()
+	}
+	if req.UpdatedAt.IsZero() {
+		req.UpdatedAt = time.Now()
+	}
+
 	params := CreateRelationshipParams{
-		TrustDomainAID: pgTrustDomainAID,
-		TrustDomainBID: pgTrustDomainBID,
+		TrustDomainAID:      pgTrustDomainAID,
+		TrustDomainBID:      pgTrustDomainBID,
+		TrustDomainAConsent: ConsentStatus(req.TrustDomainAConsent),
+		TrustDomainBConsent: ConsentStatus(req.TrustDomainBConsent),
+		CreatedAt:           req.CreatedAt,
+		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
@@ -637,36 +639,16 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 	return &relationship, nil
 }
 
-func (d *Datastore) relationshipsFromRows(rows *sql.Rows) ([]Relationship, error) {
-	relationships := []Relationship{}
-	for rows.Next() {
-		var r Relationship
-		if err := rows.Scan(
-			&r.ID,
-			&r.TrustDomainAID,
-			&r.TrustDomainBID,
-			&r.TrustDomainAConsent,
-			&r.TrustDomainBConsent,
-			&r.CreatedAt,
-			&r.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
+func mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
+	result := make([]*entity.Relationship, len(models))
 
-		relationships = append(relationships, r)
+	for i, m := range models {
+		ent, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+		}
+		result[i] = ent
 	}
 
-	return relationships, nil
-}
-
-func (d *Datastore) addPagination(query string, args []any, pageSize, pageNumber, index int) (string, []any) {
-	query += fmt.Sprintf(`
-	LIMIT $%v
-	OFFSET $%v
-	`, index, index+1)
-
-	args = append(args, pageSize)
-	args = append(args, pageNumber*pageSize)
-
-	return query, args
+	return result, nil
 }

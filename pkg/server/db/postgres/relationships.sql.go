@@ -7,23 +7,35 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgtype"
 )
 
 const createRelationship = `-- name: CreateRelationship :one
-INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id)
-VALUES ($1, $2)
+INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `
 
 type CreateRelationshipParams struct {
-	TrustDomainAID pgtype.UUID
-	TrustDomainBID pgtype.UUID
+	TrustDomainAID      pgtype.UUID
+	TrustDomainBID      pgtype.UUID
+	TrustDomainAConsent ConsentStatus
+	TrustDomainBConsent ConsentStatus
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 func (q *Queries) CreateRelationship(ctx context.Context, arg CreateRelationshipParams) (Relationship, error) {
-	row := q.queryRow(ctx, q.createRelationshipStmt, createRelationship, arg.TrustDomainAID, arg.TrustDomainBID)
+	row := q.queryRow(ctx, q.createRelationshipStmt, createRelationship,
+		arg.TrustDomainAID,
+		arg.TrustDomainBID,
+		arg.TrustDomainAConsent,
+		arg.TrustDomainBConsent,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
 	var i Relationship
 	err := row.Scan(
 		&i.ID,
@@ -72,13 +84,8 @@ func (q *Queries) FindRelationshipByID(ctx context.Context, id pgtype.UUID) (Rel
 const findRelationshipsByTrustDomainID = `-- name: FindRelationshipsByTrustDomainID :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
-WHERE (
-        trust_domain_a_id = $1 AND trust_domain_a_consent = $2
-      ) OR (
-        trust_domain_b_id = $1 AND trust_domain_b_consent = $2 
-      )
-LIMIT $3 
-OFFSET $4
+WHERE trust_domain_a_id = $1
+   OR trust_domain_b_id = $1
 `
 
 type FindRelationshipsByTrustDomainIDParams struct {
@@ -95,54 +102,6 @@ func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, arg Find
 		arg.Limit,
 		arg.Offset,
 	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Relationship
-	for rows.Next() {
-		var i Relationship
-		if err := rows.Scan(
-			&i.ID,
-			&i.TrustDomainAID,
-			&i.TrustDomainBID,
-			&i.TrustDomainAConsent,
-			&i.TrustDomainBConsent,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listRelationships = `-- name: ListRelationships :many
-SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
-FROM relationships
-WHERE 
-    trust_domain_a_consent = $1 OR
-    trust_domain_b_consent = $1 
-ORDER BY created_at DESC
-LIMIT $2 
-OFFSET $3
-`
-
-type ListRelationshipsParams struct {
-	TrustDomainAConsent ConsentStatus
-	Limit               int32
-	Offset              int32
-}
-
-func (q *Queries) ListRelationships(ctx context.Context, arg ListRelationshipsParams) ([]Relationship, error) {
-	rows, err := q.query(ctx, q.listRelationshipsStmt, listRelationships, arg.TrustDomainAConsent, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

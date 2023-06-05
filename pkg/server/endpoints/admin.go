@@ -13,6 +13,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -43,38 +44,38 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	var err error
-	var td *entity.TrustDomain
-	var relationships []*entity.Relationship
-
-	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
-	if err != nil {
-		return err
-	}
-
-	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
-	if err != nil {
-		return err
+	listCriteria := &criteria.ListRelationshipsCriteria{
+		OrderByCreatedAt: criteria.OrderDescending,
 	}
 
 	if params.TrustDomainName != nil {
-		td, err = h.findTrustDomainByName(ctx, *params.TrustDomainName)
+		td, err := h.findTrustDomainByName(ctx, *params.TrustDomainName)
 		if err != nil {
 			err = fmt.Errorf("failed looking up trust domain name: %w", err)
 			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 		}
 
-		relationships, err = h.Datastore.FindRelationshipsByTrustDomainID(ctx, td.ID.UUID, consentStatus, pageSize, pageNumber)
-		if err != nil {
-			err = fmt.Errorf("failed looking up relationships: %v", err)
-			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+		listCriteria.FilterByTrustDomainID = uuid.NullUUID{Valid: true, UUID: td.ID.UUID}
+	}
+
+	var consentStatus *entity.ConsentStatus
+	if params.Status != nil {
+		switch *params.Status {
+		case "":
+		case api.Approved, api.Denied, api.Pending:
+			consentStatus = (*entity.ConsentStatus)(params.Status)
+		default:
+			err := fmt.Errorf("status filter %q is not supported, approved values [approved, denied, pending]", *params.Status)
+			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 		}
-	} else {
-		relationships, err = h.Datastore.ListRelationships(ctx, consentStatus, pageSize, pageNumber)
-		if err != nil {
-			err = fmt.Errorf("failed listing relationships: %v", err)
-			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
-		}
+
+		listCriteria.FilterByConsentStatus = consentStatus
+	}
+
+	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
+	if err != nil {
+		err = fmt.Errorf("failed listing relationships: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
 	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships...)

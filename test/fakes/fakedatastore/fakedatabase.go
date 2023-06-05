@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -458,9 +459,6 @@ func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID
 func (db *FakeDatabase) FindRelationshipsByTrustDomainID(
 	ctx context.Context,
 	trustDomainID uuid.UUID,
-	trustDomainConsent *entity.ConsentStatus,
-	pageSize int,
-	pageNumber int,
 ) ([]*entity.Relationship, error) {
 
 	db.mutex.Lock()
@@ -483,13 +481,7 @@ func (db *FakeDatabase) FindRelationshipsByTrustDomainID(
 	return relationships, nil
 }
 
-func (db *FakeDatabase) ListRelationships(
-	ctx context.Context,
-	trustDomainConsent *entity.ConsentStatus,
-	pageSize int,
-	pageNumber int,
-) ([]*entity.Relationship, error) {
-
+func (db *FakeDatabase) ListRelationships(ctx context.Context, listCriteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -499,6 +491,27 @@ func (db *FakeDatabase) ListRelationships(
 
 	var relationships []*entity.Relationship
 	for _, r := range db.relationships {
+		// Apply the filter criteria
+		if listCriteria != nil {
+			// Filter by consent status and trust domain ID
+			if listCriteria.FilterByConsentStatus != nil && listCriteria.FilterByTrustDomainID.Valid {
+				if (*listCriteria.FilterByConsentStatus != r.TrustDomainAConsent || listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainAID) &&
+					(*listCriteria.FilterByConsentStatus != r.TrustDomainBConsent || listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainBID) {
+					continue
+				}
+			} else {
+				// Filter by consent status
+				if listCriteria.FilterByConsentStatus != nil && (*listCriteria.FilterByConsentStatus != r.TrustDomainAConsent && *listCriteria.FilterByConsentStatus != r.TrustDomainBConsent) {
+					continue
+				}
+
+				// Filter by trust domain ID
+				if listCriteria.FilterByTrustDomainID.Valid && (listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainAID && listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainBID) {
+					continue
+				}
+			}
+		}
+
 		relationships = append(relationships, r)
 	}
 

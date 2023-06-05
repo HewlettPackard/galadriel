@@ -18,6 +18,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/constants"
+	"github.com/HewlettPackard/galadriel/pkg/common/diskutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/common/util"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
@@ -27,20 +28,16 @@ import (
 )
 
 const (
-	scheme          = "https://"
-	jsonContentType = "application/json"
-
 	jwtRotationInterval = 5 * time.Minute
 	onboardPath         = "/trust-domain/onboard"
 	tokenFile           = "jwt-token"
-	tokenFileMode       = 0600
 )
 
 var (
 	NotOnboardedErr = errors.New("client has not been onboarded to Galadriel Server")
 )
 
-// Client represents a client to interact with the Galadriel Server
+// Client represents a client to interact with the Galadriel Server API.
 type Client interface {
 	SyncBundles(context.Context, []*entity.Bundle) ([]*entity.Bundle, map[spiffeid.TrustDomain][]byte, error)
 	PostBundle(context.Context, *entity.Bundle) error
@@ -48,7 +45,7 @@ type Client interface {
 	UpdateRelationship(context.Context, uuid.UUID, entity.ConsentStatus) (*entity.Relationship, error)
 }
 
-// Config is a struct that holds the configuration for the Galadriel Server client
+// Config is a struct that holds the configuration for the Galadriel Server client.
 type Config struct {
 	TrustDomain            spiffeid.TrustDomain
 	GaladrielServerAddress *net.TCPAddr
@@ -62,12 +59,12 @@ type Config struct {
 type client struct {
 	client      harvester.ClientInterface
 	trustDomain spiffeid.TrustDomain
-	jwtStore    *jwtProvider
+	jwtStore    *jwtStore
 	logger      logrus.FieldLogger
 }
 
-// jwtProvider is a struct that holds the JWT access token
-type jwtProvider struct {
+// jwtStore is a struct that holds the JWT access token
+type jwtStore struct {
 	mu            sync.RWMutex
 	jwt           string
 	tokenFilePath string // File path for storing the JWT token
@@ -91,7 +88,7 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		return nil, errors.New("data dir cannot be empty")
 	}
 
-	jp, err := newJWTProvider(cfg.DataDir, tokenFile, cfg.Logger)
+	jwtProvider, err := newJwtStore(cfg.DataDir, tokenFile, cfg.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create JWT provider: %w", err)
 	}
@@ -101,12 +98,12 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		return nil, fmt.Errorf("failed to create TLS client for server %s: %w", cfg.GaladrielServerAddress, err)
 	}
 
-	serverAddress := fmt.Sprintf("%s%s", scheme, cfg.GaladrielServerAddress.String())
+	serverAddress := fmt.Sprintf("%s://%s", constants.HTTPSScheme, cfg.GaladrielServerAddress.String())
 
 	// Create harvester client
 	harvesterClient, err := harvester.NewClient(serverAddress,
 		harvester.WithHTTPClient(c),
-		harvester.WithRequestEditorFn(createJWTTokenReqEditor(jp)))
+		harvester.WithRequestEditorFn(createJWTTokenReqEditor(jwtProvider)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create harvester client: %w", err)
 	}
@@ -115,7 +112,7 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		trustDomain: cfg.TrustDomain,
 		client:      harvesterClient,
 		logger:      cfg.Logger,
-		jwtStore:    jp,
+		jwtStore:    jwtProvider,
 	}
 
 	// if the user provided a join token, try to onboard the Harvester to Galadriel Server
@@ -125,7 +122,7 @@ func NewClient(ctx context.Context, cfg *Config) (Client, error) {
 		}
 	}
 
-	if !client.isOnboarded() {
+	if !client.isClientOnboarded() {
 		// this happens if the user did not provide a join token and the Harvester cannot find a stored jwt token
 		return nil, errors.New("harvester is not onboarded to Galadriel Server. A join token is required")
 	}
@@ -335,8 +332,8 @@ func (c *client) PostBundle(ctx context.Context, bundle *entity.Bundle) error {
 	return nil
 }
 
-// isOnboarded Check if the client has been onboarded by checking if there is a JWT token
-func (c *client) isOnboarded() bool {
+// isClientOnboarded Check if the client has been onboarded by checking if there is a JWT token
+func (c *client) isClientOnboarded() bool {
 	return c.jwtStore.getToken() != ""
 }
 
@@ -433,7 +430,7 @@ func createTLSClient(trustBundlePath string) (*http.Client, error) {
 }
 
 // createEmptyTokenFile creates an empty token file
-func (p *jwtProvider) createEmptyTokenFile() error {
+func (p *jwtStore) createEmptyTokenFile() error {
 	// Create the file and close it immediately to create an empty file
 	file, err := os.Create(p.tokenFilePath)
 	if err != nil {
@@ -445,7 +442,7 @@ func (p *jwtProvider) createEmptyTokenFile() error {
 }
 
 // createJWTTokenReqEditor creates a request editor function that adds the JWT token to the request's Authorization header
-func createJWTTokenReqEditor(jp *jwtProvider) harvester.RequestEditorFn {
+func createJWTTokenReqEditor(jp *jwtStore) harvester.RequestEditorFn {
 	return func(ctx context.Context, req *http.Request) error {
 		if req.URL.Path == onboardPath {
 			return nil
@@ -453,7 +450,7 @@ func createJWTTokenReqEditor(jp *jwtProvider) harvester.RequestEditorFn {
 
 		token := jp.getToken()
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-		req.Header.Set("Content-Type", jsonContentType)
+		req.Header.Set("Content-Type", constants.JSONContentType)
 		return nil
 	}
 }
@@ -510,13 +507,13 @@ func createEntityBundle(trustDomainName string, b *harvester.BundlesUpdatesItem)
 	return ret, nil
 }
 
-func newJWTProvider(dataDir, tokenFileName string, logger logrus.FieldLogger) (*jwtProvider, error) {
+func newJwtStore(dataDir, tokenFileName string, logger logrus.FieldLogger) (*jwtStore, error) {
 	if logger == nil {
 		return nil, errors.New("logger is required")
 	}
 
 	tokenStoragePath := filepath.Join(dataDir, tokenFileName)
-	jp := &jwtProvider{
+	jp := &jwtStore{
 		mu:            sync.RWMutex{},
 		jwt:           "",
 		tokenFilePath: tokenStoragePath,
@@ -538,7 +535,7 @@ func newJWTProvider(dataDir, tokenFileName string, logger logrus.FieldLogger) (*
 	return jp, nil
 }
 
-func (p *jwtProvider) setToken(jwt string) {
+func (p *jwtStore) setToken(jwt string) {
 	p.mu.Lock()
 
 	// Sanitize token removing leading and trailing spaces and quotes
@@ -550,20 +547,19 @@ func (p *jwtProvider) setToken(jwt string) {
 	p.mu.Unlock()
 
 	// Save the token to disk
-	err := p.saveToken()
-	if err != nil {
+	if err := p.saveToken(); err != nil {
 		p.logger.Errorf("Failed to save JWT token to disk: %v", err)
 	}
 }
 
-func (p *jwtProvider) getToken() string {
+func (p *jwtStore) getToken() string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return p.jwt
 }
 
 // loadToken loads the JWT token from the disk storage
-func (p *jwtProvider) loadToken() error {
+func (p *jwtStore) loadToken() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -580,9 +576,9 @@ func (p *jwtProvider) loadToken() error {
 }
 
 // saveToken saves the JWT token to disk storage
-func (p *jwtProvider) saveToken() error {
+func (p *jwtStore) saveToken() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return os.WriteFile(p.tokenFilePath, []byte(p.jwt), tokenFileMode)
+	return diskutil.AtomicWritePrivateFile(p.tokenFilePath, []byte(p.jwt))
 }

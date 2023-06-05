@@ -30,7 +30,6 @@ type Querier interface {
 	FindTrustDomainByName(ctx context.Context, name string) (TrustDomain, error)
 	ListBundles(ctx context.Context) ([]Bundle, error)
 	ListJoinTokens(ctx context.Context) ([]JoinToken, error)
-	ListRelationships(ctx context.Context, arg ListRelationshipsParams) ([]Relationship, error)
 	ListTrustDomains(ctx context.Context) ([]TrustDomain, error)
 	UpdateBundle(ctx context.Context, arg UpdateBundleParams) (Bundle, error)
 	UpdateJoinToken(ctx context.Context, arg UpdateJoinTokenParams) (JoinToken, error)

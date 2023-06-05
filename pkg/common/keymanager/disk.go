@@ -13,9 +13,8 @@ import (
 	"os"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
+	"github.com/HewlettPackard/galadriel/pkg/common/diskutil"
 )
-
-const keyFilePerm = 0600
 
 // Disk extends the base KeyManager to store keys in disk.
 type Disk struct {
@@ -114,7 +113,7 @@ func (d *Disk) saveKeysToDisk() error {
 		return fmt.Errorf("failed to serialize keys: %w", err)
 	}
 
-	if err := os.WriteFile(d.keysFilePath, data, keyFilePerm); err != nil {
+	if err := diskutil.AtomicWritePrivateFile(d.keysFilePath, data); err != nil {
 		return fmt.Errorf("failed to write keys to disk: %w", err)
 	}
 
