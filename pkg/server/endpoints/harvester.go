@@ -60,20 +60,28 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	var status *entity.ConsentStatus
-	consentStatus := *params.ConsentStatus
-	switch consentStatus {
-	case "":
-	case api.Approved, api.Denied, api.Pending:
-		status = (*entity.ConsentStatus)(&consentStatus)
-	default:
-		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
-		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	if err != nil {
+		return err
+	}
+
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.ConsentStatus)
+	if err != nil {
+		return err
+	}
+
+	startDate, endDate, err := validateTimeParams(echoCtx, h.Logger, params.StartDate, params.EndDate)
+	if err != nil {
+		return err
 	}
 
 	listCriteria := &criteria.ListRelationshipsCriteria{
 		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
-		FilterByConsentStatus: status,
+		FilterByConsentStatus: consentStatus,
+		PageSize:              pageSize,
+		PageNumber:            pageNumber,
+		FilterByEndDate:       endDate,
+		FilterByStartDate:     startDate,
 		OrderByCreatedAt:      criteria.OrderDescending,
 	}
 

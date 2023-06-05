@@ -44,8 +44,28 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
+	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	if err != nil {
+		return err
+	}
+
+	startDate, endDate, err := validateTimeParams(echoCtx, h.Logger, params.StartDate, params.EndDate)
+	if err != nil {
+		return err
+	}
+
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.ConsentStatus)
+	if err != nil {
+		return err
+	}
+
 	listCriteria := &criteria.ListRelationshipsCriteria{
-		OrderByCreatedAt: criteria.OrderDescending,
+		PageSize:              pageSize,
+		PageNumber:            pageNumber,
+		FilterByEndDate:       endDate,
+		FilterByStartDate:     startDate,
+		FilterByConsentStatus: consentStatus,
+		OrderByCreatedAt:      criteria.OrderDescending,
 	}
 
 	if params.TrustDomainName != nil {
@@ -56,20 +76,6 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 		}
 
 		listCriteria.FilterByTrustDomainID = uuid.NullUUID{Valid: true, UUID: td.ID.UUID}
-	}
-
-	var consentStatus *entity.ConsentStatus
-	if params.Status != nil {
-		switch *params.Status {
-		case "":
-		case api.Approved, api.Denied, api.Pending:
-			consentStatus = (*entity.ConsentStatus)(params.Status)
-		default:
-			err := fmt.Errorf("status filter %q is not supported, approved values [approved, denied, pending]", *params.Status)
-			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-		}
-
-		listCriteria.FilterByConsentStatus = consentStatus
 	}
 
 	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
