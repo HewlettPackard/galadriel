@@ -7,13 +7,13 @@
 - TLS communication between Galadriel Server and Harvester for enhanced security (#146).
 - Enhanced Harvester secure introduction flow by utilizing join tokens and issuing JWTs by the Server for Harvester authentication (#151).
 - APIs for Server and Harvester defined through Open API spec for improved documentation and client integration (#70, #170).
-- Harvester admin API specification for managing administrative tasks (#170).
-- Galadriel Server Management API implementation to provide management capabilities (#150).
-- Harvester Admin API implementation for administrative tasks (#154).
+- Harvester admin API specification (#170).
+- Galadriel Server Admin API implementation (#150).
+- Harvester Admin API implementation (#154).
 - Datastore layer supporting SQLite and Postgres (#73, #157).
 - Comprehensive overhaul of Harvester and Server, incorporating various enhancements, including improved synchronization processes for SPIRE bundles and Federated bundles (#171).
 - Improvements in CLI implementations (#173).
-- KeyManager 'disk' implementation (#167).
+- KeyManager `disk` implementation (#167).
 - X509CA `disk` implementation for managing X.509 certificate authorities (#145).
 - `diskutil` package for atomic file writing operations (#187).
 - Releasing how-to document (#186).
