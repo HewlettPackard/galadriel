@@ -209,7 +209,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Contains(t, rels, relationship1)
 
 		// List all relationships
-		rels, err = ds.ListRelationships(ctx)
+		rels, err = ds.ListRelationships(ctx, nil)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 2)
 

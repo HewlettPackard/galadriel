@@ -168,8 +168,8 @@ func (q *Queries) ListJoinTokens(ctx context.Context) ([]JoinToken, error) {
 
 const updateJoinToken = `-- name: UpdateJoinToken :one
 UPDATE join_tokens
-    SET used = $2,
-        updated_at = now()
+SET used       = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
