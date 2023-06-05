@@ -409,31 +409,6 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 		return nil, err
 	}
 
-	// args := []any{pgID}
-	// query := `
-	// SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
-	// FROM relationships
-	// WHERE trust_domain_a_id = $1 OR trust_domain_b_id = $1`
-
-	// if consentStatus != nil {
-	// 	query += " AND ( trust_domain_a_consent = $2 OR trust_domain_b_consent = $2 )"
-	// 	args = append(args, *consentStatus)
-	// 	query, args = d.addPagination(query, args, pageSize, pageNumber, 3)
-	// } else {
-	// 	query, args = d.addPagination(query, args, pageSize, pageNumber, 2)
-	// }
-
-	// rows, err := d.db.QueryContext(ctx, query, args...)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed looking up relationships: %w", err)
-	// }
-
-	// defer rows.Close()
-	// relationships, err := d.relationshipsFromRows(rows)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, FindRelationshipsByTrustDomainIDParams{TrustDomainAID: pgID})
 	if err != nil {
 		return nil, err

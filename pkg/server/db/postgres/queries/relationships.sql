@@ -24,11 +24,5 @@ WHERE id = $1;
 -- name: FindRelationshipsByTrustDomainID :many
 SELECT *
 FROM relationships
-WHERE (
-        trust_domain_a_id = $1 AND trust_domain_a_consent = $2
-      ) OR (
-        trust_domain_b_id = $1 AND trust_domain_b_consent = $2
-      )
-LIMIT $3
-OFFSET $4;
-
+WHERE trust_domain_a_id = $1
+   OR trust_domain_b_id = $1;
