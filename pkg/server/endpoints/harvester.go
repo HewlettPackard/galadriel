@@ -78,8 +78,8 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 	listCriteria := &criteria.ListRelationshipsCriteria{
 		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
 		FilterByConsentStatus: consentStatus,
-		PageSize:              pageSize,
 		PageNumber:            pageNumber,
+		PageSize:              pageSize,
 		FilterByEndDate:       endDate,
 		FilterByStartDate:     startDate,
 		OrderByCreatedAt:      criteria.OrderDescending,

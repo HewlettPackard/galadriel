@@ -73,15 +73,12 @@ func validateTimeParams(
 	startDate *types.Date,
 	endDate *types.Date,
 ) (time.Time, time.Time, error) {
-
-	last30Days := time.Now().Add(-30 * 24 * time.Hour)
-
-	from := last30Days
-	until := time.Now()
+	from := defaultStartDate()
+	until := defaultEndDate()
 
 	if startDate != nil {
 		if startDate.Time.After(until) {
-			err := errors.New("can't use a startDate that is after the endDate")
+			err := errors.New("can't use a startDate that is in the future")
 			return time.Time{}, time.Time{}, err
 		}
 
@@ -103,4 +100,13 @@ func validateTimeParams(
 	}
 
 	return from, until, nil
+}
+
+func defaultStartDate() time.Time {
+	// Last 30 Day
+	return time.Now().Add(-30 * 24 * time.Hour)
+}
+
+func defaultEndDate() time.Time {
+	return time.Now().Add(1 * time.Second)
 }
