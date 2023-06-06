@@ -159,13 +159,15 @@ func TestTCPGetRelationships(t *testing.T) {
 		tdName := tdA.Name.String()
 		status := api.ConsentStatus("invalid")
 		params := harvester.GetRelationshipsParams{
-			ConsentStatus: &status,
+			Status: &status,
 		}
 
 		err := setup.Handler.GetRelationships(echoCtx, tdName, params)
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
-		assert.Contains(t, err.(*echo.HTTPError).Message, "invalid consent status: \"invalid\"")
+
+		errMsg := "status filter \"invalid\" is not supported, available values [approved, denied, pending]"
+		assert.Contains(t, err.(*echo.HTTPError).Message, errMsg)
 	})
 
 	t.Run("Fails if no authenticated trust domain", func(t *testing.T) {
@@ -206,8 +208,10 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 	setupFn(setup, trustDomain)
 
 	tdName := trustDomain.Name.String()
-	params := harvester.GetRelationshipsParams{
-		ConsentStatus: &status,
+
+	params := harvester.GetRelationshipsParams{}
+	if status != "" {
+		params.Status = &status
 	}
 
 	err := setup.Handler.GetRelationships(echoCtx, tdName, params)

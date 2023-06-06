@@ -65,7 +65,7 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.ConsentStatus)
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
 	if err != nil {
 		return err
 	}
