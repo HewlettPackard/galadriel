@@ -2,28 +2,15 @@ package endpoints
 
 import (
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/deepmap/oapi-codegen/pkg/types"
-	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-func NewEchoContext(t *testing.T) echo.Context {
-	e := echo.New()
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "http://fakeurl", nil)
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	echoCtx := e.NewContext(req, rec)
-	return echoCtx
-
-}
 func TestValidatePaginationParams(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -57,16 +44,13 @@ func TestValidatePaginationParams(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			echoCtx := NewEchoContext(t)
-
 			var err error
 			var pageSize, pageNumber uint
-			var logger logrus.FieldLogger = logrus.StandardLogger().WithField("test", tc.name)
 
 			if tc.noParams {
-				pageSize, pageNumber, err = validatePaginationParams(echoCtx, logger, nil, nil)
+				pageSize, pageNumber, err = validatePaginationParams(nil, nil)
 			} else {
-				pageSize, pageNumber, err = validatePaginationParams(echoCtx, logger, &tc.pageSize, &tc.pageNumber)
+				pageSize, pageNumber, err = validatePaginationParams(&tc.pageSize, &tc.pageNumber)
 			}
 
 			if tc.expectedError != nil {
@@ -125,15 +109,12 @@ func TestValidateConsentStatusParam(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			echoCtx := NewEchoContext(t)
 
 			var consentStatus *api.ConsentStatus
 			if !tc.noParams {
 				consentStatus = &tc.consentStatus
 			}
-
-			var logger logrus.FieldLogger = logrus.StandardLogger().WithField("test", tc.name)
-			status, err := validateConsentStatusParam(echoCtx, logger, consentStatus)
+			status, err := validateConsentStatusParam(consentStatus)
 
 			if tc.expectedError != nil {
 				assert.Empty(t, status)
@@ -193,10 +174,7 @@ func TestValidateTimeParams(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			echoCtx := NewEchoContext(t)
-
-			var logger logrus.FieldLogger = logrus.StandardLogger().WithField("test", tc.name)
-			startDate, endDate, err := validateTimeParams(echoCtx, logger, tc.startDate, tc.endDate)
+			startDate, endDate, err := validateTimeParams(tc.startDate, tc.endDate)
 
 			if tc.expectErr != nil {
 				assert.Empty(t, endDate)

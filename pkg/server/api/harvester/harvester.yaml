@@ -187,7 +187,7 @@ paths:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: relationship status from a Trust Domain perspective
           required: true
-        - name: status
+        - name: consentStatus
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'

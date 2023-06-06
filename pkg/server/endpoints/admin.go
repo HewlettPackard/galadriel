@@ -44,19 +44,19 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	pageSize, pageNumber, err := validatePaginationParams(params.PageSize, params.PageNumber)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	startDate, endDate, err := validateTimeParams(echoCtx, h.Logger, params.StartDate, params.EndDate)
+	consentStatus, err := validateConsentStatusParam(params.ConsentStatus)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
+	startDate, endDate, err := validateTimeParams(params.StartDate, params.EndDate)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
 	listCriteria := &criteria.ListRelationshipsCriteria{

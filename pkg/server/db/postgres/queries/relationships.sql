@@ -26,3 +26,4 @@ SELECT *
 FROM relationships
 WHERE trust_domain_a_id = $1
    OR trust_domain_b_id = $1;
+

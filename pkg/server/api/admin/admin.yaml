@@ -97,7 +97,7 @@ paths:
         - Relationships
       summary: Get relationships
       parameters:
-        - name: status
+        - name: consentStatus
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'

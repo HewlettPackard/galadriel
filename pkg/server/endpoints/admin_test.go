@@ -119,19 +119,19 @@ func TestGetRelationships(t *testing.T) {
 	})
 
 	t.Run("Successfully filter by status approved", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusAccepted}, 3, rel1, rel2, rel3)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusAccepted}, 3, rel1, rel2, rel3)
 	})
 
 	t.Run("Successfully filter by status pending", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusPending}, 2, rel1, rel5)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusPending}, 2, rel1, rel5)
 	})
 
 	t.Run("Successfully filter by status denied", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusDenied}, 3, rel2, rel3, rel4)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusDenied}, 3, rel2, rel3, rel4)
 	})
 
 	t.Run("Successfully filter by status approved and trust domain", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, rel1)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, ConsentStatus: &statusAccepted}, 1, rel1)
 	})
 
 	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestGetRelationships(t *testing.T) {
 		// Approved filter
 		var randomFilter api.ConsentStatus = "a random filter"
 		params := admin.GetRelationshipsParams{
-			Status: &randomFilter,
+			ConsentStatus: &randomFilter,
 		}
 
 		err := setup.Handler.GetRelationships(setup.EchoCtx, params)

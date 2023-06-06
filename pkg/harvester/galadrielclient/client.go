@@ -152,7 +152,7 @@ func (c *client) GetRelationships(ctx context.Context, consentStatus entity.Cons
 		status = api.ConsentStatus(consentStatus)
 	}
 
-	resp, err := c.client.GetRelationships(ctx, c.trustDomain.String(), &harvester.GetRelationshipsParams{Status: &status})
+	resp, err := c.client.GetRelationships(ctx, c.trustDomain.String(), &harvester.GetRelationshipsParams{ConsentStatus: &status})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get relationships: %v", err)
 	}

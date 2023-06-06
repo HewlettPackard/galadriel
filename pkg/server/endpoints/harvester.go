@@ -60,19 +60,19 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	pageSize, pageNumber, err := validatePaginationParams(echoCtx, h.Logger, params.PageSize, params.PageNumber)
+	pageSize, pageNumber, err := validatePaginationParams(params.PageSize, params.PageNumber)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
+	consentStatus, err := validateConsentStatusParam(params.ConsentStatus)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	startDate, endDate, err := validateTimeParams(echoCtx, h.Logger, params.StartDate, params.EndDate)
+	startDate, endDate, err := validateTimeParams(params.StartDate, params.EndDate)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
 	listCriteria := &criteria.ListRelationshipsCriteria{

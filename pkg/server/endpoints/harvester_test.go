@@ -159,7 +159,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		tdName := tdA.Name.String()
 		status := api.ConsentStatus("invalid")
 		params := harvester.GetRelationshipsParams{
-			Status: &status,
+			ConsentStatus: &status,
 		}
 
 		err := setup.Handler.GetRelationships(echoCtx, tdName, params)
@@ -211,7 +211,7 @@ func testGetRelationships(t *testing.T, setupFn func(*HarvesterTestSetup, *entit
 
 	params := harvester.GetRelationshipsParams{}
 	if status != "" {
-		params.Status = &status
+		params.ConsentStatus = &status
 	}
 
 	err := setup.Handler.GetRelationships(echoCtx, tdName, params)
