@@ -46,11 +46,12 @@ func TestValidatePaginationParams(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var err error
 			var pageSize, pageNumber uint
+			qp := QueryParams{}
 
 			if tc.noParams {
-				pageSize, pageNumber, err = validatePaginationParams(nil, nil)
+				pageSize, pageNumber, err = qp.validatePaginationParams(nil, nil)
 			} else {
-				pageSize, pageNumber, err = validatePaginationParams(&tc.pageSize, &tc.pageNumber)
+				pageSize, pageNumber, err = qp.validatePaginationParams(&tc.pageSize, &tc.pageNumber)
 			}
 
 			if tc.expectedError != nil {
@@ -109,12 +110,13 @@ func TestValidateConsentStatusParam(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			qp := QueryParams{}
 
 			var consentStatus *api.ConsentStatus
 			if !tc.noParams {
 				consentStatus = &tc.consentStatus
 			}
-			status, err := validateConsentStatusParam(consentStatus)
+			status, err := qp.validateConsentStatusParam(consentStatus)
 
 			if tc.expectedError != nil {
 				assert.Empty(t, status)
@@ -174,7 +176,8 @@ func TestValidateTimeParams(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			startDate, endDate, err := validateTimeParams(tc.startDate, tc.endDate)
+			qp := QueryParams{}
+			startDate, endDate, err := qp.validateTimeParams(tc.startDate, tc.endDate)
 
 			if tc.expectErr != nil {
 				assert.Empty(t, endDate)

@@ -60,28 +60,18 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	pageSize, pageNumber, err := validatePaginationParams(params.PageSize, params.PageNumber)
-	if err != nil {
-		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-	}
-
-	consentStatus, err := validateConsentStatusParam(params.ConsentStatus)
-	if err != nil {
-		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-	}
-
-	startDate, endDate, err := validateTimeParams(params.StartDate, params.EndDate)
-	if err != nil {
+	queryParams := harvesterGetRelationshipsToQueryParams(params)
+	if err := queryParams.ValidateParams(); err != nil {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
 	listCriteria := &criteria.ListRelationshipsCriteria{
 		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
-		FilterByConsentStatus: consentStatus,
-		PageNumber:            pageNumber,
-		PageSize:              pageSize,
-		FilterByEndDate:       endDate,
-		FilterByStartDate:     startDate,
+		FilterByConsentStatus: queryParams.validParams.consentStatus,
+		PageSize:              queryParams.validParams.pageSize,
+		PageNumber:            queryParams.validParams.pageNumber,
+		FilterByEndDate:       queryParams.validParams.endDate,
+		FilterByStartDate:     queryParams.validParams.startDate,
 		OrderByCreatedAt:      criteria.OrderDescending,
 	}
 
@@ -525,4 +515,14 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	}
 
 	return nil
+}
+
+func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParams {
+	return &QueryParams{
+		pageSize:      params.PageSize,
+		endDate:       params.EndDate,
+		pageNumber:    params.PageNumber,
+		startDate:     params.StartDate,
+		consentStatus: params.ConsentStatus,
+	}
 }

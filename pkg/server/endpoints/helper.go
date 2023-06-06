@@ -10,7 +10,54 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/types"
 )
 
-func validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
+type QueryParams struct {
+	pageSize   *api.PageSize
+	pageNumber *api.PageNumber
+
+	startDate *types.Date
+	endDate   *types.Date
+
+	consentStatus *api.ConsentStatus
+
+	validParams ValidQueryParams
+}
+
+type ValidQueryParams struct {
+	pageSize      uint
+	pageNumber    uint
+	consentStatus *entity.ConsentStatus
+	startDate     time.Time
+	endDate       time.Time
+}
+
+func (q *QueryParams) ValidateParams() error {
+	pageSize, pageNumber, err := q.validatePaginationParams(q.pageSize, q.pageNumber)
+	if err != nil {
+		return err
+	}
+
+	consentStatus, err := q.validateConsentStatusParam(q.consentStatus)
+	if err != nil {
+		return err
+	}
+
+	startDate, endDate, err := q.validateTimeParams(q.startDate, q.endDate)
+	if err != nil {
+		return err
+	}
+
+	q.validParams = ValidQueryParams{
+		pageSize:      pageSize,
+		pageNumber:    pageNumber,
+		consentStatus: consentStatus,
+		startDate:     startDate,
+		endDate:       endDate,
+	}
+
+	return nil
+}
+
+func (q *QueryParams) validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
 	pageSize := defaultPageSize
 	pageNumber := defaultPageNumber
 
@@ -36,7 +83,7 @@ func validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
 	return uint(pageSize), uint(pageNumber), nil
 }
 
-func validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
+func (q *QueryParams) validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
 	if status != nil {
 		switch *status {
 		case api.Approved, api.Denied, api.Pending:
@@ -52,7 +99,7 @@ func validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatu
 	return nil, nil
 }
 
-func validateTimeParams(startDate *types.Date, endDate *types.Date) (time.Time, time.Time, error) {
+func (q *QueryParams) validateTimeParams(startDate *types.Date, endDate *types.Date) (time.Time, time.Time, error) {
 	from := defaultStartDate()
 	until := defaultEndDate()
 
