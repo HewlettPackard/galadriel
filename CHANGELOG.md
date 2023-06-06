@@ -6,6 +6,7 @@
 
 - TLS communication between Galadriel Server and Harvester for enhanced security (#146).
 - Enhanced Harvester secure introduction flow by utilizing join tokens and issuing JWTs by the Server for Harvester authentication (#151).
+- Bundle signing and verification using generic interface and providing a `disk` implementation (#147).
 - APIs for Server and Harvester defined through Open API spec for improved documentation and client integration (#70, #170).
 - Harvester admin API specification (#170).
 - Galadriel Server Admin API implementation (#150).
