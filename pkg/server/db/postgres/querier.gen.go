@@ -25,7 +25,7 @@ type Querier interface {
 	FindJoinTokenByID(ctx context.Context, id pgtype.UUID) (JoinToken, error)
 	FindJoinTokensByTrustDomainID(ctx context.Context, trustDomainID pgtype.UUID) ([]JoinToken, error)
 	FindRelationshipByID(ctx context.Context, id pgtype.UUID) (Relationship, error)
-	FindRelationshipsByTrustDomainID(ctx context.Context, arg FindRelationshipsByTrustDomainIDParams) ([]Relationship, error)
+	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainAID pgtype.UUID) ([]Relationship, error)
 	FindTrustDomainByID(ctx context.Context, id pgtype.UUID) (TrustDomain, error)
 	FindTrustDomainByName(ctx context.Context, name string) (TrustDomain, error)
 	ListBundles(ctx context.Context) ([]Bundle, error)

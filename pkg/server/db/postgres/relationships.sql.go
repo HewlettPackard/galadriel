@@ -88,20 +88,8 @@ WHERE trust_domain_a_id = $1
    OR trust_domain_b_id = $1
 `
 
-type FindRelationshipsByTrustDomainIDParams struct {
-	TrustDomainAID      pgtype.UUID
-	TrustDomainAConsent ConsentStatus
-	Limit               int32
-	Offset              int32
-}
-
-func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, arg FindRelationshipsByTrustDomainIDParams) ([]Relationship, error) {
-	rows, err := q.query(ctx, q.findRelationshipsByTrustDomainIDStmt, findRelationshipsByTrustDomainID,
-		arg.TrustDomainAID,
-		arg.TrustDomainAConsent,
-		arg.Limit,
-		arg.Offset,
-	)
+func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainAID pgtype.UUID) ([]Relationship, error) {
+	rows, err := q.query(ctx, q.findRelationshipsByTrustDomainIDStmt, findRelationshipsByTrustDomainID, trustDomainAID)
 	if err != nil {
 		return nil, err
 	}

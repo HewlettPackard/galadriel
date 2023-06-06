@@ -409,7 +409,7 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 		return nil, err
 	}
 
-	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, FindRelationshipsByTrustDomainIDParams{TrustDomainAID: pgID})
+	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, pgID)
 	if err != nil {
 		return nil, err
 	}
