@@ -16,9 +16,9 @@ func validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
 
 	if pgSize != nil {
 		pageSize = *pgSize
-		outOfLimits := pageSize >= 0
+		outOfLimits := pageSize < 0
 		if outOfLimits {
-			err := fmt.Errorf("page size %v is out of the accepted range [0 - 100]", *pgSize)
+			err := fmt.Errorf("page size %v is not accepted, must be positive", *pgSize)
 			return 0, 0, err
 		}
 	}
@@ -26,9 +26,9 @@ func validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
 	if pgNumber != nil {
 		pageNumber = *pgNumber
 
-		outOfLimits := pageNumber >= 0
+		outOfLimits := pageNumber < 0
 		if outOfLimits {
-			err := fmt.Errorf("page number %v is out of the accepted range [0 - 100]", *pgSize)
+			err := fmt.Errorf("page number %v is not accepted, must be positive", *pgNumber)
 			return 0, 0, err
 		}
 	}

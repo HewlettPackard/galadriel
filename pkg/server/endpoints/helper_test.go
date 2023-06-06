@@ -21,15 +21,15 @@ func TestValidatePaginationParams(t *testing.T) {
 	}{
 		{
 			name:          "Page size out of range",
-			pageSize:      101,
+			pageSize:      -1,
 			pageNumber:    0,
-			expectedError: errors.New("code=400, message=page size 101 is out of the accepted range [1 - 100]"),
+			expectedError: errors.New("page size -1 is not accepted, must be positive"),
 		},
 		{
 			name:          "Page number out of range",
 			pageSize:      10,
-			pageNumber:    101,
-			expectedError: errors.New("code=400, message=page number 10 is out of the accepted range [0 - 100]"),
+			pageNumber:    -1,
+			expectedError: errors.New("page number -1 is not accepted, must be positive"),
 		},
 		{
 			name:       "Successfully pass verifications",
@@ -103,7 +103,7 @@ func TestValidateConsentStatusParam(t *testing.T) {
 		{
 			name:          "Unsuported filter type",
 			consentStatus: "teste",
-			expectedError: errors.New("code=400, message=status filter \"teste\" is not supported, available values [approved, denied, pending]"),
+			expectedError: errors.New("status filter \"teste\" is not supported, available values [approved, denied, pending]"),
 		},
 	}
 
