@@ -54,7 +54,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 		return err
 	}
 
-	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.ConsentStatus)
+	consentStatus, err := validateConsentStatusParam(echoCtx, h.Logger, params.Status)
 	if err != nil {
 		return err
 	}

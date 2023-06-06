@@ -110,9 +110,9 @@ func (setup *ManagementTestSetup) Refresh() {
 
 func TestGetRelationships(t *testing.T) {
 	tdName := td1
-	statusAccepted := api.Approved
-	statusPending := api.Pending
 	statusDenied := api.Denied
+	statusPending := api.Pending
+	statusAccepted := api.Approved
 
 	t.Run("Successfully filter by trust domain", func(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName}, 3, rel1, rel2, rel4)
@@ -152,7 +152,7 @@ func TestGetRelationships(t *testing.T) {
 		assert.Empty(t, setup.Recorder.Body)
 
 		expectedMsg := fmt.Sprintf(
-			"status filter %q is not supported, approved values [%v, %v, %v]",
+			"code=400, message=status filter \"%v\" is not supported, available values [%v, %v, %v]",
 			randomFilter, api.Approved, api.Denied, api.Pending,
 		)
 

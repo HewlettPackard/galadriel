@@ -107,10 +107,6 @@ paths:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: TrustDomain
-        - name: consentStatus
-          in: query
-          schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
         - name: pageSize
           required: false
           in: query
