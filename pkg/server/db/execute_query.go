@@ -51,6 +51,44 @@ func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria
 	return rows, nil
 }
 
+// Q executes a query to retrieve trust domains from the database based on the provided criteria.
+// The function constructs the SQL query based on the provided criteria, including pagination,
+// and ordering by created at. If the listCriteria parameter is nil, the function returns
+// all trust domains without any filtering or ordering.
+func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListTrustDomainCriteria) (*sql.Rows, error) {
+	offset := uint(0)
+	pageSize := uint(0)
+
+	if listCriteria != nil {
+		offset = (listCriteria.PageNumber - 1) * listCriteria.PageSize
+		pageSize = listCriteria.PageSize
+	}
+
+	query := squirrel.Select("*").From("trust_domains")
+
+	if listCriteria != nil {
+		if listCriteria.OrderByCreatedAt != criteria.NoOrder {
+			query = query.OrderBy(fmt.Sprintf("created_at %s", listCriteria.OrderByCreatedAt))
+		}
+
+		if pageSize > 0 {
+			query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
+		}
+	}
+
+	toSql, args, err := query.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build SQL query: %w", err)
+	}
+
+	rows, err := db.QueryContext(ctx, toSql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute SQL query: %w", err)
+	}
+
+	return rows, nil
+}
+
 func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) squirrel.SelectBuilder {
 	if listCriteria.FilterByConsentStatus == nil && !listCriteria.FilterByTrustDomainID.Valid {
 		return query

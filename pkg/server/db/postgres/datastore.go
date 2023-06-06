@@ -89,7 +89,7 @@ func (d *Datastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UU
 	return nil
 }
 
-func (d *Datastore) ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error) {
+func (d *Datastore) ListTrustDomains(ctx context.Context, criteria *criteria.ListTrustDomainCriteria) ([]*entity.TrustDomain, error) {
 	trustDomains, err := d.querier.ListTrustDomains(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting trust domain list: %w", err)

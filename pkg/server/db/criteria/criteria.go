@@ -26,3 +26,10 @@ type ListRelationshipsCriteria struct {
 	FilterByTrustDomainID uuid.NullUUID         // Filter relationships by trust domain ID (optional)
 	OrderByCreatedAt      OrderDirection        // Order relationships by created at (ascending, descending, or no order)
 }
+
+// ListTrustDomainCriteria defines the criteria for filtering and ordering trust domains.
+type ListTrustDomainCriteria struct {
+	PageNumber       uint           // Page number for pagination (0 for no pagination)
+	PageSize         uint           // Number of items per page (0 for no pagination)
+	OrderByCreatedAt OrderDirection // Order relationships by created at (ascending, descending, or no order)
+}
