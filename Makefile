@@ -68,7 +68,7 @@ sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION
 else ifeq ($(os1),darwin)
 sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_darwin_$(arch2).zip
 else
-sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux-$(arch2).zip
+sqlc_url := https://github.com/kyleconroy/sqlc/releases/download/v$(SQLC_VERSION)/sqlc_$(SQLC_VERSION)_linux_$(arch2).zip
 endif
 
 # Define Go path
