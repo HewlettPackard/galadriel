@@ -20,8 +20,13 @@ for architecture in "${supported_architectures[@]}"; do
     echo "Artifacts successfully built for architecture: ${architecture}"
     tarball="galadriel-${version_tag}-linux-${architecture}-glibc.tar.gz"
 
+    # Create a staging directory for the tarball
+    dir="galadriel-${version_tag}"
+    mkdir "${dir}"
+    cp -r bin conf LICENSE "${dir}"
+
     # Create a tarball with the binaries, license, and conf files
-    tar -czvf "$tarball" -C bin/ . -C ../ LICENSE conf/
+    tar -czvf "$tarball" "${dir}"
 
     # Generate a SHA-256 checksum for the tarball
     sha256sum "$tarball" > "$tarball.sha256sum.txt"
@@ -29,6 +34,8 @@ for architecture in "${supported_architectures[@]}"; do
     echo "Error encountered while building artifact for architecture: ${architecture}"
     exit 1
   fi
+
+  rm -rf "${dir}"
 done
 
 echo "Build completed successfully for all architectures"
