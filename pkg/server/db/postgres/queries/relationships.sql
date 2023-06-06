@@ -1,6 +1,6 @@
 -- name: CreateRelationship :one
-INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id)
-VALUES ($1, $2)
+INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: UpdateRelationship :one
@@ -27,7 +27,3 @@ FROM relationships
 WHERE trust_domain_a_id = $1
    OR trust_domain_b_id = $1;
 
--- name: ListRelationships :many
-SELECT *
-FROM relationships
-ORDER BY created_at DESC;

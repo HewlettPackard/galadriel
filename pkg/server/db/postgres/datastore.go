@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -30,16 +33,16 @@ func NewDatastore(connString string) (*Datastore, error) {
 		return nil, fmt.Errorf("failed to parse Postgres Connection URL: %w", err)
 	}
 
-	db := stdlib.OpenDB(*c)
+	openDB := stdlib.OpenDB(*c)
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(db); err != nil {
+	if err = validateAndMigrateSchema(openDB); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
 	return &Datastore{
-		db:      db,
-		querier: New(db),
+		db:      openDB,
+		querier: New(openDB),
 	}, nil
 }
 
@@ -422,22 +425,27 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustD
 	return result, nil
 }
 
-func (d *Datastore) ListRelationships(ctx context.Context) ([]*entity.Relationship, error) {
-	relationships, err := d.querier.ListRelationships(ctx)
+func (d *Datastore) ListRelationships(ctx context.Context, criteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
+	rows, err := db.ExecuteListRelationshipsQuery(ctx, d.db, criteria, db.Postgres)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
+	defer rows.Close()
 
-	result := make([]*entity.Relationship, len(relationships))
-	for i, m := range relationships {
-		ent, err := m.ToEntity()
-		if err != nil {
-			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+	var relationships []Relationship
+	for rows.Next() {
+		var m Relationship
+		if err := rows.Scan(&m.ID, &m.TrustDomainAID, &m.TrustDomainBID, &m.TrustDomainAConsent, &m.TrustDomainBConsent, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		result[i] = ent
+		relationships = append(relationships, m)
 	}
 
-	return result, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed during row iteration: %w", err)
+	}
+
+	return mapToEntity(relationships)
 }
 
 func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
@@ -548,9 +556,26 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		return nil, err
 	}
 
+	if req.TrustDomainAConsent == "" {
+		req.TrustDomainAConsent = entity.ConsentStatusPending
+	}
+	if req.TrustDomainBConsent == "" {
+		req.TrustDomainBConsent = entity.ConsentStatusPending
+	}
+	if req.CreatedAt.IsZero() {
+		req.CreatedAt = time.Now()
+	}
+	if req.UpdatedAt.IsZero() {
+		req.UpdatedAt = time.Now()
+	}
+
 	params := CreateRelationshipParams{
-		TrustDomainAID: pgTrustDomainAID,
-		TrustDomainBID: pgTrustDomainBID,
+		TrustDomainAID:      pgTrustDomainAID,
+		TrustDomainBID:      pgTrustDomainBID,
+		TrustDomainAConsent: ConsentStatus(req.TrustDomainAConsent),
+		TrustDomainBConsent: ConsentStatus(req.TrustDomainBConsent),
+		CreatedAt:           req.CreatedAt,
+		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
@@ -579,4 +604,18 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 	}
 
 	return &relationship, nil
+}
+
+func mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
+	result := make([]*entity.Relationship, len(models))
+
+	for i, m := range models {
+		ent, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
+		}
+		result[i] = ent
+	}
+
+	return result, nil
 }
