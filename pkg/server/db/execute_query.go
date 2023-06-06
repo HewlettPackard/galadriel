@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
@@ -53,14 +52,12 @@ func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria
 }
 
 func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) squirrel.SelectBuilder {
-	conditions := squirrel.And{}
-
-	timeWindowCondition := buildTimeWindowCondition(listCriteria.FilterByStartDate, listCriteria.FilterByEndDate, dbType)
-	conditions = append(conditions, timeWindowCondition)
 
 	if listCriteria.FilterByConsentStatus == nil && !listCriteria.FilterByTrustDomainID.Valid {
-		return query.Where(conditions)
+		return query
 	}
+
+	conditions := squirrel.And{}
 
 	if listCriteria.FilterByConsentStatus != nil && listCriteria.FilterByTrustDomainID.Valid {
 		consentCondition := buildConsentConditionByTrustDomainID(*listCriteria.FilterByConsentStatus, listCriteria.FilterByTrustDomainID.UUID, dbType)
@@ -117,14 +114,4 @@ func buildConsentConditionByTrustDomainID(consentStatus entity.ConsentStatus, tr
 		squirrel.And{squirrel.Eq{"trust_domain_a_id": trustDomainID}, squirrel.Eq{"trust_domain_a_consent": consentStatus}},
 		squirrel.And{squirrel.Eq{"trust_domain_b_id": trustDomainID}, squirrel.Eq{"trust_domain_b_consent": consentStatus}},
 	}
-}
-
-func buildTimeWindowCondition(startDate time.Time, endDate time.Time, dbType Engine) squirrel.Sqlizer {
-	if dbType == Postgres {
-		return squirrel.Expr(
-			"(created_at >= $1 AND created_at <= $2)",
-			startDate, endDate,
-		)
-	}
-	return squirrel.And{squirrel.GtOrEq{"created_at": startDate}, squirrel.LtOrEq{"created_at": endDate}}
 }
