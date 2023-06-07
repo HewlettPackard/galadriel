@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - 2023-06-07
+
+### Added
+
+- Layout improvement of the release artifact (#202).
+
+### Fixed
+
+- Issue with server `socket_path` (#201).
+
 ## [0.2.0] - 2023-06-06
 
 ### Added
