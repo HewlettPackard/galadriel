@@ -1,8 +1,6 @@
 package criteria
 
 import (
-	"time"
-
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/google/uuid"
 )
@@ -26,7 +24,5 @@ type ListRelationshipsCriteria struct {
 	PageSize              uint                  // Number of items per page (0 for no pagination)
 	FilterByConsentStatus *entity.ConsentStatus // Filter relationships by consent status (optional)
 	FilterByTrustDomainID uuid.NullUUID         // Filter relationships by trust domain ID (optional)
-	FilterByStartDate     time.Time
-	FilterByEndDate       time.Time
-	OrderByCreatedAt      OrderDirection // Order relationships by created at (ascending, descending, or no order)
+	OrderByCreatedAt      OrderDirection        // Order relationships by created at (ascending, descending, or no order)
 }

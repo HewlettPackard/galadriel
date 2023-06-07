@@ -3,11 +3,9 @@ package endpoints
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -131,73 +129,4 @@ func TestValidateConsentStatusParam(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestValidateTimeParams(t *testing.T) {
-	testCases := []struct {
-		name              string
-		startDate         *types.Date
-		endDate           *types.Date
-		expectErr         error
-		expectedEndDate   time.Time
-		expectedStartDate time.Time
-	}{
-		{
-			name:              "Applying Default values",
-			expectedEndDate:   defaultEndDate(),
-			expectedStartDate: defaultStartDate(),
-		},
-		{
-			name:              "Successfully pass verification",
-			startDate:         &types.Date{Time: time.Now().Add(-2 * time.Hour)},
-			endDate:           &types.Date{Time: time.Now().Add(-1 * time.Hour)},
-			expectedEndDate:   time.Now().Add(-1 * time.Hour),
-			expectedStartDate: time.Now().Add(-2 * time.Hour),
-		},
-		{
-			name:      "StartDate that is in the future",
-			startDate: &types.Date{Time: time.Now().Add(1 * time.Minute)},
-			endDate:   &types.Date{Time: time.Now()},
-			expectErr: errors.New("can't use a startDate that is in the future"),
-		},
-		{
-			name:      "EndDate before startDate",
-			startDate: &types.Date{Time: time.Now().Add(-1 * time.Hour)},
-			endDate:   &types.Date{Time: time.Now().Add(-2 * time.Hour)},
-			expectErr: errors.New("can't use a endDate that is before the startDate"),
-		},
-		{
-			name:      "Checking at least 30 minutes interval",
-			startDate: &types.Date{Time: time.Now().Add(-1 * time.Hour)},
-			endDate:   &types.Date{Time: time.Now().Add(-45 * time.Minute)},
-			expectErr: errors.New("the minimal interval is 30 minutes"),
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			qp := QueryParamsAdapter{}
-			startDate, endDate, err := qp.validateTimeParams(tc.startDate, tc.endDate)
-
-			if tc.expectErr != nil {
-				assert.Empty(t, endDate)
-				assert.Empty(t, startDate)
-				assert.EqualError(t, err, tc.expectErr.Error())
-			} else {
-				assert.NoError(t, err)
-				assertTime(t, tc.expectedEndDate, endDate)
-				assertTime(t, tc.expectedStartDate, startDate)
-			}
-		})
-	}
-}
-
-// Compare 2 times ignoring the milliseconds for testing running purpose
-func assertTime(t *testing.T, expectedTime time.Time, actual time.Time) {
-	assert.Equal(t, expectedTime.Year(), actual.Year())
-	assert.Equal(t, expectedTime.Month(), actual.Month())
-	assert.Equal(t, expectedTime.Day(), actual.Day())
-	assert.Equal(t, expectedTime.Hour(), actual.Hour())
-	assert.Equal(t, expectedTime.Minute(), actual.Minute())
-	assert.Equal(t, expectedTime.Second(), actual.Second())
 }

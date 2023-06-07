@@ -44,18 +44,9 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	queryParams := adminGetRelationshipsToQueryParams(params)
-	if err := queryParams.ValidateParams(); err != nil {
-		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-	}
-
-	listCriteria := &criteria.ListRelationshipsCriteria{
-		PageSize:              queryParams.validParams.pageSize,
-		PageNumber:            queryParams.validParams.pageNumber,
-		FilterByEndDate:       queryParams.validParams.endDate,
-		FilterByStartDate:     queryParams.validParams.startDate,
-		FilterByConsentStatus: queryParams.validParams.consentStatus,
-		OrderByCreatedAt:      criteria.OrderDescending,
+	listCriteria, err := AdminGetRelationshipsParamsToCriteria(params)
+	if err != nil {
+		return err
 	}
 
 	if params.TrustDomainName != nil {
@@ -364,12 +355,24 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	return td, nil
 }
 
+func AdminGetRelationshipsParamsToCriteria(params admin.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
+	queryParams := adminGetRelationshipsToQueryParams(params)
+	if err := queryParams.ValidateParams(); err != nil {
+		return nil, err
+	}
+
+	return &criteria.ListRelationshipsCriteria{
+		FilterByConsentStatus: queryParams.validParams.consentStatus,
+		PageSize:              queryParams.validParams.pageSize,
+		PageNumber:            queryParams.validParams.pageNumber,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}, nil
+}
+
 func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *QueryParamsAdapter {
 	return &QueryParamsAdapter{
 		pageSize:      params.PageSize,
 		pageNumber:    params.PageNumber,
-		endDate:       params.EndDate,
-		startDate:     params.StartDate,
 		consentStatus: params.ConsentStatus,
 	}
 }

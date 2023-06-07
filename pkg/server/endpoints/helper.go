@@ -47,17 +47,10 @@ func (q *QueryParamsAdapter) ValidateParams() error {
 		return err
 	}
 
-	startDate, endDate, err := q.validateTimeParams(q.startDate, q.endDate)
-	if err != nil {
-		return err
-	}
-
 	q.validParams = ValidQueryParams{
 		pageSize:      pageSize,
 		pageNumber:    pageNumber,
 		consentStatus: consentStatus,
-		startDate:     startDate,
-		endDate:       endDate,
 	}
 
 	return nil

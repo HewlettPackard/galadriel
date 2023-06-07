@@ -60,20 +60,12 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	queryParams := harvesterGetRelationshipsToQueryParams(params)
-	if err := queryParams.ValidateParams(); err != nil {
+	listCriteria, err := HarvesterGetRelationshipsParamsToCriteria(params)
+	if err != nil {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	listCriteria := &criteria.ListRelationshipsCriteria{
-		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
-		FilterByConsentStatus: queryParams.validParams.consentStatus,
-		PageSize:              queryParams.validParams.pageSize,
-		PageNumber:            queryParams.validParams.pageNumber,
-		FilterByEndDate:       queryParams.validParams.endDate,
-		FilterByStartDate:     queryParams.validParams.startDate,
-		OrderByCreatedAt:      criteria.OrderDescending,
-	}
+	listCriteria.FilterByTrustDomainID = uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID}
 
 	// get the relationships for the trust domain
 	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
@@ -517,12 +509,24 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	return nil
 }
 
+func HarvesterGetRelationshipsParamsToCriteria(params harvester.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
+	queryParams := harvesterGetRelationshipsToQueryParams(params)
+	if err := queryParams.ValidateParams(); err != nil {
+		return nil, err
+	}
+
+	return &criteria.ListRelationshipsCriteria{
+		FilterByConsentStatus: queryParams.validParams.consentStatus,
+		PageSize:              queryParams.validParams.pageSize,
+		PageNumber:            queryParams.validParams.pageNumber,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}, nil
+}
+
 func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParamsAdapter {
 	return &QueryParamsAdapter{
 		pageSize:      params.PageSize,
-		endDate:       params.EndDate,
 		pageNumber:    params.PageNumber,
-		startDate:     params.StartDate,
 		consentStatus: params.ConsentStatus,
 	}
 }
