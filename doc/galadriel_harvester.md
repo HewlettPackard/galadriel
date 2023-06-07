@@ -18,7 +18,7 @@ Harvester.
 | `server_trust_bundle_path`        | Path to the Galadriel Server CA bundle.                                                                            |                                      |
 | `federated_bundles_poll_interval` | Configure how often the harvester will poll federated bundles from the Galadriel Server.                           | `2m`                                 |
 | `spire_bundle_poll_interval`      | Configure how often the harvester will poll the bundle from SPIRE.                                                 | `1m`                                 |
-| `log_level`                       | Sets the logging level [DEBUG                                                                                      | INFO                                 |WARN|ERROR]. | `INFO` |
+| `log_level`                       | Sets the logging level. Options are `DEBUG`, `WARN`, `INFO`, `ERROR`                                               | `INFO`                               |WARN|ERROR]. | `INFO` |
 | `data_dir`                        | Directory to store persistent data.                                                                                |                                      |
 
 ### `providers`
@@ -91,19 +91,75 @@ Run this command to start the Galadriel Harvester.
 
 #### `relationship`
 
-The 'relationship' command allows you to manage
-
-relationships within the trust domain managed by the SPIRE Server that this Harvester runs alongside.
+The 'relationship' command allows you to manage relationships within the trust domain managed by the SPIRE Server that
+this Harvester runs alongside.
 
 ```bash
 ./galadriel-harvester relationship [command]
 ```
 
-Available Commands:
+#### Available subcommands:
 
-- `approve`: Approve a relationship.
-- `deny`: Deny a relationship.
-- `list`: List relationships for the trust domain managed by the SPIRE Server this Harvester runs alongside.
+- `approve` - Give the consent to participate in the Federation relationship.
+- `deny` - Deny to participate in the Federation relationship.
+- `list` - List all relationships for the trust domain managed by the SPIRE Server that this Harvester runs alongside.
+
+##### `relationship approve`
+
+Utilize the `approve` command to approve a relationship for the trust domain of the SPIRE Server that this Harvester
+runs alongside.
+
+Syntax:
+
+```bash
+./galadriel-harvester relationship approve [flags]
+```
+
+Example Usage:
+
+```bash
+./galadriel-harvester relationship approve --relationshipID <relationshipID>
+```
+
+| Flag                          | Description                                            | Default |
+|-------------------------------|--------------------------------------------------------|---------|
+| `-r, --relationshipID string` | The specific Relationship ID that you wish to approve. |         |
+
+##### `relationship deny`
+
+The `deny` command permits you to invalidate a relationship within the trust domain managed by the SPIRE Server that
+this Harvester works in conjunction with.
+
+Syntax:
+
+```bash
+./galadriel-harvester relationship deny [flags]
+```
+
+Example Usage:
+
+```bash
+./galadriel-harvester relationship deny --relationshipID <relationshipID>
+```
+
+| Flag                          | Description                                         | Default |
+|-------------------------------|-----------------------------------------------------|---------|
+| `-r, --relationshipID string` | The specific Relationship ID that you wish to deny. |         |
+
+##### `relationship list`
+
+The `list` command displays all relationships within the trust domain managed by the SPIRE Server, where this Harvester
+is running.
+
+```bash
+./galadriel-harvester relationship list [flags]
+```
+
+Example Usage:
+
+```bash
+./galadriel-harvester relationship list
+```
 
 ### Global Flags
 

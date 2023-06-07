@@ -85,8 +85,6 @@ providers {
   }
 ```
 
-Sure, here's how you might add this information to your documentation:
-
 ## Galadriel Server CLI Reference
 
 The Galadriel server provides a command-line interface (CLI) for running the server, managing federation relationships,
@@ -136,12 +134,31 @@ register, list, update, and delete trust domains.
 ./galadriel-server trustdomain [command]
 ```
 
-Available Commands:
+##### Available subcommands:
 
 - `create`: Create a new trust domain.
-- `delete`: Delete a trust domain.
-- `list`: List trust domains.
-- `update`: Update a trust domain.
+
+##### `trustdomain create`
+
+The `create` command registers a new trust domain in the Galadriel Server.
+
+```bash
+
+Syntax:
+
+```bash
+./galadriel-harvester trustdomain create [flags]
+```
+
+Example Usage:
+
+```bash
+./galadriel-harvester trustdomain create --trustDomain <trustDomainName>
+```
+
+| Flag                | Description                               | Default |
+|---------------------|-------------------------------------------|---------|
+| `-t, --trustDomain` | The name of the trust domain to register. |         |
 
 #### `relationship`
 
@@ -152,12 +169,32 @@ in SPIFFE permit secure communication between workloads across different trust d
 ./galadriel-server relationship [command]
 ```
 
-Available Commands:
+##### Available subcommands:
 
-- `create`: Create a new federation relationship.
-- `delete`: Delete a relationship.
-- `list`: List relationships.
-- `update`: Update a relationship.
+- `create`: Create a new relationship.
+
+##### `relationship create`
+
+The `create` command registers a new Federation relationship in Galadriel Server.
+
+```bash
+
+Syntax:
+
+```bash
+./galadriel-harvester relationship create [flags]
+```
+
+Example Usage:
+
+```bash
+./galadriel-harvester relationship create --trustDomainA <trustDomainName> --trustDomainB <trustDomainName>
+```
+
+| Flag                 | Description                                                    | Default |
+|----------------------|----------------------------------------------------------------|---------|
+| `-a, --trustDomainA` | The name of a trust domain to participate in the relationship. |         |
+| `-b, --trustDomainB` | The name of a trust domain to participate in the relationship. |         |
 
 ### Global Flags
 
@@ -165,10 +202,9 @@ Available Commands:
 |----------------|------------------------------------------|----------------------------------|
 | `--socketPath` | Path to the Galadriel Server API socket. | `/tmp/galadriel-server/api.sock` |
 
-
 ## Sample Configuration File
 
-Below is a sample configuration file for the Galadriel server. 
+Below is a sample configuration file for the Galadriel server.
 
 ```hcl
 server {
