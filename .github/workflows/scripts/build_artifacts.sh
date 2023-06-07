@@ -13,7 +13,8 @@ function get_version_tag() {
   if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9.]+$ ]]; then
     echo "${GITHUB_REF##refs/tags/v}"
   else
-    echo ""
+    echo "Error: No valid version tag found. Aborting."
+    exit 1
   fi
 }
 
