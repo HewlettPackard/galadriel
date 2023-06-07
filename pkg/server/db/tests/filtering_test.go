@@ -36,6 +36,23 @@ func TestListRelationshipsByCriteria(t *testing.T) {
 	runFilteringByTrustDomainIDTest(t, ctx, db.Postgres, postgresDS)
 }
 
+func TestListTrustDomainByCriteria(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	sqliteDS := func() db.Datastore {
+		return setupSQLiteDatastore(t)
+	}
+	runTDPaginationTest(t, ctx, db.SQLite, sqliteDS)
+	runTDOrderByCreatedAtTest(t, ctx, db.SQLite, sqliteDS)
+
+	postgresDS := func() db.Datastore {
+		return setupPostgresDatastore(t)
+	}
+	runTDPaginationTest(t, ctx, db.Postgres, postgresDS)
+	runTDOrderByCreatedAtTest(t, ctx, db.Postgres, postgresDS)
+}
+
 func runPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newDB func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Relationships Pagination (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
@@ -72,6 +89,73 @@ func runPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newD
 		rels, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
 		assert.Len(t, rels, 0)
+	})
+}
+
+func runTDPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newDB func() db.Datastore) {
+	t.Run(fmt.Sprintf("Test Trust Domain Pagination (%s)", dbType), func(t *testing.T) {
+		t.Parallel()
+		ds := newDB()
+		defer closeDatastore(t, ds)
+
+		createRelationships(t, ctx, ds, 200)
+
+		// List relationships with pagination
+		listCriteria := &criteria.ListTrustDomainCriteria{
+			PageNumber: 1,
+			PageSize:   50,
+		}
+		rels, err := ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 50)
+
+		listCriteria.PageNumber = 2
+		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 50)
+
+		listCriteria.PageNumber = 3
+		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 50)
+
+		listCriteria.PageNumber = 4
+		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 50)
+
+		listCriteria.PageNumber = 5
+		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 0)
+	})
+}
+
+func runTDOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+	t.Run(fmt.Sprintf("Test Order by CreatedAt (%s)", dbType), func(t *testing.T) {
+		t.Parallel()
+		ds := newDS()
+		defer closeDatastore(t, ds)
+
+		createRelationships(t, ctx, ds, 5)
+
+		// List relationships ordered by created_at
+		listCriteria := &criteria.ListTrustDomainCriteria{
+			OrderByCreatedAt: criteria.OrderAscending,
+		}
+		rels, err := ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 5)
+
+		assertTDCreatedAtOrder(t, rels, true)
+
+		// List relationships ordered by created_at in descending order
+		listCriteria.OrderByCreatedAt = criteria.OrderDescending
+		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		assert.NoError(t, err)
+		assert.Len(t, rels, 5)
+
+		assertTDCreatedAtOrder(t, rels, false)
 	})
 }
 
@@ -242,6 +326,16 @@ func assertConsentStatus(t *testing.T, rels []*entity.Relationship, consentStatu
 }
 
 func assertCreatedAtOrder(t *testing.T, rels []*entity.Relationship, ascending bool) {
+	for i := 0; i < len(rels)-1; i++ {
+		if ascending {
+			assert.True(t, rels[i].CreatedAt.Before(rels[i+1].CreatedAt))
+		} else {
+			assert.True(t, rels[i].CreatedAt.After(rels[i+1].CreatedAt))
+		}
+	}
+}
+
+func assertTDCreatedAtOrder(t *testing.T, rels []*entity.TrustDomain, ascending bool) {
 	for i := 0; i < len(rels)-1; i++ {
 		if ascending {
 			assert.True(t, rels[i].CreatedAt.Before(rels[i+1].CreatedAt))
