@@ -74,9 +74,6 @@ func buildAndExecute(ctx context.Context, db *sql.DB, query squirrel.SelectBuild
 }
 
 func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) squirrel.SelectBuilder {
-	if listCriteria == nil {
-		return query
-	}
 
 	if listCriteria.FilterByConsentStatus == nil && !listCriteria.FilterByTrustDomainID.Valid {
 		return query
