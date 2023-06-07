@@ -517,8 +517,8 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	return nil
 }
 
-func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParams {
-	return &QueryParams{
+func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParamsAdapter {
+	return &QueryParamsAdapter{
 		pageSize:      params.PageSize,
 		endDate:       params.EndDate,
 		pageNumber:    params.PageNumber,

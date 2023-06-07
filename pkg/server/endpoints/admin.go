@@ -364,8 +364,8 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	return td, nil
 }
 
-func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *QueryParams {
-	return &QueryParams{
+func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *QueryParamsAdapter {
+	return &QueryParamsAdapter{
 		pageSize:      params.PageSize,
 		pageNumber:    params.PageNumber,
 		endDate:       params.EndDate,

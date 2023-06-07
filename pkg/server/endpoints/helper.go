@@ -10,7 +10,9 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/types"
 )
 
-type QueryParams struct {
+// QueryParamsAdapter is responsible for validating and adapting API values into
+// valid params using business types
+type QueryParamsAdapter struct {
 	pageSize   *api.PageSize
 	pageNumber *api.PageNumber
 
@@ -22,15 +24,19 @@ type QueryParams struct {
 	validParams ValidQueryParams
 }
 
+// ValidQueryParams is the struct that holds th valid types and validated values
+// for query params
 type ValidQueryParams struct {
-	pageSize      uint
-	pageNumber    uint
+	pageSize   uint
+	pageNumber uint
+	startDate  time.Time
+	endDate    time.Time
+
 	consentStatus *entity.ConsentStatus
-	startDate     time.Time
-	endDate       time.Time
 }
 
-func (q *QueryParams) ValidateParams() error {
+// ValidateParams start the validation process over all query params
+func (q *QueryParamsAdapter) ValidateParams() error {
 	pageSize, pageNumber, err := q.validatePaginationParams(q.pageSize, q.pageNumber)
 	if err != nil {
 		return err
@@ -57,7 +63,7 @@ func (q *QueryParams) ValidateParams() error {
 	return nil
 }
 
-func (q *QueryParams) validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
+func (q *QueryParamsAdapter) validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
 	pageSize := defaultPageSize
 	pageNumber := defaultPageNumber
 
@@ -83,7 +89,7 @@ func (q *QueryParams) validatePaginationParams(pgSize *int, pgNumber *int) (uint
 	return uint(pageSize), uint(pageNumber), nil
 }
 
-func (q *QueryParams) validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
+func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
 	if status != nil {
 		switch *status {
 		case api.Approved, api.Denied, api.Pending:
@@ -99,7 +105,7 @@ func (q *QueryParams) validateConsentStatusParam(status *api.ConsentStatus) (*en
 	return nil, nil
 }
 
-func (q *QueryParams) validateTimeParams(startDate *types.Date, endDate *types.Date) (time.Time, time.Time, error) {
+func (q *QueryParamsAdapter) validateTimeParams(startDate *types.Date, endDate *types.Date) (time.Time, time.Time, error) {
 	from := defaultStartDate()
 	until := defaultEndDate()
 
