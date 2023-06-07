@@ -136,7 +136,7 @@ register, list, update, and delete trust domains.
 
 ##### Available subcommands:
 
-- `create`: Create a new trust domain.
+- `create`: Register a new trust domain in Galadriel Server.
 
 ##### `trustdomain create`
 
@@ -171,7 +171,7 @@ in SPIFFE permit secure communication between workloads across different trust d
 
 ##### Available subcommands:
 
-- `create`: Create a new relationship.
+- `create`: Register a new Federation relationship in Galadriel Server.
 
 ##### `relationship create`
 
