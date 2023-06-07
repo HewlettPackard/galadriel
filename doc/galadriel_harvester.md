@@ -1,13 +1,18 @@
-# Galadriel Harvester Configuration Reference
+# Galadriel Harvester Configuration and CLI Reference
 
-This document provides a reference for the Galadriel Harvester configuration file.
+This document provides a comprehensive reference for both the Galadriel Harvester configuration file and its
+command-line interface (CLI). It details each section of the configuration file and explains various CLI commands to
+assist with the
+harvester's setup, customization, and management.
 
 ## Configuration File
 
-The Galadriel Harvester configuration file contains several sections that allow you to customize the behavior of the
-Harvester.
+The Galadriel Harvester configuration file contains various sections that let you customize the Harvester's behaviour,
+enhancing your control over its functions and operations.
 
 ### `harvester`
+
+This section lists the options available for configuring the main behavior of the Galadriel Harvester.
 
 | Option                            | Description                                                                                                        | Default                              |
 |-----------------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------------|
@@ -15,13 +20,16 @@ Harvester.
 | `harvester_socket_path`           | Specifies the path to the UNIX Domain Socket that the Galadriel Harvester will listen on.                          | `/tmp/galadriel-harvester/api.sock`  |
 | `spire_socket_path`               | Specifies the path to the UNIX Domain Socket of the SPIRE Server that the Harvester will connect to.               | `/tmp/spire-server/private/api.sock` |
 | `galadriel_server_address`        | Specifies the DNS name or IP address and port of the upstream Galadriel Server that the Harvester will connect to. |                                      |
-| `server_trust_bundle_path`        | Path to the Galadriel Server CA bundle.                                                                            |                                      |
+| `server_trust_bundle_path`        | Path to the Galadriel Server CA bundle that will be used to verify the Server's certificate.                       |                                      |
 | `federated_bundles_poll_interval` | Configure how often the harvester will poll federated bundles from the Galadriel Server.                           | `2m`                                 |
 | `spire_bundle_poll_interval`      | Configure how often the harvester will poll the bundle from SPIRE.                                                 | `1m`                                 |
-| `log_level`                       | Sets the logging level. Options are `DEBUG`, `WARN`, `INFO`, `ERROR`                                               | `INFO`                               |WARN|ERROR]. | `INFO` |
+| `log_level`                       | Sets the logging level. Options are `DEBUG`, `WARN`, `INFO`, `ERROR`                                               | `INFO`                               |
 | `data_dir`                        | Directory to store persistent data.                                                                                |                                      |
 
 ### `providers`
+
+This section describes the configuration options for the `BundleSigner` and `BundleVerifier` providers in the Galadriel
+Harvester.
 
 | Provider         | Description                                                                                            |
 |------------------|--------------------------------------------------------------------------------------------------------|
@@ -29,6 +37,8 @@ Harvester.
 | `BundleVerifier` | Enables the verification of bundle signatures using selected implementations. Can be `noop` or `disk`. |
 
 #### BundleSigner
+
+This subsection illustrates options available for the `BundleSigner`.
 
 | Option | Description                                                                                                                                                                              |
 |--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -48,6 +58,8 @@ providers {
 
 #### BundleVerifier
 
+This subsection explains the `BundleVerifier` options.
+
 | Option | Description                                                                                                                                  |
 |--------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | `noop` | If this verifier is enabled, all bundles will pass the verification process without actually validating the signatures.                      |
@@ -65,10 +77,10 @@ providers {
 
 ## Galadriel Harvester CLI Reference
 
-The Galadriel Harvester provides a command-line interface (CLI) for running the Harvester and managing relationships for
-the trust domain managed by the SPIRE Server that this Harvester runs alongside.
+The Galadriel Harvester provides a command-line interface (CLI) for operating the Harvester and managing
+relationships for the trust domain overseen by the corresponding SPIRE Server.
 
-To access the CLI, use the `galadriel-harvester` command:
+To access the CLI, you can use the `galadriel-harvester` command:
 
 ```bash
 ./galadriel-harvester
@@ -76,23 +88,25 @@ To access the CLI, use the `galadriel-harvester` command:
 
 ### Available Commands
 
+This section describes the available commands and their usage.
+
 #### `run`
 
-Run this command to start the Galadriel Harvester.
+This command starts the Galadriel Harvester.
 
 ```bash
 ./galadriel-harvester run [flags]
 ```
 
-| Flag              | Description                                  | Default                         |
-|-------------------|----------------------------------------------|---------------------------------|
-| `-c, --config`    | Path to the Galadriel Harvester config file. | `conf/harvester/harvester.conf` |
-| `-t, --joinToken` | A join token generated by Galadriel Server.  |                                 |
+| Flag              | Description                                                                               | Default                         |
+|-------------------|-------------------------------------------------------------------------------------------|---------------------------------|
+| `-c, --config`    | Path to the Galadriel Harvester config file.                                              | `conf/harvester/harvester.conf` |
+| `-t, --joinToken` | A join token generated by Galadriel Server used to introduce the Harvester to the Server. |                                 |
 
 #### `relationship`
 
-The 'relationship' command allows you to manage relationships within the trust domain managed by the SPIRE Server that
-this Harvester runs alongside.
+The 'relationship' command assists you in managing relationships within the trust domain regulated by the SPIRE Server
+that the Harvester operates with.
 
 ```bash
 ./galadriel-harvester relationship [command]
@@ -100,14 +114,14 @@ this Harvester runs alongside.
 
 #### Available subcommands:
 
-- `approve` - Give the consent to participate in the Federation relationship.
-- `deny` - Deny to participate in the Federation relationship.
-- `list` - List all relationships for the trust domain managed by the SPIRE Server that this Harvester runs alongside.
+- `approve` - Authorize participation in the Federation relationship.
+- `deny` - Refuse participation in the Federation relationship.
+- `list` - List all relationships for the trust domain managed by the SPIRE Server that the Harvester operates with.
 
 ##### `relationship approve`
 
-Utilize the `approve` command to approve a relationship for the trust domain of the SPIRE Server that this Harvester
-runs alongside.
+The `approve` command is for approving a relationship for the trust domain of the SPIRE Server that the Harvester
+operates with.
 
 Syntax:
 
@@ -127,8 +141,8 @@ Example Usage:
 
 ##### `relationship deny`
 
-The `deny` command permits you to invalidate a relationship within the trust domain managed by the SPIRE Server that
-this Harvester works in conjunction with.
+The `deny` command enables you to reject a relationship within the trust domain managed by the SPIRE Server that the
+Harvester operates with.
 
 Syntax:
 
@@ -148,8 +162,8 @@ Example Usage:
 
 ##### `relationship list`
 
-The `list` command displays all relationships within the trust domain managed by the SPIRE Server, where this Harvester
-is running.
+The `list` command allows you to view all relationships within the trust domain managed by the SPIRE Server where the
+Harvester operates.
 
 ```bash
 ./galadriel-harvester relationship list [flags]
@@ -163,14 +177,16 @@ Example Usage:
 
 ### Global Flags
 
+These flags can be used across all commands.
+
 | Flag           | Description                                 | Default                             |
 |----------------|---------------------------------------------|-------------------------------------|
 | `--socketPath` | Path to the Galadriel Harvester API socket. | `/tmp/galadriel-harvester/api.sock` |
 
 ## Sample Configuration File
 
-Below is a sample configuration file for the Galadriel Harvester. This file includes examples of how to configure the
-Harvester, providers, and other options.
+Provided below is a sample configuration file for the Galadriel Harvester. It demonstrates how to configure the
+Harvester, providers, and other available options.
 
 ```hcl
 harvester {

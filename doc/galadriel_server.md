@@ -1,13 +1,20 @@
 # Galadriel Server Configuration Reference
 
-This document provides a reference for the Galadriel Server configuration file.
+This document provides a comprehensive reference for both the Galadriel Server configuration file and its command-line
+interface (CLI). It details each section of the configuration file and explains various CLI commands to assist with the
+server's setup, customization, and management.
 
-## Configuration File
+## Introduction to the Configuration File
 
-The Galadriel Server configuration file contains several sections that allow you to customize the behavior of the
-Galadriel Server.
+The Galadriel Server configuration file is instrumental in tailoring the behavior of the Galadriel Server. It's divided
+into multiple sections, primarily `server` and `providers`, with `providers` further containing `Datastore`, `X509CA`,
+and `KeyManager`.
 
-### `server`
+### Server Configuration (`server`)
+
+This section facilitates the configuration of the server's fundamental characteristics. It includes properties such
+as `listen_address`, `listen_port`, `socket_path`, and `log_level`. Below is the detailed description for each property
+along with their default values:
 
 | Property         | Description                                                                                                                 | Default                          |
 |------------------|-----------------------------------------------------------------------------------------------------------------------------|----------------------------------|
@@ -27,7 +34,10 @@ server {
 }
 ```
 
-### `providers`
+### Provider Configuration (`providers`)
+
+The `providers` section allows you to configure the Datastore, X509CA, and KeyManager providers. Each provider is
+detailed below:
 
 | Provider     | Description                                                                  |
 |--------------|------------------------------------------------------------------------------|
@@ -35,7 +45,11 @@ server {
 | `X509CA`     | Configures the X509CA provider for signing TLS X.509 certificates.           |
 | `KeyManager` | Configures the KeyManager for providing private keys for signing JWT tokens. |
 
-#### Datastore
+The following subsections provide detailed configurations for each provider:
+
+#### Datastore Configuration
+
+The Datastore section covers the configuration details for SQLite3 and PostgreSQL datastores:
 
 | Option     | Description                                                                                  |
 |------------|----------------------------------------------------------------------------------------------|
@@ -52,11 +66,13 @@ providers {
 }
 ```
 
-#### X509CA
+#### X509CA Configuration
 
-| Option | Description                                                                                                                                                                                                                |
-|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `disk` | Uses a ROOT CA loaded from disk to issue X509 certificates. The `key_file_path` is the path to the root CA private key file in PEM format. The `cert_file_path` is the path to the root CA certificate file in PEM format. |
+The X509CA section provides configuration details for X.509 CA providers:
+
+| Option | Description                                                                                                                                                                                                                                 |
+|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `disk` | Uses a ROOT CA and private key loaded from disk to issue X.509 certificates. The `key_file_path` is the path to the root CA private key file in PEM format. The `cert_file_path` is the path to the root CA certificate file in PEM format. |
 
 #### Example:
 
@@ -69,7 +85,9 @@ providers {
 }
 ```
 
-#### KeyManager
+#### KeyManager Configuration
+
+The KeyManager section discusses the configuration details for key managers:
 
 | Option   | Description                                                                                                                                     |
 |----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -83,12 +101,15 @@ providers {
   KeyManager "disk" {
     keys_file_path = "./keys.json"
   }
+}
 ```
+
+Sure, here is the improved "Galadriel Server CLI Reference" section:
 
 ## Galadriel Server CLI Reference
 
-The Galadriel server provides a command-line interface (CLI) for running the server, managing federation relationships,
-creating join tokens, and managing SPIFFE trust domains.
+The Galadriel server provides a command-line interface (CLI) for operating the server, managing federation
+relationships, creating join tokens, and managing SPIFFE trust domains.
 
 To access the CLI, use the `galadriel-server` command:
 
@@ -96,11 +117,13 @@ To access the CLI, use the `galadriel-server` command:
 ./galadriel-server
 ```
 
-### Available Commands
+### CLI Commands
 
-#### `run`
+Below are the primary commands available in the CLI, along with their associated flags.
 
-Run this command to start the Galadriel server.
+#### `run` Command
+
+This command initiates the Galadriel server.
 
 ```bash
 ./galadriel-server run [flags]
@@ -110,11 +133,11 @@ Run this command to start the Galadriel server.
 |----------------|-------------------------------------------|---------------------------|
 | `-c, --config` | Path to the Galadriel Server config file. | `conf/server/server.conf` |
 
-#### `token generate`
+#### `token generate` Command
 
-The 'generate' command allows you to generate a join token for the provided trust domain. This join token serves as a
-secure authentication mechanism to establish the necessary trust relationship between the Harvester and the Galadriel
-Server.
+This 'generate' command enables the generation of a join token bound to the provided trust domain. The join token acts
+as a secure authentication mechanism to establish the requisite trust relationship between the Harvester and the
+Galadriel Server.
 
 ```bash
 ./galadriel-server token generate [flags]
@@ -125,70 +148,50 @@ Server.
 | `-t, --trustDomain` | The trust domain to which the join token will be bound. |         |
 | `--ttl`             | Token TTL in seconds.                                   | `600`   |
 
-#### `trustdomain`
+#### `trustdomain` Command
 
-The 'trustdomain' command is used for managing SPIFFE trust domains in the Galadriel Server database. It allows you to
-register, list, update, and delete trust domains.
+The 'trustdomain' command facilitates the management of SPIFFE trust domains in the Galadriel Server. This
+command allows for the registration, listing, updating, and deletion of trust domains.
 
 ```bash
 ./galadriel-server trustdomain [command]
 ```
 
-##### Available subcommands:
+Subcommands:
 
 - `create`: Register a new trust domain in Galadriel Server.
 
-##### `trustdomain create`
+##### `trustdomain create` Subcommand
 
-The `create` command registers a new trust domain in the Galadriel Server.
-
-```bash
-
-Syntax:
+This 'create' command registers a new trust domain in the Galadriel Server.
 
 ```bash
-./galadriel-harvester trustdomain create [flags]
-```
-
-Example Usage:
-
-```bash
-./galadriel-harvester trustdomain create --trustDomain <trustDomainName>
+./galadriel-server trustdomain create [flags]
 ```
 
 | Flag                | Description                               | Default |
 |---------------------|-------------------------------------------|---------|
 | `-t, --trustDomain` | The name of the trust domain to register. |         |
 
-#### `relationship`
+#### `relationship` Command
 
-Manage federation relationships between SPIFFE trust domains with the 'relationship' command. Federation relationships
-in SPIFFE permit secure communication between workloads across different trust domains.
+The 'relationship' command manages federation relationships between SPIFFE trust domains. Federation relationships in
+SPIFFE enable secure communication between workloads across different trust domains.
 
 ```bash
 ./galadriel-server relationship [command]
 ```
 
-##### Available subcommands:
+Subcommands:
 
-- `create`: Register a new Federation relationship in Galadriel Server.
+- `create`: Register a new federation relationship in Galadriel Server.
 
-##### `relationship create`
+##### `relationship create` Subcommand
 
-The `create` command registers a new Federation relationship in Galadriel Server.
-
-```bash
-
-Syntax:
+This 'create' command registers a new federation relationship in the Galadriel Server.
 
 ```bash
-./galadriel-harvester relationship create [flags]
-```
-
-Example Usage:
-
-```bash
-./galadriel-harvester relationship create --trustDomainA <trustDomainName> --trustDomainB <trustDomainName>
+./galadriel-server relationship create [flags]
 ```
 
 | Flag                 | Description                                                    | Default |
@@ -198,13 +201,15 @@ Example Usage:
 
 ### Global Flags
 
+These flags can be used across all commands.
+
 | Flag           | Description                              | Default                          |
 |----------------|------------------------------------------|----------------------------------|
 | `--socketPath` | Path to the Galadriel Server API socket. | `/tmp/galadriel-server/api.sock` |
 
 ## Sample Configuration File
 
-Below is a sample configuration file for the Galadriel server.
+The following is a sample configuration file for the Galadriel server:
 
 ```hcl
 server {
