@@ -33,15 +33,15 @@ type ListRelationshipsCriteria struct {
 	OrderByCreatedAt      OrderDirection        // Order relationships by created at (ascending, descending, or no order)
 }
 
-func (c ListRelationshipsCriteria) GetPageNumber() uint {
+func (c *ListRelationshipsCriteria) GetPageNumber() uint {
 	return c.PageNumber
 }
 
-func (c ListRelationshipsCriteria) GetPageSize() uint {
+func (c *ListRelationshipsCriteria) GetPageSize() uint {
 	return c.PageSize
 }
 
-func (c ListRelationshipsCriteria) GetOrderDirection() OrderDirection {
+func (c *ListRelationshipsCriteria) GetOrderDirection() OrderDirection {
 	return c.OrderByCreatedAt
 }
 
@@ -52,14 +52,14 @@ type ListTrustDomainCriteria struct {
 	OrderByCreatedAt OrderDirection // Order relationships by created at (ascending, descending, or no order)
 }
 
-func (c ListTrustDomainCriteria) GetPageNumber() uint {
+func (c *ListTrustDomainCriteria) GetPageNumber() uint {
 	return c.PageNumber
 }
 
-func (c ListTrustDomainCriteria) GetPageSize() uint {
+func (c *ListTrustDomainCriteria) GetPageSize() uint {
 	return c.PageSize
 }
 
-func (c ListTrustDomainCriteria) GetOrderDirection() OrderDirection {
+func (c *ListTrustDomainCriteria) GetOrderDirection() OrderDirection {
 	return c.OrderByCreatedAt
 }
