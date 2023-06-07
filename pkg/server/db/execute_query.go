@@ -18,8 +18,10 @@ import (
 func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) (*sql.Rows, error) {
 	query := squirrel.Select("*").From("relationships")
 
-	query = applyWhereClause(query, listCriteria, dbType)
-	query = applyPagination(query, listCriteria)
+	if listCriteria != nil {
+		query = applyWhereClause(query, listCriteria, dbType)
+		query = applyPagination(query, listCriteria)
+	}
 
 	return buildAndExecute(ctx, db, query)
 }
@@ -31,26 +33,27 @@ func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria
 func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListTrustDomainCriteria) (*sql.Rows, error) {
 	query := squirrel.Select("*").From("trust_domains")
 
-	query = applyPagination(query, listCriteria)
+	if listCriteria != nil {
+		query = applyPagination(query, listCriteria)
+	}
 
 	return buildAndExecute(ctx, db, query)
 }
 
 func applyPagination(query squirrel.SelectBuilder, listCriteria criteria.Criteria) squirrel.SelectBuilder {
+	// Ensuring uint types for operations bellow
 	offset := uint(0)
 	pageSize := uint(0)
 
-	if listCriteria != nil {
-		offset = (listCriteria.GetPageNumber() - 1) * listCriteria.GetPageSize()
-		pageSize = listCriteria.GetPageSize()
+	offset = (listCriteria.GetPageNumber() - 1) * listCriteria.GetPageSize()
+	pageSize = listCriteria.GetPageSize()
 
-		if listCriteria.GetOrderDirection() != criteria.NoOrder {
-			query = query.OrderBy(fmt.Sprintf("created_at %s", listCriteria.GetOrderDirection()))
-		}
+	if listCriteria.GetOrderDirection() != criteria.NoOrder {
+		query = query.OrderBy(fmt.Sprintf("created_at %s", listCriteria.GetOrderDirection()))
+	}
 
-		if pageSize > 0 {
-			query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
-		}
+	if pageSize > 0 {
+		query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
 	}
 
 	return query
