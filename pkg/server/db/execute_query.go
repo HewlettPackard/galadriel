@@ -51,7 +51,7 @@ func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria
 	return rows, nil
 }
 
-// Q executes a query to retrieve trust domains from the database based on the provided criteria.
+// ExecuteListTrustDomainQuery executes a query to retrieve trust domains from the database based on the provided criteria.
 // The function constructs the SQL query based on the provided criteria, including pagination,
 // and ordering by created at. If the listCriteria parameter is nil, the function returns
 // all trust domains without any filtering or ordering.

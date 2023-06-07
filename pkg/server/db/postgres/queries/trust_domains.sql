@@ -24,8 +24,3 @@ WHERE id = $1;
 SELECT *
 FROM trust_domains
 WHERE name = $1;
-
--- name: ListTrustDomains :many
-SELECT *
-FROM trust_domains
-ORDER BY name;
