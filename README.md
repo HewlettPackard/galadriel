@@ -27,9 +27,16 @@ functions as a central hub for the management and auditing of these Federation r
 
 ---
 
-## Getting Started
+## Quick start
 
-- **TBD**
+1. Download the appropriate binary from our [releases page](https://github.com/HewlettPackard/galadriel/releases).
+2. Follow the instructions in our [Getting Started Guide](./doc/getting_started.md).
+
+## Documentation
+
+- [Getting Started Guide](./doc/getting_started.md)
+- [Galadriel Server Configuration Reference](./doc/galadriel_server.md)
+- [Harvester Configuration Reference](./doc/galadriel_harvester.md)
 
 ## Contributing
 
