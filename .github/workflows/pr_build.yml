@@ -27,7 +27,7 @@ jobs:
     - name: "Lint"
       uses: golangci/golangci-lint-action@5f1fec7010f6ae3b84ea4f7b2129beb8639b564f # v3.5.0
       with:
-        version: v1.48
+        version: v1.53.2
         args: --timeout 3m0s
 
     - name: "Unit test"
