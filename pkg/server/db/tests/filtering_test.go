@@ -99,7 +99,7 @@ func runTDPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, ne
 		ds := newDB()
 		defer closeDatastore(t, ds)
 
-		createTrustDomains(t, ctx, ds, 5)
+		createTrustDomains(t, ctx, ds, 200)
 
 		// List relationships with pagination
 		listCriteria := &criteria.ListTrustDomainCriteria{
