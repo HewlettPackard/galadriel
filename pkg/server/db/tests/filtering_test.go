@@ -361,9 +361,9 @@ func assertCreatedAtOrder[T TimeComparable](t *testing.T, rels []T, ascending bo
 
 func timeFromTimeComparable[T TimeComparable](t T) time.Time {
 	switch v := any(t).(type) {
-	case entity.TrustDomain:
+	case *entity.TrustDomain:
 		return v.CreatedAt
-	case entity.Relationship:
+	case *entity.Relationship:
 		return v.CreatedAt
 	default:
 		return time.Time{}
