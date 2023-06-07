@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/deepmap/oapi-codegen v1.12.4
-	github.com/getkin/kin-openapi v0.117.0
+	github.com/getkin/kin-openapi v0.118.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/golang-migrate/migrate/v4 v4.16.0
+	github.com/golang-migrate/migrate/v4 v4.16.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/hcl/v2 v2.17.0
 	github.com/jackc/pgtype v1.14.0
@@ -17,9 +17,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.2
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
-	github.com/spiffe/go-spiffe/v2 v2.1.5
+	github.com/spiffe/go-spiffe/v2 v2.1.6
 	github.com/spiffe/spire-api-sdk v1.6.4
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/grpc v1.55.0
