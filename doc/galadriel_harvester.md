@@ -2,8 +2,7 @@
 
 This document provides a comprehensive reference for both the Galadriel Harvester configuration file and its
 command-line interface (CLI). It details each section of the configuration file and explains various CLI commands to
-assist with the
-harvester's setup, customization, and management.
+assist with the harvester's setup, customization, and management.
 
 ## Configuration File
 
