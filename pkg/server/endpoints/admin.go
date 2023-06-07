@@ -46,7 +46,7 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 
 	listCriteria, err := AdminGetRelationshipsParamsToCriteria(params)
 	if err != nil {
-		return err
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
 	if params.TrustDomainName != nil {
