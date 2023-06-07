@@ -1,13 +1,10 @@
 package endpoints
 
 import (
-	"errors"
 	"fmt"
-	"time"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
-	"github.com/deepmap/oapi-codegen/pkg/types"
 )
 
 // QueryParamsAdapter is responsible for validating and adapting API values into
@@ -15,9 +12,6 @@ import (
 type QueryParamsAdapter struct {
 	pageSize   *api.PageSize
 	pageNumber *api.PageNumber
-
-	startDate *types.Date
-	endDate   *types.Date
 
 	consentStatus *api.ConsentStatus
 
@@ -29,8 +23,6 @@ type QueryParamsAdapter struct {
 type ValidQueryParams struct {
 	pageSize   uint
 	pageNumber uint
-	startDate  time.Time
-	endDate    time.Time
 
 	consentStatus *entity.ConsentStatus
 }
@@ -96,43 +88,4 @@ func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatu
 	}
 
 	return nil, nil
-}
-
-func (q *QueryParamsAdapter) validateTimeParams(startDate *types.Date, endDate *types.Date) (time.Time, time.Time, error) {
-	from := defaultStartDate()
-	until := defaultEndDate()
-
-	if startDate != nil {
-		if startDate.Time.After(until) {
-			err := errors.New("can't use a startDate that is in the future")
-			return time.Time{}, time.Time{}, err
-		}
-
-		from = startDate.Time
-	}
-
-	if endDate != nil {
-		if endDate.Time.Before(until) && endDate.Time.After(from) {
-			until = endDate.Time
-		} else {
-			err := errors.New("can't use a endDate that is before the startDate")
-			return time.Time{}, time.Time{}, err
-		}
-	}
-
-	if from.Add(30 * time.Minute).After(until) {
-		err := errors.New("the minimal interval is 30 minutes")
-		return time.Time{}, time.Time{}, err
-	}
-
-	return from, until, nil
-}
-
-func defaultStartDate() time.Time {
-	// Last 30 Day
-	return time.Now().Add(-30 * 24 * time.Hour)
-}
-
-func defaultEndDate() time.Time {
-	return time.Now().Add(1 * time.Second)
 }
