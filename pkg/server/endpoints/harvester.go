@@ -18,7 +18,9 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/util/encoding"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	gojwt "github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -58,24 +60,29 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
+	var status *entity.ConsentStatus
 	consentStatus := *params.ConsentStatus
 	switch consentStatus {
-	case "", api.Approved, api.Denied, api.Pending:
+	case "":
+	case api.Approved, api.Denied, api.Pending:
+		status = (*entity.ConsentStatus)(&consentStatus)
 	default:
 		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
+	listCriteria := &criteria.ListRelationshipsCriteria{
+		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
+		FilterByConsentStatus: status,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}
+
 	// get the relationships for the trust domain
-	relationships, err := h.Datastore.FindRelationshipsByTrustDomainID(ctx, authTD.ID.UUID)
+	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
 	if err != nil {
 		msg := "error looking up relationships"
 		err := fmt.Errorf("%s: %w", msg, err)
 		return chttp.LogAndRespondWithError(h.Logger, err, msg, http.StatusInternalServerError)
-	}
-
-	if consentStatus != "" {
-		relationships = entity.FilterRelationships(relationships, entity.ConsentStatus(consentStatus), &authTD.ID.UUID)
 	}
 
 	relationships, err = db.PopulateTrustDomainNames(ctx, h.Datastore, relationships...)

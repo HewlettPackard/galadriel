@@ -1,0 +1,61 @@
+name: Release Build
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Trigger this workflow when a new vX.Y.Z tag is pushed
+env:
+  GO_VERSION: 1.20.3
+
+jobs:
+  build:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Setup go
+        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Check out code
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Build Artifacts
+        run: ./.github/workflows/scripts/build_artifacts.sh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce   # v3.1.2
+        with:
+          name: release-artifacts
+          path: |
+            galadriel-*-linux-*-glibc.tar.gz
+            galadriel-*-linux-*-glibc.tar.gz.sha256sum.txt
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: release-artifacts
+
+      - name: Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844  # v1
+        with:
+          files: |
+            galadriel-*-linux-*-glibc.tar.gz
+            galadriel-*-linux-*-glibc.tar.gz.sha256sum.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

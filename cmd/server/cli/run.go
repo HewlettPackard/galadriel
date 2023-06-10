@@ -89,5 +89,8 @@ func init() {
 	runCmd := NewRunCmd()
 	runCmd.Flags().StringP(cli.ConfigFlagName, "c", defaultConfigPath, "Path to the Galadriel Server config file")
 
+	// Override the socket path flag in the run command to remove the default value. This flag takes precedence over the config file when set.
+	runCmd.PersistentFlags().StringP(cli.SocketPathFlagName, "", "", "Specify the path to the Galadriel Server API socket")
+
 	RootCmd.AddCommand(runCmd)
 }

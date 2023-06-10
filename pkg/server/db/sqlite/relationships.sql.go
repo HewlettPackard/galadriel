@@ -7,22 +7,35 @@ package sqlite
 
 import (
 	"context"
+	"time"
 )
 
 const createRelationship = `-- name: CreateRelationship :one
-INSERT INTO relationships(id, trust_domain_a_id, trust_domain_b_id)
-VALUES (?, ?, ?)
+INSERT INTO relationships(id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `
 
 type CreateRelationshipParams struct {
-	ID             string
-	TrustDomainAID string
-	TrustDomainBID string
+	ID                  string
+	TrustDomainAID      string
+	TrustDomainBID      string
+	TrustDomainAConsent string
+	TrustDomainBConsent string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 func (q *Queries) CreateRelationship(ctx context.Context, arg CreateRelationshipParams) (Relationship, error) {
-	row := q.queryRow(ctx, q.createRelationshipStmt, createRelationship, arg.ID, arg.TrustDomainAID, arg.TrustDomainBID)
+	row := q.queryRow(ctx, q.createRelationshipStmt, createRelationship,
+		arg.ID,
+		arg.TrustDomainAID,
+		arg.TrustDomainBID,
+		arg.TrustDomainAConsent,
+		arg.TrustDomainBConsent,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
 	var i Relationship
 	err := row.Scan(
 		&i.ID,
@@ -71,7 +84,8 @@ func (q *Queries) FindRelationshipByID(ctx context.Context, id string) (Relation
 const findRelationshipsByTrustDomainID = `-- name: FindRelationshipsByTrustDomainID :many
 SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 FROM relationships
-WHERE trust_domain_a_id = ? OR trust_domain_b_id = ?
+WHERE trust_domain_a_id = ?
+   OR trust_domain_b_id = ?
 `
 
 type FindRelationshipsByTrustDomainIDParams struct {
@@ -110,48 +124,11 @@ func (q *Queries) FindRelationshipsByTrustDomainID(ctx context.Context, arg Find
 	return items, nil
 }
 
-const listRelationships = `-- name: ListRelationships :many
-SELECT id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
-FROM relationships
-ORDER BY created_at DESC
-`
-
-func (q *Queries) ListRelationships(ctx context.Context) ([]Relationship, error) {
-	rows, err := q.query(ctx, q.listRelationshipsStmt, listRelationships)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Relationship
-	for rows.Next() {
-		var i Relationship
-		if err := rows.Scan(
-			&i.ID,
-			&i.TrustDomainAID,
-			&i.TrustDomainBID,
-			&i.TrustDomainAConsent,
-			&i.TrustDomainBConsent,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateRelationship = `-- name: UpdateRelationship :one
 UPDATE relationships
 SET trust_domain_a_consent = ?,
     trust_domain_b_consent = ?,
-    updated_at = CURRENT_TIMESTAMP
+    updated_at             = CURRENT_TIMESTAMP
 WHERE id = ?
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `

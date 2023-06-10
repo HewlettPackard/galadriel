@@ -4,8 +4,16 @@ import (
 	"context"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+)
+
+type Engine string
+
+const (
+	Postgres Engine = "postgres"
+	SQLite   Engine = "sqlite3"
 )
 
 type Datastore interface {
@@ -29,6 +37,6 @@ type Datastore interface {
 	CreateOrUpdateRelationship(ctx context.Context, req *entity.Relationship) (*entity.Relationship, error)
 	FindRelationshipByID(ctx context.Context, relationshipID uuid.UUID) (*entity.Relationship, error)
 	FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error)
-	ListRelationships(ctx context.Context) ([]*entity.Relationship, error)
 	DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error
+	ListRelationships(ctx context.Context, criteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error)
 }
