@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -349,6 +350,86 @@ func TestUDSPutTrustDomain(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, echoHttpErr.Code)
 		expectedErrorMsg := fmt.Sprintf("trust domain already exists: %q", td1)
 		assert.Equal(t, expectedErrorMsg, echoHttpErr.Message)
+	})
+}
+
+func TestUDSListTrustDomains(t *testing.T) {
+	trustDomainPath := "/trust-domain"
+	t.Run("Successfully retrieve trust domain information", func(t *testing.T) {
+		fakeTrustDomains := []*entity.TrustDomain{
+			{ID: tdUUID1, Name: NewTrustDomain(t, td1)},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
+		}
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, trustDomainPath, nil)
+		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+
+		err := setup.Handler.ListTrustDomains(setup.EchoCtx)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		apiTrustDomain := []*api.TrustDomain{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiTrustDomain)
+		assert.NoError(t, err)
+
+		assert.Equal(t, len(apiTrustDomain), len(fakeTrustDomains))
+	})
+
+	t.Run("Successfully executes the request but without trust domains registered", func(t *testing.T) {
+		fakeTrustDomains := []*entity.TrustDomain{}
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodGet, trustDomainPath, nil)
+		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+
+		err := setup.Handler.ListTrustDomains(setup.EchoCtx)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		apiTrustDomain := []*api.TrustDomain{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiTrustDomain)
+		assert.NoError(t, err)
+
+		assert.Empty(t, len(apiTrustDomain))
+	})
+}
+
+func TestUDSDeleteTrustDomain(t *testing.T) {
+	trustDomainPath := "/trust-domain/%v"
+	t.Run("Successfully delete a trust domain", func(t *testing.T) {
+		fakeTrustDomains := entity.TrustDomain{ID: tdUUID1, Name: NewTrustDomain(t, td1)}
+
+		completePath := fmt.Sprintf(trustDomainPath, td1)
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodDelete, completePath, nil)
+		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
+
+		err := setup.Handler.DeleteTrustDomainByName(setup.EchoCtx, td1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		expectedOutput := fmt.Sprintf("\"Trust domain %q deleted\"\n", td1)
+		got := bytes.NewBuffer(setup.Recorder.Body.Bytes()).String()
+
+		assert.Equal(t, expectedOutput, strings.ReplaceAll(got, "\\", ""))
+	})
+
+	t.Run("Error when deleting a trust domain that does not exists", func(t *testing.T) {
+		fakeTrustDomains := entity.TrustDomain{}
+
+		completePath := fmt.Sprintf(trustDomainPath, td1)
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodDelete, completePath, nil)
+		setup.FakeDatabase.WithTrustDomains(&fakeTrustDomains)
+
+		err := setup.Handler.DeleteTrustDomainByName(setup.EchoCtx, td1)
+		assert.Error(t, err)
+
+		expectedErrMsg := fmt.Sprintf("code=404, message=trust domain %q does not exist", td1)
+		assert.Equal(t, expectedErrMsg, err.Error())
 	})
 }
 

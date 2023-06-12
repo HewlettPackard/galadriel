@@ -207,6 +207,59 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 	return nil
 }
 
+// ListTrustDomains retrieves all trust domains registered - (GET /trust-domain)
+func (h *AdminAPIHandlers) ListTrustDomains(echoCtx echo.Context) error {
+	ctx := echoCtx.Request().Context()
+
+	trustDomains, err := h.Datastore.ListTrustDomains(ctx)
+	if err != nil {
+		err = fmt.Errorf("failed listing trust domains: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	if trustDomains == nil {
+		err = fmt.Errorf("no trust domain found")
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
+	response := api.MapTrustDomains(trustDomains...)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
+	if err != nil {
+		err = fmt.Errorf("trust domain entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+// DeleteTrustDomainByName deletes a specific trust domain by its name - (DELETE /trust-domain/{trustDomainName})
+func (h *AdminAPIHandlers) DeleteTrustDomainByName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
+	ctx := echoCtx.Request().Context()
+
+	trustDomain, err := h.findTrustDomainByName(ctx, trustDomainName)
+	if err != nil {
+		return err
+	}
+
+	if trustDomain == nil {
+		err = fmt.Errorf("trust domain %q does not exist", trustDomainName)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
+	err = h.Datastore.DeleteTrustDomain(ctx, trustDomain.ID.UUID)
+	if err != nil {
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, fmt.Sprintf("Trust domain %q deleted", trustDomainName))
+	if err != nil {
+		err = fmt.Errorf("trust domain entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
 // GetTrustDomainByName retrieves a specific trust domain by its name - (GET /trust-domain/{trustDomainName})
 func (h *AdminAPIHandlers) GetTrustDomainByName(echoCtx echo.Context, trustDomainName api.TrustDomainName) error {
 	ctx := echoCtx.Request().Context()
@@ -255,10 +308,13 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	_, err = h.lookupTrustDomain(ctx, trustDomainName)
+	dbTD, err := h.lookupTrustDomain(ctx, trustDomainName)
 	if err != nil {
 		return err
 	}
+
+	// If the trust domain exist, set the ID to perform an update instead of a Creation of a new Trust Domain.
+	etd.ID = dbTD.ID
 
 	td, err := h.Datastore.CreateOrUpdateTrustDomain(ctx, etd)
 	if err != nil {
