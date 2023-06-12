@@ -160,10 +160,10 @@ func runTDOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engi
 	})
 }
 
-func runFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType db.Engine, newDB func() db.Datastore) {
+func runFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Filtering By Consent Status (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
-		ds := newDB()
+		ds := newDS()
 		defer closeDatastore(t, ds)
 
 		consentStatuses := []entity.ConsentStatus{
@@ -328,7 +328,7 @@ func createTrustDomains(t *testing.T, ctx context.Context, ds db.Datastore, coun
 		tdName := fmt.Sprintf("spiffe://domain%d.com", i*2)
 		td := &entity.TrustDomain{
 			Name:      spiffeid.RequireTrustDomainFromString(tdName),
-			CreatedAt: time.Now(),
+			CreatedAt: time.Now().Add(time.Duration(i+1) * time.Minute),
 		}
 		td = createTrustDomain(ctx, t, ds, td)
 
@@ -352,10 +352,14 @@ func assertCreatedAtOrder[T TimeComparable](t *testing.T, rels []T, ascending bo
 	for i := 0; i < len(rels)-1; i++ {
 		createdAt := timeFromTimeComparable(rels[i])
 		nextCreatedAt := timeFromTimeComparable(rels[i+1])
+
+		// +1 means that created is after nextCreatedAt
+		// -1 means that created is before nextCreatedAt
+		// O is equal, so in the order it doesn't break the order principles
 		if ascending {
-			assert.True(t, createdAt.Before(nextCreatedAt))
+			assert.NotEqual(t, +1, createdAt.Compare(nextCreatedAt))
 		} else {
-			assert.True(t, createdAt.After(nextCreatedAt))
+			assert.NotEqual(t, -1, createdAt.Compare(nextCreatedAt))
 		}
 	}
 }
