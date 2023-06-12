@@ -327,7 +327,8 @@ func createTrustDomains(t *testing.T, ctx context.Context, ds db.Datastore, coun
 		// Create TrustDomains
 		tdName := fmt.Sprintf("spiffe://domain%d.com", i*2)
 		td := &entity.TrustDomain{
-			Name: spiffeid.RequireTrustDomainFromString(tdName),
+			Name:      spiffeid.RequireTrustDomainFromString(tdName),
+			CreatedAt: time.Now(),
 		}
 		td = createTrustDomain(ctx, t, ds, td)
 
