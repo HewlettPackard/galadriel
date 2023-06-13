@@ -28,7 +28,8 @@ type GaladrielAPIClient interface {
 	UpdateTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
 	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
 	GetRelationshipByID(context.Context, uuid.UUID) (*entity.Relationship, error)
-	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) (*entity.Relationship, error)
+	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
+	DeleteRelationshipByID(ctx context.Context, relID api.UUID) error
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
 }
 
@@ -139,10 +140,25 @@ func (c *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *enti
 	return relationship, nil
 }
 
-func (c *galadrielAdminClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
-	payload := &admin.GetRelationshipsParams{Status: &consentStatus, TrustDomainName: &trustDomainName}
+func (g *galadrielAdminClient) DeleteRelationshipByID(ctx context.Context, relID api.UUID) error {
+	res, err := g.client.DeleteRelationshipByID(ctx, relID)
+	if err != nil {
+		return fmt.Errorf(errorRequestFailed, err)
+	}
+	defer res.Body.Close()
 
-	res, err := c.client.GetRelationships(ctx, payload)
+	_, err = httputil.ReadResponse(res)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{Status: &status, TrustDomainName: &trustDomainName}
+
+	res, err := g.client.GetRelationships(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
@@ -153,12 +169,21 @@ func (c *galadrielAdminClient) GetRelationships(ctx context.Context, consentStat
 		return nil, err
 	}
 
-	relationship, err := unmarshalJSONToRelationship(body)
-	if err != nil {
-		return nil, err
+	var relationships []*api.Relationship
+	if err := json.Unmarshal(body, &relationships); err != nil {
+		return nil, fmt.Errorf(errUnmarshalRelationships, err)
 	}
 
-	return relationship, nil
+	rels := make([]*entity.Relationship, 0, len(relationships))
+	for i, r := range relationships {
+		rel, err := r.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert relationship %d: %v", i, err)
+		}
+		rels = append(rels, rel)
+	}
+
+	return rels, nil
 }
 
 func (c *galadrielAdminClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {

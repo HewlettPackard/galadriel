@@ -162,6 +162,43 @@ paths:
                 $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
         default:
           $ref: '#/components/responses/Default'
+    delete:
+      operationId: DeleteRelationshipByID
+      tags:
+        - Relationships
+      summary: Deletes a specific relationship
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the Relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          $ref: '#/components/responses/Default'
+    patch:
+      operationId: UpdateRelationshipByID
+      tags:
+        - Relationships
+      summary: Update a specific relationship
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the Relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+
 
   /trust-domain/{trustDomainName}/join-token:
     get:

@@ -278,6 +278,25 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 	return nil
 }
 
+// DeleteRelationshipByID deletes a specific relationship based on its id - (DELETE /relationships/{relationshipID})
+func (h *AdminAPIHandlers) DeleteRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
+
+	err := h.Datastore.DeleteRelationship(ctx, relationshipID)
+	if err != nil {
+		err = fmt.Errorf("failed getting relationships: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, "relationship deleted")
+	if err != nil {
+		err = fmt.Errorf("relationship entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
 // GetJoinToken generates a join token for the trust domain - (GET /trust-domain/{trustDomainName}/join-token)
 func (h *AdminAPIHandlers) GetJoinToken(echoCtx echo.Context, trustDomainName api.TrustDomainName, params admin.GetJoinTokenParams) error {
 	ctx := echoCtx.Request().Context()
