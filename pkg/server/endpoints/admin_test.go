@@ -115,23 +115,23 @@ func TestGetRelationships(t *testing.T) {
 	statusDenied := api.Denied
 
 	t.Run("Successfully filter by trust domain", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName}, 3, rel1, rel2, rel4)
+		runListRelationshipTest(t, admin.ListRelationshipsParams{TrustDomainName: &tdName}, 3, rel1, rel2, rel4)
 	})
 
 	t.Run("Successfully filter by status approved", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusAccepted}, 3, rel1, rel2, rel3)
+		runListRelationshipTest(t, admin.ListRelationshipsParams{Status: &statusAccepted}, 3, rel1, rel2, rel3)
 	})
 
 	t.Run("Successfully filter by status pending", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusPending}, 2, rel1, rel5)
+		runListRelationshipTest(t, admin.ListRelationshipsParams{Status: &statusPending}, 2, rel1, rel5)
 	})
 
 	t.Run("Successfully filter by status denied", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusDenied}, 3, rel2, rel3, rel4)
+		runListRelationshipTest(t, admin.ListRelationshipsParams{Status: &statusDenied}, 3, rel2, rel3, rel4)
 	})
 
 	t.Run("Successfully filter by status approved and trust domain", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, rel1)
+		runListRelationshipTest(t, admin.ListRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, rel1)
 	})
 
 	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
@@ -140,11 +140,11 @@ func TestGetRelationships(t *testing.T) {
 
 		// Approved filter
 		var randomFilter api.ConsentStatus = "a random filter"
-		params := admin.GetRelationshipsParams{
+		params := admin.ListRelationshipsParams{
 			Status: &randomFilter,
 		}
 
-		err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+		err := setup.Handler.ListRelationships(setup.EchoCtx, params)
 		assert.Error(t, err)
 
 		httpErr := err.(*echo.HTTPError)
@@ -160,10 +160,10 @@ func TestGetRelationships(t *testing.T) {
 	})
 }
 
-func runGetRelationshipTest(t *testing.T, params admin.GetRelationshipsParams, expectedLength int, expectedRelationships ...*entity.Relationship) {
+func runListRelationshipTest(t *testing.T, params admin.ListRelationshipsParams, expectedLength int, expectedRelationships ...*entity.Relationship) {
 	setup := setupGetRelationshipTest(t)
 
-	err := setup.Handler.GetRelationships(setup.EchoCtx, params)
+	err := setup.Handler.ListRelationships(setup.EchoCtx, params)
 	assert.NoError(t, err)
 
 	recorder := setup.Recorder

@@ -40,3 +40,22 @@ func (td *PutTrustDomainRequest) ToEntity() (*entity.TrustDomain, error) {
 		Description: description,
 	}, nil
 }
+
+func (r *UpdateRelationshipByIDRequest) ToEntity() (*entity.Relationship, error) {
+	var (
+		consentStatusA = ""
+		consentStatusB = ""
+	)
+
+	if r.ConsentStatusA != "" {
+		consentStatusA = string(r.ConsentStatusA)
+	}
+	if r.ConsentStatusB != "" {
+		consentStatusB = string(r.ConsentStatusB)
+	}
+
+	return &entity.Relationship{
+		TrustDomainAConsent: entity.ConsentStatus(consentStatusA),
+		TrustDomainBConsent: entity.ConsentStatus(consentStatusB),
+	}, nil
+}

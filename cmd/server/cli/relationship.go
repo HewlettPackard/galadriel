@@ -122,7 +122,7 @@ var listRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		relationships, err := client.GetRelationships(ctx, consentStatus, trustDomainName)
+		relationships, err := client.ListRelationships(ctx, consentStatus, trustDomainName)
 		if err != nil {
 			return err
 		}
@@ -198,6 +198,49 @@ var updateRelationshipCmd = &cobra.Command{
 in the Galadriel Server.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get relationship ID flag: %v", err)
+		}
+
+		relID, err := uuid.Parse(idStr)
+		if err != nil {
+			return fmt.Errorf("cannot parse relationship ID: %v", err)
+		}
+
+		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status for trust domain A flag: %v", err)
+		}
+
+		statusB, err := cmd.Flags().GetString(cli.ConsentStatusBFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status for trust domain B flag: %v", err)
+		}
+
+		consentStatusA := api.ConsentStatus(statusA)
+		consentStatusB := api.ConsentStatus(statusB)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		rel, err := client.UpdateRelationshipByID(ctx, relID, consentStatusA, consentStatusB)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Relationship %q updated.\n", rel.ID.UUID.String())
+
 		return nil
 	},
 }
@@ -231,6 +274,29 @@ func init() {
 		if status != "" {
 			return cli.ValidateConsentStatusValue(status)
 		}
+		return nil
+	}
+
+	updateRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "The ID of therelationship to be updated.")
+	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusAFlagName, "a", "", fmt.Sprintf("Trust domain A consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusBFlagName, "b", "", fmt.Sprintf("Trust domain B consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	updateRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status A flag: %v", err)
+		}
+		if statusA != "" {
+			return cli.ValidateConsentStatusValue(statusA)
+		}
+
+		statusB, err := cmd.Flags().GetString(cli.ConsentStatusBFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status B flag: %v", err)
+		}
+		if statusB != "" {
+			return cli.ValidateConsentStatusValue(statusB)
+		}
+
 		return nil
 	}
 

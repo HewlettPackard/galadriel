@@ -36,8 +36,8 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 	}
 }
 
-// GetRelationships lists all relationships filtered by the request params - (GET /relationships)
-func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
+// ListRelationships lists all relationships filtered by the request params - (GET /relationships)
+func (h *AdminAPIHandlers) ListRelationships(echoCtx echo.Context, params admin.ListRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
 	listCriteria := &criteria.ListRelationshipsCriteria{
@@ -278,6 +278,57 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 	return nil
 }
 
+// UpdateRelationshipByID updates a specific relationship based on its id - (PATCH /relationships/{relationshipID})
+func (h *AdminAPIHandlers) UpdateRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
+
+	reqBody := &admin.UpdateRelationshipByIDJSONRequestBody{}
+	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
+	if err != nil {
+		err := fmt.Errorf("failed to parse relationship patch body: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	}
+
+	rel, err := reqBody.ToEntity()
+	if err != nil {
+		err := fmt.Errorf("failed to read relationship patch body: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	}
+
+	relDB, err := h.findRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		return err
+	}
+
+	// Set the ID to perform an Update instead of a Creation of a new Relationship.
+	rel.ID = relDB.ID
+
+	// Check if the user its performing an update in a single consent status, and replace the other one with the existing consent in the databse.
+	if rel.TrustDomainAConsent == "" {
+		rel.TrustDomainAConsent = relDB.TrustDomainAConsent
+	}
+	if rel.TrustDomainBConsent == "" {
+		rel.TrustDomainBConsent = relDB.TrustDomainBConsent
+	}
+
+	relationship, err := h.Datastore.CreateOrUpdateRelationship(ctx, rel)
+	if err != nil {
+		err = fmt.Errorf("failed updating relationship: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	h.Logger.Printf("Relationship updated.")
+
+	response := api.RelationshipFromEntity(relationship)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
+	if err != nil {
+		err = fmt.Errorf("relationship entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
 // DeleteRelationshipByID deletes a specific relationship based on its id - (DELETE /relationships/{relationshipID})
 func (h *AdminAPIHandlers) DeleteRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
@@ -381,4 +432,14 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	}
 
 	return td, nil
+}
+
+func (h *AdminAPIHandlers) findRelationshipByID(ctx context.Context, relationshipID api.UUID) (*entity.Relationship, error) {
+	relationship, err := h.Datastore.FindRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		err = fmt.Errorf("failed getting relationship: %v", err)
+		return nil, chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return relationship, nil
 }

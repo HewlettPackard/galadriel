@@ -93,21 +93,21 @@ paths:
 
   /relationships:
     get:
-      operationId: GetRelationships
+      operationId: ListRelationships
       tags:
         - Relationships
-      summary: Get relationships
+      summary: List all relationships
       parameters:
         - name: status
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
-          description: relationship status from a Trust Domain perspective,
+          description: relationship status from a Trust Domain perspective.
         - name: trustDomainName
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-          description: TrustDomain
+          description: Trust Domain name that participates in a relationship.
       responses:
         '200':
           description: Successful operation
@@ -184,6 +184,11 @@ paths:
       tags:
         - Relationships
       summary: Update a specific relationship
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRelationshipByIDRequest'
       parameters:
         - name: relationshipID
           in: path
@@ -266,6 +271,17 @@ components:
           example: "Trust domain that represent the entity X"
         name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+    UpdateRelationshipByIDRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_status_a
+        - consent_status_b
+      properties:
+        consent_status_a:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+        consent_status_b:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
     JoinTokenResponse:
       type: object
       additionalProperties: false
