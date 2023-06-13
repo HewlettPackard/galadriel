@@ -378,7 +378,11 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 	return response, nil
 }
 
-func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+func (d *Datastore) FindRelationshipsByTrustDomainID(
+	ctx context.Context,
+	trustDomainID uuid.UUID,
+) ([]*entity.Relationship, error) {
+
 	params := FindRelationshipsByTrustDomainIDParams{
 		TrustDomainAID: trustDomainID.String(),
 		TrustDomainBID: trustDomainID.String(),

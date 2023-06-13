@@ -48,7 +48,7 @@ func NewHarvesterAPIHandlers(l logrus.FieldLogger, ds db.Datastore, jwtIssuer jw
 	}
 }
 
-// GetRelationships lists all the relationships for a given trust domain name and consent status  - (GET /relationships)
+// GetRelationships lists all the relationships for a given trust domain name and consent status  - (GET /trust-domain/:trustDomainName/relationships)
 // The consent status is optional, if not provided, all relationships will be returned for a given trust domain. If the
 // consent status is provided, only relationships with the given consent status for the given trust domain will be returned.
 // The trust domain name provided should match the authenticated trust domain.
@@ -60,22 +60,12 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	var status *entity.ConsentStatus
-	consentStatus := *params.ConsentStatus
-	switch consentStatus {
-	case "":
-	case api.Approved, api.Denied, api.Pending:
-		status = (*entity.ConsentStatus)(&consentStatus)
-	default:
-		err := fmt.Errorf("invalid consent status: %q", *params.ConsentStatus)
+	listCriteria, err := HarvesterGetRelationshipsParamsToCriteria(params)
+	if err != nil {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
-	listCriteria := &criteria.ListRelationshipsCriteria{
-		FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID},
-		FilterByConsentStatus: status,
-		OrderByCreatedAt:      criteria.OrderDescending,
-	}
+	listCriteria.FilterByTrustDomainID = uuid.NullUUID{Valid: true, UUID: authTD.ID.UUID}
 
 	// get the relationships for the trust domain
 	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
@@ -517,4 +507,26 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	}
 
 	return nil
+}
+
+func HarvesterGetRelationshipsParamsToCriteria(params harvester.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
+	queryParams := harvesterGetRelationshipsToQueryParams(params)
+	if err := queryParams.ValidateParams(); err != nil {
+		return nil, err
+	}
+
+	return &criteria.ListRelationshipsCriteria{
+		FilterByConsentStatus: queryParams.validParams.consentStatus,
+		PageSize:              queryParams.validParams.pageSize,
+		PageNumber:            queryParams.validParams.pageNumber,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}, nil
+}
+
+func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParamsAdapter {
+	return &QueryParamsAdapter{
+		pageSize:      params.PageSize,
+		pageNumber:    params.PageNumber,
+		consentStatus: params.ConsentStatus,
+	}
 }

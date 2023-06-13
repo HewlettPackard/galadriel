@@ -456,7 +456,11 @@ func (db *FakeDatabase) FindRelationshipByID(ctx context.Context, relationshipID
 	return nil, nil
 }
 
-func (db *FakeDatabase) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+func (db *FakeDatabase) FindRelationshipsByTrustDomainID(
+	ctx context.Context,
+	trustDomainID uuid.UUID,
+) ([]*entity.Relationship, error) {
+
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 
@@ -497,12 +501,16 @@ func (db *FakeDatabase) ListRelationships(ctx context.Context, listCriteria *cri
 				}
 			} else {
 				// Filter by consent status
-				if listCriteria.FilterByConsentStatus != nil && (*listCriteria.FilterByConsentStatus != r.TrustDomainAConsent && *listCriteria.FilterByConsentStatus != r.TrustDomainBConsent) {
+				if listCriteria.FilterByConsentStatus != nil &&
+					(*listCriteria.FilterByConsentStatus != r.TrustDomainAConsent &&
+						*listCriteria.FilterByConsentStatus != r.TrustDomainBConsent) {
 					continue
 				}
 
 				// Filter by trust domain ID
-				if listCriteria.FilterByTrustDomainID.Valid && (listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainAID && listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainBID) {
+				if listCriteria.FilterByTrustDomainID.Valid &&
+					(listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainAID &&
+						listCriteria.FilterByTrustDomainID.UUID != r.TrustDomainBID) {
 					continue
 				}
 			}
