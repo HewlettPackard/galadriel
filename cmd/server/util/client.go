@@ -11,7 +11,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	"github.com/google/uuid"
 )
 
 const (
@@ -24,10 +23,8 @@ const (
 // GaladrielAPIClient represents an API client for the Galadriel Server API.
 type GaladrielAPIClient interface {
 	CreateTrustDomain(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
-	GetTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
 	UpdateTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
 	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
-	GetRelationshipByID(context.Context, uuid.UUID) (*entity.Relationship, error)
 	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
 	UpdateRelationshipByID(context.Context, api.UUID, api.ConsentStatus, api.ConsentStatus) (*entity.Relationship, error)
 	DeleteRelationshipByID(ctx context.Context, relID api.UUID) error
@@ -55,26 +52,6 @@ func NewGaladrielUDSClient(socketPath string, httpClient *http.Client) (Galadrie
 	adminClient.Client = httpClient
 
 	return &galadrielAdminClient{client: adminClient}, nil
-}
-
-func (c *galadrielAdminClient) GetTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
-	res, err := c.client.GetTrustDomainByName(ctx, trustDomainName)
-	if err != nil {
-		return nil, fmt.Errorf(errorRequestFailed, err)
-	}
-	defer res.Body.Close()
-
-	body, err := httputil.ReadResponse(res)
-	if err != nil {
-		return nil, err
-	}
-
-	trustDomain, err := unmarshalJSONToTrustDomain(body)
-	if err != nil {
-		return nil, err
-	}
-
-	return trustDomain, nil
 }
 
 func (c *galadrielAdminClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName) (*entity.TrustDomain, error) {
@@ -206,26 +183,6 @@ func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.
 	}
 
 	return rels, nil
-}
-
-func (c *galadrielAdminClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
-	res, err := c.client.GetRelationshipByID(ctx, relID)
-	if err != nil {
-		return nil, fmt.Errorf(errorRequestFailed, err)
-	}
-	defer res.Body.Close()
-
-	body, err := httputil.ReadResponse(res)
-	if err != nil {
-		return nil, err
-	}
-
-	relationship, err := unmarshalJSONToRelationship(body)
-	if err != nil {
-		return nil, err
-	}
-
-	return relationship, nil
 }
 
 func (c *galadrielAdminClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName, ttl int32) (*entity.JoinToken, error) {
