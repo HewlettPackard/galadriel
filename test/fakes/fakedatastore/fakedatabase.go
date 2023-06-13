@@ -145,7 +145,7 @@ func (db *FakeDatabase) DeleteTrustDomain(ctx context.Context, trustDomainID uui
 	return nil
 }
 
-func (db *FakeDatabase) ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error) {
+func (db *FakeDatabase) ListTrustDomains(ctx context.Context, criteria *criteria.ListTrustDomainCriteria) ([]*entity.TrustDomain, error) {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 

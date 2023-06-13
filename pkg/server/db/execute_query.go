@@ -16,28 +16,52 @@ import (
 // filtering by trust domain ID, and ordering by created at. If the listCriteria parameter is nil, the function returns
 // all relationships without any filtering or ordering.
 func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) (*sql.Rows, error) {
-	offset := uint(0)
-	pageSize := uint(0)
-
-	if listCriteria != nil {
-		offset = (listCriteria.PageNumber - 1) * listCriteria.PageSize
-		pageSize = listCriteria.PageSize
-	}
-
 	query := squirrel.Select("*").From("relationships")
 
 	if listCriteria != nil {
 		query = applyWhereClause(query, listCriteria, dbType)
-
-		if listCriteria.OrderByCreatedAt != criteria.NoOrder {
-			query = query.OrderBy(fmt.Sprintf("created_at %s", listCriteria.OrderByCreatedAt))
-		}
-
-		if pageSize > 0 {
-			query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
-		}
+		query = applyPaginationAndOrder(query, listCriteria)
 	}
 
+	return buildAndExecute(ctx, db, query)
+}
+
+// ExecuteListTrustDomainQuery executes a query to retrieve trust domains from the database based on the provided criteria.
+// The function constructs the SQL query based on the provided criteria, including pagination,
+// and ordering by created at. If the listCriteria parameter is nil, the function returns
+// all trust domains without any filtering or ordering.
+func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListTrustDomainCriteria) (*sql.Rows, error) {
+	query := squirrel.Select("*").From("trust_domains")
+
+	if listCriteria != nil {
+		query = applyPaginationAndOrder(query, listCriteria)
+	}
+
+	return buildAndExecute(ctx, db, query)
+}
+
+func applyPaginationAndOrder(query squirrel.SelectBuilder, listCriteria criteria.Criteria) squirrel.SelectBuilder {
+	// Ensuring uint types for operations bellow
+	offset := uint(0)
+	pageSize := uint(0)
+
+	order := listCriteria.GetOrderDirection()
+
+	pageSize = listCriteria.GetPageSize()
+	offset = (listCriteria.GetPageNumber() - 1) * pageSize
+
+	if order != criteria.NoOrder {
+		query = query.OrderBy(fmt.Sprintf("created_at %s", order))
+	}
+
+	if pageSize > 0 {
+		query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
+	}
+
+	return query
+}
+
+func buildAndExecute(ctx context.Context, db *sql.DB, query squirrel.SelectBuilder) (*sql.Rows, error) {
 	toSql, args, err := query.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build SQL query: %w", err)

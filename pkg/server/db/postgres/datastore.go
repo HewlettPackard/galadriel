@@ -89,22 +89,23 @@ func (d *Datastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UU
 	return nil
 }
 
-func (d *Datastore) ListTrustDomains(ctx context.Context) ([]*entity.TrustDomain, error) {
-	trustDomains, err := d.querier.ListTrustDomains(ctx)
+func (d *Datastore) ListTrustDomains(ctx context.Context, criteria *criteria.ListTrustDomainCriteria) ([]*entity.TrustDomain, error) {
+	rows, err := db.ExecuteListTrustDomainQuery(ctx, d.db, criteria)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting trust domain list: %w", err)
 	}
+	defer rows.Close()
 
-	result := make([]*entity.TrustDomain, len(trustDomains))
-	for i, m := range trustDomains {
-		r, err := m.ToEntity()
-		if err != nil {
-			return nil, fmt.Errorf("failed converting model trust domain to entity: %v", err)
+	var domains []TrustDomain
+	for rows.Next() {
+		var d TrustDomain
+		if err := rows.Scan(&d.ID, &d.Name, &d.Description, &d.CreatedAt, &d.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-		result[i] = r
+		domains = append(domains, d)
 	}
 
-	return result, nil
+	return trustDomainToEntity(domains)
 }
 
 func (d *Datastore) FindTrustDomainByID(ctx context.Context, trustDomainID uuid.UUID) (*entity.TrustDomain, error) {
@@ -453,7 +454,7 @@ func (d *Datastore) ListRelationships(ctx context.Context, criteria *criteria.Li
 		return nil, fmt.Errorf("failed during row iteration: %w", err)
 	}
 
-	return mapToEntity(relationships)
+	return relationshipsToEntity(relationships)
 }
 
 func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.UUID) error {
@@ -614,7 +615,7 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 	return &relationship, nil
 }
 
-func mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
+func relationshipsToEntity(models []Relationship) ([]*entity.Relationship, error) {
 	result := make([]*entity.Relationship, len(models))
 
 	for i, m := range models {
@@ -623,6 +624,19 @@ func mapToEntity(models []Relationship) ([]*entity.Relationship, error) {
 			return nil, fmt.Errorf("failed converting relationship model to entity: %w", err)
 		}
 		result[i] = ent
+	}
+
+	return result, nil
+}
+
+func trustDomainToEntity(models []TrustDomain) ([]*entity.TrustDomain, error) {
+	result := make([]*entity.TrustDomain, len(models))
+	for i, m := range models {
+		r, err := m.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed converting model trust domain to entity: %v", err)
+		}
+		result[i] = r
 	}
 
 	return result, nil

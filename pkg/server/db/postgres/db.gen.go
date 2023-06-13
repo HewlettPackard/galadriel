@@ -81,9 +81,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listJoinTokensStmt, err = db.PrepareContext(ctx, listJoinTokens); err != nil {
 		return nil, fmt.Errorf("error preparing query ListJoinTokens: %w", err)
 	}
-	if q.listTrustDomainsStmt, err = db.PrepareContext(ctx, listTrustDomains); err != nil {
-		return nil, fmt.Errorf("error preparing query ListTrustDomains: %w", err)
-	}
 	if q.updateBundleStmt, err = db.PrepareContext(ctx, updateBundle); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateBundle: %w", err)
 	}
@@ -196,11 +193,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listJoinTokensStmt: %w", cerr)
 		}
 	}
-	if q.listTrustDomainsStmt != nil {
-		if cerr := q.listTrustDomainsStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing listTrustDomainsStmt: %w", cerr)
-		}
-	}
 	if q.updateBundleStmt != nil {
 		if cerr := q.updateBundleStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateBundleStmt: %w", cerr)
@@ -279,7 +271,6 @@ type Queries struct {
 	findTrustDomainByNameStmt            *sql.Stmt
 	listBundlesStmt                      *sql.Stmt
 	listJoinTokensStmt                   *sql.Stmt
-	listTrustDomainsStmt                 *sql.Stmt
 	updateBundleStmt                     *sql.Stmt
 	updateJoinTokenStmt                  *sql.Stmt
 	updateRelationshipStmt               *sql.Stmt
@@ -309,7 +300,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		findTrustDomainByNameStmt:            q.findTrustDomainByNameStmt,
 		listBundlesStmt:                      q.listBundlesStmt,
 		listJoinTokensStmt:                   q.listJoinTokensStmt,
-		listTrustDomainsStmt:                 q.listTrustDomainsStmt,
 		updateBundleStmt:                     q.updateBundleStmt,
 		updateJoinTokenStmt:                  q.updateJoinTokenStmt,
 		updateRelationshipStmt:               q.updateRelationshipStmt,

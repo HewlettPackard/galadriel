@@ -91,7 +91,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Equal(t, td1, stored)
 
 		// List all trust domains
-		list, err := ds.ListTrustDomains(ctx)
+		list, err := ds.ListTrustDomains(ctx, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(list))
 		assert.Contains(t, list, td1)
