@@ -202,7 +202,7 @@ func (h *AdminAPIHandlers) PutTrustDomain(echoCtx echo.Context) error {
 func (h *AdminAPIHandlers) ListTrustDomains(echoCtx echo.Context) error {
 	ctx := echoCtx.Request().Context()
 
-	trustDomains, err := h.Datastore.ListTrustDomains(ctx)
+	trustDomains, err := h.Datastore.ListTrustDomains(ctx, nil)
 	if err != nil {
 		err = fmt.Errorf("failed listing trust domains: %v", err)
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
