@@ -19,7 +19,6 @@ tags:
     description: A relationship is the representation of a SPIFFE Federation Relationship between two Trust Domains
   - name: Join Token
     description: Representation of a join token bound to a Trust Domain.
-
 paths:
   /trust-domain/{trustDomainName}:
     get:
@@ -131,7 +130,7 @@ paths:
         - Relationships
       summary: Get relationships
       parameters:
-        - name: status
+        - name: consentStatus
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
@@ -141,6 +140,17 @@ paths:
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
           description: TrustDomain
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageSize'
+          description: TrustDomain
+        - name: pageNumber
+          in: query
+          required: false
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageNumber'
       responses:
         '200':
           description: Successful operation
@@ -208,7 +218,7 @@ paths:
           description: Trust Domain Name
           required: true
           schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+            $ref: ../../../common/api/schemas.yaml#/components/schemas/TrustDomainName
         - name: ttl
           in: query
           description: Time-to-Live (TTL) in seconds for the join token
@@ -236,7 +246,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '../../../common/api/schemas.yaml#/components/schemas/ApiError'
+            $ref: ../../../common/api/schemas.yaml#/components/schemas/ApiError
   schemas:
     PutRelationshipRequest:
       type: object
@@ -269,4 +279,4 @@ components:
         - token
       properties:
         token:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/JoinToken'
+          $ref: ../../../common/api/schemas.yaml#/components/schemas/JoinToken

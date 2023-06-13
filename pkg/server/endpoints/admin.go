@@ -21,7 +21,11 @@ import (
 )
 
 // DefaultTokenTTL is the default TTL for tokens in seconds.
-const DefaultTokenTTL = 600
+const (
+	DefaultTokenTTL   = 600
+	defaultPageSize   = 10
+	defaultPageNumber = 0
+)
 
 type AdminAPIHandlers struct {
 	Logger    logrus.FieldLogger
@@ -40,8 +44,9 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	listCriteria := &criteria.ListRelationshipsCriteria{
-		OrderByCreatedAt: criteria.OrderDescending,
+	listCriteria, err := AdminGetRelationshipsParamsToCriteria(params)
+	if err != nil {
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
 
 	if params.TrustDomainName != nil {
@@ -52,20 +57,6 @@ func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.G
 		}
 
 		listCriteria.FilterByTrustDomainID = uuid.NullUUID{Valid: true, UUID: td.ID.UUID}
-	}
-
-	var consentStatus *entity.ConsentStatus
-	if params.Status != nil {
-		switch *params.Status {
-		case "":
-		case api.Approved, api.Denied, api.Pending:
-			consentStatus = (*entity.ConsentStatus)(params.Status)
-		default:
-			err := fmt.Errorf("status filter %q is not supported, approved values [approved, denied, pending]", *params.Status)
-			return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
-		}
-
-		listCriteria.FilterByConsentStatus = consentStatus
 	}
 
 	relationships, err := h.Datastore.ListRelationships(ctx, listCriteria)
@@ -418,4 +409,26 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	}
 
 	return td, nil
+}
+
+func AdminGetRelationshipsParamsToCriteria(params admin.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
+	queryParams := adminGetRelationshipsToQueryParams(params)
+	if err := queryParams.ValidateParams(); err != nil {
+		return nil, err
+	}
+
+	return &criteria.ListRelationshipsCriteria{
+		FilterByConsentStatus: queryParams.validParams.consentStatus,
+		PageSize:              queryParams.validParams.pageSize,
+		PageNumber:            queryParams.validParams.pageNumber,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}, nil
+}
+
+func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *QueryParamsAdapter {
+	return &QueryParamsAdapter{
+		pageSize:      params.PageSize,
+		pageNumber:    params.PageNumber,
+		consentStatus: params.ConsentStatus,
+	}
 }

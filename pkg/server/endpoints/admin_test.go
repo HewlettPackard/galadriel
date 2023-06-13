@@ -111,28 +111,28 @@ func (setup *ManagementTestSetup) Refresh() {
 
 func TestGetRelationships(t *testing.T) {
 	tdName := td1
-	statusAccepted := api.Approved
-	statusPending := api.Pending
 	statusDenied := api.Denied
+	statusPending := api.Pending
+	statusAccepted := api.Approved
 
 	t.Run("Successfully filter by trust domain", func(t *testing.T) {
 		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName}, 3, rel1, rel2, rel4)
 	})
 
 	t.Run("Successfully filter by status approved", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusAccepted}, 3, rel1, rel2, rel3)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusAccepted}, 3, rel1, rel2, rel3)
 	})
 
 	t.Run("Successfully filter by status pending", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusPending}, 2, rel1, rel5)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusPending}, 2, rel1, rel5)
 	})
 
 	t.Run("Successfully filter by status denied", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{Status: &statusDenied}, 3, rel2, rel3, rel4)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{ConsentStatus: &statusDenied}, 3, rel2, rel3, rel4)
 	})
 
 	t.Run("Successfully filter by status approved and trust domain", func(t *testing.T) {
-		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, Status: &statusAccepted}, 1, rel1)
+		runGetRelationshipTest(t, admin.GetRelationshipsParams{TrustDomainName: &tdName, ConsentStatus: &statusAccepted}, 1, rel1)
 	})
 
 	t.Run("Should raise a bad request when receiving undefined status filter", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestGetRelationships(t *testing.T) {
 		// Approved filter
 		var randomFilter api.ConsentStatus = "a random filter"
 		params := admin.GetRelationshipsParams{
-			Status: &randomFilter,
+			ConsentStatus: &randomFilter,
 		}
 
 		err := setup.Handler.GetRelationships(setup.EchoCtx, params)
@@ -153,7 +153,7 @@ func TestGetRelationships(t *testing.T) {
 		assert.Empty(t, setup.Recorder.Body)
 
 		expectedMsg := fmt.Sprintf(
-			"status filter %q is not supported, approved values [%v, %v, %v]",
+			"code=400, message=status filter \"%v\" is not supported, available values [%v, %v, %v]",
 			randomFilter, api.Approved, api.Denied, api.Pending,
 		)
 
