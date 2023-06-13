@@ -99,6 +99,8 @@ paths:
           content:
             application/json:
               schema:
+                type: array
+                items:
                 $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
         default:
           $ref: '#/components/responses/Default'
