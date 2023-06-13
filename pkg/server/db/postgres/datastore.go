@@ -399,13 +399,21 @@ func (d *Datastore) FindRelationshipByID(ctx context.Context, relationshipID uui
 	return response, nil
 }
 
-func (d *Datastore) FindRelationshipsByTrustDomainID(ctx context.Context, trustDomainID uuid.UUID) ([]*entity.Relationship, error) {
+func (d *Datastore) FindRelationshipsByTrustDomainID(
+	ctx context.Context,
+	trustDomainID uuid.UUID,
+) ([]*entity.Relationship, error) {
+
 	pgID, err := uuidToPgType(trustDomainID)
 	if err != nil {
 		return nil, err
 	}
 
 	relationships, err := d.querier.FindRelationshipsByTrustDomainID(ctx, pgID)
+	if err != nil {
+		return nil, err
+	}
+
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil

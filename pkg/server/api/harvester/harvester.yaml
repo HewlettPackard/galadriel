@@ -110,6 +110,7 @@ paths:
                 $ref: '#/components/schemas/OnboardHarvesterResponse'
         default:
           $ref: '#/components/responses/Default'
+
   /trust-domain/{trustDomainName}/jwt:
     get:
       operationId: GetNewJWTToken
@@ -190,6 +191,18 @@ paths:
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageSize'
+          description: TrustDomain
+        - name: pageNumber
+          in: query
+          required: false
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/PageNumber'
+          description: TrustDomain
       responses:
         '200':
           description: Successful operation
