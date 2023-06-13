@@ -48,13 +48,19 @@ type UpdateRelationshipByIDRequest struct {
 // Default defines model for Default.
 type Default = externalRef0.ApiError
 
-// ListRelationshipsParams defines parameters for ListRelationships.
-type ListRelationshipsParams struct {
-	// Status relationship status from a Trust Domain perspective.
-	Status *externalRef0.ConsentStatus `form:"status,omitempty" json:"status,omitempty"`
+// GetRelationshipsParams defines parameters for GetRelationships.
+type GetRelationshipsParams struct {
+	// ConsentStatus relationship status from a Trust Domain perspective.
+	ConsentStatus *externalRef0.ConsentStatus `form:"consentStatus,omitempty" json:"consentStatus,omitempty"`
 
 	// TrustDomainName Trust Domain name that participates in a relationship.
 	TrustDomainName *externalRef0.TrustDomainName `form:"trustDomainName,omitempty" json:"trustDomainName,omitempty"`
+
+	// PageSize Number of items in each page.
+	PageSize *externalRef0.PageSize `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// PageNumber Number of pages.
+	PageNumber *externalRef0.PageNumber `form:"pageNumber,omitempty" json:"pageNumber,omitempty"`
 }
 
 // GetJoinTokenParams defines parameters for GetJoinToken.
@@ -148,8 +154,8 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// ListRelationships request
-	ListRelationships(ctx context.Context, params *ListRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetRelationships request
+	GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PutRelationship request with any body
 	PutRelationshipWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -184,8 +190,8 @@ type ClientInterface interface {
 	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) ListRelationships(ctx context.Context, params *ListRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRelationshipsRequest(c.Server, params)
+func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRelationshipsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -340,8 +346,8 @@ func (c *Client) GetJoinToken(ctx context.Context, trustDomainName externalRef0.
 	return c.Client.Do(req)
 }
 
-// NewListRelationshipsRequest generates requests for ListRelationships
-func NewListRelationshipsRequest(server string, params *ListRelationshipsParams) (*http.Request, error) {
+// NewGetRelationshipsRequest generates requests for GetRelationships
+func NewGetRelationshipsRequest(server string, params *GetRelationshipsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -362,9 +368,9 @@ func NewListRelationshipsRequest(server string, params *ListRelationshipsParams)
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.Status != nil {
+		if params.ConsentStatus != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "consentStatus", runtime.ParamLocationQuery, *params.ConsentStatus); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -381,6 +387,38 @@ func NewListRelationshipsRequest(server string, params *ListRelationshipsParams)
 		if params.TrustDomainName != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "trustDomainName", runtime.ParamLocationQuery, *params.TrustDomainName); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageSize != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "pageSize", runtime.ParamLocationQuery, *params.PageSize); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PageNumber != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "pageNumber", runtime.ParamLocationQuery, *params.PageNumber); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -776,8 +814,8 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// ListRelationships request
-	ListRelationshipsWithResponse(ctx context.Context, params *ListRelationshipsParams, reqEditors ...RequestEditorFn) (*ListRelationshipsResponse, error)
+	// GetRelationships request
+	GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error)
 
 	// PutRelationship request with any body
 	PutRelationshipWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutRelationshipResponse, error)
@@ -812,7 +850,7 @@ type ClientWithResponsesInterface interface {
 	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
 }
 
-type ListRelationshipsResponse struct {
+type GetRelationshipsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]externalRef0.Relationship
@@ -820,7 +858,7 @@ type ListRelationshipsResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r ListRelationshipsResponse) Status() string {
+func (r GetRelationshipsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -828,7 +866,7 @@ func (r ListRelationshipsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListRelationshipsResponse) StatusCode() int {
+func (r GetRelationshipsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1017,13 +1055,13 @@ func (r GetJoinTokenResponse) StatusCode() int {
 	return 0
 }
 
-// ListRelationshipsWithResponse request returning *ListRelationshipsResponse
-func (c *ClientWithResponses) ListRelationshipsWithResponse(ctx context.Context, params *ListRelationshipsParams, reqEditors ...RequestEditorFn) (*ListRelationshipsResponse, error) {
-	rsp, err := c.ListRelationships(ctx, params, reqEditors...)
+// GetRelationshipsWithResponse request returning *GetRelationshipsResponse
+func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error) {
+	rsp, err := c.GetRelationships(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListRelationshipsResponse(rsp)
+	return ParseGetRelationshipsResponse(rsp)
 }
 
 // PutRelationshipWithBodyWithResponse request with arbitrary body returning *PutRelationshipResponse
@@ -1130,15 +1168,15 @@ func (c *ClientWithResponses) GetJoinTokenWithResponse(ctx context.Context, trus
 	return ParseGetJoinTokenResponse(rsp)
 }
 
-// ParseListRelationshipsResponse parses an HTTP response from a ListRelationshipsWithResponse call
-func ParseListRelationshipsResponse(rsp *http.Response) (*ListRelationshipsResponse, error) {
+// ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
+func ParseGetRelationshipsResponse(rsp *http.Response) (*GetRelationshipsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListRelationshipsResponse{
+	response := &GetRelationshipsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1415,9 +1453,9 @@ func ParseGetJoinTokenResponse(rsp *http.Response) (*GetJoinTokenResponse, error
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// List all relationships
+	// Get the relationships based on the trust domain name and/or consent statuses.
 	// (GET /relationships)
-	ListRelationships(ctx echo.Context, params ListRelationshipsParams) error
+	GetRelationships(ctx echo.Context, params GetRelationshipsParams) error
 	// Create a relationship request between two Trust Domains
 	// (PUT /relationships)
 	PutRelationship(ctx echo.Context) error
@@ -1449,17 +1487,17 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// ListRelationships converts echo context to params.
-func (w *ServerInterfaceWrapper) ListRelationships(ctx echo.Context) error {
+// GetRelationships converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRelationships(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params ListRelationshipsParams
-	// ------------- Optional query parameter "status" -------------
+	var params GetRelationshipsParams
+	// ------------- Optional query parameter "consentStatus" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "status", ctx.QueryParams(), &params.Status)
+	err = runtime.BindQueryParameter("form", true, false, "consentStatus", ctx.QueryParams(), &params.ConsentStatus)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter status: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter consentStatus: %s", err))
 	}
 
 	// ------------- Optional query parameter "trustDomainName" -------------
@@ -1469,8 +1507,22 @@ func (w *ServerInterfaceWrapper) ListRelationships(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
 	}
 
+	// ------------- Optional query parameter "pageSize" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pageSize", ctx.QueryParams(), &params.PageSize)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pageSize: %s", err))
+	}
+
+	// ------------- Optional query parameter "pageNumber" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pageNumber", ctx.QueryParams(), &params.PageNumber)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pageNumber: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.ListRelationships(ctx, params)
+	err = w.Handler.GetRelationships(ctx, params)
 	return err
 }
 
@@ -1625,7 +1677,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/relationships", wrapper.ListRelationships)
+	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
 	router.PUT(baseURL+"/relationships", wrapper.PutRelationship)
 	router.DELETE(baseURL+"/relationships/:relationshipID", wrapper.DeleteRelationshipByID)
 	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
@@ -1640,41 +1692,44 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"BGScHV/F/wkAAP//eLoEYVIoAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -84,41 +84,6 @@ func (q *Queries) FindTrustDomainByName(ctx context.Context, name string) (Trust
 	return i, err
 }
 
-const listTrustDomains = `-- name: ListTrustDomains :many
-SELECT id, name, description, created_at, updated_at
-FROM trust_domains
-ORDER BY name
-`
-
-func (q *Queries) ListTrustDomains(ctx context.Context) ([]TrustDomain, error) {
-	rows, err := q.query(ctx, q.listTrustDomainsStmt, listTrustDomains)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []TrustDomain
-	for rows.Next() {
-		var i TrustDomain
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateTrustDomain = `-- name: UpdateTrustDomain :one
 UPDATE trust_domains
 SET description = ?,

@@ -28,7 +28,7 @@ type GaladrielAPIClient interface {
 	UpdateTrustDomainByName(context.Context, api.TrustDomainName) (*entity.TrustDomain, error)
 	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
 	GetRelationshipByID(context.Context, uuid.UUID) (*entity.Relationship, error)
-	ListRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
+	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
 	UpdateRelationshipByID(context.Context, api.UUID, api.ConsentStatus, api.ConsentStatus) (*entity.Relationship, error)
 	DeleteRelationshipByID(ctx context.Context, relID api.UUID) error
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
@@ -177,10 +177,10 @@ func (g *galadrielAdminClient) DeleteRelationshipByID(ctx context.Context, relID
 	return nil
 }
 
-func (g *galadrielAdminClient) ListRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
-	payload := &admin.ListRelationshipsParams{Status: &status, TrustDomainName: &trustDomainName}
+func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName}
 
-	res, err := g.client.ListRelationships(ctx, payload)
+	res, err := g.client.GetRelationships(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
 	}

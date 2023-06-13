@@ -122,7 +122,7 @@ var listRelationshipCmd = &cobra.Command{
 			return err
 		}
 
-		relationships, err := client.ListRelationships(ctx, consentStatus, trustDomainName)
+		relationships, err := client.GetRelationships(ctx, consentStatus, trustDomainName)
 		if err != nil {
 			return err
 		}
