@@ -97,7 +97,7 @@ func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatu
 }
 
 func (q *QueryParamsAdapter) validateOrder(apiOrder *api.CreatedAtOrder) (*criteria.OrderDirection, error) {
-	var order criteria.OrderDirection
+	order := criteria.NoOrder
 	if apiOrder != nil {
 		order = criteria.OrderDirection(*apiOrder)
 		switch order {
@@ -106,9 +106,7 @@ func (q *QueryParamsAdapter) validateOrder(apiOrder *api.CreatedAtOrder) (*crite
 			err := fmt.Errorf("order filter %q is not supported, available values [asc, desc]", order)
 			return nil, err
 		}
-
-		return &order, nil
 	}
 
-	return nil, nil
+	return &order, nil
 }
