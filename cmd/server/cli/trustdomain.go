@@ -9,6 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	errMarkFlagAsRequired = "Error marking %q flag as required: %v\n"
+)
+
 const trustDomainCommonText = `
 A trust domain represents a distinct trust boundary or realm within a distributed system. 
 By creating a new trust domain, you can establish a namespace for workload identities 
@@ -49,10 +53,6 @@ The 'create' command allows you to create a new trust domain in the Galadriel Se
 			return fmt.Errorf("cannot get trust domain flag: %v", err)
 		}
 
-		if trustDomain == "" {
-			return fmt.Errorf("trust domain name is required")
-		}
-
 		client, err := util.NewGaladrielUDSClient(socketPath, nil)
 		if err != nil {
 			return err
@@ -79,6 +79,34 @@ var listTrustDomainCmd = &cobra.Command{
 	Long:  `The 'list' command allows you to retrieve a list of registered trust domains.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		trustDomains, err := client.ListTrustDomains(ctx)
+		if err != nil {
+			return err
+		}
+
+		if len(trustDomains) == 0 {
+			fmt.Printf("No trust domains registered.")
+		}
+
+		fmt.Println()
+		for _, td := range trustDomains {
+			fmt.Printf("%s\n", td.ConsoleString())
+		}
+		fmt.Println()
+
 		return nil
 	},
 }
@@ -94,6 +122,31 @@ with it are removed or deleted. This ensures the integrity of the system and pre
 potential disruptions in secure communication between trust domains.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		trustDomainName, err := cmd.Flags().GetString(cli.TrustDomainFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		err = client.DeleteTrustDomainByName(ctx, trustDomainName)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Trust Domain %q deleted\n", trustDomainName)
+
 		return nil
 	},
 }
@@ -106,6 +159,36 @@ var updateTrustDomainCmd = &cobra.Command{
 in the Galadriel Server.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		trustDomainName, err := cmd.Flags().GetString(cli.TrustDomainFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
+		description, err := cmd.Flags().GetString(cli.TrustDomainDescriptionFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get description flag: %v", err)
+		}
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		_, err = client.UpdateTrustDomainByName(ctx, trustDomainName, description)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Trust Domain %q updated \n", trustDomainName)
+
 		return nil
 	},
 }
@@ -120,6 +203,24 @@ func init() {
 	createTrustDomainCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The trust domain name.")
 	err := createTrustDomainCmd.MarkFlagRequired(cli.TrustDomainFlagName)
 	if err != nil {
-		fmt.Printf("Error marking trustDomain flag as required: %v\n", err)
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainFlagName, err)
+	}
+
+	deleteTrustDomainCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The trust domain name.")
+	err = deleteTrustDomainCmd.MarkFlagRequired(cli.TrustDomainFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainFlagName, err)
+	}
+
+	updateTrustDomainCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The trust domain to be updated.")
+	err = updateTrustDomainCmd.MarkFlagRequired(cli.TrustDomainFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainFlagName, err)
+	}
+
+	updateTrustDomainCmd.Flags().StringP(cli.TrustDomainDescriptionFlagName, "d", "", "The trust domain description.")
+	err = updateTrustDomainCmd.MarkFlagRequired(cli.TrustDomainDescriptionFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainDescriptionFlagName, err)
 	}
 }
