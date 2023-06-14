@@ -519,7 +519,7 @@ func HarvesterGetRelationshipsParamsToCriteria(params harvester.GetRelationships
 		FilterByConsentStatus: queryParams.validParams.consentStatus,
 		PageSize:              queryParams.validParams.pageSize,
 		PageNumber:            queryParams.validParams.pageNumber,
-		OrderByCreatedAt:      criteria.OrderDescending,
+		OrderByCreatedAt:      queryParams.validParams.order,
 	}, nil
 }
 

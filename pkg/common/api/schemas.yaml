@@ -183,13 +183,19 @@ components:
     PageNumber:
       type: integer
       minimum: 0
-      description: The number of items to skip before starting to collect the result set.
+      description: The number of items to skip before starting to collect the result set. O means no pagination
     PageSize:
       type: integer
-      minimum: 1
+      minimum: 0
       maximum: 50
       default: 20
-      description: The numbers of items to return.
+      description: The numbers of items to return. O means no pagination
+    CreatedAtOrder:
+      type: string
+      enum: 
+        - asc
+        - desc
+      description: Defines the order of element based on creation time
     Date:
       type: string
       format: date

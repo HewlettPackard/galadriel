@@ -419,7 +419,7 @@ func AdminGetRelationshipsParamsToCriteria(params admin.GetRelationshipsParams) 
 		FilterByConsentStatus: queryParams.validParams.consentStatus,
 		PageSize:              queryParams.validParams.pageSize,
 		PageNumber:            queryParams.validParams.pageNumber,
-		OrderByCreatedAt:      criteria.OrderDescending,
+		OrderByCreatedAt:      queryParams.validParams.order,
 	}, nil
 }
 
@@ -428,5 +428,6 @@ func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *Qu
 		pageSize:      params.PageSize,
 		pageNumber:    params.PageNumber,
 		consentStatus: params.ConsentStatus,
+		order:         params.CreatedAtOrder,
 	}
 }

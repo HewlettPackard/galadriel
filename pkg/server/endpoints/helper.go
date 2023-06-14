@@ -5,6 +5,7 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 )
 
 // QueryParamsAdapter is responsible for validating and adapting API values into
@@ -16,14 +17,16 @@ type QueryParamsAdapter struct {
 	consentStatus *api.ConsentStatus
 
 	validParams ValidQueryParams
+
+	order *api.CreatedAtOrder
 }
 
 // ValidQueryParams is the struct that holds th valid types and validated values
 // for query params
 type ValidQueryParams struct {
-	pageSize   uint
-	pageNumber uint
-
+	pageSize      uint
+	pageNumber    uint
+	order         criteria.OrderDirection
 	consentStatus *entity.ConsentStatus
 }
 
@@ -34,12 +37,18 @@ func (q *QueryParamsAdapter) ValidateParams() error {
 		return err
 	}
 
+	order, err := q.validateOrder(q.order)
+	if err != nil {
+		return err
+	}
+
 	consentStatus, err := q.validateConsentStatusParam(q.consentStatus)
 	if err != nil {
 		return err
 	}
 
 	q.validParams = ValidQueryParams{
+		order:         *order,
 		pageSize:      pageSize,
 		pageNumber:    pageNumber,
 		consentStatus: consentStatus,
@@ -82,6 +91,23 @@ func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatu
 
 		consentStatus := entity.ConsentStatus(*status)
 		return &consentStatus, nil
+	}
+
+	return nil, nil
+}
+
+func (q *QueryParamsAdapter) validateOrder(apiOrder *api.CreatedAtOrder) (*criteria.OrderDirection, error) {
+	var order criteria.OrderDirection
+	if apiOrder != nil {
+		order = criteria.OrderDirection(*apiOrder)
+		switch order {
+		case criteria.NoOrder, criteria.OrderAscending, criteria.OrderDescending:
+		default:
+			err := fmt.Errorf("order filter %q is not supported, available values [asc, desc]", order)
+			return nil, err
+		}
+
+		return &order, nil
 	}
 
 	return nil, nil

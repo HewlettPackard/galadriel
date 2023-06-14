@@ -151,6 +151,11 @@ paths:
           required: false
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/PageNumber'
+        - name: createdAtOrder
+          in: query
+          required: false
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/CreatedAtOrder'
       responses:
         '200':
           description: Successful operation
