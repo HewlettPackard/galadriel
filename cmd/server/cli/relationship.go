@@ -157,14 +157,9 @@ Exercise caution when using this command, as it permanently removes the relation
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+		relID, err := getRelationshipIDAndParse(cmd)
 		if err != nil {
-			return fmt.Errorf("cannot get relationship ID flag: %v", err)
-		}
-
-		relID, err := uuid.Parse(idStr)
-		if err != nil {
-			return fmt.Errorf("cannot parse relationship ID: %v", err)
+			return err
 		}
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -199,14 +194,9 @@ in the Galadriel Server.`,
 			return fmt.Errorf("cannot get socket path flag: %v", err)
 		}
 
-		idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+		relID, err := getRelationshipIDAndParse(cmd)
 		if err != nil {
-			return fmt.Errorf("cannot get relationship ID flag: %v", err)
-		}
-
-		relID, err := uuid.Parse(idStr)
-		if err != nil {
-			return fmt.Errorf("cannot parse relationship ID: %v", err)
+			return err
 		}
 
 		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
@@ -321,4 +311,18 @@ func init() {
 	if err != nil {
 		fmt.Printf(errMarkFlagAsRequired, cli.RelationshipIDFlagName, err)
 	}
+}
+
+func getRelationshipIDAndParse(cmd *cobra.Command) (uuid.UUID, error) {
+	idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("cannot get relationship ID flag: %v", err)
+	}
+
+	relID, err := uuid.Parse(idStr)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("cannot parse relationship ID: %v", err)
+	}
+
+	return relID, nil
 }
