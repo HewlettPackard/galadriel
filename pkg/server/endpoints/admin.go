@@ -13,7 +13,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
-	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
@@ -22,9 +21,7 @@ import (
 
 // DefaultTokenTTL is the default TTL for tokens in seconds.
 const (
-	DefaultTokenTTL   = 600
-	defaultPageSize   = 10
-	defaultPageNumber = 0
+	DefaultTokenTTL = 600
 )
 
 type AdminAPIHandlers struct {
@@ -44,7 +41,8 @@ func NewAdminAPIHandlers(l logrus.FieldLogger, ds db.Datastore) *AdminAPIHandler
 func (h *AdminAPIHandlers) GetRelationships(echoCtx echo.Context, params admin.GetRelationshipsParams) error {
 	ctx := echoCtx.Request().Context()
 
-	listCriteria, err := AdminGetRelationshipsParamsToCriteria(params)
+	adminParams := adminParams{params}
+	listCriteria, err := convertRelationshipsParamsToListCriteria(adminParams)
 	if err != nil {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
@@ -409,26 +407,4 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	}
 
 	return td, nil
-}
-
-func AdminGetRelationshipsParamsToCriteria(params admin.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
-	queryParams := adminGetRelationshipsToQueryParams(params)
-	if err := queryParams.ValidateParams(); err != nil {
-		return nil, err
-	}
-
-	return &criteria.ListRelationshipsCriteria{
-		FilterByConsentStatus: queryParams.validParams.consentStatus,
-		PageSize:              queryParams.validParams.pageSize,
-		PageNumber:            queryParams.validParams.pageNumber,
-		OrderByCreatedAt:      criteria.OrderDescending,
-	}, nil
-}
-
-func adminGetRelationshipsToQueryParams(params admin.GetRelationshipsParams) *QueryParamsAdapter {
-	return &QueryParamsAdapter{
-		pageSize:      params.PageSize,
-		pageNumber:    params.PageNumber,
-		consentStatus: params.ConsentStatus,
-	}
 }

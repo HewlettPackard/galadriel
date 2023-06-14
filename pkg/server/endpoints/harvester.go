@@ -18,7 +18,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/util/encoding"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
-	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 	gojwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -60,7 +59,8 @@ func (h *HarvesterAPIHandlers) GetRelationships(echoCtx echo.Context, trustDomai
 		return err
 	}
 
-	listCriteria, err := HarvesterGetRelationshipsParamsToCriteria(params)
+	harvesterParams := harvesterParams{params}
+	listCriteria, err := convertRelationshipsParamsToListCriteria(harvesterParams)
 	if err != nil {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
 	}
@@ -507,26 +507,4 @@ func validateBundleRequest(req *harvester.BundlePutJSONRequestBody) error {
 	}
 
 	return nil
-}
-
-func HarvesterGetRelationshipsParamsToCriteria(params harvester.GetRelationshipsParams) (*criteria.ListRelationshipsCriteria, error) {
-	queryParams := harvesterGetRelationshipsToQueryParams(params)
-	if err := queryParams.ValidateParams(); err != nil {
-		return nil, err
-	}
-
-	return &criteria.ListRelationshipsCriteria{
-		FilterByConsentStatus: queryParams.validParams.consentStatus,
-		PageSize:              queryParams.validParams.pageSize,
-		PageNumber:            queryParams.validParams.pageNumber,
-		OrderByCreatedAt:      criteria.OrderDescending,
-	}, nil
-}
-
-func harvesterGetRelationshipsToQueryParams(params harvester.GetRelationshipsParams) *QueryParamsAdapter {
-	return &QueryParamsAdapter{
-		pageSize:      params.PageSize,
-		pageNumber:    params.PageNumber,
-		consentStatus: params.ConsentStatus,
-	}
 }
