@@ -41,7 +41,7 @@ func (td *PutTrustDomainRequest) ToEntity() (*entity.TrustDomain, error) {
 	}, nil
 }
 
-func (r *UpdateRelationshipByIDRequest) ToEntity() (*entity.Relationship, error) {
+func (r *PatchRelationshipByIDRequest) ToEntity() (*entity.Relationship, error) {
 	var (
 		consentStatusA = ""
 		consentStatusB = ""

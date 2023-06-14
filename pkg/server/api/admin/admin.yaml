@@ -224,7 +224,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
     patch:
-      operationId: UpdateRelationshipByID
+      operationId: PatchRelationshipByID
       tags:
         - Relationships
       summary: Update a specific relationship
@@ -232,7 +232,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRelationshipByIDRequest'
+              $ref: '#/components/schemas/PatchRelationshipByIDRequest'
       parameters:
         - name: relationshipID
           in: path
@@ -315,7 +315,7 @@ components:
           example: "Trust domain that represent the entity X"
         name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-    UpdateRelationshipByIDRequest:
+    PatchRelationshipByIDRequest:
       type: object
       additionalProperties: false
       required:

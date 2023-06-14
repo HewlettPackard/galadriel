@@ -29,7 +29,7 @@ type GaladrielAPIClient interface {
 	UpdateTrustDomainByName(context.Context, api.TrustDomainName, string) (*entity.TrustDomain, error)
 	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
 	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
-	UpdateRelationshipByID(context.Context, api.UUID, api.ConsentStatus, api.ConsentStatus) (*entity.Relationship, error)
+	PatchRelationshipByID(context.Context, api.UUID, api.ConsentStatus, api.ConsentStatus) (*entity.Relationship, error)
 	DeleteRelationshipByID(ctx context.Context, relID api.UUID) error
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
 }
@@ -185,9 +185,9 @@ func (g *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *enti
 	return relationship, nil
 }
 
-func (g *galadrielAdminClient) UpdateRelationshipByID(ctx context.Context, relID api.UUID, statusA api.ConsentStatus, statusB api.ConsentStatus) (*entity.Relationship, error) {
-	payload := admin.UpdateRelationshipByIDRequest{ConsentStatusA: statusA, ConsentStatusB: statusB}
-	res, err := g.client.UpdateRelationshipByID(ctx, relID, payload)
+func (g *galadrielAdminClient) PatchRelationshipByID(ctx context.Context, relID api.UUID, statusA api.ConsentStatus, statusB api.ConsentStatus) (*entity.Relationship, error) {
+	payload := admin.PatchRelationshipByIDRequest{ConsentStatusA: statusA, ConsentStatusB: statusB}
+	res, err := g.client.PatchRelationshipByID(ctx, relID, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
@@ -222,7 +222,9 @@ func (g *galadrielAdminClient) DeleteRelationshipByID(ctx context.Context, relID
 }
 
 func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
-	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName}
+	pageSize := 10
+	pageNumber := 1
+	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName, PageSize: &pageSize, PageNumber: &pageNumber}
 
 	res, err := g.client.GetRelationships(ctx, payload)
 	if err != nil {

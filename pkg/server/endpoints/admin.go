@@ -325,11 +325,11 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 	return nil
 }
 
-// UpdateRelationshipByID updates a specific relationship based on its id - (PATCH /relationships/{relationshipID})
-func (h *AdminAPIHandlers) UpdateRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
+// PatchRelationshipByID updates a specific relationship based on its id - (PATCH /relationships/{relationshipID})
+func (h *AdminAPIHandlers) PatchRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
-	reqBody := &admin.UpdateRelationshipByIDJSONRequestBody{}
+	reqBody := &admin.PatchRelationshipByIDJSONRequestBody{}
 	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
 	if err != nil {
 		err := fmt.Errorf("failed to parse relationship patch body: %v", err)

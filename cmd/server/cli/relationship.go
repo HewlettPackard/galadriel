@@ -14,10 +14,6 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
-var (
-	errMarkFlagAsRequired = "cannot mark %q flag as required: %v"
-)
-
 const (
 	relationshipCommonText = `Manage federation relationships between SPIFFE trust domains with the 'relationship' command.
 Federation relationships in SPIFFE permit secure communication between workloads across different trust domains.`
@@ -234,7 +230,7 @@ in the Galadriel Server.`,
 			return err
 		}
 
-		rel, err := client.UpdateRelationshipByID(ctx, relID, consentStatusA, consentStatusB)
+		rel, err := client.PatchRelationshipByID(ctx, relID, consentStatusA, consentStatusB)
 		if err != nil {
 			return err
 		}

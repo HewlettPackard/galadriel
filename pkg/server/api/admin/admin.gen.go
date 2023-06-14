@@ -27,6 +27,12 @@ type JoinTokenResponse struct {
 	Token externalRef0.JoinToken `json:"token"`
 }
 
+// PatchRelationshipByIDRequest defines model for PatchRelationshipByIDRequest.
+type PatchRelationshipByIDRequest struct {
+	ConsentStatusA externalRef0.ConsentStatus `json:"consent_status_a"`
+	ConsentStatusB externalRef0.ConsentStatus `json:"consent_status_b"`
+}
+
 // PutRelationshipRequest defines model for PutRelationshipRequest.
 type PutRelationshipRequest struct {
 	TrustDomainAName externalRef0.TrustDomainName `json:"trust_domain_a_name"`
@@ -37,12 +43,6 @@ type PutRelationshipRequest struct {
 type PutTrustDomainRequest struct {
 	Description *string                      `json:"description,omitempty"`
 	Name        externalRef0.TrustDomainName `json:"name"`
-}
-
-// UpdateRelationshipByIDRequest defines model for UpdateRelationshipByIDRequest.
-type UpdateRelationshipByIDRequest struct {
-	ConsentStatusA externalRef0.ConsentStatus `json:"consent_status_a"`
-	ConsentStatusB externalRef0.ConsentStatus `json:"consent_status_b"`
 }
 
 // Default defines model for Default.
@@ -72,8 +72,8 @@ type GetJoinTokenParams struct {
 // PutRelationshipJSONRequestBody defines body for PutRelationship for application/json ContentType.
 type PutRelationshipJSONRequestBody = PutRelationshipRequest
 
-// UpdateRelationshipByIDJSONRequestBody defines body for UpdateRelationshipByID for application/json ContentType.
-type UpdateRelationshipByIDJSONRequestBody = UpdateRelationshipByIDRequest
+// PatchRelationshipByIDJSONRequestBody defines body for PatchRelationshipByID for application/json ContentType.
+type PatchRelationshipByIDJSONRequestBody = PatchRelationshipByIDRequest
 
 // PutTrustDomainJSONRequestBody defines body for PutTrustDomain for application/json ContentType.
 type PutTrustDomainJSONRequestBody = PutTrustDomainRequest
@@ -168,10 +168,10 @@ type ClientInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdateRelationshipByID request with any body
-	UpdateRelationshipByIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PatchRelationshipByID request with any body
+	PatchRelationshipByIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTrustDomains request
 	ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -256,8 +256,8 @@ func (c *Client) GetRelationshipByID(ctx context.Context, relationshipID externa
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRelationshipByIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRelationshipByIDRequestWithBody(c.Server, relationshipID, contentType, body)
+func (c *Client) PatchRelationshipByIDWithBody(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipByIDRequestWithBody(c.Server, relationshipID, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -268,8 +268,8 @@ func (c *Client) UpdateRelationshipByIDWithBody(ctx context.Context, relationshi
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRelationshipByIDRequest(c.Server, relationshipID, body)
+func (c *Client) PatchRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchRelationshipByIDRequest(c.Server, relationshipID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -581,19 +581,19 @@ func NewGetRelationshipByIDRequest(server string, relationshipID externalRef0.UU
 	return req, nil
 }
 
-// NewUpdateRelationshipByIDRequest calls the generic UpdateRelationshipByID builder with application/json body
-func NewUpdateRelationshipByIDRequest(server string, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody) (*http.Request, error) {
+// NewPatchRelationshipByIDRequest calls the generic PatchRelationshipByID builder with application/json body
+func NewPatchRelationshipByIDRequest(server string, relationshipID externalRef0.UUID, body PatchRelationshipByIDJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRelationshipByIDRequestWithBody(server, relationshipID, "application/json", bodyReader)
+	return NewPatchRelationshipByIDRequestWithBody(server, relationshipID, "application/json", bodyReader)
 }
 
-// NewUpdateRelationshipByIDRequestWithBody generates requests for UpdateRelationshipByID with any type of body
-func NewUpdateRelationshipByIDRequestWithBody(server string, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
+// NewPatchRelationshipByIDRequestWithBody generates requests for PatchRelationshipByID with any type of body
+func NewPatchRelationshipByIDRequestWithBody(server string, relationshipID externalRef0.UUID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -919,10 +919,10 @@ type ClientWithResponsesInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipByIDResponse, error)
 
-	// UpdateRelationshipByID request with any body
-	UpdateRelationshipByIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRelationshipByIDResponse, error)
+	// PatchRelationshipByID request with any body
+	PatchRelationshipByIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipByIDResponse, error)
 
-	UpdateRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRelationshipByIDResponse, error)
+	PatchRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipByIDResponse, error)
 
 	// ListTrustDomains request
 	ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error)
@@ -1038,14 +1038,14 @@ func (r GetRelationshipByIDResponse) StatusCode() int {
 	return 0
 }
 
-type UpdateRelationshipByIDResponse struct {
+type PatchRelationshipByIDResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *externalRef0.Relationship
 }
 
 // Status returns HTTPResponse.Status
-func (r UpdateRelationshipByIDResponse) Status() string {
+func (r PatchRelationshipByIDResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1053,7 +1053,7 @@ func (r UpdateRelationshipByIDResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r UpdateRelationshipByIDResponse) StatusCode() int {
+func (r PatchRelationshipByIDResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1241,21 +1241,21 @@ func (c *ClientWithResponses) GetRelationshipByIDWithResponse(ctx context.Contex
 	return ParseGetRelationshipByIDResponse(rsp)
 }
 
-// UpdateRelationshipByIDWithBodyWithResponse request with arbitrary body returning *UpdateRelationshipByIDResponse
-func (c *ClientWithResponses) UpdateRelationshipByIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRelationshipByIDResponse, error) {
-	rsp, err := c.UpdateRelationshipByIDWithBody(ctx, relationshipID, contentType, body, reqEditors...)
+// PatchRelationshipByIDWithBodyWithResponse request with arbitrary body returning *PatchRelationshipByIDResponse
+func (c *ClientWithResponses) PatchRelationshipByIDWithBodyWithResponse(ctx context.Context, relationshipID externalRef0.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchRelationshipByIDResponse, error) {
+	rsp, err := c.PatchRelationshipByIDWithBody(ctx, relationshipID, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUpdateRelationshipByIDResponse(rsp)
+	return ParsePatchRelationshipByIDResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRelationshipByIDResponse, error) {
-	rsp, err := c.UpdateRelationshipByID(ctx, relationshipID, body, reqEditors...)
+func (c *ClientWithResponses) PatchRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body PatchRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchRelationshipByIDResponse, error) {
+	rsp, err := c.PatchRelationshipByID(ctx, relationshipID, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUpdateRelationshipByIDResponse(rsp)
+	return ParsePatchRelationshipByIDResponse(rsp)
 }
 
 // ListTrustDomainsWithResponse request returning *ListTrustDomainsResponse
@@ -1453,15 +1453,15 @@ func ParseGetRelationshipByIDResponse(rsp *http.Response) (*GetRelationshipByIDR
 	return response, nil
 }
 
-// ParseUpdateRelationshipByIDResponse parses an HTTP response from a UpdateRelationshipByIDWithResponse call
-func ParseUpdateRelationshipByIDResponse(rsp *http.Response) (*UpdateRelationshipByIDResponse, error) {
+// ParsePatchRelationshipByIDResponse parses an HTTP response from a PatchRelationshipByIDWithResponse call
+func ParsePatchRelationshipByIDResponse(rsp *http.Response) (*PatchRelationshipByIDResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &UpdateRelationshipByIDResponse{
+	response := &PatchRelationshipByIDResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -1686,7 +1686,7 @@ type ServerInterface interface {
 	GetRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
 	// Update a specific relationship
 	// (PATCH /relationships/{relationshipID})
-	UpdateRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
+	PatchRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
 	// List all trust domains
 	// (GET /trust-domain)
 	ListTrustDomains(ctx echo.Context) error
@@ -1792,8 +1792,8 @@ func (w *ServerInterfaceWrapper) GetRelationshipByID(ctx echo.Context) error {
 	return err
 }
 
-// UpdateRelationshipByID converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateRelationshipByID(ctx echo.Context) error {
+// PatchRelationshipByID converts echo context to params.
+func (w *ServerInterfaceWrapper) PatchRelationshipByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "relationshipID" -------------
 	var relationshipID externalRef0.UUID
@@ -1804,7 +1804,7 @@ func (w *ServerInterfaceWrapper) UpdateRelationshipByID(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.UpdateRelationshipByID(ctx, relationshipID)
+	err = w.Handler.PatchRelationshipByID(ctx, relationshipID)
 	return err
 }
 
@@ -1931,7 +1931,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PUT(baseURL+"/relationships", wrapper.PutRelationship)
 	router.DELETE(baseURL+"/relationships/:relationshipID", wrapper.DeleteRelationshipByID)
 	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
-	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.UpdateRelationshipByID)
+	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.PatchRelationshipByID)
 	router.GET(baseURL+"/trust-domain", wrapper.ListTrustDomains)
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
 	router.DELETE(baseURL+"/trust-domain/:trustDomainName", wrapper.DeleteTrustDomainByName)
@@ -1944,44 +1944,44 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
