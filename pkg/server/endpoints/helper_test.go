@@ -59,13 +59,12 @@ func TestValidatePaginationParams(t *testing.T) {
 			} else {
 				if tc.noParams {
 					assert.NoError(t, err)
-					assert.Equal(t, uint(defaultPageSize), pageSize)
-					assert.Equal(t, uint(defaultPageNumber), pageNumber)
+					assert.Zero(t, pageSize)
+					assert.Zero(t, pageNumber)
 				} else {
 					assert.NoError(t, err)
 					assert.Equal(t, uint(tc.pageSize), pageSize)
 					assert.Equal(t, uint(tc.pageNumber), pageNumber)
-
 				}
 			}
 		})

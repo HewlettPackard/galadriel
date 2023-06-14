@@ -22,9 +22,7 @@ import (
 
 // DefaultTokenTTL is the default TTL for tokens in seconds.
 const (
-	DefaultTokenTTL   = 600
-	defaultPageSize   = 10
-	defaultPageNumber = 0
+	DefaultTokenTTL = 600
 )
 
 type AdminAPIHandlers struct {

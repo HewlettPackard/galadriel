@@ -43,18 +43,15 @@ func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *
 func applyPaginationAndOrder(query squirrel.SelectBuilder, listCriteria criteria.Criteria) squirrel.SelectBuilder {
 	// Ensuring uint types for operations bellow
 	offset := uint(0)
-	pageSize := uint(0)
+	pageSize := listCriteria.GetPageSize()
 
 	order := listCriteria.GetOrderDirection()
-
-	pageSize = listCriteria.GetPageSize()
-	offset = (listCriteria.GetPageNumber() - 1) * pageSize
-
 	if order != criteria.NoOrder {
 		query = query.OrderBy(fmt.Sprintf("created_at %s", order))
 	}
 
 	if pageSize > 0 {
+		offset = (listCriteria.GetPageNumber() - 1) * pageSize
 		query = query.Limit(uint64(pageSize)).Offset(uint64(offset))
 	}
 
@@ -76,7 +73,6 @@ func buildAndExecute(ctx context.Context, db *sql.DB, query squirrel.SelectBuild
 }
 
 func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) squirrel.SelectBuilder {
-
 	if listCriteria.FilterByConsentStatus == nil && !listCriteria.FilterByTrustDomainID.Valid {
 		return query
 	}

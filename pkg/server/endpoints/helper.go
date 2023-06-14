@@ -49,29 +49,26 @@ func (q *QueryParamsAdapter) ValidateParams() error {
 }
 
 func (q *QueryParamsAdapter) validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
-	pageSize := defaultPageSize
-	pageNumber := defaultPageNumber
+	pageSize := uint(0)
+	pageNumber := uint(0)
 
 	if pgSize != nil {
-		pageSize = *pgSize
-		outOfLimits := pageSize < 0
-		if outOfLimits {
+		pageSize = uint(*pgSize)
+		if *pgSize < 0 {
 			err := fmt.Errorf("page size %v is not accepted, must be positive", *pgSize)
 			return 0, 0, err
 		}
 	}
 
 	if pgNumber != nil {
-		pageNumber = *pgNumber
-
-		outOfLimits := pageNumber < 0
-		if outOfLimits {
+		pageNumber = uint(*pgNumber)
+		if *pgNumber < 0 {
 			err := fmt.Errorf("page number %v is not accepted, must be positive", *pgNumber)
 			return 0, 0, err
 		}
 	}
 
-	return uint(pageSize), uint(pageNumber), nil
+	return pageSize, pageNumber, nil
 }
 
 func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
