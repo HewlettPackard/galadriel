@@ -260,7 +260,15 @@ func init() {
 	}
 
 	listRelationshipCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The name of a trust domain to filter relationships by.")
+	err = listRelationshipCmd.MarkFlagRequired(cli.TrustDomainFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainFlagName, err)
+	}
 	listRelationshipCmd.Flags().StringP(cli.ConsentStatusFlagName, "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = listRelationshipCmd.MarkFlagRequired(cli.ConsentStatusFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusFlagName, err)
+	}
 	listRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
 		if err != nil {
@@ -273,9 +281,21 @@ func init() {
 		return nil
 	}
 
-	updateRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "The ID of therelationship to be updated.")
+	updateRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "The ID of the relationship to be updated.")
+	err = updateRelationshipCmd.MarkFlagRequired(cli.RelationshipIDFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.RelationshipIDFlagName, err)
+	}
 	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusAFlagName, "a", "", fmt.Sprintf("Trust domain A consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = updateRelationshipCmd.MarkFlagRequired(cli.ConsentStatusAFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusAFlagName, err)
+	}
 	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusBFlagName, "b", "", fmt.Sprintf("Trust domain B consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = updateRelationshipCmd.MarkFlagRequired(cli.ConsentStatusBFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusBFlagName, err)
+	}
 	updateRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
 		if err != nil {
