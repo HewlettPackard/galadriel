@@ -347,6 +347,11 @@ func (h *AdminAPIHandlers) PatchRelationshipByID(echoCtx echo.Context, relations
 		return err
 	}
 
+	if relDB == nil {
+		err = fmt.Errorf("relationship does not exist")
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
 	// Set the ID to perform an Update instead of a Creation of a new Relationship.
 	rel.ID = relDB.ID
 
@@ -380,7 +385,18 @@ func (h *AdminAPIHandlers) PatchRelationshipByID(echoCtx echo.Context, relations
 func (h *AdminAPIHandlers) DeleteRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
 	ctx := echoCtx.Request().Context()
 
-	err := h.Datastore.DeleteRelationship(ctx, relationshipID)
+	//Check if the relationship exist in the database
+	relationship, err := h.findRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		return err
+	}
+
+	if relationship == nil {
+		err = fmt.Errorf("relationship does not exist")
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
+	err = h.Datastore.DeleteRelationship(ctx, relationship.ID.UUID)
 	if err != nil {
 		err = fmt.Errorf("failed getting relationships: %v", err)
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)

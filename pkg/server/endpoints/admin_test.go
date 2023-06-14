@@ -304,6 +304,116 @@ func TestUDSGetRelationshipsByID(t *testing.T) {
 	})
 }
 
+func TestUDSDeleteRelationshipByID(t *testing.T) {
+	relationshipPath := "/relationship/%v"
+	r1ID := NewNullableID()
+	fakeID := NewNullableID()
+	t.Run("Successfully delete a relationship", func(t *testing.T) {
+		fakeTrustDomains := []*entity.TrustDomain{
+			{ID: tdUUID1, Name: NewTrustDomain(t, td1)},
+			{ID: tdUUID2, Name: NewTrustDomain(t, td2)},
+		}
+
+		fakeRelationship := &entity.Relationship{
+			ID:             r1ID,
+			TrustDomainAID: tdUUID1.UUID,
+			TrustDomainBID: tdUUID2.UUID,
+		}
+
+		completePath := fmt.Sprintf(relationshipPath, r1ID.UUID)
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodDelete, completePath, nil)
+		setup.FakeDatabase.WithTrustDomains(fakeTrustDomains...)
+		setup.FakeDatabase.WithRelationships(fakeRelationship)
+
+		err := setup.Handler.DeleteRelationshipByID(setup.EchoCtx, fakeRelationship.ID.UUID)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		expectedOutput := "\"relationship deleted\"\n"
+		got := bytes.NewBuffer(setup.Recorder.Body.Bytes()).String()
+
+		assert.Equal(t, expectedOutput, strings.ReplaceAll(got, "\\", ""))
+	})
+
+	t.Run("Error when deleting a relationship that does not exists", func(t *testing.T) {
+		fakeRelationship := &entity.Relationship{}
+
+		completePath := fmt.Sprintf(relationshipPath, fakeID.UUID)
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodDelete, completePath, nil)
+		setup.FakeDatabase.WithRelationships(fakeRelationship)
+
+		err := setup.Handler.DeleteRelationshipByID(setup.EchoCtx, fakeID.UUID)
+		assert.Error(t, err)
+
+		expectedErrMsg := "code=404, message=relationship does not exist"
+		assert.Equal(t, expectedErrMsg, err.Error())
+	})
+}
+
+func TestUDSPatchRelationshipByID(t *testing.T) {
+	relationshipPath := "/relationship/%v"
+	r1ID := NewNullableID()
+	fakeID := NewNullableID()
+	t.Run("Successfully update the consent status of a relationship", func(t *testing.T) {
+		fakeRelationship := &entity.Relationship{
+			ID:                  r1ID,
+			TrustDomainAConsent: entity.ConsentStatus(api.Pending),
+			TrustDomainBConsent: entity.ConsentStatus(api.Pending),
+		}
+
+		completePath := fmt.Sprintf(relationshipPath, fakeRelationship.ID.UUID)
+
+		reqBody := &admin.PatchRelationshipByIDJSONRequestBody{
+			ConsentStatusA: api.Approved,
+			ConsentStatusB: api.Denied,
+		}
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
+		setup.FakeDatabase.WithRelationships(fakeRelationship)
+
+		err := setup.Handler.PatchRelationshipByID(setup.EchoCtx, fakeRelationship.ID.UUID)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
+
+		apiRelationship := api.Relationship{}
+		err = json.Unmarshal(setup.Recorder.Body.Bytes(), &apiRelationship)
+		assert.NoError(t, err)
+
+		assert.Equal(t, api.Approved, apiRelationship.TrustDomainAConsent)
+		assert.Equal(t, api.Denied, apiRelationship.TrustDomainBConsent)
+	})
+
+	t.Run("Error when trying to update a relationship that does not exist", func(t *testing.T) {
+		fakeRelationship := &entity.Relationship{
+			ID:                  r1ID,
+			TrustDomainAConsent: entity.ConsentStatus(api.Pending),
+			TrustDomainBConsent: entity.ConsentStatus(api.Pending),
+		}
+
+		completePath := fmt.Sprintf(relationshipPath, fakeID.UUID)
+
+		reqBody := &admin.PatchRelationshipByIDJSONRequestBody{
+			ConsentStatusA: api.Approved,
+			ConsentStatusB: api.Denied,
+		}
+
+		// Setup
+		setup := NewManagementTestSetup(t, http.MethodPut, completePath, reqBody)
+		setup.FakeDatabase.WithRelationships(fakeRelationship)
+
+		err := setup.Handler.PatchRelationshipByID(setup.EchoCtx, fakeID.UUID)
+		assert.Error(t, err)
+
+		expectedErrMsg := "code=404, message=relationship does not exist"
+		assert.Equal(t, expectedErrMsg, err.Error())
+	})
+}
+
 func TestUDSPutTrustDomain(t *testing.T) {
 	trustDomainPath := "/trust-domain"
 	t.Run("Successfully create a new trust domain", func(t *testing.T) {
