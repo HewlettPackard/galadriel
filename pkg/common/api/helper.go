@@ -102,3 +102,14 @@ func MapRelationships(relationships ...*entity.Relationship) []*Relationship {
 
 	return cRelationships
 }
+
+// MapTrustDomains transforms a slice of TrustDomain entities to a slice of API TrustDomain representation.
+func MapTrustDomains(trustDomains ...*entity.TrustDomain) []*TrustDomain {
+	cTrustDomains := make([]*TrustDomain, len(trustDomains))
+
+	for i, td := range trustDomains {
+		cTrustDomains[i] = TrustDomainFromEntity(td)
+	}
+
+	return cTrustDomains
+}

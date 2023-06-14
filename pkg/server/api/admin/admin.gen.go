@@ -154,10 +154,16 @@ type ClientInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListTrustDomains request
+	ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTrustDomainByName request
+	DeleteTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTrustDomainByName request
 	GetTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -219,6 +225,18 @@ func (c *Client) GetRelationshipByID(ctx context.Context, relationshipID externa
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTrustDomainsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PutTrustDomainWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainRequestWithBody(c.Server, contentType, body)
 	if err != nil {
@@ -233,6 +251,18 @@ func (c *Client) PutTrustDomainWithBody(ctx context.Context, contentType string,
 
 func (c *Client) PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTrustDomainByNameRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
@@ -462,6 +492,33 @@ func NewGetRelationshipByIDRequest(server string, relationshipID externalRef0.UU
 	return req, nil
 }
 
+// NewListTrustDomainsRequest generates requests for ListTrustDomains
+func NewListTrustDomainsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPutTrustDomainRequest calls the generic PutTrustDomain builder with application/json body
 func NewPutTrustDomainRequest(server string, body PutTrustDomainJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -498,6 +555,40 @@ func NewPutTrustDomainRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteTrustDomainByNameRequest generates requests for DeleteTrustDomainByName
+func NewDeleteTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -689,10 +780,16 @@ type ClientWithResponsesInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipByIDResponse, error)
 
+	// ListTrustDomains request
+	ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error)
+
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
 
 	PutTrustDomainWithResponse(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
+
+	// DeleteTrustDomainByName request
+	DeleteTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*DeleteTrustDomainByNameResponse, error)
 
 	// GetTrustDomainByName request
 	GetTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainByNameResponse, error)
@@ -775,6 +872,29 @@ func (r GetRelationshipByIDResponse) StatusCode() int {
 	return 0
 }
 
+type ListTrustDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.TrustDomain
+	JSONDefault  *externalRef0.ApiError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListTrustDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListTrustDomainsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PutTrustDomainResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -792,6 +912,28 @@ func (r PutTrustDomainResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PutTrustDomainResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteTrustDomainByNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *externalRef0.ApiError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTrustDomainByNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTrustDomainByNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -902,6 +1044,15 @@ func (c *ClientWithResponses) GetRelationshipByIDWithResponse(ctx context.Contex
 	return ParseGetRelationshipByIDResponse(rsp)
 }
 
+// ListTrustDomainsWithResponse request returning *ListTrustDomainsResponse
+func (c *ClientWithResponses) ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error) {
+	rsp, err := c.ListTrustDomains(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListTrustDomainsResponse(rsp)
+}
+
 // PutTrustDomainWithBodyWithResponse request with arbitrary body returning *PutTrustDomainResponse
 func (c *ClientWithResponses) PutTrustDomainWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error) {
 	rsp, err := c.PutTrustDomainWithBody(ctx, contentType, body, reqEditors...)
@@ -917,6 +1068,15 @@ func (c *ClientWithResponses) PutTrustDomainWithResponse(ctx context.Context, bo
 		return nil, err
 	}
 	return ParsePutTrustDomainResponse(rsp)
+}
+
+// DeleteTrustDomainByNameWithResponse request returning *DeleteTrustDomainByNameResponse
+func (c *ClientWithResponses) DeleteTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*DeleteTrustDomainByNameResponse, error) {
+	rsp, err := c.DeleteTrustDomainByName(ctx, trustDomainName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTrustDomainByNameResponse(rsp)
 }
 
 // GetTrustDomainByNameWithResponse request returning *GetTrustDomainByNameResponse
@@ -1053,6 +1213,39 @@ func ParseGetRelationshipByIDResponse(rsp *http.Response) (*GetRelationshipByIDR
 	return response, nil
 }
 
+// ParseListTrustDomainsResponse parses an HTTP response from a ListTrustDomainsWithResponse call
+func ParseListTrustDomainsResponse(rsp *http.Response) (*ListTrustDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListTrustDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.TrustDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest externalRef0.ApiError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePutTrustDomainResponse parses an HTTP response from a PutTrustDomainWithResponse call
 func ParsePutTrustDomainResponse(rsp *http.Response) (*PutTrustDomainResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1074,6 +1267,32 @@ func ParsePutTrustDomainResponse(rsp *http.Response) (*PutTrustDomainResponse, e
 		}
 		response.JSON201 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest externalRef0.ApiError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteTrustDomainByNameResponse parses an HTTP response from a DeleteTrustDomainByNameWithResponse call
+func ParseDeleteTrustDomainByNameResponse(rsp *http.Response) (*DeleteTrustDomainByNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTrustDomainByNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest externalRef0.ApiError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1196,9 +1415,15 @@ type ServerInterface interface {
 	// Get a specific relationship
 	// (GET /relationships/{relationshipID})
 	GetRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
+	// List all trust domains
+	// (GET /trust-domain)
+	ListTrustDomains(ctx echo.Context) error
 	// Add a specific trust domain
 	// (PUT /trust-domain)
 	PutTrustDomain(ctx echo.Context) error
+	// Deletes a specific trust domain
+	// (DELETE /trust-domain/{trustDomainName})
+	DeleteTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Get a specific trust domain
 	// (GET /trust-domain/{trustDomainName})
 	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
@@ -1279,12 +1504,37 @@ func (w *ServerInterfaceWrapper) GetRelationshipByID(ctx echo.Context) error {
 	return err
 }
 
+// ListTrustDomains converts echo context to params.
+func (w *ServerInterfaceWrapper) ListTrustDomains(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListTrustDomains(ctx)
+	return err
+}
+
 // PutTrustDomain converts echo context to params.
 func (w *ServerInterfaceWrapper) PutTrustDomain(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PutTrustDomain(ctx)
+	return err
+}
+
+// DeleteTrustDomainByName converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTrustDomainByName(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteTrustDomainByName(ctx, trustDomainName)
 	return err
 }
 
@@ -1376,7 +1626,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
 	router.PUT(baseURL+"/relationships", wrapper.PutRelationship)
 	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
+	router.GET(baseURL+"/trust-domain", wrapper.ListTrustDomains)
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
+	router.DELETE(baseURL+"/trust-domain/:trustDomainName", wrapper.DeleteTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainByName)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetJoinToken)
