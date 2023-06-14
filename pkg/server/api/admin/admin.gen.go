@@ -173,10 +173,16 @@ type ClientInterface interface {
 
 	UpdateRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListTrustDomains request
+	ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTrustDomainByName request
+	DeleteTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTrustDomainByName request
 	GetTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -274,6 +280,18 @@ func (c *Client) UpdateRelationshipByID(ctx context.Context, relationshipID exte
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTrustDomainsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) PutTrustDomainWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainRequestWithBody(c.Server, contentType, body)
 	if err != nil {
@@ -288,6 +306,18 @@ func (c *Client) PutTrustDomainWithBody(ctx context.Context, contentType string,
 
 func (c *Client) PutTrustDomain(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTrustDomainByNameRequest(c.Server, trustDomainName)
 	if err != nil {
 		return nil, err
 	}
@@ -598,6 +628,33 @@ func NewUpdateRelationshipByIDRequestWithBody(server string, relationshipID exte
 	return req, nil
 }
 
+// NewListTrustDomainsRequest generates requests for ListTrustDomains
+func NewListTrustDomainsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPutTrustDomainRequest calls the generic PutTrustDomain builder with application/json body
 func NewPutTrustDomainRequest(server string, body PutTrustDomainJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -634,6 +691,40 @@ func NewPutTrustDomainRequestWithBody(server string, contentType string, body io
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteTrustDomainByNameRequest generates requests for DeleteTrustDomainByName
+func NewDeleteTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domain/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -833,10 +924,16 @@ type ClientWithResponsesInterface interface {
 
 	UpdateRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, body UpdateRelationshipByIDJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRelationshipByIDResponse, error)
 
+	// ListTrustDomains request
+	ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error)
+
 	// PutTrustDomain request with any body
 	PutTrustDomainWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
 
 	PutTrustDomainWithResponse(ctx context.Context, body PutTrustDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error)
+
+	// DeleteTrustDomainByName request
+	DeleteTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*DeleteTrustDomainByNameResponse, error)
 
 	// GetTrustDomainByName request
 	GetTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*GetTrustDomainByNameResponse, error)
@@ -963,6 +1060,29 @@ func (r UpdateRelationshipByIDResponse) StatusCode() int {
 	return 0
 }
 
+type ListTrustDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *externalRef0.TrustDomain
+	JSONDefault  *externalRef0.ApiError
+}
+
+// Status returns HTTPResponse.Status
+func (r ListTrustDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListTrustDomainsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type PutTrustDomainResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -980,6 +1100,28 @@ func (r PutTrustDomainResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PutTrustDomainResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteTrustDomainByNameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *externalRef0.ApiError
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTrustDomainByNameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTrustDomainByNameResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1116,6 +1258,15 @@ func (c *ClientWithResponses) UpdateRelationshipByIDWithResponse(ctx context.Con
 	return ParseUpdateRelationshipByIDResponse(rsp)
 }
 
+// ListTrustDomainsWithResponse request returning *ListTrustDomainsResponse
+func (c *ClientWithResponses) ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error) {
+	rsp, err := c.ListTrustDomains(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListTrustDomainsResponse(rsp)
+}
+
 // PutTrustDomainWithBodyWithResponse request with arbitrary body returning *PutTrustDomainResponse
 func (c *ClientWithResponses) PutTrustDomainWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainResponse, error) {
 	rsp, err := c.PutTrustDomainWithBody(ctx, contentType, body, reqEditors...)
@@ -1131,6 +1282,15 @@ func (c *ClientWithResponses) PutTrustDomainWithResponse(ctx context.Context, bo
 		return nil, err
 	}
 	return ParsePutTrustDomainResponse(rsp)
+}
+
+// DeleteTrustDomainByNameWithResponse request returning *DeleteTrustDomainByNameResponse
+func (c *ClientWithResponses) DeleteTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, reqEditors ...RequestEditorFn) (*DeleteTrustDomainByNameResponse, error) {
+	rsp, err := c.DeleteTrustDomainByName(ctx, trustDomainName, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTrustDomainByNameResponse(rsp)
 }
 
 // GetTrustDomainByNameWithResponse request returning *GetTrustDomainByNameResponse
@@ -1319,6 +1479,39 @@ func ParseUpdateRelationshipByIDResponse(rsp *http.Response) (*UpdateRelationshi
 	return response, nil
 }
 
+// ParseListTrustDomainsResponse parses an HTTP response from a ListTrustDomainsWithResponse call
+func ParseListTrustDomainsResponse(rsp *http.Response) (*ListTrustDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListTrustDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest externalRef0.TrustDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest externalRef0.ApiError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParsePutTrustDomainResponse parses an HTTP response from a PutTrustDomainWithResponse call
 func ParsePutTrustDomainResponse(rsp *http.Response) (*PutTrustDomainResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1340,6 +1533,32 @@ func ParsePutTrustDomainResponse(rsp *http.Response) (*PutTrustDomainResponse, e
 		}
 		response.JSON201 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest externalRef0.ApiError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteTrustDomainByNameResponse parses an HTTP response from a DeleteTrustDomainByNameWithResponse call
+func ParseDeleteTrustDomainByNameResponse(rsp *http.Response) (*DeleteTrustDomainByNameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTrustDomainByNameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest externalRef0.ApiError
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1468,9 +1687,15 @@ type ServerInterface interface {
 	// Update a specific relationship
 	// (PATCH /relationships/{relationshipID})
 	UpdateRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
+	// List all trust domains
+	// (GET /trust-domain)
+	ListTrustDomains(ctx echo.Context) error
 	// Add a specific trust domain
 	// (PUT /trust-domain)
 	PutTrustDomain(ctx echo.Context) error
+	// Deletes a specific trust domain
+	// (DELETE /trust-domain/{trustDomainName})
+	DeleteTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Get a specific trust domain
 	// (GET /trust-domain/{trustDomainName})
 	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
@@ -1583,12 +1808,37 @@ func (w *ServerInterfaceWrapper) UpdateRelationshipByID(ctx echo.Context) error 
 	return err
 }
 
+// ListTrustDomains converts echo context to params.
+func (w *ServerInterfaceWrapper) ListTrustDomains(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ListTrustDomains(ctx)
+	return err
+}
+
 // PutTrustDomain converts echo context to params.
 func (w *ServerInterfaceWrapper) PutTrustDomain(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.PutTrustDomain(ctx)
+	return err
+}
+
+// DeleteTrustDomainByName converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTrustDomainByName(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteTrustDomainByName(ctx, trustDomainName)
 	return err
 }
 
@@ -1682,7 +1932,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/relationships/:relationshipID", wrapper.DeleteRelationshipByID)
 	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
 	router.PATCH(baseURL+"/relationships/:relationshipID", wrapper.UpdateRelationshipByID)
+	router.GET(baseURL+"/trust-domain", wrapper.ListTrustDomains)
 	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
+	router.DELETE(baseURL+"/trust-domain/:trustDomainName", wrapper.DeleteTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainByName)
 	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetJoinToken)
@@ -1692,44 +1944,44 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"BGScHV/F/wkAAP//eLoEYVIoAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -68,8 +68,41 @@ paths:
                 $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
         default:
           $ref: '#/components/responses/Default'
+    delete:
+      operationId: DeleteTrustDomainByName
+      tags:
+        - Trust Domain
+      summary: Deletes a specific trust domain
+      parameters:
+        - name: trustDomainName
+          in: path
+          description: Trust Domain name
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          $ref: '#/components/responses/Default'
 
   /trust-domain:
+    get:
+      operationId: ListTrustDomains
+      tags:
+        - Trust Domain
+      summary: List all trust domains
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomain'
+        default:
+          $ref: '#/components/responses/Default'
     put:
       operationId: PutTrustDomain
       tags:
