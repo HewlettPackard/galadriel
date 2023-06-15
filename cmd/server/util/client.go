@@ -123,6 +123,7 @@ func (g *galadrielAdminClient) DeleteTrustDomainByName(ctx context.Context, trus
 
 func (g *galadrielAdminClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName, description string) (*entity.TrustDomain, error) {
 	payload := api.TrustDomain{Name: trustDomainName, Description: &description}
+
 	res, err := g.client.PutTrustDomainByName(ctx, trustDomainName, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
@@ -187,6 +188,7 @@ func (g *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *enti
 
 func (g *galadrielAdminClient) PatchRelationshipByID(ctx context.Context, relID api.UUID, statusA api.ConsentStatus, statusB api.ConsentStatus) (*entity.Relationship, error) {
 	payload := admin.PatchRelationshipByIDRequest{ConsentStatusA: statusA, ConsentStatusB: statusB}
+
 	res, err := g.client.PatchRelationshipByID(ctx, relID, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
@@ -222,9 +224,7 @@ func (g *galadrielAdminClient) DeleteRelationshipByID(ctx context.Context, relID
 }
 
 func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
-	pageSize := 10
-	pageNumber := 1
-	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName, PageSize: &pageSize, PageNumber: &pageNumber}
+	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName}
 
 	res, err := g.client.GetRelationships(ctx, payload)
 	if err != nil {
