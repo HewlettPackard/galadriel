@@ -334,3 +334,9 @@ components:
       properties:
         token:
           $ref: ../../../common/api/schemas.yaml#/components/schemas/JoinToken
+    DeleteResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        schema:
+          $ref: ../../../common/api/schemas.yaml#/components/schemas/DeleteResponse          

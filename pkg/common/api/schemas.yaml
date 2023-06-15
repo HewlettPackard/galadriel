@@ -195,6 +195,23 @@ components:
       format: date
       maxLength: 21
       example: "2021-01-30"
+    DeleteResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        message:
+          type: string
+          format: string
+          maxLength: 200
+          example: "Entity deleted message"
+        code:
+          type: integer
+          format: int64
+          maximum: 599
+          minimum: 100
   securitySchemes:
     harvester_auth:
       type: "http"

@@ -54,4 +54,7 @@ const (
 
 	// TrustDomain tags the name of some trust domain
 	TrustDomain = "trust_domain"
+
+	//Relationship tags the name of a relationship
+	Relationship = "relationship"
 )

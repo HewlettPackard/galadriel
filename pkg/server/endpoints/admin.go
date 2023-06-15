@@ -117,14 +117,14 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Created relationship between trust domains %s and %s", dbTd1.Name.String(), dbTd2.Name.String())
-
 	response := api.RelationshipFromEntity(rel)
 	err = chttp.WriteResponse(echoCtx, http.StatusCreated, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Created relationship between trust domains %s and %s", dbTd1.Name.String(), dbTd2.Name.String()))
 
 	return nil
 }
@@ -242,11 +242,15 @@ func (h *AdminAPIHandlers) DeleteTrustDomainByName(echoCtx echo.Context, trustDo
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = chttp.WriteResponse(echoCtx, http.StatusOK, fmt.Sprintf("Trust domain %q deleted", trustDomainName))
+	message := fmt.Sprintf("Trust Domain %q deleted", trustDomain.Name.String())
+	response := api.DeleteResponse{Code: http.StatusOK, Message: message}
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("trust domain entity - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Trust Domain %q deleted", trustDomain.Name.String()))
 
 	return nil
 }
@@ -313,14 +317,14 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Trust Bundle %v updated", td.Name)
-
 	response := api.TrustDomainFromEntity(td)
 	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Trust Domain %q updated", td.Name.String()))
 
 	return nil
 }
@@ -369,14 +373,14 @@ func (h *AdminAPIHandlers) PatchRelationshipByID(echoCtx echo.Context, relations
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Relationship updated.")
-
 	response := api.RelationshipFromEntity(relationship)
 	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationship entity - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.Relationship, fmt.Sprintf("Relationship %q updated.", rel.ID.UUID.String()))
 
 	return nil
 }
@@ -402,11 +406,14 @@ func (h *AdminAPIHandlers) DeleteRelationshipByID(echoCtx echo.Context, relation
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = chttp.WriteResponse(echoCtx, http.StatusOK, "relationship deleted")
+	response := api.DeleteResponse{Code: http.StatusOK, Message: "Relationship deleted"}
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationship entity - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.Relationship, fmt.Sprintf("Relationship %q deleted.", relationship.ID.UUID.String()))
 
 	return nil
 }
