@@ -331,10 +331,10 @@ func TestUDSDeleteRelationshipByID(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
-		expectedOutput := "\"relationship deleted\"\n"
+		expectedOutput := "{\"code\":200,\"message\":\"Relationship deleted\"}\n"
 		got := bytes.NewBuffer(setup.Recorder.Body.Bytes()).String()
 
-		assert.Equal(t, expectedOutput, strings.ReplaceAll(got, "\\", ""))
+		assert.Equal(t, expectedOutput, got)
 	})
 
 	t.Run("Error when deleting a relationship that does not exists", func(t *testing.T) {
@@ -520,7 +520,7 @@ func TestUDSDeleteTrustDomain(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, setup.Recorder.Code)
 
-		expectedOutput := fmt.Sprintf("\"Trust domain %q deleted\"\n", td1)
+		expectedOutput := fmt.Sprintf("{\"code\":200,\"message\":\"Trust Domain %q deleted\"}\n", td1)
 		got := bytes.NewBuffer(setup.Recorder.Body.Bytes()).String()
 
 		assert.Equal(t, expectedOutput, strings.ReplaceAll(got, "\\", ""))
