@@ -19,40 +19,49 @@ func TestListRelationshipsByCriteria(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
+	testCases := []func(*testing.T, context.Context, dbtypes.Engine, func() db.Datastore){
+		runListRelationshipsPaginationTest,
+		runListRelationshipsFilteringByConsentStatusTest,
+		runListRelationshipsFilteringByConsentStatusWithPaginationTest,
+		runListRelationshipsOrderByCreatedAtTest,
+		runListRelationshipsFilteringByTrustDomainIDTest,
+	}
+
 	sqliteDS := func() db.Datastore {
 		return setupSQLiteDatastore(t)
 	}
-	runListRelationshipsPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
-	runListRelationshipsFilteringByConsentStatusTest(t, ctx, dbtypes.SQLite3, sqliteDS)
-	runListRelationshipsFilteringByConsentStatusWithPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
-	runListRelationshipsOrderByCreatedAtTest(t, ctx, dbtypes.SQLite3, sqliteDS)
-	runListRelationshipsFilteringByTrustDomainIDTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runAllTests(t, ctx, dbtypes.SQLite3, sqliteDS, testCases)
 
 	postgresDS := func() db.Datastore {
 		return setupPostgresDatastore(t)
 	}
-	runListRelationshipsPaginationTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
-	runListRelationshipsFilteringByConsentStatusTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
-	runListRelationshipsFilteringByConsentStatusWithPaginationTest(t, ctx, dbtypes.PostgreSQL, sqliteDS)
-	runListRelationshipsOrderByCreatedAtTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
-	runListRelationshipsFilteringByTrustDomainIDTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runAllTests(t, ctx, dbtypes.PostgreSQL, postgresDS, testCases)
 }
 
-func TestListTrustDomainByCriteria(t *testing.T) {
+func TestListTrustDomainsByCriteria(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
+	testCases := []func(*testing.T, context.Context, dbtypes.Engine, func() db.Datastore){
+		runListTrustDomainsPaginationTest,
+		runListTrustDomainsOrderByCreatedAtTest,
+	}
+
 	sqliteDS := func() db.Datastore {
 		return setupSQLiteDatastore(t)
 	}
-	runListTrustDomainsPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
-	runListTrustDomainsOrderByCreatedAtTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runAllTests(t, ctx, dbtypes.SQLite3, sqliteDS, testCases)
 
 	postgresDS := func() db.Datastore {
 		return setupPostgresDatastore(t)
 	}
-	runListTrustDomainsPaginationTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
-	runListTrustDomainsOrderByCreatedAtTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runAllTests(t, ctx, dbtypes.PostgreSQL, postgresDS, testCases)
+}
+
+func runAllTests(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDB func() db.Datastore, testCases []func(*testing.T, context.Context, dbtypes.Engine, func() db.Datastore)) {
+	for _, testCase := range testCases {
+		testCase(t, ctx, dbType, newDB)
+	}
 }
 
 func runListRelationshipsPaginationTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDB func() db.Datastore) {
@@ -68,29 +77,29 @@ func runListRelationshipsPaginationTest(t *testing.T, ctx context.Context, dbTyp
 			PageNumber: 1,
 			PageSize:   50,
 		}
-		rels, err := ds.ListRelationships(ctx, listCriteria)
+		relationships, err := ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, relationships, 50)
 
 		listCriteria.PageNumber = 2
-		rels, err = ds.ListRelationships(ctx, listCriteria)
+		relationships, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, relationships, 50)
 
 		listCriteria.PageNumber = 3
-		rels, err = ds.ListRelationships(ctx, listCriteria)
+		relationships, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, relationships, 50)
 
 		listCriteria.PageNumber = 4
-		rels, err = ds.ListRelationships(ctx, listCriteria)
+		relationships, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, relationships, 50)
 
 		listCriteria.PageNumber = 5
-		rels, err = ds.ListRelationships(ctx, listCriteria)
+		relationships, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 0)
+		assert.Len(t, relationships, 0)
 	})
 }
 
@@ -102,34 +111,34 @@ func runListTrustDomainsPaginationTest(t *testing.T, ctx context.Context, dbType
 
 		createTrustDomains(t, ctx, ds, 200)
 
-		// List relationships with pagination
+		// List trust domains with pagination
 		listCriteria := &criteria.ListTrustDomainsCriteria{
 			PageNumber: 1,
 			PageSize:   50,
 		}
-		rels, err := ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err := ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, trustDomains, 50)
 
 		listCriteria.PageNumber = 2
-		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, trustDomains, 50)
 
 		listCriteria.PageNumber = 3
-		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, trustDomains, 50)
 
 		listCriteria.PageNumber = 4
-		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 50)
+		assert.Len(t, trustDomains, 50)
 
 		listCriteria.PageNumber = 5
-		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 0)
+		assert.Len(t, trustDomains, 0)
 	})
 }
 
@@ -141,23 +150,31 @@ func runListTrustDomainsOrderByCreatedAtTest(t *testing.T, ctx context.Context, 
 
 		createTrustDomains(t, ctx, ds, 5)
 
-		// List relationships ordered by created_at
+		// List trust domains ordered by created_at
 		listCriteria := &criteria.ListTrustDomainsCriteria{
 			OrderByCreatedAt: criteria.OrderAscending,
 		}
-		rels, err := ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err := ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 5)
+		assert.Len(t, trustDomains, 5)
 
-		assertCreatedAtOrder(t, rels, true)
+		// Convert trustDomains to createdAtProvider instances
+		trustDomainAdapters := make([]createdAtProvider, len(trustDomains))
+		for i, v := range trustDomains {
+			trustDomainAdapters[i] = trustDomainAdapter{td: v}
+		}
+		assertEntitiesAreInCreatedAtOrder(t, trustDomainAdapters, listCriteria.OrderByCreatedAt)
 
 		// List relationships ordered by created_at in descending order
 		listCriteria.OrderByCreatedAt = criteria.OrderDescending
-		rels, err = ds.ListTrustDomains(ctx, listCriteria)
+		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 5)
+		assert.Len(t, trustDomains, 5)
 
-		assertCreatedAtOrder(t, rels, false)
+		for i, v := range trustDomains {
+			trustDomainAdapters[i] = trustDomainAdapter{td: v}
+		}
+		assertEntitiesAreInCreatedAtOrder(t, trustDomainAdapters, listCriteria.OrderByCreatedAt)
 	})
 }
 
@@ -180,12 +197,12 @@ func runListRelationshipsFilteringByConsentStatusTest(t *testing.T, ctx context.
 			listCriteria := &criteria.ListRelationshipsCriteria{
 				FilterByConsentStatus: &filterBy,
 			}
-			rels, err := ds.ListRelationships(ctx, listCriteria)
+			relationships, err := ds.ListRelationships(ctx, listCriteria)
 			assert.NoError(t, err)
-			assert.Equal(t, 200, len(rels))
+			assert.Equal(t, 200, len(relationships))
 
 			// Assert that the entities have the correct consent status
-			assertConsentStatus(t, rels, filterBy)
+			assertConsentStatus(t, relationships, filterBy)
 		}
 	})
 }
@@ -213,16 +230,16 @@ func runListRelationshipsFilteringByConsentStatusWithPaginationTest(t *testing.T
 
 			for i := 1; i <= 3; i++ {
 				listCriteria.PageNumber = uint(i)
-				rels, err := ds.ListRelationships(ctx, listCriteria)
+				relationships, err := ds.ListRelationships(ctx, listCriteria)
 				assert.NoError(t, err)
 
 				expectedPageSize := 100
 				if i == 3 {
 					expectedPageSize = 0
 				}
-				assert.Equal(t, expectedPageSize, len(rels))
+				assert.Equal(t, expectedPageSize, len(relationships))
 
-				assertConsentStatus(t, rels, filterBy)
+				assertConsentStatus(t, relationships, filterBy)
 			}
 		}
 	})
@@ -240,19 +257,26 @@ func runListRelationshipsOrderByCreatedAtTest(t *testing.T, ctx context.Context,
 		listCriteria := &criteria.ListRelationshipsCriteria{
 			OrderByCreatedAt: criteria.OrderAscending,
 		}
-		rels, err := ds.ListRelationships(ctx, listCriteria)
+		relationships, err := ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 5)
+		assert.Len(t, relationships, 5)
 
-		assertCreatedAtOrder(t, rels, true)
+		relationshipsAdapters := make([]createdAtProvider, len(relationships))
+		for i, v := range relationships {
+			relationshipsAdapters[i] = relationshipAdapter{rel: v}
+		}
+		assertEntitiesAreInCreatedAtOrder(t, relationshipsAdapters, criteria.OrderAscending)
 
 		// List relationships ordered by created_at in descending order
 		listCriteria.OrderByCreatedAt = criteria.OrderDescending
-		rels, err = ds.ListRelationships(ctx, listCriteria)
+		relationships, err = ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Len(t, rels, 5)
+		assert.Len(t, relationships, 5)
 
-		assertCreatedAtOrder(t, rels, false)
+		for i, v := range relationships {
+			relationshipsAdapters[i] = relationshipAdapter{rel: v}
+		}
+		assertEntitiesAreInCreatedAtOrder(t, relationshipsAdapters, criteria.OrderDescending)
 	})
 }
 
@@ -272,11 +296,11 @@ func runListRelationshipsFilteringByTrustDomainIDTest(t *testing.T, ctx context.
 		listCriteria := &criteria.ListRelationshipsCriteria{
 			FilterByTrustDomainID: uuid.NullUUID{Valid: true, UUID: filterByTrustDomainID},
 		}
-		rels, err := ds.ListRelationships(ctx, listCriteria)
+		listRelationships, err := ds.ListRelationships(ctx, listCriteria)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(rels))
+		assert.Equal(t, 1, len(listRelationships))
 
-		rel := rels[0]
+		rel := listRelationships[0]
 		assert.True(t, rel.TrustDomainAID == filterByTrustDomainID || rel.TrustDomainBID == filterByTrustDomainID)
 	})
 }
@@ -345,33 +369,55 @@ func assertConsentStatus(t *testing.T, rels []*entity.Relationship, consentStatu
 	}
 }
 
-type TimeComparable interface {
-	*entity.Relationship | *entity.TrustDomain
+type createdAtProvider interface {
+	CreatedAt() time.Time
 }
 
-func assertCreatedAtOrder[T TimeComparable](t *testing.T, rels []T, ascending bool) {
-	for i := 0; i < len(rels)-1; i++ {
-		createdAt := timeFromTimeComparable(rels[i])
-		nextCreatedAt := timeFromTimeComparable(rels[i+1])
+type trustDomainAdapter struct {
+	td *entity.TrustDomain
+}
 
-		// +1 means that created is after nextCreatedAt
-		// -1 means that created is before nextCreatedAt
-		// O is equal, so in the order it doesn't break the order principles
-		if ascending {
-			assert.NotEqual(t, +1, createdAt.Compare(nextCreatedAt))
-		} else {
-			assert.NotEqual(t, -1, createdAt.Compare(nextCreatedAt))
-		}
+func (a trustDomainAdapter) CreatedAt() time.Time {
+	return a.td.CreatedAt
+}
+
+type relationshipAdapter struct {
+	rel *entity.Relationship
+}
+
+func (a relationshipAdapter) CreatedAt() time.Time {
+	return a.rel.CreatedAt
+}
+
+// assertEntitiesAreInCreatedAtOrder checks if the given entities are in the correct order of creation time.
+func assertEntitiesAreInCreatedAtOrder(t *testing.T, entities []createdAtProvider, order criteria.OrderDirection) {
+	for i := 0; i < len(entities)-1; i++ {
+		createdAt := entities[i].CreatedAt()
+		nextCreatedAt := entities[i+1].CreatedAt()
+
+		assertIsInOrder(t, createdAt, nextCreatedAt, order)
 	}
 }
 
-func timeFromTimeComparable[T TimeComparable](t T) time.Time {
-	switch v := any(t).(type) {
-	case *entity.TrustDomain:
-		return v.CreatedAt
-	case *entity.Relationship:
-		return v.CreatedAt
+// assertIsInOrder checks whether the given createdAt times are in the correct order.
+func assertIsInOrder(t *testing.T, createdAt, nextCreatedAt time.Time, order criteria.OrderDirection) {
+	var isOrderCorrect bool
+	var orderDescription string
+
+	switch order {
+	case criteria.OrderAscending:
+		isOrderCorrect = createdAt.Before(nextCreatedAt) || createdAt.Equal(nextCreatedAt)
+		orderDescription = "before or at the same time as"
+	case criteria.OrderDescending:
+		isOrderCorrect = createdAt.After(nextCreatedAt) || createdAt.Equal(nextCreatedAt)
+		orderDescription = "after or at the same time as"
+	case criteria.NoOrder:
+		// For NoOrder, we don't perform any check, so we can just return
+		return
 	default:
-		return time.Time{}
+		assert.Fail(t, fmt.Sprintf("Unknown order direction: %s", order))
+		return
 	}
+
+	assert.True(t, isOrderCorrect, "Expected time %v to be %s %v, but it was not.", createdAt, orderDescription, nextCreatedAt)
 }
