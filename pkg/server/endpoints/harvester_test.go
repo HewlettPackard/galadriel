@@ -166,7 +166,7 @@ func TestTCPGetRelationships(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, http.StatusBadRequest, err.(*echo.HTTPError).Code)
 
-		errMsg := "status filter \"invalid\" is not supported, available values [approved, denied, pending]"
+		errMsg := "invalid consent status filter \"invalid\", it must be one of [approved, denied, pending]"
 		assert.Contains(t, err.(*echo.HTTPError).Message, errMsg)
 	})
 
