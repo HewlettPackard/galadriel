@@ -154,6 +154,9 @@ type ClientInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetJoinToken request
+	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListTrustDomains request
 	ListTrustDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -172,9 +175,6 @@ type ClientInterface interface {
 	PutTrustDomainByNameWithBody(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetJoinToken request
-	GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetRelationships(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -215,6 +215,18 @@ func (c *Client) PutRelationship(ctx context.Context, body PutRelationshipJSONRe
 
 func (c *Client) GetRelationshipByID(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRelationshipByIDRequest(c.Server, relationshipID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetJoinTokenRequest(c.Server, trustDomainName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -299,18 +311,6 @@ func (c *Client) PutTrustDomainByNameWithBody(ctx context.Context, trustDomainNa
 
 func (c *Client) PutTrustDomainByName(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutTrustDomainByNameRequest(c.Server, trustDomainName, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetJoinToken(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetJoinTokenRequest(c.Server, trustDomainName, params)
 	if err != nil {
 		return nil, err
 	}
@@ -492,188 +492,6 @@ func NewGetRelationshipByIDRequest(server string, relationshipID externalRef0.UU
 	return req, nil
 }
 
-// NewListTrustDomainsRequest generates requests for ListTrustDomains
-func NewListTrustDomainsRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/trust-domain")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPutTrustDomainRequest calls the generic PutTrustDomain builder with application/json body
-func NewPutTrustDomainRequest(server string, body PutTrustDomainJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPutTrustDomainRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewPutTrustDomainRequestWithBody generates requests for PutTrustDomain with any type of body
-func NewPutTrustDomainRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/trust-domain")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeleteTrustDomainByNameRequest generates requests for DeleteTrustDomainByName
-func NewDeleteTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/trust-domain/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetTrustDomainByNameRequest generates requests for GetTrustDomainByName
-func NewGetTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/trust-domain/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewPutTrustDomainByNameRequest calls the generic PutTrustDomainByName builder with application/json body
-func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPutTrustDomainByNameRequestWithBody(server, trustDomainName, "application/json", bodyReader)
-}
-
-// NewPutTrustDomainByNameRequestWithBody generates requests for PutTrustDomainByName with any type of body
-func NewPutTrustDomainByNameRequestWithBody(server string, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/trust-domain/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewGetJoinTokenRequest generates requests for GetJoinToken
 func NewGetJoinTokenRequest(server string, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams) (*http.Request, error) {
 	var err error
@@ -722,6 +540,188 @@ func NewGetJoinTokenRequest(server string, trustDomainName externalRef0.TrustDom
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListTrustDomainsRequest generates requests for ListTrustDomains
+func NewListTrustDomainsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domains")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutTrustDomainRequest calls the generic PutTrustDomain builder with application/json body
+func NewPutTrustDomainRequest(server string, body PutTrustDomainJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutTrustDomainRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPutTrustDomainRequestWithBody generates requests for PutTrustDomain with any type of body
+func NewPutTrustDomainRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domains")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteTrustDomainByNameRequest generates requests for DeleteTrustDomainByName
+func NewDeleteTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domains/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetTrustDomainByNameRequest generates requests for GetTrustDomainByName
+func NewGetTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domains/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutTrustDomainByNameRequest calls the generic PutTrustDomainByName builder with application/json body
+func NewPutTrustDomainByNameRequest(server string, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutTrustDomainByNameRequestWithBody(server, trustDomainName, "application/json", bodyReader)
+}
+
+// NewPutTrustDomainByNameRequestWithBody generates requests for PutTrustDomainByName with any type of body
+func NewPutTrustDomainByNameRequestWithBody(server string, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, trustDomainName)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trust-domains/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -780,6 +780,9 @@ type ClientWithResponsesInterface interface {
 	// GetRelationshipByID request
 	GetRelationshipByIDWithResponse(ctx context.Context, relationshipID externalRef0.UUID, reqEditors ...RequestEditorFn) (*GetRelationshipByIDResponse, error)
 
+	// GetJoinToken request
+	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
+
 	// ListTrustDomains request
 	ListTrustDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTrustDomainsResponse, error)
 
@@ -798,9 +801,6 @@ type ClientWithResponsesInterface interface {
 	PutTrustDomainByNameWithBodyWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
 
 	PutTrustDomainByNameWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, body PutTrustDomainByNameJSONRequestBody, reqEditors ...RequestEditorFn) (*PutTrustDomainByNameResponse, error)
-
-	// GetJoinToken request
-	GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error)
 }
 
 type GetRelationshipsResponse struct {
@@ -866,6 +866,29 @@ func (r GetRelationshipByIDResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetRelationshipByIDResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetJoinTokenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *JoinTokenResponse
+	JSONDefault  *externalRef0.ApiError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetJoinTokenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetJoinTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -986,29 +1009,6 @@ func (r PutTrustDomainByNameResponse) StatusCode() int {
 	return 0
 }
 
-type GetJoinTokenResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *JoinTokenResponse
-	JSONDefault  *externalRef0.ApiError
-}
-
-// Status returns HTTPResponse.Status
-func (r GetJoinTokenResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetJoinTokenResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 // GetRelationshipsWithResponse request returning *GetRelationshipsResponse
 func (c *ClientWithResponses) GetRelationshipsWithResponse(ctx context.Context, params *GetRelationshipsParams, reqEditors ...RequestEditorFn) (*GetRelationshipsResponse, error) {
 	rsp, err := c.GetRelationships(ctx, params, reqEditors...)
@@ -1042,6 +1042,15 @@ func (c *ClientWithResponses) GetRelationshipByIDWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseGetRelationshipByIDResponse(rsp)
+}
+
+// GetJoinTokenWithResponse request returning *GetJoinTokenResponse
+func (c *ClientWithResponses) GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error) {
+	rsp, err := c.GetJoinToken(ctx, trustDomainName, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetJoinTokenResponse(rsp)
 }
 
 // ListTrustDomainsWithResponse request returning *ListTrustDomainsResponse
@@ -1103,15 +1112,6 @@ func (c *ClientWithResponses) PutTrustDomainByNameWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParsePutTrustDomainByNameResponse(rsp)
-}
-
-// GetJoinTokenWithResponse request returning *GetJoinTokenResponse
-func (c *ClientWithResponses) GetJoinTokenWithResponse(ctx context.Context, trustDomainName externalRef0.TrustDomainName, params *GetJoinTokenParams, reqEditors ...RequestEditorFn) (*GetJoinTokenResponse, error) {
-	rsp, err := c.GetJoinToken(ctx, trustDomainName, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetJoinTokenResponse(rsp)
 }
 
 // ParseGetRelationshipsResponse parses an HTTP response from a GetRelationshipsWithResponse call
@@ -1196,6 +1196,39 @@ func ParseGetRelationshipByIDResponse(rsp *http.Response) (*GetRelationshipByIDR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest externalRef0.Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest externalRef0.ApiError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetJoinTokenResponse parses an HTTP response from a GetJoinTokenWithResponse call
+func ParseGetJoinTokenResponse(rsp *http.Response) (*GetJoinTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetJoinTokenResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JoinTokenResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1371,39 +1404,6 @@ func ParsePutTrustDomainByNameResponse(rsp *http.Response) (*PutTrustDomainByNam
 	return response, nil
 }
 
-// ParseGetJoinTokenResponse parses an HTTP response from a GetJoinTokenWithResponse call
-func ParseGetJoinTokenResponse(rsp *http.Response) (*GetJoinTokenResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetJoinTokenResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest JoinTokenResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest externalRef0.ApiError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get relationships
@@ -1415,24 +1415,24 @@ type ServerInterface interface {
 	// Get a specific relationship
 	// (GET /relationships/{relationshipID})
 	GetRelationshipByID(ctx echo.Context, relationshipID externalRef0.UUID) error
-	// List all trust domains
-	// (GET /trust-domain)
-	ListTrustDomains(ctx echo.Context) error
-	// Add a specific trust domain
-	// (PUT /trust-domain)
-	PutTrustDomain(ctx echo.Context) error
-	// Deletes a specific trust domain
-	// (DELETE /trust-domain/{trustDomainName})
-	DeleteTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
-	// Get a specific trust domain
-	// (GET /trust-domain/{trustDomainName})
-	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
-	// Update a specific trust domain
-	// (PUT /trust-domain/{trustDomainName})
-	PutTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 	// Get a join token for a specific Trust Domain
 	// (GET /trust-domain/{trustDomainName}/join-token)
 	GetJoinToken(ctx echo.Context, trustDomainName externalRef0.TrustDomainName, params GetJoinTokenParams) error
+	// List all trust domains
+	// (GET /trust-domains)
+	ListTrustDomains(ctx echo.Context) error
+	// Add a specific trust domain
+	// (PUT /trust-domains)
+	PutTrustDomain(ctx echo.Context) error
+	// Deletes a specific trust domain
+	// (DELETE /trust-domains/{trustDomainName})
+	DeleteTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// Get a specific trust domain
+	// (GET /trust-domains/{trustDomainName})
+	GetTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
+	// Update a specific trust domain
+	// (PUT /trust-domains/{trustDomainName})
+	PutTrustDomainByName(ctx echo.Context, trustDomainName externalRef0.TrustDomainName) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1504,6 +1504,31 @@ func (w *ServerInterfaceWrapper) GetRelationshipByID(ctx echo.Context) error {
 	return err
 }
 
+// GetJoinToken converts echo context to params.
+func (w *ServerInterfaceWrapper) GetJoinToken(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "trustDomainName" -------------
+	var trustDomainName externalRef0.TrustDomainName
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetJoinTokenParams
+	// ------------- Required query parameter "ttl" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "ttl", ctx.QueryParams(), &params.Ttl)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ttl: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetJoinToken(ctx, trustDomainName, params)
+	return err
+}
+
 // ListTrustDomains converts echo context to params.
 func (w *ServerInterfaceWrapper) ListTrustDomains(ctx echo.Context) error {
 	var err error
@@ -1570,31 +1595,6 @@ func (w *ServerInterfaceWrapper) PutTrustDomainByName(ctx echo.Context) error {
 	return err
 }
 
-// GetJoinToken converts echo context to params.
-func (w *ServerInterfaceWrapper) GetJoinToken(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "trustDomainName" -------------
-	var trustDomainName externalRef0.TrustDomainName
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "trustDomainName", runtime.ParamLocationPath, ctx.Param("trustDomainName"), &trustDomainName)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter trustDomainName: %s", err))
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetJoinTokenParams
-	// ------------- Required query parameter "ttl" -------------
-
-	err = runtime.BindQueryParameter("form", true, true, "ttl", ctx.QueryParams(), &params.Ttl)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ttl: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetJoinToken(ctx, trustDomainName, params)
-	return err
-}
-
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1626,53 +1626,54 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/relationships", wrapper.GetRelationships)
 	router.PUT(baseURL+"/relationships", wrapper.PutRelationship)
 	router.GET(baseURL+"/relationships/:relationshipID", wrapper.GetRelationshipByID)
-	router.GET(baseURL+"/trust-domain", wrapper.ListTrustDomains)
-	router.PUT(baseURL+"/trust-domain", wrapper.PutTrustDomain)
-	router.DELETE(baseURL+"/trust-domain/:trustDomainName", wrapper.DeleteTrustDomainByName)
-	router.GET(baseURL+"/trust-domain/:trustDomainName", wrapper.GetTrustDomainByName)
-	router.PUT(baseURL+"/trust-domain/:trustDomainName", wrapper.PutTrustDomainByName)
 	router.GET(baseURL+"/trust-domain/:trustDomainName/join-token", wrapper.GetJoinToken)
+	router.GET(baseURL+"/trust-domains", wrapper.ListTrustDomains)
+	router.PUT(baseURL+"/trust-domains", wrapper.PutTrustDomain)
+	router.DELETE(baseURL+"/trust-domains/:trustDomainName", wrapper.DeleteTrustDomainByName)
+	router.GET(baseURL+"/trust-domains/:trustDomainName", wrapper.GetTrustDomainByName)
+	router.PUT(baseURL+"/trust-domains/:trustDomainName", wrapper.PutTrustDomainByName)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
