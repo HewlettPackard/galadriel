@@ -9,6 +9,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/dbtypes"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/stretchr/testify/assert"
@@ -21,20 +22,20 @@ func TestListRelationshipsByCriteria(t *testing.T) {
 	sqliteDS := func() db.Datastore {
 		return setupSQLiteDatastore(t)
 	}
-	runPaginationTest(t, ctx, db.SQLite, sqliteDS)
-	runFilteringByConsentStatusTest(t, ctx, db.SQLite, sqliteDS)
-	runFilteringByConsentStatusWithPaginationTest(t, ctx, db.SQLite, sqliteDS)
-	runOrderByCreatedAtTest(t, ctx, db.SQLite, sqliteDS)
-	runFilteringByTrustDomainIDTest(t, ctx, db.SQLite, sqliteDS)
+	runListRelationshipsPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runListRelationshipsFilteringByConsentStatusTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runListRelationshipsFilteringByConsentStatusWithPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runListRelationshipsOrderByCreatedAtTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runListRelationshipsFilteringByTrustDomainIDTest(t, ctx, dbtypes.SQLite3, sqliteDS)
 
 	postgresDS := func() db.Datastore {
 		return setupPostgresDatastore(t)
 	}
-	runPaginationTest(t, ctx, db.Postgres, postgresDS)
-	runFilteringByConsentStatusTest(t, ctx, db.Postgres, postgresDS)
-	runFilteringByConsentStatusWithPaginationTest(t, ctx, db.SQLite, sqliteDS)
-	runOrderByCreatedAtTest(t, ctx, db.Postgres, postgresDS)
-	runFilteringByTrustDomainIDTest(t, ctx, db.Postgres, postgresDS)
+	runListRelationshipsPaginationTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runListRelationshipsFilteringByConsentStatusTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runListRelationshipsFilteringByConsentStatusWithPaginationTest(t, ctx, dbtypes.PostgreSQL, sqliteDS)
+	runListRelationshipsOrderByCreatedAtTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runListRelationshipsFilteringByTrustDomainIDTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
 }
 
 func TestListTrustDomainByCriteria(t *testing.T) {
@@ -44,17 +45,17 @@ func TestListTrustDomainByCriteria(t *testing.T) {
 	sqliteDS := func() db.Datastore {
 		return setupSQLiteDatastore(t)
 	}
-	runTDPaginationTest(t, ctx, db.SQLite, sqliteDS)
-	runTDOrderByCreatedAtTest(t, ctx, db.SQLite, sqliteDS)
+	runListTrustDomainsPaginationTest(t, ctx, dbtypes.SQLite3, sqliteDS)
+	runListTrustDomainsOrderByCreatedAtTest(t, ctx, dbtypes.SQLite3, sqliteDS)
 
 	postgresDS := func() db.Datastore {
 		return setupPostgresDatastore(t)
 	}
-	runTDPaginationTest(t, ctx, db.Postgres, postgresDS)
-	runTDOrderByCreatedAtTest(t, ctx, db.Postgres, postgresDS)
+	runListTrustDomainsPaginationTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
+	runListTrustDomainsOrderByCreatedAtTest(t, ctx, dbtypes.PostgreSQL, postgresDS)
 }
 
-func runPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newDB func() db.Datastore) {
+func runListRelationshipsPaginationTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDB func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Relationships Pagination (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDB()
@@ -93,7 +94,7 @@ func runPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newD
 	})
 }
 
-func runTDPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newDB func() db.Datastore) {
+func runListTrustDomainsPaginationTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDB func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Trust Domain Pagination (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDB()
@@ -102,7 +103,7 @@ func runTDPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, ne
 		createTrustDomains(t, ctx, ds, 200)
 
 		// List relationships with pagination
-		listCriteria := &criteria.ListTrustDomainCriteria{
+		listCriteria := &criteria.ListTrustDomainsCriteria{
 			PageNumber: 1,
 			PageSize:   50,
 		}
@@ -132,7 +133,7 @@ func runTDPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, ne
 	})
 }
 
-func runTDOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+func runListTrustDomainsOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Order by CreatedAt (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDS()
@@ -141,7 +142,7 @@ func runTDOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engi
 		createTrustDomains(t, ctx, ds, 5)
 
 		// List relationships ordered by created_at
-		listCriteria := &criteria.ListTrustDomainCriteria{
+		listCriteria := &criteria.ListTrustDomainsCriteria{
 			OrderByCreatedAt: criteria.OrderAscending,
 		}
 		rels, err := ds.ListTrustDomains(ctx, listCriteria)
@@ -160,7 +161,7 @@ func runTDOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engi
 	})
 }
 
-func runFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+func runListRelationshipsFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Filtering By Consent Status (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDS()
@@ -176,10 +177,10 @@ func runFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType d
 
 		// List relationships filtered by consent status
 		for _, filterBy := range consentStatuses {
-			criteria := &criteria.ListRelationshipsCriteria{
+			listCriteria := &criteria.ListRelationshipsCriteria{
 				FilterByConsentStatus: &filterBy,
 			}
-			rels, err := ds.ListRelationships(ctx, criteria)
+			rels, err := ds.ListRelationships(ctx, listCriteria)
 			assert.NoError(t, err)
 			assert.Equal(t, 200, len(rels))
 
@@ -189,7 +190,7 @@ func runFilteringByConsentStatusTest(t *testing.T, ctx context.Context, dbType d
 	})
 }
 
-func runFilteringByConsentStatusWithPaginationTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+func runListRelationshipsFilteringByConsentStatusWithPaginationTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Filtering and Pagination (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDS()
@@ -227,7 +228,7 @@ func runFilteringByConsentStatusWithPaginationTest(t *testing.T, ctx context.Con
 	})
 }
 
-func runOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+func runListRelationshipsOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Order by CreatedAt (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDS()
@@ -255,7 +256,7 @@ func runOrderByCreatedAtTest(t *testing.T, ctx context.Context, dbType db.Engine
 	})
 }
 
-func runFilteringByTrustDomainIDTest(t *testing.T, ctx context.Context, dbType db.Engine, newDS func() db.Datastore) {
+func runListRelationshipsFilteringByTrustDomainIDTest(t *testing.T, ctx context.Context, dbType dbtypes.Engine, newDS func() db.Datastore) {
 	t.Run(fmt.Sprintf("Test Filtering By TrustDomain ID (%s)", dbType), func(t *testing.T) {
 		t.Parallel()
 		ds := newDS()
