@@ -40,9 +40,9 @@ func TestConvertRelationshipsParamsToListCriteria(t *testing.T) {
 	result, err := convertRelationshipsParamsToListCriteria(params)
 	assert.Nil(t, err)
 
-	assert.Equal(t, result.PageSize, uint(ps))
-	assert.Equal(t, result.PageNumber, uint(pn))
-	assert.Equal(t, *result.FilterByConsentStatus, entity.ConsentStatus(cs))
+	assert.Equal(t, uint(ps), result.PageSize)
+	assert.Equal(t, uint(pn), result.PageNumber)
+	assert.Equal(t, entity.ConsentStatus(cs), *result.FilterByConsentStatus)
 }
 
 func TestConvertPaginationParam(t *testing.T) {
@@ -50,11 +50,12 @@ func TestConvertPaginationParam(t *testing.T) {
 
 	result, err := convertPaginationParam(&value)
 	assert.Nil(t, err)
-	assert.Equal(t, result, uint(value))
+	assert.Equal(t, uint(value), result)
 
 	value = -1
 	result, err = convertPaginationParam(&value)
 	assert.NotNil(t, err)
+	assert.Equal(t, uint(0), result)
 }
 
 func TestConvertValidConsentStatusParam(t *testing.T) {
@@ -62,9 +63,10 @@ func TestConvertValidConsentStatusParam(t *testing.T) {
 
 	result, err := convertValidConsentStatusParam(&cs)
 	assert.Nil(t, err)
-	assert.Equal(t, *result, entity.ConsentStatus(cs))
+	assert.Equal(t, entity.ConsentStatus(cs), *result)
 
 	cs = "invalid"
 	result, err = convertValidConsentStatusParam(&cs)
 	assert.NotNil(t, err)
+	assert.Nil(t, result)
 }
