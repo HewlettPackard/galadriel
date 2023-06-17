@@ -401,23 +401,16 @@ func assertEntitiesAreInCreatedAtOrder(t *testing.T, entities []createdAtProvide
 
 // assertIsInOrder checks whether the given createdAt times are in the correct order.
 func assertIsInOrder(t *testing.T, createdAt, nextCreatedAt time.Time, order criteria.OrderDirection) {
-	var isOrderCorrect bool
-	var orderDescription string
-
 	switch order {
 	case criteria.OrderAscending:
-		isOrderCorrect = createdAt.Before(nextCreatedAt) || createdAt.Equal(nextCreatedAt)
-		orderDescription = "before or at the same time as"
+		assert.True(t, createdAt.Before(nextCreatedAt) || createdAt.Equal(nextCreatedAt),
+			"Expected time %v to be before or at the same time as %v, but it was not.", createdAt, nextCreatedAt)
 	case criteria.OrderDescending:
-		isOrderCorrect = createdAt.After(nextCreatedAt) || createdAt.Equal(nextCreatedAt)
-		orderDescription = "after or at the same time as"
+		assert.True(t, createdAt.After(nextCreatedAt) || createdAt.Equal(nextCreatedAt),
+			"Expected time %v to be after or at the same time as %v, but it was not.", createdAt, nextCreatedAt)
 	case criteria.NoOrder:
-		// For NoOrder, we don't perform any check, so we can just return
-		return
+		// For NoOrder, we don't perform any check
 	default:
-		assert.Fail(t, fmt.Sprintf("Unknown order direction: %s", order))
-		return
+		assert.Fail(t, "Unknown order direction: %s", order)
 	}
-
-	assert.True(t, isOrderCorrect, "Expected time %v to be %s %v, but it was not.", createdAt, orderDescription, nextCreatedAt)
 }
