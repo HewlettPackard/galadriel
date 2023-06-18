@@ -165,7 +165,7 @@ func runListTrustDomainsOrderByCreatedAtTest(t *testing.T, ctx context.Context, 
 		}
 		assertEntitiesAreInCreatedAtOrder(t, trustDomainAdapters, listCriteria.OrderByCreatedAt)
 
-		// List relationships ordered by created_at in descending order
+		// List trust domains ordered by created_at in descending order
 		listCriteria.OrderByCreatedAt = criteria.OrderDescending
 		trustDomains, err = ds.ListTrustDomains(ctx, listCriteria)
 		assert.NoError(t, err)
@@ -314,7 +314,7 @@ func createRelationships(t *testing.T, ctx context.Context, ds db.Datastore, cou
 
 	relationships := make([]*entity.Relationship, 0, count)
 	for i := 0; i < count; i++ {
-		// Create TrustDomains
+		// Create TrustDomains for relationships
 		td1Name := fmt.Sprintf("spiffe://domain%d.com", i*2)
 		td1 := &entity.TrustDomain{
 			Name: spiffeid.RequireTrustDomainFromString(td1Name),
@@ -346,10 +346,8 @@ func createRelationships(t *testing.T, ctx context.Context, ds db.Datastore, cou
 }
 
 func createTrustDomains(t *testing.T, ctx context.Context, ds db.Datastore, count int) []*entity.TrustDomain {
-
 	domains := make([]*entity.TrustDomain, 0, count)
 	for i := 0; i < count; i++ {
-		// Create TrustDomains
 		tdName := fmt.Sprintf("spiffe://domain%d.com", i*2)
 		td := &entity.TrustDomain{
 			Name:      spiffeid.RequireTrustDomainFromString(tdName),
