@@ -1,6 +1,6 @@
 -- name: CreateJoinToken :one
-INSERT INTO join_tokens(id, token, expires_at, trust_domain_id)
-VALUES (?, ?, ?, ?)
+INSERT INTO join_tokens(id, token, expires_at, trust_domain_id, created_at)
+VALUES (?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateJoinToken :one

@@ -228,6 +228,7 @@ func (d *Datastore) CreateJoinToken(ctx context.Context, req *entity.JoinToken) 
 		Token:         req.Token,
 		ExpiresAt:     req.ExpiresAt,
 		TrustDomainID: req.TrustDomainID.String(),
+		CreatedAt:     req.CreatedAt,
 	}
 	joinToken, err := d.querier.CreateJoinToken(ctx, params)
 	if err != nil {
@@ -442,8 +443,9 @@ func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.
 func (d *Datastore) createTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
 	id := uuid.New()
 	params := CreateTrustDomainParams{
-		ID:   id.String(),
-		Name: req.Name.String(),
+		ID:        id.String(),
+		Name:      req.Name.String(),
+		CreatedAt: req.CreatedAt,
 	}
 	if req.Description != "" {
 		params.Description = sql.NullString{
@@ -505,7 +507,6 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		TrustDomainAConsent: string(req.TrustDomainAConsent),
 		TrustDomainBConsent: string(req.TrustDomainBConsent),
 		CreatedAt:           req.CreatedAt,
-		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
@@ -540,6 +541,7 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      req.TrustDomainID.String(),
+		CreatedAt:          req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)
