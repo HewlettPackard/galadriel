@@ -7,11 +7,12 @@ package sqlite
 
 import (
 	"context"
+	"time"
 )
 
 const createBundle = `-- name: CreateBundle :one
-INSERT INTO bundles(id, data, digest, signature, signing_certificate, trust_domain_id)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO bundles(id, data, digest, signature, signing_certificate, trust_domain_id, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
 `
 
@@ -22,6 +23,7 @@ type CreateBundleParams struct {
 	Signature          []byte
 	SigningCertificate []byte
 	TrustDomainID      string
+	CreatedAt          time.Time
 }
 
 func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bundle, error) {
@@ -32,6 +34,7 @@ func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bun
 		arg.Signature,
 		arg.SigningCertificate,
 		arg.TrustDomainID,
+		arg.CreatedAt,
 	)
 	var i Bundle
 	err := row.Scan(

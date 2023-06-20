@@ -20,7 +20,7 @@ tags:
   - name: Join Token
     description: Representation of a join token bound to a Trust Domain.
 paths:
-  /trust-domain/{trustDomainName}:
+  /trust-domains/{trustDomainName}:
     get:
       operationId: GetTrustDomainByName
       tags:
@@ -86,7 +86,7 @@ paths:
         default:
           $ref: '#/components/responses/Default'
 
-  /trust-domain:
+  /trust-domains:
     get:
       operationId: ListTrustDomains
       tags:

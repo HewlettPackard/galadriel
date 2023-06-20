@@ -5,87 +5,96 @@ import (
 
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
+	"github.com/HewlettPackard/galadriel/pkg/server/api/harvester"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
 )
 
-// QueryParamsAdapter is responsible for validating and adapting API values into
-// valid params using business types
-type QueryParamsAdapter struct {
-	pageSize   *api.PageSize
-	pageNumber *api.PageNumber
-
-	consentStatus *api.ConsentStatus
-
-	validParams ValidQueryParams
+type relationshipsParamGetter interface {
+	GetPageSize() *int
+	GetPageNumber() *int
+	GetConsentStatus() *api.ConsentStatus
 }
 
-// ValidQueryParams is the struct that holds th valid types and validated values
-// for query params
-type ValidQueryParams struct {
-	pageSize   uint
-	pageNumber uint
-
-	consentStatus *entity.ConsentStatus
+type adminParams struct {
+	admin.GetRelationshipsParams
 }
 
-// ValidateParams start the validation process over all query params
-func (q *QueryParamsAdapter) ValidateParams() error {
-	pageSize, pageNumber, err := q.validatePaginationParams(q.pageSize, q.pageNumber)
+func (p adminParams) GetPageSize() *int {
+	return p.PageSize
+}
+
+func (p adminParams) GetPageNumber() *int {
+	return p.PageNumber
+}
+
+func (p adminParams) GetConsentStatus() *api.ConsentStatus {
+	return p.ConsentStatus
+}
+
+type harvesterParams struct {
+	harvester.GetRelationshipsParams
+}
+
+func (p harvesterParams) GetPageSize() *int {
+	return p.PageSize
+}
+
+func (p harvesterParams) GetPageNumber() *int {
+	return p.PageNumber
+}
+
+func (p harvesterParams) GetConsentStatus() *api.ConsentStatus {
+	return p.ConsentStatus
+}
+
+func convertRelationshipsParamsToListCriteria(params relationshipsParamGetter) (*criteria.ListRelationshipsCriteria, error) {
+	pageSize, err := convertPaginationParam(params.GetPageSize())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	consentStatus, err := q.validateConsentStatusParam(q.consentStatus)
+	pageNumber, err := convertPaginationParam(params.GetPageNumber())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	q.validParams = ValidQueryParams{
-		pageSize:      pageSize,
-		pageNumber:    pageNumber,
-		consentStatus: consentStatus,
+	filterByConsentStatus, err := convertValidConsentStatusParam(params.GetConsentStatus())
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return &criteria.ListRelationshipsCriteria{
+		FilterByConsentStatus: filterByConsentStatus,
+		PageSize:              pageSize,
+		PageNumber:            pageNumber,
+		OrderByCreatedAt:      criteria.OrderDescending,
+	}, nil
 }
 
-func (q *QueryParamsAdapter) validatePaginationParams(pgSize *int, pgNumber *int) (uint, uint, error) {
-	pageSize := defaultPageSize
-	pageNumber := defaultPageNumber
-
-	if pgSize != nil {
-		pageSize = *pgSize
-		outOfLimits := pageSize < 0
-		if outOfLimits {
-			err := fmt.Errorf("page size %v is not accepted, must be positive", *pgSize)
-			return 0, 0, err
-		}
+func convertPaginationParam(param *int) (uint, error) {
+	if param == nil {
+		return 0, nil
 	}
 
-	if pgNumber != nil {
-		pageNumber = *pgNumber
-
-		outOfLimits := pageNumber < 0
-		if outOfLimits {
-			err := fmt.Errorf("page number %v is not accepted, must be positive", *pgNumber)
-			return 0, 0, err
-		}
+	value := *param
+	if value <= 0 {
+		return 0, fmt.Errorf("pagination parameter must be a positive integer")
 	}
 
-	return uint(pageSize), uint(pageNumber), nil
+	return uint(value), nil
 }
 
-func (q *QueryParamsAdapter) validateConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
-	if status != nil {
-		switch *status {
-		case api.Approved, api.Denied, api.Pending:
-		default:
-			err := fmt.Errorf("status filter %q is not supported, available values [approved, denied, pending]", *status)
-			return nil, err
-		}
-
-		consentStatus := entity.ConsentStatus(*status)
-		return &consentStatus, nil
+func convertValidConsentStatusParam(status *api.ConsentStatus) (*entity.ConsentStatus, error) {
+	if status == nil || *status == "" {
+		return nil, nil
 	}
 
-	return nil, nil
+	switch *status {
+	case api.Approved, api.Denied, api.Pending:
+		convertedStatus := entity.ConsentStatus(*status)
+		return &convertedStatus, nil
+	default:
+		return nil, fmt.Errorf("invalid consent status filter %q, it must be one of [approved, denied, pending]", *status)
+	}
 }
