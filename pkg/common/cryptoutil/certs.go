@@ -107,6 +107,16 @@ func EncodeCertificate(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: certType, Bytes: cert.Raw})
 }
 
+// EncodeCertificates encodes the given chain of x509.Certificate into PEM format.
+func EncodeCertificates(certChain []*x509.Certificate) ([]byte, error) {
+	var certPEM []byte
+	for _, cert := range certChain {
+		certPEM = append(certPEM, EncodeCertificate(cert)...)
+		certPEM = append(certPEM, '\n')
+	}
+	return certPEM, nil
+}
+
 // CreateX509Template creates a new x509.Certificate template for a leaf certificate.
 func CreateX509Template(clk clock.Clock, publicKey crypto.PublicKey, subject pkix.Name, uris []*url.URL, dnsNames []string, ttl time.Duration) (*x509.Certificate, error) {
 	now := clk.Now()

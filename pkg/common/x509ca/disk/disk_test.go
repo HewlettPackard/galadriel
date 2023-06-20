@@ -31,99 +31,119 @@ func TestNew(t *testing.T) {
 	ca, err := New()
 	require.NoError(t, err)
 	assert.NotNil(t, ca)
-	assert.NotNil(t, ca.clock)
 }
 
 func TestConfigure(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
+	tempDir := setupTest(t)
 
+	testCases := []struct {
+		name   string
+		config Config
+		err    string
+	}{
+		{
+			name: "WithRootCA",
+			config: Config{
+				KeyFilePath:  tempDir + "/root-ca.key",
+				CertFilePath: tempDir + "/root-ca.crt",
+			},
+		},
+		{
+			name: "WithIntermediateCAAndTrustBundle",
+			config: Config{
+				KeyFilePath:    tempDir + "/intermediate-ca.key",
+				CertFilePath:   tempDir + "/intermediate-ca.crt",
+				BundleFilePath: tempDir + "/root-ca.crt",
+			},
+		},
+		{
+			name: "WithIntermediateCADontChainBack",
+			config: Config{
+				KeyFilePath:    tempDir + "/other-ca.key",
+				CertFilePath:   tempDir + "/other-ca.crt",
+				BundleFilePath: tempDir + "/root-ca.crt",
+			},
+			err: "unable to chain the certificate to a trusted CA",
+		},
+		{
+			name: "CertAndPrivateKeyNotMatch",
+			config: Config{
+				KeyFilePath:  tempDir + "/other-ca.key",
+				CertFilePath: tempDir + "/root-ca.crt",
+			},
+			err: "certificate public key does not match private key",
+		},
+		{
+			name: "NoSelfSigned",
+			config: Config{
+				KeyFilePath:  tempDir + "/intermediate-ca.key",
+				CertFilePath: tempDir + "/intermediate-ca.crt",
+			},
+			err: ErrTrustBundleReq,
+		},
+		{
+			name: "NoIntermediateCACert",
+			config: Config{
+				KeyFilePath:  tempDir + "/intermediate-ca.key",
+				CertFilePath: "",
+			},
+			err: ErrCertPathRequired,
+		},
+		{
+			name: "NoIntermediateCAPrivateKey",
+			config: Config{
+				KeyFilePath:  "",
+				CertFilePath: tempDir + "/intermediate-ca.crt",
+			},
+			err: ErrPrivateKeyPathReq,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ca := newCA(t)
+			tc.config.Clock = clk
+
+			err := ca.Configure(&tc.config)
+			if tc.err != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestIssueX509CertificateWithRootCA(t *testing.T) {
+	tempDir := setupTest(t)
 	config := Config{
 		KeyFilePath:  tempDir + "/root-ca.key",
 		CertFilePath: tempDir + "/root-ca.crt",
+		Clock:        clk,
 	}
 
-	ca := newCA(t)
-	err := ca.Configure(&config)
-	require.NoError(t, err)
+	runIssueX509CertificateTest(t, config)
 }
 
-func TestConfigureCertAndPrivateKeyNotMatch(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
-
+func TestIssueX509CertificateWithIntermediateCA(t *testing.T) {
+	tempDir := setupTest(t)
 	config := Config{
-		KeyFilePath:  tempDir + "/other-ca.key",
-		CertFilePath: tempDir + "/root-ca.crt",
+		KeyFilePath:    tempDir + "/intermediate-ca.key",
+		CertFilePath:   tempDir + "/intermediate-ca.crt",
+		BundleFilePath: tempDir + "/root-ca.crt",
+		Clock:          clk,
 	}
 
-	ca := newCA(t)
-	err := ca.Configure(&config)
-	require.Error(t, err)
-	assert.Equal(t, "certificate verification failed: certificate public key does not match private key", err.Error())
+	runIssueX509CertificateTest(t, config)
 }
 
-func TestConfigureNoSelfSigned(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
-
-	config := Config{
-		KeyFilePath:  tempDir + "/intermediate-ca.key",
-		CertFilePath: tempDir + "/intermediate-ca.crt",
-	}
-
-	ca := newCA(t)
-	err := ca.Configure(&config)
-	require.Error(t, err)
-	assert.Equal(t, "certificate is not self-signed", err.Error())
-}
-
-func TestConfigureNoIntermediateCACert(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
-
-	config := Config{
-		KeyFilePath:  tempDir + "/intermediate-ca.key",
-		CertFilePath: "",
-	}
-
-	ca := newCA(t)
-
-	err := ca.Configure(&config)
-	require.Error(t, err)
-	assert.Equal(t, "certificate file path is required", err.Error())
-}
-
-func TestConfigureNoIntermediateCAPrivateKey(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
-
-	config := Config{
-		KeyFilePath:  "",
-		CertFilePath: tempDir + "/intermediate-ca.crt",
-	}
-
-	ca := newCA(t)
-
-	err := ca.Configure(&config)
-	require.Error(t, err)
-	assert.Equal(t, "private key file path is required", err.Error())
-}
-
-func TestIssueX509Certificate(t *testing.T) {
-	tempDir, cleanup := setupTest(t)
-	defer cleanup()
-
-	config := Config{
-		KeyFilePath:  tempDir + "/root-ca.key",
-		CertFilePath: tempDir + "/root-ca.crt",
-	}
+func runIssueX509CertificateTest(t *testing.T, config Config) {
 	ca := newCA(t)
 
 	err := ca.Configure(&config)
 	require.NoError(t, err)
 
-	// generate private key
 	signer, err := cryptoutil.GenerateSigner(cryptoutil.RSA2048)
 	require.NoError(t, err)
 
@@ -137,18 +157,17 @@ func TestIssueX509Certificate(t *testing.T) {
 	certChain, err := ca.IssueX509Certificate(context.Background(), params)
 	require.NoError(t, err)
 	require.NotNil(t, certChain)
-	require.Len(t, certChain, 1)
+	require.NotEmpty(t, certChain)
 
 	leaf := certChain[0]
-	assert.Equal(t, dnsNames, leaf.DNSNames)
-	assert.Equal(t, uris, leaf.URIs)
-	assert.Equal(t, clk.Now().Add(fiveHours), leaf.NotAfter)
-	assert.Equal(t, clk.Now().Add(-cryptoutil.NotBeforeTolerance), leaf.NotBefore)
-	assert.Equal(t, expectedKeyUsage, leaf.KeyUsage)
-	assert.Equal(t, expectedExtKeyUsage, leaf.ExtKeyUsage)
-	assert.NotNil(t, leaf.SerialNumber)
+	require.Equal(t, dnsNames, leaf.DNSNames)
+	require.Equal(t, uris, leaf.URIs)
+	require.Equal(t, clk.Now().Add(fiveHours), leaf.NotAfter)
+	require.Equal(t, clk.Now().Add(-cryptoutil.NotBeforeTolerance), leaf.NotBefore)
+	require.Equal(t, expectedKeyUsage, leaf.KeyUsage)
+	require.Equal(t, expectedExtKeyUsage, leaf.ExtKeyUsage)
+	require.NotNil(t, leaf.SerialNumber)
 
-	// verify that leaf certificate is signed by ca.Certificate
 	x509CertPool := x509.NewCertPool()
 	x509CertPool.AddCert(ca.certificate)
 	opts := x509.VerifyOptions{
@@ -163,15 +182,15 @@ func newCA(t *testing.T) *X509CA {
 	ca, err := New()
 	require.NoError(t, err)
 	assert.NotNil(t, ca)
-	ca.clock = clock.NewFake()
 	return ca
 }
 
-func setupTest(t *testing.T) (string, func()) {
+func setupTest(t *testing.T) string {
 	tempDir := certtest.CreateTestCACertificates(t, clk)
 	cleanup := func() {
 		os.RemoveAll(tempDir)
 	}
+	t.Cleanup(cleanup)
 
-	return tempDir, cleanup
+	return tempDir
 }
