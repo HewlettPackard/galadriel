@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/postgres"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/sqlite"
 	"github.com/ory/dockertest/v3"
@@ -20,7 +21,7 @@ const (
 	dbname        = "test_db"
 )
 
-func setupSQLiteDatastore(t *testing.T) *sqlite.Datastore {
+func setupSQLiteDatastore(t *testing.T) db.Datastore {
 	// Use an in-memory database
 	dsn := ":memory:"
 
@@ -28,6 +29,7 @@ func setupSQLiteDatastore(t *testing.T) *sqlite.Datastore {
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		t.Log("Closing SQLite database")
 		err = datastore.Close()
 		require.NoError(t, err)
 	})
@@ -35,12 +37,13 @@ func setupSQLiteDatastore(t *testing.T) *sqlite.Datastore {
 	return datastore
 }
 
-func setupPostgresDatastore(t *testing.T) *postgres.Datastore {
+func setupPostgresDatastore(t *testing.T) db.Datastore {
 	conn := startPostgresDB(t)
 	datastore, err := postgres.NewDatastore(conn)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
+		t.Log("Closing Postgres database")
 		err = datastore.Close()
 		require.NoError(t, err)
 	})

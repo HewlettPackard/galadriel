@@ -1,6 +1,6 @@
 -- name: CreateTrustDomain :one
-INSERT INTO trust_domains(id, name, description)
-VALUES (?, ?, ?)
+INSERT INTO trust_domains(id, name, description, created_at)
+VALUES (?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateTrustDomain :one
