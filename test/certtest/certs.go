@@ -111,6 +111,7 @@ func CreateTestCACertificates(t *testing.T, clk clock.Clock) string {
 	bundlePEM, err := cryptoutil.EncodeCertificates([]*x509.Certificate{rootCA, intermediateCA, intermediateCA2, otherCA})
 	require.NoError(t, err)
 	err = os.WriteFile(tempDir+"/bundle.crt", bundlePEM, crtPerm)
+	require.NoError(t, err)
 
 	return tempDir
 }
