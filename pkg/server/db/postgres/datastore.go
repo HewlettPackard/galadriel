@@ -473,7 +473,8 @@ func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.
 
 func (d *Datastore) createTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
 	params := CreateTrustDomainParams{
-		Name: req.Name.String(),
+		Name:      req.Name.String(),
+		CreatedAt: req.CreatedAt,
 	}
 	if req.Description != "" {
 		params.Description = sql.NullString{
@@ -524,6 +525,7 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      pgTrustDomainID,
+		CreatedAt:          req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)
@@ -585,7 +587,6 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		TrustDomainAConsent: ConsentStatus(req.TrustDomainAConsent),
 		TrustDomainBConsent: ConsentStatus(req.TrustDomainBConsent),
 		CreatedAt:           req.CreatedAt,
-		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
