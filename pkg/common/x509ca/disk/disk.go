@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	ErrCertPathRequired  = "certificate file path is required"
-	ErrPrivateKeyPathReq = "private key file path is required"
-	ErrPublicKeyRequired = "public key is required"
-	ErrTTLRequired       = "TTL is required"
-	ErrTrustBundleReq    = "certificate is not self-signed. A trust bundle is required"
+	ErrCertPathRequired       = "certificate file path is required"
+	ErrPrivateKeyPathRequired = "private key file path is required"
+	ErrPublicKeyRequired      = "public key is required"
+	ErrTTLRequired            = "TTL is required"
+	ErrTrustBundleRequired    = "certificate is not self-signed. A trust bundle is required"
 )
 
 // X509CA is a CA that signs X509 certificates using a disk-based private key and ROOT CA certificate.
@@ -74,7 +74,7 @@ func (ca *X509CA) Configure(config *Config) error {
 	}
 
 	if config.KeyFilePath == "" {
-		return errors.New(ErrPrivateKeyPathReq)
+		return errors.New(ErrPrivateKeyPathRequired)
 	}
 
 	key, err := cryptoutil.LoadPrivateKey(config.KeyFilePath)
@@ -129,12 +129,16 @@ func (ca *X509CA) IssueX509Certificate(ctx context.Context, params *x509ca.X509C
 	return chain, nil
 }
 
-func (ca *X509CA) buildCertificateChain(cert *x509.Certificate) ([]*x509.Certificate, error) {
-	chain := []*x509.Certificate{cert}
+func (ca *X509CA) buildCertificateChain(leafCert *x509.Certificate) ([]*x509.Certificate, error) {
+	chain := []*x509.Certificate{leafCert}
 
-	// If the CA has a trust bundle, append the intermediate and the certificates in the trust bundle to the chain
-	if len(ca.trustBundle) > 0 {
+	// Always include the certificate used to sign the leaf certificate if it is an intermediate CA
+	if !cryptoutil.IsSelfSigned(ca.certificate) {
 		chain = append(chain, ca.certificate)
+	}
+
+	// If the CA has a trust bundle, append the intermediate certificates in the trust bundle to the chain
+	if len(ca.trustBundle) > 0 {
 		chain = append(chain, ca.trustBundle...)
 	}
 
@@ -146,16 +150,19 @@ func (ca *X509CA) processTrustBundle(config *Config, cert *x509.Certificate) err
 		return ca.verifySelfSigned(cert)
 	}
 
-	return ca.loadAndVerifyTrustBundle(config, cert)
-}
-
-func (ca *X509CA) loadAndVerifyTrustBundle(config *Config, cert *x509.Certificate) error {
 	bundle, err := ca.loadTrustBundle(config)
 	if err != nil {
 		return err
 	}
 
-	return ca.verifyTrustBundle(cert, bundle)
+	err = ca.verifyTrustBundle(cert, bundle)
+	if err != nil {
+		return err
+	}
+
+	ca.trustBundle = filterTrustBundle(bundle, cert)
+
+	return nil
 }
 
 func (ca *X509CA) loadTrustBundle(config *Config) ([]*x509.Certificate, error) {
@@ -177,8 +184,8 @@ func (ca *X509CA) verifyTrustBundle(cert *x509.Certificate, bundle []*x509.Certi
 }
 
 func (ca *X509CA) verifySelfSigned(cert *x509.Certificate) error {
-	if err := cert.CheckSignatureFrom(cert); err != nil {
-		return errors.New(ErrTrustBundleReq)
+	if !cryptoutil.IsSelfSigned(cert) {
+		return errors.New(ErrTrustBundleRequired)
 	}
 	return nil
 }
@@ -202,4 +209,15 @@ func (ca *X509CA) verifyCertificateCanChainToTrustBundle(cert *x509.Certificate,
 	}
 
 	return nil
+}
+
+// filterTrustBundle removes self-signed and duplicate certificates from the provided bundle.
+func filterTrustBundle(bundle []*x509.Certificate, cert *x509.Certificate) []*x509.Certificate {
+	var filteredBundle []*x509.Certificate
+	for _, certificate := range bundle {
+		if !cryptoutil.IsSelfSigned(certificate) && !cryptoutil.CertificatesMatch(certificate, cert) {
+			filteredBundle = append(filteredBundle, certificate)
+		}
+	}
+	return filteredBundle
 }

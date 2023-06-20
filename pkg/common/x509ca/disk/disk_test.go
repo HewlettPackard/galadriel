@@ -37,9 +37,10 @@ func TestConfigure(t *testing.T) {
 	tempDir := setupTest(t)
 
 	testCases := []struct {
-		name   string
-		config Config
-		err    string
+		name                 string
+		config               Config
+		err                  string
+		expectedBundleLength int
 	}{
 		{
 			name: "WithRootCA",
@@ -47,14 +48,25 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  tempDir + "/root-ca.key",
 				CertFilePath: tempDir + "/root-ca.crt",
 			},
+			expectedBundleLength: 0,
 		},
 		{
-			name: "WithIntermediateCAAndTrustBundle",
+			name: "WithIntermediateCAAndRootCA",
 			config: Config{
 				KeyFilePath:    tempDir + "/intermediate-ca.key",
 				CertFilePath:   tempDir + "/intermediate-ca.crt",
 				BundleFilePath: tempDir + "/root-ca.crt",
 			},
+			expectedBundleLength: 0,
+		},
+		{
+			name: "WithIntermediateCAAndTrustBundle",
+			config: Config{
+				KeyFilePath:    tempDir + "/intermediate-ca-2.key",
+				CertFilePath:   tempDir + "/intermediate-ca-2.crt",
+				BundleFilePath: tempDir + "/bundle.crt",
+			},
+			expectedBundleLength: 1,
 		},
 		{
 			name: "WithIntermediateCADontChainBack",
@@ -79,7 +91,7 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  tempDir + "/intermediate-ca.key",
 				CertFilePath: tempDir + "/intermediate-ca.crt",
 			},
-			err: ErrTrustBundleReq,
+			err: ErrTrustBundleRequired,
 		},
 		{
 			name: "NoIntermediateCACert",
@@ -95,7 +107,7 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  "",
 				CertFilePath: tempDir + "/intermediate-ca.crt",
 			},
-			err: ErrPrivateKeyPathReq,
+			err: ErrPrivateKeyPathRequired,
 		},
 	}
 
@@ -110,12 +122,13 @@ func TestConfigure(t *testing.T) {
 				assert.Contains(t, err.Error(), tc.err)
 			} else {
 				require.NoError(t, err)
+				assert.Equal(t, tc.expectedBundleLength, len(ca.trustBundle))
 			}
 		})
 	}
 }
 
-func TestIssueX509CertificateWithRootCA(t *testing.T) {
+func TestIssueX509CertificateUsingOnlyRootCA(t *testing.T) {
 	tempDir := setupTest(t)
 	config := Config{
 		KeyFilePath:  tempDir + "/root-ca.key",
@@ -123,10 +136,11 @@ func TestIssueX509CertificateWithRootCA(t *testing.T) {
 		Clock:        clk,
 	}
 
-	runIssueX509CertificateTest(t, config)
+	// Expectation: the certificate chain should only contain the leaf certificate when a Root CA is used.
+	runIssueX509CertificateTest(t, config, 1)
 }
 
-func TestIssueX509CertificateWithIntermediateCA(t *testing.T) {
+func TestIssueX509CertificateWithIntermediateAndRootCA(t *testing.T) {
 	tempDir := setupTest(t)
 	config := Config{
 		KeyFilePath:    tempDir + "/intermediate-ca.key",
@@ -135,10 +149,24 @@ func TestIssueX509CertificateWithIntermediateCA(t *testing.T) {
 		Clock:          clk,
 	}
 
-	runIssueX509CertificateTest(t, config)
+	// Expectation: the certificate chain should contain the leaf certificate and the intermediate CA, but not the root CA when an Intermediate CA and a Root CA are used.
+	runIssueX509CertificateTest(t, config, 2)
 }
 
-func runIssueX509CertificateTest(t *testing.T, config Config) {
+func TestIssueX509CertificateWithTwoIntermediateCAs(t *testing.T) {
+	tempDir := setupTest(t)
+	config := Config{
+		KeyFilePath:    tempDir + "/intermediate-ca-2.key",
+		CertFilePath:   tempDir + "/intermediate-ca-2.crt",
+		BundleFilePath: tempDir + "/bundle.crt",
+		Clock:          clk,
+	}
+
+	// Expectation: the certificate chain should contain the leaf certificate and the two intermediate CAs when two Intermediate CAs are used.
+	runIssueX509CertificateTest(t, config, 3)
+}
+
+func runIssueX509CertificateTest(t *testing.T, config Config, expectedChainLength int) {
 	ca := newCA(t)
 
 	err := ca.Configure(&config)
@@ -157,7 +185,7 @@ func runIssueX509CertificateTest(t *testing.T, config Config) {
 	certChain, err := ca.IssueX509Certificate(context.Background(), params)
 	require.NoError(t, err)
 	require.NotNil(t, certChain)
-	require.NotEmpty(t, certChain)
+	require.Equal(t, expectedChainLength, len(certChain))
 
 	leaf := certChain[0]
 	require.Equal(t, dnsNames, leaf.DNSNames)

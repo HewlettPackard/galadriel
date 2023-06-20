@@ -1,6 +1,7 @@
 package cryptoutil
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -29,6 +30,23 @@ var (
 	maxBigInt64 = getMaxBigInt64()
 	one         = big.NewInt(1)
 )
+
+// IsSelfSigned checks if the given certificate is self-signed.
+// In the context of a certificate hierarchy, a self-signed certificate is typically a root CA.
+func IsSelfSigned(cert *x509.Certificate) bool {
+	if err := cert.CheckSignatureFrom(cert); err != nil {
+		return false
+	}
+	return true
+}
+
+// CertificatesMatch compares two certificates to determine if they are identical.
+// The comparison is made by looking at the raw, DER-encoded form of the certificates.
+// If the raw forms of the certificates are identical, the function returns true;
+// otherwise, it returns false.
+func CertificatesMatch(cert1, cert2 *x509.Certificate) bool {
+	return bytes.Equal(cert1.Raw, cert2.Raw)
+}
 
 // LoadCertificate loads a x509.Certificate from the given path.
 func LoadCertificate(path string) (*x509.Certificate, error) {
