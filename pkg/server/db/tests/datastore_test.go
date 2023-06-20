@@ -19,8 +19,9 @@ var (
 	spiffeTD2 = spiffeid.RequireTrustDomainFromString("bar.test")
 	spiffeTD3 = spiffeid.RequireTrustDomainFromString("baz.test")
 
-	location, _   = time.LoadLocation("UTC")
-	inFiveSeconds = time.Now().In(location).Add(5 * time.Second)
+	location, _ = time.LoadLocation("UTC")
+	// inFiveSeconds is truncated to microsecond precision to match the database's timestamp precision.
+	inFiveSeconds = time.Now().In(location).Add(5 * time.Second).Truncate(time.Microsecond)
 
 	sqliteExpectedUniqueErr       = "UNIQUE constraint failed"
 	postgresExpectedUniqueErr     = "duplicate key value violates unique constraint"
