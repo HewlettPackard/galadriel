@@ -122,7 +122,7 @@ func TestConfigure(t *testing.T) {
 				assert.Contains(t, err.Error(), tc.err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expectedBundleLength, len(ca.trustBundle))
+				assert.Equal(t, tc.expectedBundleLength, len(ca.upstreamChain))
 			}
 		})
 	}

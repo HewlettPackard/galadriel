@@ -30,8 +30,9 @@ type X509CA struct {
 	// certificate is the CA certificate for signing X509 certificates.
 	certificate *x509.Certificate
 
-	// trustBundle is a collection of trusted certificates.
-	trustBundle []*x509.Certificate
+	// upstreamChain contains the intermediates certificates necessary to
+	// chain back to the upstream trust bundle.
+	upstreamChain []*x509.Certificate
 
 	clock  clock.Clock
 	logger logrus.FieldLogger
@@ -91,7 +92,7 @@ func (ca *X509CA) Configure(config *Config) error {
 		return fmt.Errorf("certificate verification failed: %w", err)
 	}
 
-	if err := ca.processTrustBundle(config, cert); err != nil {
+	if err := ca.processTrustBundle(config.BundleFilePath, cert); err != nil {
 		return err
 	}
 
@@ -126,6 +127,11 @@ func (ca *X509CA) IssueX509Certificate(ctx context.Context, params *x509ca.X509C
 		return nil, fmt.Errorf("failed to build certificate chain: %w", err)
 	}
 
+	ca.logger.WithFields(logrus.Fields{
+		"subject": cert.Subject,
+		"expiry":  cert.NotAfter,
+	}).Info("Successfully issued new X.509 certificate")
+
 	return chain, nil
 }
 
@@ -137,53 +143,34 @@ func (ca *X509CA) buildCertificateChain(leafCert *x509.Certificate) ([]*x509.Cer
 		chain = append(chain, ca.certificate)
 	}
 
-	// If the CA has a trust bundle, append the intermediate certificates in the trust bundle to the chain
-	if len(ca.trustBundle) > 0 {
-		chain = append(chain, ca.trustBundle...)
+	// If the CA has an upstream chain, append the intermediate certificates to the chain
+	if len(ca.upstreamChain) > 0 {
+		chain = append(chain, ca.upstreamChain...)
 	}
 
 	return chain, nil
 }
 
-func (ca *X509CA) processTrustBundle(config *Config, cert *x509.Certificate) error {
-	if config.BundleFilePath == "" {
-		return ca.verifySelfSigned(cert)
+func (ca *X509CA) processTrustBundle(bundlePath string, cert *x509.Certificate) error {
+	if bundlePath == "" {
+		return verifySelfSigned(cert)
 	}
 
-	bundle, err := ca.loadTrustBundle(config)
+	bundle, err := cryptoutil.LoadCertificates(bundlePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to load trust bundle: %v", err)
 	}
 
-	err = ca.verifyTrustBundle(cert, bundle)
-	if err != nil {
-		return err
-	}
-
-	ca.trustBundle = filterTrustBundle(bundle, cert)
-
-	return nil
-}
-
-func (ca *X509CA) loadTrustBundle(config *Config) ([]*x509.Certificate, error) {
-	bundle, err := cryptoutil.LoadCertificates(config.BundleFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load trust bundle: %v", err)
-	}
-
-	return bundle, nil
-}
-
-func (ca *X509CA) verifyTrustBundle(cert *x509.Certificate, bundle []*x509.Certificate) error {
 	if err := ca.verifyCertificateCanChainToTrustBundle(cert, bundle); err != nil {
 		return fmt.Errorf("certificate chain verification failed: %w", err)
 	}
 
-	ca.trustBundle = bundle
+	ca.upstreamChain = filterTrustBundle(bundle, cert)
+
 	return nil
 }
 
-func (ca *X509CA) verifySelfSigned(cert *x509.Certificate) error {
+func verifySelfSigned(cert *x509.Certificate) error {
 	if !cryptoutil.IsSelfSigned(cert) {
 		return errors.New(ErrTrustBundleRequired)
 	}
