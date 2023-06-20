@@ -9,6 +9,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/dbtypes"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
@@ -87,8 +88,8 @@ func (d *Datastore) DeleteTrustDomain(ctx context.Context, trustDomainID uuid.UU
 	return nil
 }
 
-func (d *Datastore) ListTrustDomains(ctx context.Context, criteria *criteria.ListTrustDomainCriteria) ([]*entity.TrustDomain, error) {
-	rows, err := db.ExecuteListTrustDomainQuery(ctx, d.db, criteria)
+func (d *Datastore) ListTrustDomains(ctx context.Context, criteria *criteria.ListTrustDomainsCriteria) ([]*entity.TrustDomain, error) {
+	rows, err := db.ExecuteListTrustDomainQuery(ctx, d.db, criteria, dbtypes.SQLite3)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting trust domain list: %w", err)
 	}
@@ -227,6 +228,7 @@ func (d *Datastore) CreateJoinToken(ctx context.Context, req *entity.JoinToken) 
 		Token:         req.Token,
 		ExpiresAt:     req.ExpiresAt,
 		TrustDomainID: req.TrustDomainID.String(),
+		CreatedAt:     req.CreatedAt,
 	}
 	joinToken, err := d.querier.CreateJoinToken(ctx, params)
 	if err != nil {
@@ -408,7 +410,7 @@ func (d *Datastore) FindRelationshipsByTrustDomainID(
 }
 
 func (d *Datastore) ListRelationships(ctx context.Context, criteria *criteria.ListRelationshipsCriteria) ([]*entity.Relationship, error) {
-	rows, err := db.ExecuteListRelationshipsQuery(ctx, d.db, criteria, db.SQLite)
+	rows, err := db.ExecuteListRelationshipsQuery(ctx, d.db, criteria, dbtypes.SQLite3)
 	if err != nil {
 		return nil, fmt.Errorf("failed looking up relationships: %w", err)
 	}
@@ -441,8 +443,9 @@ func (d *Datastore) DeleteRelationship(ctx context.Context, relationshipID uuid.
 func (d *Datastore) createTrustDomain(ctx context.Context, req *entity.TrustDomain) (*TrustDomain, error) {
 	id := uuid.New()
 	params := CreateTrustDomainParams{
-		ID:   id.String(),
-		Name: req.Name.String(),
+		ID:        id.String(),
+		Name:      req.Name.String(),
+		CreatedAt: req.CreatedAt,
 	}
 	if req.Description != "" {
 		params.Description = sql.NullString{
@@ -504,7 +507,6 @@ func (d *Datastore) createRelationship(ctx context.Context, req *entity.Relation
 		TrustDomainAConsent: string(req.TrustDomainAConsent),
 		TrustDomainBConsent: string(req.TrustDomainBConsent),
 		CreatedAt:           req.CreatedAt,
-		UpdatedAt:           req.UpdatedAt,
 	}
 
 	relationship, err := d.querier.CreateRelationship(ctx, params)
@@ -539,6 +541,7 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		Signature:          req.Signature,
 		SigningCertificate: req.SigningCertificate,
 		TrustDomainID:      req.TrustDomainID.String(),
+		CreatedAt:          req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)

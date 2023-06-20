@@ -1,6 +1,6 @@
 -- name: CreateBundle :one
-INSERT INTO bundles(data, digest, signature, signing_certificate, trust_domain_id)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO bundles(data, digest, signature, signing_certificate, trust_domain_id, created_at)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: UpdateBundle :one

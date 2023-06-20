@@ -1,6 +1,6 @@
 -- name: CreateRelationship :one
-INSERT INTO relationships(id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO relationships(id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateRelationship :one

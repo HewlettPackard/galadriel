@@ -5,17 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/db/criteria"
+	"github.com/HewlettPackard/galadriel/pkg/server/db/dbtypes"
 	"github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 )
 
 // ExecuteListRelationshipsQuery executes a query to retrieve relationships from the database based on the provided criteria.
-// The function constructs the SQL query based on the provided criteria, including pagination, filtering by consent status,
-// filtering by trust domain ID, and ordering by created at. If the listCriteria parameter is nil, the function returns
-// all relationships without any filtering or ordering.
-func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) (*sql.Rows, error) {
+func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListRelationshipsCriteria, dbType dbtypes.Engine) (*sql.Rows, error) {
 	query := squirrel.Select("*").From("relationships")
 
 	if listCriteria != nil {
@@ -27,21 +23,19 @@ func ExecuteListRelationshipsQuery(ctx context.Context, db *sql.DB, listCriteria
 }
 
 // ExecuteListTrustDomainQuery executes a query to retrieve trust domains from the database based on the provided criteria.
-// The function constructs the SQL query based on the provided criteria, including pagination,
-// and ordering by created at. If the listCriteria parameter is nil, the function returns
-// all trust domains without any filtering or ordering.
-func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListTrustDomainCriteria) (*sql.Rows, error) {
+func ExecuteListTrustDomainQuery(ctx context.Context, db *sql.DB, listCriteria *criteria.ListTrustDomainsCriteria, dbType dbtypes.Engine) (*sql.Rows, error) {
 	query := squirrel.Select("*").From("trust_domains")
 
 	if listCriteria != nil {
+		query = applyWhereClause(query, listCriteria, dbType)
 		query = applyPaginationAndOrder(query, listCriteria)
 	}
 
 	return buildAndExecute(ctx, db, query)
 }
 
-func applyPaginationAndOrder(query squirrel.SelectBuilder, listCriteria criteria.Criteria) squirrel.SelectBuilder {
-	// Ensuring uint types for operations bellow
+func applyPaginationAndOrder(query squirrel.SelectBuilder, listCriteria criteria.QueryCriteria) squirrel.SelectBuilder {
+	// Ensuring uint types for operations below
 	offset := uint(0)
 	pageSize := uint(0)
 
@@ -61,6 +55,20 @@ func applyPaginationAndOrder(query squirrel.SelectBuilder, listCriteria criteria
 	return query
 }
 
+func applyWhereClause(query squirrel.SelectBuilder, listCriteria criteria.QueryCriteria, dbType dbtypes.Engine) squirrel.SelectBuilder {
+	filters := listCriteria.GetFilters()
+	if len(filters) == 0 {
+		return query
+	}
+
+	conditions := squirrel.And{}
+	for _, filter := range filters {
+		conditions = append(conditions, filter.GetCondition(dbType))
+	}
+
+	return query.Where(conditions)
+}
+
 func buildAndExecute(ctx context.Context, db *sql.DB, query squirrel.SelectBuilder) (*sql.Rows, error) {
 	toSql, args, err := query.ToSql()
 	if err != nil {
@@ -73,69 +81,4 @@ func buildAndExecute(ctx context.Context, db *sql.DB, query squirrel.SelectBuild
 	}
 
 	return rows, nil
-}
-
-func applyWhereClause(query squirrel.SelectBuilder, listCriteria *criteria.ListRelationshipsCriteria, dbType Engine) squirrel.SelectBuilder {
-
-	if listCriteria.FilterByConsentStatus == nil && !listCriteria.FilterByTrustDomainID.Valid {
-		return query
-	}
-
-	conditions := squirrel.And{}
-
-	if listCriteria.FilterByConsentStatus != nil && listCriteria.FilterByTrustDomainID.Valid {
-		consentCondition := buildConsentConditionByTrustDomainID(*listCriteria.FilterByConsentStatus, listCriteria.FilterByTrustDomainID.UUID, dbType)
-		conditions = append(conditions, consentCondition)
-	} else {
-		if listCriteria.FilterByConsentStatus != nil {
-			consentCondition := buildConsentCondition(*listCriteria.FilterByConsentStatus, dbType)
-			conditions = append(conditions, consentCondition)
-		}
-
-		if listCriteria.FilterByTrustDomainID.Valid {
-			trustDomainIDCondition := buildTrustDomainIDCondition(listCriteria.FilterByTrustDomainID.UUID, dbType)
-			conditions = append(conditions, trustDomainIDCondition)
-		}
-	}
-
-	return query.Where(conditions)
-}
-
-// The following functions use a different syntax for Postgres due to an issue with Squirrel library:
-// https://github.com/Masterminds/squirrel/issues/358
-func buildConsentCondition(consentStatus entity.ConsentStatus, dbType Engine) squirrel.Sqlizer {
-	if dbType == Postgres {
-		return squirrel.Or{
-			squirrel.Expr("trust_domain_a_consent = $1 OR trust_domain_b_consent = $2", consentStatus, consentStatus),
-		}
-	}
-	return squirrel.Or{
-		squirrel.Eq{"trust_domain_a_consent": consentStatus},
-		squirrel.Eq{"trust_domain_b_consent": consentStatus},
-	}
-}
-
-func buildTrustDomainIDCondition(trustDomainID uuid.UUID, dbType Engine) squirrel.Sqlizer {
-	if dbType == Postgres {
-		return squirrel.Or{
-			squirrel.Expr("trust_domain_a_id = $1 OR trust_domain_b_id = $2", trustDomainID, trustDomainID),
-		}
-	}
-	return squirrel.Or{
-		squirrel.Eq{"trust_domain_a_id": trustDomainID},
-		squirrel.Eq{"trust_domain_b_id": trustDomainID},
-	}
-}
-
-func buildConsentConditionByTrustDomainID(consentStatus entity.ConsentStatus, trustDomainID uuid.UUID, dbType Engine) squirrel.Sqlizer {
-	if dbType == Postgres {
-		return squirrel.Expr(
-			"(trust_domain_a_id = $1 AND trust_domain_a_consent = $2) OR (trust_domain_b_id = $3 AND trust_domain_b_consent = $4)",
-			trustDomainID, consentStatus, trustDomainID, consentStatus,
-		)
-	}
-	return squirrel.Or{
-		squirrel.And{squirrel.Eq{"trust_domain_a_id": trustDomainID}, squirrel.Eq{"trust_domain_a_consent": consentStatus}},
-		squirrel.And{squirrel.Eq{"trust_domain_b_id": trustDomainID}, squirrel.Eq{"trust_domain_b_consent": consentStatus}},
-	}
 }

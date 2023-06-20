@@ -8,23 +8,25 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/jackc/pgtype"
 )
 
 const createTrustDomain = `-- name: CreateTrustDomain :one
-INSERT INTO trust_domains(name, description)
-VALUES ($1, $2)
+INSERT INTO trust_domains(name, description, created_at)
+VALUES ($1, $2, $3)
 RETURNING id, name, description, created_at, updated_at
 `
 
 type CreateTrustDomainParams struct {
 	Name        string
 	Description sql.NullString
+	CreatedAt   time.Time
 }
 
 func (q *Queries) CreateTrustDomain(ctx context.Context, arg CreateTrustDomainParams) (TrustDomain, error) {
-	row := q.queryRow(ctx, q.createTrustDomainStmt, createTrustDomain, arg.Name, arg.Description)
+	row := q.queryRow(ctx, q.createTrustDomainStmt, createTrustDomain, arg.Name, arg.Description, arg.CreatedAt)
 	var i TrustDomain
 	err := row.Scan(
 		&i.ID,

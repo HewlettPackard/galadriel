@@ -153,7 +153,7 @@ func TestGetRelationships(t *testing.T) {
 		assert.Empty(t, setup.Recorder.Body)
 
 		expectedMsg := fmt.Sprintf(
-			"code=400, message=status filter \"%v\" is not supported, available values [%v, %v, %v]",
+			"invalid consent status filter %q, it must be one of [%v, %v, %v]",
 			randomFilter, api.Approved, api.Denied, api.Pending,
 		)
 

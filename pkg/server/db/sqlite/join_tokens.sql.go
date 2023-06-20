@@ -11,8 +11,8 @@ import (
 )
 
 const createJoinToken = `-- name: CreateJoinToken :one
-INSERT INTO join_tokens(id, token, expires_at, trust_domain_id)
-VALUES (?, ?, ?, ?)
+INSERT INTO join_tokens(id, token, expires_at, trust_domain_id, created_at)
+VALUES (?, ?, ?, ?, ?)
 RETURNING id, trust_domain_id, token, used, expires_at, created_at, updated_at
 `
 
@@ -21,6 +21,7 @@ type CreateJoinTokenParams struct {
 	Token         string
 	ExpiresAt     time.Time
 	TrustDomainID string
+	CreatedAt     time.Time
 }
 
 func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams) (JoinToken, error) {
@@ -29,6 +30,7 @@ func (q *Queries) CreateJoinToken(ctx context.Context, arg CreateJoinTokenParams
 		arg.Token,
 		arg.ExpiresAt,
 		arg.TrustDomainID,
+		arg.CreatedAt,
 	)
 	var i JoinToken
 	err := row.Scan(

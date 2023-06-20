@@ -18,38 +18,40 @@ var (
 	spiffeTD1 = spiffeid.RequireTrustDomainFromString("foo.test")
 	spiffeTD2 = spiffeid.RequireTrustDomainFromString("bar.test")
 	spiffeTD3 = spiffeid.RequireTrustDomainFromString("baz.test")
+
+	location, _ = time.LoadLocation("UTC")
+	// inFiveSeconds is truncated to microsecond precision to match the database's timestamp precision.
+	inFiveSeconds = time.Now().In(location).Add(5 * time.Second).Truncate(time.Microsecond)
+
+	sqliteExpectedUniqueErr       = "UNIQUE constraint failed"
+	postgresExpectedUniqueErr     = "duplicate key value violates unique constraint"
+	sqliteExpectedForeignKeyErr   = "FOREIGN KEY constraint failed"
+	postgresExpectedForeignKeyErr = "violates foreign key constraint"
 )
 
-func TestSuite(t *testing.T) {
+func TestDatastoreOperations(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	sqliteDS := func() db.Datastore {
-		return setupSQLiteDatastore(t)
-	}
-	runTests(t, ctx, sqliteDS)
-
-	postgresDS := func() db.Datastore {
-		return setupPostgresDatastore(t)
-	}
-	runTests(t, ctx, postgresDS)
+	runDatastoreTests(t, ctx, setupSQLiteDatastore)
+	runDatastoreTests(t, ctx, setupPostgresDatastore)
 }
 
-func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
+func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T) db.Datastore) {
 	t.Run("Test CRUD TrustDomains", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		// Create trust domain
 		req1 := &entity.TrustDomain{
-			Name: spiffeTD1,
+			Name:      spiffeTD1,
+			CreatedAt: inFiveSeconds,
 		}
 		td1, err := ds.CreateOrUpdateTrustDomain(ctx, req1)
 		assert.NoError(t, err)
 		assert.NotNil(t, td1.ID)
 		assert.Equal(t, req1.Name, td1.Name)
-		assert.NotNil(t, td1.CreatedAt)
+		assertEqualDate(t, inFiveSeconds, td1.CreatedAt.In(location))
 		assert.NotNil(t, td1.UpdatedAt)
 
 		// Create second trust domain
@@ -106,8 +108,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 	})
 	t.Run("Test TrustDomain Unique Constraint", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		td1 := &entity.TrustDomain{
 			Name: spiffeTD1,
@@ -122,14 +123,11 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		_, err = ds.CreateOrUpdateTrustDomain(ctx, td2)
 		require.Error(t, err)
 
-		sqliteExpectedErr := "UNIQUE constraint failed"
-		postgresExpectedErr := "duplicate key value violates unique constraint"
-		assertErrorString(t, err, sqliteExpectedErr, postgresExpectedErr)
+		assertErrorString(t, err, sqliteExpectedUniqueErr, postgresExpectedUniqueErr)
 	})
 	t.Run("Test CRUD Relationships", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		// Create TrustDomains
 		td1 := &entity.TrustDomain{
@@ -151,12 +149,13 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		req1 := &entity.Relationship{
 			TrustDomainAID: td1.ID.UUID,
 			TrustDomainBID: td2.ID.UUID,
+			CreatedAt:      inFiveSeconds,
 		}
 
 		relationship1, err := ds.CreateOrUpdateRelationship(ctx, req1)
 		assert.NoError(t, err)
 		assert.NotNil(t, relationship1.ID)
-		assert.NotNil(t, relationship1.CreatedAt)
+		assert.Equal(t, req1.CreatedAt, relationship1.CreatedAt.In(location))
 		assert.NotNil(t, relationship1.UpdatedAt)
 		assert.Equal(t, req1.TrustDomainAID, relationship1.TrustDomainAID)
 		assert.Equal(t, req1.TrustDomainBID, relationship1.TrustDomainBID)
@@ -228,26 +227,23 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 	})
 	t.Run("Test Relationship ForeignKey Constraints", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		td1 := &entity.TrustDomain{
 			Name: spiffeTD1,
 		}
-		td1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
-		assert.NoError(t, err)
+		td1 = createTrustDomain(ctx, t, ds, td1)
 
 		td2 := &entity.TrustDomain{
 			Name: spiffeTD2,
 		}
-		td2, err = ds.CreateOrUpdateTrustDomain(ctx, td2)
-		assert.NoError(t, err)
+		td2 = createTrustDomain(ctx, t, ds, td2)
 
 		relationship1 := &entity.Relationship{
 			TrustDomainAID: td1.ID.UUID,
 			TrustDomainBID: td2.ID.UUID,
 		}
-		relationship1, err = ds.CreateOrUpdateRelationship(ctx, relationship1)
+		relationship1, err := ds.CreateOrUpdateRelationship(ctx, relationship1)
 		assert.NoError(t, err)
 
 		// Cannot add a new relationship for the same TrustDomains
@@ -255,42 +251,33 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		_, err = ds.CreateOrUpdateRelationship(ctx, relationship1)
 		require.Error(t, err)
 
-		sqliteExpectedError := "UNIQUE constraint failed"
-		postgresExpectedError := "duplicate key value violates unique constraint"
-		assertErrorString(t, err, sqliteExpectedError, postgresExpectedError)
+		assertErrorString(t, err, sqliteExpectedUniqueErr, postgresExpectedUniqueErr)
 
 		// Cannot delete Trust Domain that has a relationship associated
 		err = ds.DeleteTrustDomain(ctx, td1.ID.UUID)
 		require.Error(t, err)
 
-		sqliteExpectedError = "FOREIGN KEY constraint failed"
-		postgresExpectedError = "violates foreign key constraint"
-		assertErrorString(t, err, sqliteExpectedError, postgresExpectedError)
+		assertErrorString(t, err, sqliteExpectedForeignKeyErr, postgresExpectedForeignKeyErr)
 
 		// Cannot delete Trust Domain that has a relationship associated
 		err = ds.DeleteTrustDomain(ctx, td2.ID.UUID)
 		require.Error(t, err)
-		assertErrorString(t, err, sqliteExpectedError, postgresExpectedError)
+		assertErrorString(t, err, sqliteExpectedForeignKeyErr, postgresExpectedForeignKeyErr)
 	})
 	t.Run("Test CRUD Bundles", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		// Create trustDomains to associate the bundles
 		td1 := &entity.TrustDomain{
 			Name: spiffeTD1,
 		}
-		td1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
-		assert.NoError(t, err)
-		assert.NotNil(t, td1.ID)
+		td1 = createTrustDomain(ctx, t, ds, td1)
 
 		td2 := &entity.TrustDomain{
 			Name: spiffeTD2,
 		}
-		td2, err = ds.CreateOrUpdateTrustDomain(ctx, td2)
-		assert.NoError(t, err)
-		assert.NotNil(t, td2.ID)
+		td2 = createTrustDomain(ctx, t, ds, td2)
 
 		// Create first Data - trustDomain-1
 		req1 := &entity.Bundle{
@@ -299,6 +286,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 			Signature:          []byte{4, 2},
 			SigningCertificate: []byte{50, 60},
 			TrustDomainID:      td1.ID.UUID,
+			CreatedAt:          inFiveSeconds,
 		}
 
 		b1, err := ds.CreateOrUpdateBundle(ctx, req1)
@@ -309,6 +297,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Equal(t, req1.Signature, b1.Signature)
 		assert.Equal(t, req1.SigningCertificate, b1.SigningCertificate)
 		assert.Equal(t, req1.TrustDomainID, b1.TrustDomainID)
+		assert.Equal(t, req1.CreatedAt, b1.CreatedAt.In(location))
 
 		// Look up bundle stored in DB and compare
 		stored, err := ds.FindBundleByID(ctx, b1.ID.UUID)
@@ -394,16 +383,13 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 	})
 	t.Run("Test Bundle Unique TrustDomain Constraint", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		// Create trustDomain to associate the bundles
 		td1 := &entity.TrustDomain{
 			Name: spiffeTD1,
 		}
-		td1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
-		assert.NoError(t, err)
-		assert.NotNil(t, td1.ID)
+		td1 = createTrustDomain(ctx, t, ds, td1)
 
 		// Create Data
 		b1 := &entity.Bundle{
@@ -413,7 +399,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 			SigningCertificate: []byte{50, 60},
 			TrustDomainID:      td1.ID.UUID,
 		}
-		b1, err = ds.CreateOrUpdateBundle(ctx, b1)
+		b1, err := ds.CreateOrUpdateBundle(ctx, b1)
 		assert.NoError(t, err)
 		assert.NotNil(t, b1)
 
@@ -429,45 +415,38 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		require.Error(t, err)
 		require.Nil(t, b2)
 
-		sqliteExpectedErr := "UNIQUE constraint failed"
-		postgresExpectedErr := "duplicate key value violates unique constraint"
-		assertErrorString(t, err, sqliteExpectedErr, postgresExpectedErr)
+		assertErrorString(t, err, sqliteExpectedUniqueErr, postgresExpectedUniqueErr)
 	})
 	t.Run("Test CRUD Join Tokens", func(t *testing.T) {
 		t.Parallel()
-		ds := newDS()
-		defer closeDatastore(t, ds)
+		ds := newDS(t)
 
 		// Create trustDomains to associate the join tokens
 		td1 := &entity.TrustDomain{
 			Name: spiffeTD1,
 		}
-		td1, err := ds.CreateOrUpdateTrustDomain(ctx, td1)
-		assert.NoError(t, err)
-		assert.NotNil(t, td1.ID)
+		td1 = createTrustDomain(ctx, t, ds, td1)
 
 		td2 := &entity.TrustDomain{
 			Name: spiffeTD2,
 		}
-		td2, err = ds.CreateOrUpdateTrustDomain(ctx, td2)
-		assert.NoError(t, err)
-		assert.NotNil(t, td2.ID)
+		td2 = createTrustDomain(ctx, t, ds, td2)
 
-		loc, _ := time.LoadLocation("UTC")
-		expiry := time.Now().In(loc).Add(1 * time.Hour)
+		expiry := time.Now().In(location).Add(1 * time.Hour)
 
 		// Create first join_token -> trustDomain_1
 		req1 := &entity.JoinToken{
 			Token:         uuid.NewString(),
 			ExpiresAt:     expiry,
 			TrustDomainID: td1.ID.UUID,
+			CreatedAt:     inFiveSeconds,
 		}
 
 		token1, err := ds.CreateJoinToken(ctx, req1)
 		assert.NoError(t, err)
 		assert.NotNil(t, token1)
 		assert.Equal(t, req1.Token, token1.Token)
-		assertEqualDate(t, req1.ExpiresAt, token1.ExpiresAt.In(loc))
+		assertEqualDate(t, req1.ExpiresAt, token1.ExpiresAt.In(location))
 		require.False(t, token1.Used)
 		assert.Equal(t, req1.TrustDomainID, token1.TrustDomainID)
 
@@ -490,7 +469,7 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 		assert.Equal(t, req1.TrustDomainID, token1.TrustDomainID)
 		require.False(t, token2.Used)
 
-		assertEqualDate(t, req2.ExpiresAt, token2.ExpiresAt.In(loc))
+		assertEqualDate(t, req2.ExpiresAt, token2.ExpiresAt.In(location))
 		assert.Equal(t, req2.TrustDomainID, token2.TrustDomainID)
 
 		// Look up token stored in DB and compare
@@ -581,29 +560,23 @@ func runTests(t *testing.T, ctx context.Context, newDS func() db.Datastore) {
 func createTrustDomain(ctx context.Context, t *testing.T, ds db.Datastore, req *entity.TrustDomain) *entity.TrustDomain {
 	td1, err := ds.CreateOrUpdateTrustDomain(ctx, req)
 	require.NoError(t, err)
+	require.NotNil(t, td1)
+	require.NotNil(t, td1.ID)
 	return td1
 }
 
-func closeDatastore(t *testing.T, ds db.Datastore) {
-	switch d := ds.(type) {
-	case interface {
-		Close() error
-	}:
-		if err := d.Close(); err != nil {
-			t.Errorf("error closing datastore: %v", err)
-		}
-	}
-}
-
 // assertErrorString asserts that the error string is one of the expected error strings
-func assertErrorString(t *testing.T, err error, s1, s2 string) {
+func assertErrorString(t *testing.T, err error, expectedErrors ...string) {
 	if err == nil {
-		t.Fatalf("expected error containing either '%s' or '%s', but got no error", s1, s2)
+		t.Errorf("expected error containing one of '%s', but got no error", strings.Join(expectedErrors, "' or '"))
 	}
 	errMsg := err.Error()
-	if !strings.Contains(errMsg, s1) && !strings.Contains(errMsg, s2) {
-		t.Fatalf("expected error containing either '%s' or '%s', but got '%s'", s1, s2, errMsg)
+	for _, expectedError := range expectedErrors {
+		if strings.Contains(errMsg, expectedError) {
+			return
+		}
 	}
+	t.Errorf("expected error containing one of '%s', but got '%s'", strings.Join(expectedErrors, "' or '"), errMsg)
 }
 
 func assertEqualDate(t *testing.T, time1 time.Time, time2 time.Time) {

@@ -13,8 +13,8 @@ import (
 )
 
 const createRelationship = `-- name: CreateRelationship :one
-INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO relationships(trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, trust_domain_a_id, trust_domain_b_id, trust_domain_a_consent, trust_domain_b_consent, created_at, updated_at
 `
 
@@ -24,7 +24,6 @@ type CreateRelationshipParams struct {
 	TrustDomainAConsent ConsentStatus
 	TrustDomainBConsent ConsentStatus
 	CreatedAt           time.Time
-	UpdatedAt           time.Time
 }
 
 func (q *Queries) CreateRelationship(ctx context.Context, arg CreateRelationshipParams) (Relationship, error) {
@@ -34,7 +33,6 @@ func (q *Queries) CreateRelationship(ctx context.Context, arg CreateRelationship
 		arg.TrustDomainAConsent,
 		arg.TrustDomainBConsent,
 		arg.CreatedAt,
-		arg.UpdatedAt,
 	)
 	var i Relationship
 	err := row.Scan(
