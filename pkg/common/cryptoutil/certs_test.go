@@ -14,6 +14,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestIsSelfSigned(t *testing.T) {
+	cert, _ := createRootCA(t)
+	assert.True(t, IsSelfSigned(cert))
+
+	cert, _ = createCert(t, DefaultKeyType)
+	assert.False(t, IsSelfSigned(cert))
+}
+
+func TestCertificatesMatch(t *testing.T) {
+	cert, _ := createRootCA(t)
+	assert.True(t, CertificatesMatch(cert, cert))
+
+	cert2, _ := createCert(t, DefaultKeyType)
+	assert.False(t, CertificatesMatch(cert, cert2))
+}
+
 func TestLoadCertificate(t *testing.T) {
 	// not a certificate
 	_, err := LoadCertificate(rsaKeyPath)
@@ -128,7 +144,7 @@ func TestSignX509(t *testing.T) {
 	require.NotNil(t, tmpl)
 
 	// create parent certificate for signing
-	parentCert, signingKey := makeRootCA(t)
+	parentCert, signingKey := createRootCA(t)
 
 	cert, err := SignX509(tmpl, parentCert, signingKey)
 	require.NoError(t, err)
@@ -155,7 +171,7 @@ func TestSelfSignX509(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func makeRootCA(t *testing.T) (*x509.Certificate, crypto.PrivateKey) {
+func createRootCA(t *testing.T) (*x509.Certificate, crypto.PrivateKey) {
 	clk := clock.NewFake()
 	name := pkix.Name{CommonName: "root-ca"}
 	tmpl, err := CreateRootCATemplate(clk, name, 5*time.Minute)
@@ -180,7 +196,7 @@ func createCert(t *testing.T, keyType KeyType) (*x509.Certificate, crypto.Privat
 	require.NotNil(t, tmpl)
 
 	// create parent certificate for signing
-	parentCert, signingKey := makeRootCA(t)
+	parentCert, signingKey := createRootCA(t)
 
 	cert, err := SignX509(tmpl, parentCert, signingKey)
 	require.NoError(t, err)

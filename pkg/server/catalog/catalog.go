@@ -11,6 +11,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/db/sqlite"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/jmhodges/clock"
 )
 
 // Catalog is a collection of provider interfaces.
@@ -25,6 +26,8 @@ type ProvidersRepository struct {
 	datastore  db.Datastore
 	x509ca     x509ca.X509CA
 	keyManager keymanager.KeyManager
+
+	clk clock.Clock
 }
 
 // ProvidersConfig holds the HCL configuration for the providers.
@@ -81,7 +84,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 	}
 
 	var err error
-	c.x509ca, err = loadX509CA(config.X509CA)
+	c.x509ca, err = c.loadX509CA(config.X509CA)
 	if err != nil {
 		return fmt.Errorf("error loading X509CA: %w", err)
 	}
@@ -110,10 +113,10 @@ func (c *ProvidersRepository) GetKeyManager() keymanager.KeyManager {
 	return c.keyManager
 }
 
-func loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
+func (r *ProvidersRepository) loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
 	switch c.Name {
 	case "disk":
-		x509CA, err := makeDiskX509CA(c)
+		x509CA, err := makeDiskX509CA(c, r.clk)
 		if err != nil {
 			return nil, fmt.Errorf("error creating disk X509CA: %w", err)
 		}
@@ -184,7 +187,7 @@ func decodeDiskKeyManagerConfig(config *providerConfig) (*diskKeyManagerConfig, 
 	return &dsConfig, nil
 }
 
-func makeDiskX509CA(config *providerConfig) (*disk.X509CA, error) {
+func makeDiskX509CA(config *providerConfig, clk clock.Clock) (*disk.X509CA, error) {
 	var diskX509CAConfig disk.Config
 	if err := gohcl.DecodeBody(config.Options, nil, &diskX509CAConfig); err != nil {
 		return nil, err
@@ -194,6 +197,8 @@ func makeDiskX509CA(config *providerConfig) (*disk.X509CA, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	diskX509CAConfig.Clock = clk
 	if err := ca.Configure(&diskX509CAConfig); err != nil {
 		return nil, err
 	}
