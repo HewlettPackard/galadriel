@@ -161,11 +161,14 @@ func (ca *X509CA) processTrustBundle(bundlePath string, cert *x509.Certificate) 
 		return fmt.Errorf("unable to load trust bundle: %v", err)
 	}
 
-	if err := ca.verifyCertificateCanChainToTrustBundle(cert, bundle); err != nil {
+	roots, intermediates := cryptoutil.SplitCertsIntoRootsAndIntermediates(bundle)
+	if err := cryptoutil.VerifyCertificateChain([]*x509.Certificate{cert}, intermediates, roots, ca.clock.Now()); err != nil {
 		return fmt.Errorf("certificate chain verification failed: %w", err)
 	}
 
-	ca.upstreamChain = filterTrustBundle(bundle, cert)
+	// Remove potential duplicate: Ensure that the same certificate does not exist twice in the upstream chain.
+	upstreamChain := cryptoutil.RemoveCertificateFromBundle(intermediates, cert)
+	ca.upstreamChain = upstreamChain
 
 	return nil
 }
@@ -175,36 +178,4 @@ func verifySelfSigned(cert *x509.Certificate) error {
 		return errors.New(ErrTrustBundleRequired)
 	}
 	return nil
-}
-
-func (ca *X509CA) verifyCertificateCanChainToTrustBundle(cert *x509.Certificate, intermediates []*x509.Certificate) error {
-	intermediatePool := x509.NewCertPool()
-	rootPool := x509.NewCertPool()
-	for _, intermediate := range intermediates {
-		intermediatePool.AddCert(intermediate)
-		rootPool.AddCert(intermediate)
-	}
-
-	opts := x509.VerifyOptions{
-		Roots:         rootPool,
-		Intermediates: intermediatePool,
-		CurrentTime:   ca.clock.Now(),
-	}
-
-	if _, err := cert.Verify(opts); err != nil {
-		return fmt.Errorf("unable to chain the certificate to a trusted CA: %w", err)
-	}
-
-	return nil
-}
-
-// filterTrustBundle removes self-signed and duplicate certificates from the provided bundle.
-func filterTrustBundle(bundle []*x509.Certificate, cert *x509.Certificate) []*x509.Certificate {
-	var filteredBundle []*x509.Certificate
-	for _, certificate := range bundle {
-		if !cryptoutil.IsSelfSigned(certificate) && !cryptoutil.CertificatesMatch(certificate, cert) {
-			filteredBundle = append(filteredBundle, certificate)
-		}
-	}
-	return filteredBundle
 }

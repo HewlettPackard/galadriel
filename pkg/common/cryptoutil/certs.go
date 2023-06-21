@@ -48,6 +48,72 @@ func CertificatesMatch(cert1, cert2 *x509.Certificate) bool {
 	return bytes.Equal(cert1.Raw, cert2.Raw)
 }
 
+// VerifyCertificateChain checks whether the provided certificate chain can be verified against the given intermediates and root CAs.
+// The function will return an error if the verification fails.
+func VerifyCertificateChain(certChain, intermediates, roots []*x509.Certificate, currentTime time.Time) error {
+	intermediatePool := x509.NewCertPool()
+	rootPool := x509.NewCertPool()
+
+	for _, cert := range certChain[1:] {
+		intermediatePool.AddCert(cert)
+	}
+	for _, intermediate := range intermediates {
+		intermediatePool.AddCert(intermediate)
+	}
+	for _, root := range roots {
+		rootPool.AddCert(root)
+	}
+
+	opts := x509.VerifyOptions{
+		Roots:         rootPool,
+		Intermediates: intermediatePool,
+		CurrentTime:   currentTime,
+	}
+
+	leaf := certChain[0]
+	if _, err := leaf.Verify(opts); err != nil {
+		return fmt.Errorf("unable to chain the certificate to a trusted CA: %w", err)
+	}
+
+	return nil
+}
+
+// SplitCertsIntoRootsAndIntermediates splits a slice of certificates into two slices: one containing the root
+// certificates and one containing the intermediate certificates. It also ensures that there are no duplicate
+// certificates in the output slices, using each certificate's serial number as a unique identifier. Certificates
+// are classified as root if they are self-signed, otherwise they are classified as intermediates.
+func SplitCertsIntoRootsAndIntermediates(bundle []*x509.Certificate) (roots, intermediates []*x509.Certificate) {
+	seen := make(map[string]bool)
+	for _, cert := range bundle {
+		id := cert.SerialNumber.String()
+		if seen[id] {
+			// Skip duplicates
+			continue
+		}
+		seen[id] = true
+
+		if IsSelfSigned(cert) {
+			roots = append(roots, cert)
+		} else {
+			intermediates = append(intermediates, cert)
+		}
+	}
+	return roots, intermediates
+}
+
+// RemoveCertificateFromBundle removes a specific certificate from a bundle.
+// It compares each certificate's Serial Number to identify the certificate to be removed.
+// It returns a new slice containing the remaining certificates.
+func RemoveCertificateFromBundle(bundle []*x509.Certificate, certToRemove *x509.Certificate) []*x509.Certificate {
+	var updatedBundle []*x509.Certificate
+	for _, cert := range bundle {
+		if cert.SerialNumber.Cmp(certToRemove.SerialNumber) != 0 {
+			updatedBundle = append(updatedBundle, cert)
+		}
+	}
+	return updatedBundle
+}
+
 // LoadCertificate loads a x509.Certificate from the given path.
 func LoadCertificate(path string) (*x509.Certificate, error) {
 	certFile, err := os.ReadFile(path)
