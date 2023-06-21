@@ -535,13 +535,13 @@ func (d *Datastore) updateRelationship(ctx context.Context, req *entity.Relation
 func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
 	id := uuid.New()
 	params := CreateBundleParams{
-		ID:                 id.String(),
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
-		TrustDomainID:      req.TrustDomainID.String(),
-		CreatedAt:          req.CreatedAt,
+		ID:                      id.String(),
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
+		TrustDomainID:           req.TrustDomainID.String(),
+		CreatedAt:               req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)
@@ -554,11 +554,11 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 
 func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bundle, error) {
 	params := UpdateBundleParams{
-		ID:                 req.ID.UUID.String(),
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
+		ID:                      req.ID.UUID.String(),
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
 	}
 
 	bundle, err := d.querier.UpdateBundle(ctx, params)

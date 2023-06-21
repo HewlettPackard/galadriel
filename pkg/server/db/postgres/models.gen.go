@@ -57,14 +57,14 @@ func (ns NullConsentStatus) Value() (driver.Value, error) {
 }
 
 type Bundle struct {
-	ID                 pgtype.UUID
-	TrustDomainID      pgtype.UUID
-	Data               []byte
-	Digest             []byte
-	Signature          []byte
-	SigningCertificate []byte
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	ID                      pgtype.UUID
+	TrustDomainID           pgtype.UUID
+	Data                    []byte
+	Digest                  []byte
+	Signature               []byte
+	SigningCertificateChain []byte
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 type JoinToken struct {

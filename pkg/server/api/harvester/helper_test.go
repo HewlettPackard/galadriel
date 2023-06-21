@@ -19,17 +19,17 @@ func TestBundlePutToEntity(t *testing.T) {
 		assert.Nil(t, bundle)
 	})
 
-	t.Run("Full fill correctly the bundle entity model", func(t *testing.T) {
+	t.Run("Fulfill correctly the bundle entity model", func(t *testing.T) {
 		bundleData := "test-bundle"
 		digest := cryptoutil.CalculateDigest([]byte(bundleData))
 		sig := encoding.EncodeToBase64([]byte("test-signature"))
 		cert := encoding.EncodeToBase64([]byte("test-certificate"))
 		bundlePut := PutBundleRequest{
-			TrustBundle:        bundleData,
-			Digest:             encoding.EncodeToBase64(digest),
-			Signature:          &sig,
-			TrustDomain:        "test.com",
-			SigningCertificate: &cert,
+			TrustBundle:             bundleData,
+			Digest:                  encoding.EncodeToBase64(digest),
+			Signature:               &sig,
+			TrustDomain:             "test.com",
+			SigningCertificateChain: &cert,
 		}
 
 		bundle, err := bundlePut.ToEntity()
@@ -40,6 +40,6 @@ func TestBundlePutToEntity(t *testing.T) {
 		assert.Equal(t, []byte(bundlePut.TrustBundle), bundle.Data)
 		assert.Equal(t, digest, bundle.Digest)
 		assert.Equal(t, []byte("test-signature"), bundle.Signature)
-		assert.Equal(t, []byte("test-certificate"), bundle.SigningCertificate)
+		assert.Equal(t, []byte("test-certificate"), bundle.SigningCertificateChain)
 	})
 }

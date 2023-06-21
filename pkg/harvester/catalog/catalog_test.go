@@ -19,11 +19,13 @@ providers {
     BundleSigner "disk" {
 		ca_cert_path = "%s"
         ca_private_key_path = "%s"
+		trust_bundle_path = "%s"
+        signing_cert_ttl = "%s"
 	}
     BundleVerifier "disk" {
 		trust_bundle_path = "%s"
 	}
-BundleVerifier "noop" {
+	BundleVerifier "noop" {
 	}
 }
 `
@@ -56,7 +58,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	tempDir, cleanup := setupTest(t)
 	defer cleanup()
 
-	hclConfig := fmt.Sprintf(hclConfigTemplate, tempDir+"/root-ca.crt", tempDir+"/root-ca.key", tempDir+"/root-ca.crt")
+	hclConfig := fmt.Sprintf(hclConfigTemplate, tempDir+"/intermediate-ca.crt", tempDir+"/intermediate-ca.key", tempDir+"/root-ca.crt", "2h", tempDir+"/root-ca.crt")
 
 	hclBody, diagErr := hclsyntax.ParseConfig([]byte(hclConfig), "", hcl.Pos{Line: 1, Column: 1})
 	require.False(t, diagErr.HasErrors())
@@ -70,6 +72,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	require.NotNil(t, pc)
 
 	cat := New()
+	cat.clock = clk
 	err = cat.LoadFromProvidersConfig(pc)
 	require.NoError(t, err)
 	require.NotNil(t, cat.GetBundleSigner())

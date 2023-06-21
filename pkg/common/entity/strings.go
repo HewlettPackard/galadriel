@@ -103,7 +103,7 @@ func (b *Bundle) String() string {
 		indent, b.Data,
 		indent, b.Digest,
 		indent, b.Signature,
-		indent, b.SigningCertificate,
+		indent, b.SigningCertificateChain,
 		indent, b.TrustDomainID,
 		indent, b.TrustDomainName,
 		indent, b.CreatedAt,

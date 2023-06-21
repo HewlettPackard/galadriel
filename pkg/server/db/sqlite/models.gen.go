@@ -10,14 +10,14 @@ import (
 )
 
 type Bundle struct {
-	ID                 string
-	TrustDomainID      string
-	Data               []byte
-	Digest             []byte
-	Signature          []byte
-	SigningCertificate []byte
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	ID                      string
+	TrustDomainID           string
+	Data                    []byte
+	Digest                  []byte
+	Signature               []byte
+	SigningCertificateChain []byte
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 type JoinToken struct {

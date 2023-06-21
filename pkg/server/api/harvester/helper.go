@@ -31,18 +31,18 @@ func (b PutBundleRequest) ToEntity() (*entity.Bundle, error) {
 	}
 
 	var cert []byte
-	if b.SigningCertificate != nil {
-		cert, err = encoding.DecodeFromBase64(*b.SigningCertificate)
+	if b.SigningCertificateChain != nil {
+		cert, err = encoding.DecodeFromBase64(*b.SigningCertificateChain)
 		if err != nil {
 			return nil, fmt.Errorf("cannot decode signing certificate: %w", err)
 		}
 	}
 
 	return &entity.Bundle{
-		Data:               []byte(b.TrustBundle),
-		Digest:             dig,
-		Signature:          sig,
-		TrustDomainName:    td,
-		SigningCertificate: cert,
+		Data:                    []byte(b.TrustBundle),
+		Digest:                  dig,
+		Signature:               sig,
+		TrustDomainName:         td,
+		SigningCertificateChain: cert,
 	}, nil
 }

@@ -305,13 +305,13 @@ func (c *client) PostBundle(ctx context.Context, bundle *entity.Bundle) error {
 	}
 
 	sig := util.EncodeToString(bundle.Signature)
-	cert := util.EncodeToString(bundle.SigningCertificate)
+	certChain := util.EncodeToString(bundle.SigningCertificateChain)
 	bundlePut := harvester.PutBundleRequest{
-		TrustBundle:        string(bundle.Data),
-		Digest:             util.EncodeToString(bundle.Digest),
-		Signature:          &sig,
-		SigningCertificate: &cert,
-		TrustDomain:        bundle.TrustDomainName.String(),
+		TrustBundle:             string(bundle.Data),
+		Digest:                  util.EncodeToString(bundle.Digest),
+		Signature:               &sig,
+		SigningCertificateChain: &certChain,
+		TrustDomain:             bundle.TrustDomainName.String(),
 	}
 
 	resp, err := c.client.BundlePut(ctx, bundle.TrustDomainName.String(), bundlePut)
@@ -492,17 +492,17 @@ func createEntityBundle(trustDomainName string, b *harvester.BundlesUpdatesItem)
 		return nil, fmt.Errorf("failed to decode signature: %v", err)
 	}
 
-	signingCert, err := util.DecodeString(b.SigningCertificate)
+	signingCert, err := util.DecodeString(b.SigningCertificateChain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode signing certificate: %v", err)
 	}
 
 	ret := &entity.Bundle{
-		TrustDomainName:    td,
-		Data:               bundleData,
-		Digest:             digest,
-		Signature:          signature,
-		SigningCertificate: signingCert,
+		TrustDomainName:         td,
+		Data:                    bundleData,
+		Digest:                  digest,
+		Signature:               signature,
+		SigningCertificateChain: signingCert,
 	}
 	return ret, nil
 }
