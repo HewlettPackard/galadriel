@@ -175,8 +175,9 @@ func (ca *X509CA) processTrustBundle(bundlePath string, certChain []*x509.Certif
 		return fmt.Errorf("unable to load trust bundle: %v", err)
 	}
 
+	leafCert := certChain[0]
 	intermediates := certChain[1:]
-	if err := cryptoutil.VerifyCertificateChain([]*x509.Certificate{certChain[0]}, intermediates, bundle, ca.clock.Now()); err != nil {
+	if err := cryptoutil.VerifyCertificateChain([]*x509.Certificate{leafCert}, intermediates, bundle, ca.clock.Now()); err != nil {
 		return fmt.Errorf("certificate chain verification failed: %w", err)
 	}
 
