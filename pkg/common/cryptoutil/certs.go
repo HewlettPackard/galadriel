@@ -80,8 +80,8 @@ func VerifyCertificateChain(certChain, intermediates, roots []*x509.Certificate,
 
 // SplitCertsIntoRootsAndIntermediates splits a slice of certificates into two slices: one containing the root
 // certificates and one containing the intermediate certificates. It also ensures that there are no duplicate
-// certificates in the output slices, using each certificate's serial number as a unique identifier. Certificates
-// are classified as root if they are self-signed, otherwise they are classified as intermediates.
+// certificates in the output slices, using each certificate's serial number as a unique identifier. Certificates are
+// classified as root if they are self-signed, otherwise they are classified as intermediates.
 func SplitCertsIntoRootsAndIntermediates(bundle []*x509.Certificate) (roots, intermediates []*x509.Certificate) {
 	seen := make(map[string]bool)
 	for _, cert := range bundle {
