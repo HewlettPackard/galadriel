@@ -40,11 +40,11 @@ type X509CA struct {
 
 // Config is the configuration for a disk-based X509CA.
 type Config struct {
-	// The path to the file containing the X.509 CA certificate.
+	// The path to the file containing the self-signed X.509 CA certificate or a certificate chain of one or more intermediate CAs.
 	CertFilePath string `hcl:"cert_file_path"`
 	// The path to the file containing the X.509 CA private key.
 	KeyFilePath string `hcl:"key_file_path"`
-	// The path to the file containing the X.509 trust bundle.
+	// The path to the file containing the X.509 trust bundle (root CAs).
 	BundleFilePath string `hcl:"bundle_file_path"`
 
 	Clock clock.Clock
@@ -83,21 +83,27 @@ func (ca *X509CA) Configure(config *Config) error {
 		return fmt.Errorf("unable to load private key: %v", err)
 	}
 
-	cert, err := cryptoutil.LoadCertificate(config.CertFilePath)
+	certChain, err := cryptoutil.LoadCertificates(config.CertFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to load certificate: %v", err)
 	}
+	leafCert := certChain[0]
 
-	if err := cryptoutil.VerifyCertificatePrivateKey(cert, key); err != nil {
+	if err := cryptoutil.VerifyCertificatePrivateKey(leafCert, key); err != nil {
 		return fmt.Errorf("certificate verification failed: %w", err)
 	}
 
-	if err := ca.processTrustBundle(config.BundleFilePath, cert); err != nil {
+	if err := ca.processTrustBundle(config.BundleFilePath, certChain); err != nil {
 		return err
 	}
 
-	ca.certificate = cert
-	ca.signer = key.(crypto.Signer)
+	ca.certificate = leafCert
+
+	signer, ok := key.(crypto.Signer)
+	if !ok {
+		return errors.New("failed to cast key to crypto.Signer")
+	}
+	ca.signer = signer
 
 	return nil
 }
@@ -105,6 +111,14 @@ func (ca *X509CA) Configure(config *Config) error {
 // IssueX509Certificate issues an X509 certificate using the disk-based private key and ROOT CA certificate. The certificate
 // is bound to the given public key and subject.
 func (ca *X509CA) IssueX509Certificate(ctx context.Context, params *x509ca.X509CertificateParams) ([]*x509.Certificate, error) {
+	// Check if the X509CA is correctly configured
+	if ca.certificate == nil {
+		return nil, errors.New("CA certificate is not configured")
+	}
+	if ca.signer == nil {
+		return nil, errors.New("CA signer is not configured")
+	}
+
 	if params.PublicKey == nil {
 		return nil, errors.New(ErrPublicKeyRequired)
 	}
@@ -151,9 +165,9 @@ func (ca *X509CA) buildCertificateChain(leafCert *x509.Certificate) ([]*x509.Cer
 	return chain, nil
 }
 
-func (ca *X509CA) processTrustBundle(bundlePath string, cert *x509.Certificate) error {
+func (ca *X509CA) processTrustBundle(bundlePath string, certChain []*x509.Certificate) error {
 	if bundlePath == "" {
-		return verifySelfSigned(cert)
+		return verifySelfSigned(certChain[0])
 	}
 
 	bundle, err := cryptoutil.LoadCertificates(bundlePath)
@@ -161,14 +175,12 @@ func (ca *X509CA) processTrustBundle(bundlePath string, cert *x509.Certificate) 
 		return fmt.Errorf("unable to load trust bundle: %v", err)
 	}
 
-	roots, intermediates := cryptoutil.SplitCertsIntoRootsAndIntermediates(bundle)
-	if err := cryptoutil.VerifyCertificateChain([]*x509.Certificate{cert}, intermediates, roots, ca.clock.Now()); err != nil {
+	intermediates := certChain[1:]
+	if err := cryptoutil.VerifyCertificateChain([]*x509.Certificate{certChain[0]}, intermediates, bundle, ca.clock.Now()); err != nil {
 		return fmt.Errorf("certificate chain verification failed: %w", err)
 	}
 
-	// Remove potential duplicate: Ensure that the same certificate does not exist twice in the upstream chain.
-	upstreamChain := cryptoutil.RemoveCertificateFromBundle(intermediates, cert)
-	ca.upstreamChain = upstreamChain
+	ca.upstreamChain = intermediates
 
 	return nil
 }

@@ -60,20 +60,20 @@ func TestConfigure(t *testing.T) {
 			expectedBundleLength: 0,
 		},
 		{
-			name: "WithIntermediateCAAndTrustBundle",
+			name: "WithIntermediateChainAndTrustBundle",
 			config: Config{
 				KeyFilePath:    tempDir + "/intermediate-ca-2.key",
-				CertFilePath:   tempDir + "/intermediate-ca-2.crt",
+				CertFilePath:   tempDir + "/chain.crt",
 				BundleFilePath: tempDir + "/bundle.crt",
 			},
 			expectedBundleLength: 1,
 		},
 		{
-			name: "WithIntermediateCADontChainBack",
+			name: "WithIntermediateCADontChainBackToRootCAInBundle",
 			config: Config{
-				KeyFilePath:    tempDir + "/other-ca.key",
-				CertFilePath:   tempDir + "/other-ca.crt",
-				BundleFilePath: tempDir + "/root-ca.crt",
+				KeyFilePath:    tempDir + "/intermediate-ca-2.key",
+				CertFilePath:   tempDir + "/intermediate-ca-2.crt",
+				BundleFilePath: tempDir + "/bundle.crt",
 			},
 			err: "unable to chain the certificate to a trusted CA",
 		},
@@ -157,7 +157,7 @@ func TestIssueX509CertificateWithTwoIntermediateCAs(t *testing.T) {
 	tempDir := setupTest(t)
 	config := Config{
 		KeyFilePath:    tempDir + "/intermediate-ca-2.key",
-		CertFilePath:   tempDir + "/intermediate-ca-2.crt",
+		CertFilePath:   tempDir + "/chain.crt",
 		BundleFilePath: tempDir + "/bundle.crt",
 		Clock:          clk,
 	}

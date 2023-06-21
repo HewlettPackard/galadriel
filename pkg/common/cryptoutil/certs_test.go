@@ -64,31 +64,6 @@ func TestVerifyCertificateChain(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSplitCertsIntoRootsAndIntermediates(t *testing.T) {
-	_, intermediate, root := createCertChain(t, DefaultKeyType)
-
-	bundle := []*x509.Certificate{intermediate, root, intermediate, root}
-
-	roots, intermediates := SplitCertsIntoRootsAndIntermediates(bundle)
-	require.Len(t, intermediates, 1)
-	require.Len(t, roots, 1)
-	require.True(t, CertificatesMatch(root, roots[0]))
-	require.True(t, CertificatesMatch(intermediate, intermediates[0]))
-}
-
-func TestRemoveCertificateFromBundle(t *testing.T) {
-	_, intermediate, root := createCertChain(t, DefaultKeyType)
-	bundle := []*x509.Certificate{intermediate, root, intermediate, root}
-
-	// Remove intermediate
-	remaining := RemoveCertificateFromBundle(bundle, intermediate)
-	require.Equal(t, len(remaining), 2)
-
-	// Remove root
-	remaining = RemoveCertificateFromBundle(remaining, root)
-	require.Equal(t, len(remaining), 0)
-}
-
 func TestLoadCertificate(t *testing.T) {
 	// not a certificate
 	_, err := LoadCertificate(rsaKeyPath)
