@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var clk = clock.NewFake()
+
 func TestIsSelfSigned(t *testing.T) {
 	cert, _ := createRootCA(t)
 	assert.True(t, IsSelfSigned(cert))
@@ -28,6 +30,38 @@ func TestCertificatesMatch(t *testing.T) {
 
 	cert2, _ := createCert(t, DefaultKeyType)
 	assert.False(t, CertificatesMatch(cert, cert2))
+}
+
+func TestVerifyCertificateChain(t *testing.T) {
+	now := clk.Now()
+
+	// Generate leaf, intermediate, and root certificates
+	leaf, intermediate, root := createCertChain(t, DefaultKeyType)
+	otherRoot, _ := createRootCA(t)
+
+	// Test valid certificate chain
+	certChain := []*x509.Certificate{leaf, intermediate}
+	intermediates := []*x509.Certificate{intermediate}
+	roots := []*x509.Certificate{root, otherRoot}
+
+	err := VerifyCertificateChain(certChain, intermediates, roots, now)
+	require.NoError(t, err)
+
+	// Test certificate chain with missing root
+	missingRootChain := []*x509.Certificate{leaf}
+	missingRootIntermediates := []*x509.Certificate{intermediate}
+	missingRoots := []*x509.Certificate{}
+
+	err = VerifyCertificateChain(missingRootChain, missingRootIntermediates, missingRoots, now)
+	require.Error(t, err)
+
+	// Test certificate chain with wrong root
+	wrongRootChain := []*x509.Certificate{leaf, intermediate}
+	wrongRootIntermediates := []*x509.Certificate{intermediate}
+	wrongRootRoots := []*x509.Certificate{otherRoot}
+
+	err = VerifyCertificateChain(wrongRootChain, wrongRootIntermediates, wrongRootRoots, now)
+	require.Error(t, err)
 }
 
 func TestLoadCertificate(t *testing.T) {
@@ -75,7 +109,6 @@ func TestEncodeCertificates(t *testing.T) {
 }
 
 func TestCreateX509Template(t *testing.T) {
-	clk := clock.NewFake()
 	key, err := GenerateSigner(ECP384)
 	require.NoError(t, err)
 	uris := []*url.URL{{Scheme: "https", Host: "domain.test"}}
@@ -98,7 +131,6 @@ func TestCreateX509Template(t *testing.T) {
 }
 
 func TestCreateCATemplate(t *testing.T) {
-	clk := clock.NewFake()
 	key, err := GenerateSigner(ECP384)
 	require.NoError(t, err)
 	name := pkix.Name{CommonName: "test-cn"}
@@ -116,7 +148,6 @@ func TestCreateCATemplate(t *testing.T) {
 }
 
 func TestCreateRootCATemplate(t *testing.T) {
-	clk := clock.NewFake()
 	name := pkix.Name{CommonName: "test-cn"}
 	twoHours := 2 * time.Hour
 
@@ -131,7 +162,6 @@ func TestCreateRootCATemplate(t *testing.T) {
 }
 
 func TestSignX509(t *testing.T) {
-	clk := clock.NewFake()
 	key, err := GenerateSigner(ECP384)
 	require.NoError(t, err)
 	uris := []*url.URL{{Scheme: "https", Host: "domain.test"}}
@@ -155,7 +185,6 @@ func TestSignX509(t *testing.T) {
 }
 
 func TestSelfSignX509(t *testing.T) {
-	clk := clock.NewFake()
 	name := pkix.Name{CommonName: "root"}
 	tmpl, err := CreateRootCATemplate(clk, name, 5*time.Minute)
 	require.NoError(t, err)
@@ -172,7 +201,6 @@ func TestSelfSignX509(t *testing.T) {
 }
 
 func createRootCA(t *testing.T) (*x509.Certificate, crypto.PrivateKey) {
-	clk := clock.NewFake()
 	name := pkix.Name{CommonName: "root-ca"}
 	tmpl, err := CreateRootCATemplate(clk, name, 5*time.Minute)
 	require.NoError(t, err)
@@ -186,23 +214,49 @@ func createRootCA(t *testing.T) (*x509.Certificate, crypto.PrivateKey) {
 }
 
 func createCert(t *testing.T, keyType KeyType) (*x509.Certificate, crypto.PrivateKey) {
-	clk := clock.NewFake()
-	key, err := GenerateSigner(keyType)
-	require.NoError(t, err)
-	name := pkix.Name{CommonName: "test-cn"}
-
-	tmpl, err := CreateX509Template(clk, key.Public(), name, nil, nil, 1*time.Hour)
-	require.NoError(t, err)
-	require.NotNil(t, tmpl)
-
 	// create parent certificate for signing
 	parentCert, signingKey := createRootCA(t)
 
+	tmpl, key := createCertTemplate(t, keyType, pkix.Name{CommonName: "leaf-cert"}, false)
 	cert, err := SignX509(tmpl, parentCert, signingKey)
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
 	return cert, key
+}
+
+func createCertChain(t *testing.T, keyType KeyType) (leaf *x509.Certificate, intermediate *x509.Certificate, root *x509.Certificate) {
+	root, rootKey := createRootCA(t)
+
+	intermediateTemplate, intermediateKey := createCertTemplate(t, keyType, pkix.Name{CommonName: "intermediate-cert"}, true)
+	intermediate, err := SignX509(intermediateTemplate, root, rootKey)
+	require.NoError(t, err)
+	require.NotNil(t, intermediate)
+
+	certTemplate, _ := createCertTemplate(t, keyType, pkix.Name{CommonName: "leaf-cert"}, false)
+	leaf, _ = SignX509(certTemplate, intermediate, intermediateKey)
+	require.NoError(t, err)
+	require.NotNil(t, leaf)
+
+	return
+}
+
+func createCertTemplate(t *testing.T, keyType KeyType, name pkix.Name, isCa bool) (*x509.Certificate, crypto.PrivateKey) {
+	key, err := GenerateSigner(keyType)
+	require.NoError(t, err)
+
+	var tmpl *x509.Certificate
+	if isCa {
+		tmpl, err = CreateCATemplate(clk, key.Public(), name, 1*time.Hour)
+		require.NoError(t, err)
+		require.NotNil(t, tmpl)
+	} else {
+		tmpl, err = CreateX509Template(clk, key.Public(), name, nil, nil, 1*time.Hour)
+		require.NoError(t, err)
+		require.NotNil(t, tmpl)
+	}
+
+	return tmpl, key
 }
 
 func readFile(t *testing.T, path string) []byte {
