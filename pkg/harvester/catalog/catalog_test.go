@@ -17,9 +17,9 @@ import (
 var hclConfigTemplate = `
 providers {
     BundleSigner "disk" {
-		ca_cert_path = "%s"
+        ca_cert_path = "%s"
         ca_private_key_path = "%s"
-		trust_bundle_path = "%s"
+        trust_bundle_path = "%s"
         signing_cert_ttl = "%s"
 	}
     BundleVerifier "disk" {
