@@ -23,7 +23,7 @@ providers {
         signing_cert_ttl = "%s"
 	}
     BundleVerifier "disk" {
-		trust_bundle_path = "%s"
+        trust_bundle_path = "%s"
 	}
 	BundleVerifier "noop" {
 	}

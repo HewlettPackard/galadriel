@@ -217,8 +217,9 @@ func (v *DiskVerifier) Verify(payload, signature []byte, signingCertificateChain
 		return fmt.Errorf("failed to verify signing certificate chain: %w", err)
 	}
 
-	// verifies signature of payload
-	if err := rsa.VerifyPKCS1v15(signingCertificateChain[0].PublicKey.(*rsa.PublicKey), crypto.SHA256, hashed[:], signature); err != nil {
+	// Verify the signature of the payload
+	publicKey := signingCertificateChain[0].PublicKey.(*rsa.PublicKey)
+	if err := rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashed[:], signature); err != nil {
 		return ErrInvalidSignature
 	}
 
