@@ -4,43 +4,43 @@ import (
 	"database/sql"
 	"embed"
 
-	"github.com/golang-migrate/migrate/v4"
+	"github.com/HewlettPackard/galadriel/pkg/server/db"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/sirupsen/logrus"
 )
 
 //go:embed migrations/*.sql
 var fs embed.FS
 
-// currentDBVersion defines the current migration version supported by the app.
+// supportedSchemaVersion defines the current SQLite schema migration version supported by the app.
 // This is used to ensure that the app is compatible with the database schema.
 // When a new migration is created, this version should be updated in order to force
 // the migrations to run when starting up the app.
-const currentDBVersion = 2
+const supportedSchemaVersion = 2
 
-const scheme = "sqlite3"
+const migrationsFolder = "migrations"
 
-func validateAndMigrateSchema(db *sql.DB) error {
+func applyMigrations(sqlDB *sql.DB, log logrus.FieldLogger) error {
+	sourceInstance, err := iofs.New(fs, migrationsFolder)
+	if err != nil {
+		return err
+	}
+	defer sourceInstance.Close()
 
-	sourceInstance, err := iofs.New(fs, "migrations")
+	driverInstance, err := sqlite.WithInstance(sqlDB, new(sqlite.Config))
 	if err != nil {
 		return err
 	}
 
-	driverInstance, err := sqlite.WithInstance(db, new(sqlite.Config))
+	migrated, err := db.ApplyDatabaseMigrations(driverInstance, sourceInstance, supportedSchemaVersion, driverName)
 	if err != nil {
 		return err
 	}
 
-	m, err := migrate.NewWithInstance("iofs", sourceInstance, scheme, driverInstance)
-	if err != nil {
-		return err
+	if migrated {
+		log.Infof("SQLite database migrated to version %d", supportedSchemaVersion)
 	}
 
-	err = m.Migrate(currentDBVersion)
-	if err != nil && err != migrate.ErrNoChange {
-		return err
-	}
-
-	return sourceInstance.Close()
+	return nil
 }

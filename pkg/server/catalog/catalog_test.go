@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/jmhodges/clock"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,7 +69,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pc)
 
-	cat := New()
+	cat := New(logrus.New())
 	cat.clock = clk
 	err = cat.LoadFromProvidersConfig(pc)
 	require.NoError(t, err)

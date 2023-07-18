@@ -13,8 +13,11 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
+
+const driverName = "sqlite3"
 
 // Datastore is a SQL database accessor that provides convenient methods
 // to perform CRUD operations for Galadriel entities.
@@ -27,8 +30,8 @@ type Datastore struct {
 // NewDatastore creates a new instance of a Datastore object that connects to an SQLite database
 // parsing the connString.
 // The connString should be a file path to the SQLite database file.
-func NewDatastore(connString string) (*Datastore, error) {
-	openDB, err := sql.Open("sqlite3", connString)
+func NewDatastore(connString string, log logrus.FieldLogger) (*Datastore, error) {
+	openDB, err := sql.Open(driverName, connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}
@@ -40,7 +43,7 @@ func NewDatastore(connString string) (*Datastore, error) {
 	}
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(openDB); err != nil {
+	if err = applyMigrations(openDB, log); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
