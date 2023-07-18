@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HewlettPackard/galadriel/pkg/common/constants"
 	"github.com/HewlettPackard/galadriel/pkg/common/cryptoutil"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/test/certtest"
@@ -91,7 +92,7 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  tempDir + "/intermediate-ca.key",
 				CertFilePath: tempDir + "/intermediate-ca.crt",
 			},
-			err: ErrTrustBundleRequired,
+			err: constants.ErrTrustBundleRequired,
 		},
 		{
 			name: "NoIntermediateCACert",
@@ -99,7 +100,7 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  tempDir + "/intermediate-ca.key",
 				CertFilePath: "",
 			},
-			err: ErrCertPathRequired,
+			err: constants.ErrCertPathRequired,
 		},
 		{
 			name: "NoIntermediateCAPrivateKey",
@@ -107,7 +108,7 @@ func TestConfigure(t *testing.T) {
 				KeyFilePath:  "",
 				CertFilePath: tempDir + "/intermediate-ca.crt",
 			},
-			err: ErrPrivateKeyPathRequired,
+			err: constants.ErrPrivateKeyPathRequired,
 		},
 	}
 

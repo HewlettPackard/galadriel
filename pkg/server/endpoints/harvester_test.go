@@ -605,10 +605,10 @@ func TestBundlePut(t *testing.T) {
 		sig := "test-signature"
 		cert := "test-certificate"
 		bundlePut := harvester.PutBundleRequest{
-			Signature:          &sig,
-			SigningCertificate: &cert,
-			TrustBundle:        "a new bundle",
-			TrustDomain:        td1,
+			Signature:               &sig,
+			SigningCertificateChain: &cert,
+			TrustBundle:             "a new bundle",
+			TrustDomain:             td1,
 		}
 
 		setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", &bundlePut)
@@ -639,11 +639,11 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 	sig := encoding.EncodeToBase64([]byte("test-signature"))
 	cert := encoding.EncodeToBase64([]byte("test-signing-certificate"))
 	bundlePut := harvester.PutBundleRequest{
-		Signature:          &sig,
-		SigningCertificate: &cert,
-		TrustBundle:        bundle,
-		Digest:             digest,
-		TrustDomain:        td1,
+		Signature:               &sig,
+		SigningCertificateChain: &cert,
+		TrustBundle:             bundle,
+		Digest:                  digest,
+		TrustDomain:             td1,
 	}
 
 	setup := NewHarvesterTestSetup(t, http.MethodPut, "/trust-domain/:trustDomainName/bundles", &bundlePut)
@@ -663,7 +663,7 @@ func testBundlePut(t *testing.T, setupFunc func(*HarvesterTestSetup) *entity.Tru
 	assert.Equal(t, bundlePut.TrustBundle, string(storedBundle.Data))
 	assert.Equal(t, digest, encoding.EncodeToBase64(storedBundle.Digest))
 	assert.Equal(t, sig, encoding.EncodeToBase64(storedBundle.Signature))
-	assert.Equal(t, cert, encoding.EncodeToBase64(storedBundle.SigningCertificate))
+	assert.Equal(t, cert, encoding.EncodeToBase64(storedBundle.SigningCertificateChain))
 	assert.Equal(t, td.ID.UUID, storedBundle.TrustDomainID)
 }
 
@@ -673,11 +673,11 @@ func testInvalidBundleRequest(t *testing.T, fieldName string, fieldValue interfa
 	bundle := "test trust bundle"
 	digest := encoding.EncodeToBase64(cryptoutil.CalculateDigest([]byte(bundle)))
 	bundlePut := harvester.PutBundleRequest{
-		Signature:          &sig,
-		SigningCertificate: &cert,
-		TrustBundle:        bundle,
-		Digest:             digest,
-		TrustDomain:        td1,
+		Signature:               &sig,
+		SigningCertificateChain: &cert,
+		TrustBundle:             bundle,
+		Digest:                  digest,
+		TrustDomain:             td1,
 	}
 	reflect.ValueOf(&bundlePut).Elem().FieldByName(fieldName).Set(reflect.ValueOf(fieldValue))
 

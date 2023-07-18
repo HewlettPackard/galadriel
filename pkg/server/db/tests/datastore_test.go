@@ -281,12 +281,12 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 
 		// Create first Data - trustDomain-1
 		req1 := &entity.Bundle{
-			Data:               []byte{1, 2, 3},
-			Digest:             []byte("test-digest"),
-			Signature:          []byte{4, 2},
-			SigningCertificate: []byte{50, 60},
-			TrustDomainID:      td1.ID.UUID,
-			CreatedAt:          inFiveSeconds,
+			Data:                    []byte{1, 2, 3},
+			Digest:                  []byte("test-digest"),
+			Signature:               []byte{4, 2},
+			SigningCertificateChain: []byte{50, 60},
+			TrustDomainID:           td1.ID.UUID,
+			CreatedAt:               inFiveSeconds,
 		}
 
 		b1, err := ds.CreateOrUpdateBundle(ctx, req1)
@@ -295,7 +295,7 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 		assert.Equal(t, req1.Data, b1.Data)
 		assert.Equal(t, req1.Digest, b1.Digest)
 		assert.Equal(t, req1.Signature, b1.Signature)
-		assert.Equal(t, req1.SigningCertificate, b1.SigningCertificate)
+		assert.Equal(t, req1.SigningCertificateChain, b1.SigningCertificateChain)
 		assert.Equal(t, req1.TrustDomainID, b1.TrustDomainID)
 		assert.Equal(t, req1.CreatedAt, b1.CreatedAt.In(location))
 
@@ -306,11 +306,11 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 
 		// Create second Data -> trustDomain-2
 		req2 := &entity.Bundle{
-			Data:               []byte{10, 20, 30},
-			Digest:             []byte("test-digest-2"),
-			Signature:          []byte{40, 20},
-			SigningCertificate: []byte{80, 90},
-			TrustDomainID:      td2.ID.UUID,
+			Data:                    []byte{10, 20, 30},
+			Digest:                  []byte("test-digest-2"),
+			Signature:               []byte{40, 20},
+			SigningCertificateChain: []byte{80, 90},
+			TrustDomainID:           td2.ID.UUID,
 		}
 
 		b2, err := ds.CreateOrUpdateBundle(ctx, req2)
@@ -319,7 +319,7 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 		assert.Equal(t, req2.Data, b2.Data)
 		assert.Equal(t, req2.Digest, b2.Digest)
 		assert.Equal(t, req2.Signature, b2.Signature)
-		assert.Equal(t, req2.SigningCertificate, b2.SigningCertificate)
+		assert.Equal(t, req2.SigningCertificateChain, b2.SigningCertificateChain)
 		assert.Equal(t, req2.TrustDomainID, b2.TrustDomainID)
 
 		// Look up bundle stored in DB and compare
@@ -340,7 +340,7 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 		b1.Data = []byte{'a', 'b', 'c'}
 		b1.Digest = []byte("test-digest-3")
 		b1.Signature = []byte{'f', 'g', 'h'}
-		b1.SigningCertificate = []byte{'f', 'g', 'h'}
+		b1.SigningCertificateChain = []byte{'f', 'g', 'h'}
 
 		updated, err := ds.CreateOrUpdateBundle(ctx, b1)
 		assert.NoError(t, err)
@@ -348,7 +348,7 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 		assert.Equal(t, b1.Data, updated.Data)
 		assert.Equal(t, b1.Digest, updated.Digest)
 		assert.Equal(t, b1.Signature, updated.Signature)
-		assert.Equal(t, b1.SigningCertificate, updated.SigningCertificate)
+		assert.Equal(t, b1.SigningCertificateChain, updated.SigningCertificateChain)
 		assert.Equal(t, b1.TrustDomainID, updated.TrustDomainID)
 
 		// Look up bundle stored in DB and compare
@@ -393,11 +393,11 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 
 		// Create Data
 		b1 := &entity.Bundle{
-			Data:               []byte{1, 2, 3},
-			Digest:             []byte("test-digest-1"),
-			Signature:          []byte{4, 2},
-			SigningCertificate: []byte{50, 60},
-			TrustDomainID:      td1.ID.UUID,
+			Data:                    []byte{1, 2, 3},
+			Digest:                  []byte("test-digest-1"),
+			Signature:               []byte{4, 2},
+			SigningCertificateChain: []byte{50, 60},
+			TrustDomainID:           td1.ID.UUID,
 		}
 		b1, err := ds.CreateOrUpdateBundle(ctx, b1)
 		assert.NoError(t, err)
@@ -405,11 +405,11 @@ func runDatastoreTests(t *testing.T, ctx context.Context, newDS func(*testing.T)
 
 		// Create second Data associated to same trustDomain
 		b2 := &entity.Bundle{
-			Data:               []byte{10, 20, 30},
-			Digest:             []byte("test-digest-2"),
-			Signature:          []byte{40, 20},
-			SigningCertificate: []byte{80, 90},
-			TrustDomainID:      td1.ID.UUID,
+			Data:                    []byte{10, 20, 30},
+			Digest:                  []byte("test-digest-2"),
+			Signature:               []byte{40, 20},
+			SigningCertificateChain: []byte{80, 90},
+			TrustDomainID:           td1.ID.UUID,
 		}
 		b2, err = ds.CreateOrUpdateBundle(ctx, b2)
 		require.Error(t, err)

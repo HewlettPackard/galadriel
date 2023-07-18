@@ -25,14 +25,14 @@ CREATE TABLE IF NOT EXISTS relationships
 
 CREATE TABLE IF NOT EXISTS bundles
 (
-    id                  UUID PRIMARY KEY                  DEFAULT gen_random_uuid(),
-    trust_domain_id     UUID                     NOT NULL UNIQUE,
-    data                BYTEA                    NOT NULL,
-    digest              BYTEA                    NOT NULL,
-    signature           BYTEA,
-    signing_certificate BYTEA,
-    created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    id                        UUID PRIMARY KEY                  DEFAULT gen_random_uuid(),
+    trust_domain_id           UUID                     NOT NULL UNIQUE,
+    data                      BYTEA                    NOT NULL,
+    digest                    BYTEA                    NOT NULL,
+    signature                 BYTEA,
+    signing_certificate_chain BYTEA,
+    created_at                TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at                TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS join_tokens

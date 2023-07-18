@@ -83,14 +83,14 @@ func (b Bundle) ToEntity() (*entity.Bundle, error) {
 	}
 
 	return &entity.Bundle{
-		ID:                 nullID,
-		Data:               b.Data,
-		Digest:             b.Digest,
-		Signature:          b.Signature,
-		SigningCertificate: b.SigningCertificate,
-		TrustDomainID:      tdID,
-		CreatedAt:          b.CreatedAt,
-		UpdatedAt:          b.UpdatedAt,
+		ID:                      nullID,
+		Data:                    b.Data,
+		Digest:                  b.Digest,
+		Signature:               b.Signature,
+		SigningCertificateChain: b.SigningCertificateChain,
+		TrustDomainID:           tdID,
+		CreatedAt:               b.CreatedAt,
+		UpdatedAt:               b.UpdatedAt,
 	}, nil
 }
 

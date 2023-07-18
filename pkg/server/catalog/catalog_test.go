@@ -69,7 +69,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	require.NotNil(t, pc)
 
 	cat := New()
-	cat.clk = clk
+	cat.clock = clk
 	err = cat.LoadFromProvidersConfig(pc)
 	require.NoError(t, err)
 	require.NotNil(t, cat.GetDatastore())
