@@ -26,14 +26,14 @@ CREATE TABLE IF NOT EXISTS relationships
 
 CREATE TABLE IF NOT EXISTS bundles
 (
-    id                        TEXT PRIMARY KEY,
-    trust_domain_id           TEXT      NOT NULL UNIQUE,
-    data                      BLOB      NOT NULL,
-    digest                    BLOB      NOT NULL,
-    signature                 BLOB,
-    signing_certificate_chain BLOB,
-    created_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                  TEXT PRIMARY KEY,
+    trust_domain_id     TEXT      NOT NULL UNIQUE,
+    data                BLOB      NOT NULL,
+    digest              BLOB      NOT NULL,
+    signature           BLOB,
+    signing_certificate BLOB,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trust_domain_id)
         REFERENCES trust_domains (id)
 );
