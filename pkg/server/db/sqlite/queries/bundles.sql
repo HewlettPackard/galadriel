@@ -1,5 +1,5 @@
 -- name: CreateBundle :one
-INSERT INTO bundles(id, data, digest, signature, signing_certificate, trust_domain_id, created_at)
+INSERT INTO bundles(id, data, digest, signature, signing_certificate_chain, trust_domain_id, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 RETURNING *;
 
@@ -8,7 +8,7 @@ UPDATE bundles
 SET data                = ?,
     digest              = ?,
     signature           = ?,
-    signing_certificate = ?,
+    signing_certificate_chain = ?,
     updated_at          = datetime('now')
 WHERE id = ?
 RETURNING *;

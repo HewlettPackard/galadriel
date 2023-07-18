@@ -27,7 +27,7 @@ type ProvidersRepository struct {
 	x509ca     x509ca.X509CA
 	keyManager keymanager.KeyManager
 
-	clk clock.Clock
+	clock clock.Clock
 }
 
 // ProvidersConfig holds the HCL configuration for the providers.
@@ -116,7 +116,7 @@ func (c *ProvidersRepository) GetKeyManager() keymanager.KeyManager {
 func (r *ProvidersRepository) loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
 	switch c.Name {
 	case "disk":
-		x509CA, err := makeDiskX509CA(c, r.clk)
+		x509CA, err := makeDiskX509CA(c, r.clock)
 		if err != nil {
 			return nil, fmt.Errorf("error creating disk X509CA: %w", err)
 		}

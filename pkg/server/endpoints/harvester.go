@@ -459,7 +459,7 @@ func (h *HarvesterAPIHandlers) getBundleSyncResult(ctx context.Context, authTD *
 			updateItem.TrustBundle = string(bundle.Data)
 			updateItem.Digest = encoding.EncodeToBase64(bundle.Digest[:])
 			updateItem.Signature = encoding.EncodeToBase64(bundle.Signature)
-			updateItem.SigningCertificate = encoding.EncodeToBase64(bundle.SigningCertificate)
+			updateItem.SigningCertificateChain = encoding.EncodeToBase64(bundle.SigningCertificateChain)
 			resp.Updates[bundle.TrustDomainName.String()] = updateItem
 		}
 

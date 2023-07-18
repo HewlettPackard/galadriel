@@ -169,9 +169,9 @@ func (s *FederatedBundlesSynchronizer) findTrustDomainsToDelete(bundles []*entit
 // If one of the verifiers can verify the bundle, it returns nil.
 func (s *FederatedBundlesSynchronizer) validateBundleIntegrity(bundle *entity.Bundle) error {
 	var certChain []*x509.Certificate
-	if len(bundle.SigningCertificate) > 0 {
+	if len(bundle.SigningCertificateChain) > 0 {
 		var err error
-		certChain, err = x509.ParseCertificates(bundle.SigningCertificate)
+		certChain, err = x509.ParseCertificates(bundle.SigningCertificateChain)
 		if err != nil {
 			return fmt.Errorf("failed to parse signing certificate chain: %w", err)
 		}

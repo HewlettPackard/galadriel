@@ -520,12 +520,12 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := CreateBundleParams{
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
-		TrustDomainID:      pgTrustDomainID,
-		CreatedAt:          req.CreatedAt,
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
+		TrustDomainID:           pgTrustDomainID,
+		CreatedAt:               req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)
@@ -542,11 +542,11 @@ func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := UpdateBundleParams{
-		ID:                 pgID,
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
+		ID:                      pgID,
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
 	}
 
 	bundle, err := d.querier.UpdateBundle(ctx, params)

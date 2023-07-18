@@ -55,6 +55,17 @@ providers {
 }
 ```
 
+##### BundleSigner - disk
+
+Configuration details for BundleSigner "disk":
+
+| Option                | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ca_private_key_path` | Path to the CA private key file in PEM format. This path can be relative or absolute.                                                                                                                                                                                                                                                                                                                                                                            |
+| `ca_cert_path`        | Path to the CA certificate file in PEM format. If Galadriel is using a self-signed CA, cert_file_path should specify the path to a single PEM encoded certificate representing the CA certificate. If not self-signed, cert_file_path should specify the path to a file that must contain one or more certificates necessary to establish a valid certificate chain up the root certificates defined in bundle_file_path. This path can be relative or absolute. |
+| `trust_bundle_path`   | Required when the ca_cert_path does not contain a self-signed CA certificate. This is the path to the file containing one or more root CAs. This path can be relative or absolute.                                                                                                                                                                                                                                                                               |
+| `signing_cert_ttl`    | The TTL of the signing certificate. This TTL should align with the TTL of the SPIRE bundle.                                                                                                                                                                                                                                                                                                                                                                      |
+
 #### BundleVerifier
 
 This subsection explains the `BundleVerifier` options.

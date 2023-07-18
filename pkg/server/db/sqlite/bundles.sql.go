@@ -11,19 +11,19 @@ import (
 )
 
 const createBundle = `-- name: CreateBundle :one
-INSERT INTO bundles(id, data, digest, signature, signing_certificate, trust_domain_id, created_at)
+INSERT INTO bundles(id, data, digest, signature, signing_certificate_chain, trust_domain_id, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
-RETURNING id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
+RETURNING id, trust_domain_id, data, digest, signature, signing_certificate_chain, created_at, updated_at
 `
 
 type CreateBundleParams struct {
-	ID                 string
-	Data               []byte
-	Digest             []byte
-	Signature          []byte
-	SigningCertificate []byte
-	TrustDomainID      string
-	CreatedAt          time.Time
+	ID                      string
+	Data                    []byte
+	Digest                  []byte
+	Signature               []byte
+	SigningCertificateChain []byte
+	TrustDomainID           string
+	CreatedAt               time.Time
 }
 
 func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bundle, error) {
@@ -32,7 +32,7 @@ func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bun
 		arg.Data,
 		arg.Digest,
 		arg.Signature,
-		arg.SigningCertificate,
+		arg.SigningCertificateChain,
 		arg.TrustDomainID,
 		arg.CreatedAt,
 	)
@@ -43,7 +43,7 @@ func (q *Queries) CreateBundle(ctx context.Context, arg CreateBundleParams) (Bun
 		&i.Data,
 		&i.Digest,
 		&i.Signature,
-		&i.SigningCertificate,
+		&i.SigningCertificateChain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -62,7 +62,7 @@ func (q *Queries) DeleteBundle(ctx context.Context, id string) error {
 }
 
 const findBundleByID = `-- name: FindBundleByID :one
-SELECT id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
+SELECT id, trust_domain_id, data, digest, signature, signing_certificate_chain, created_at, updated_at
 FROM bundles
 WHERE id = ?
 `
@@ -76,7 +76,7 @@ func (q *Queries) FindBundleByID(ctx context.Context, id string) (Bundle, error)
 		&i.Data,
 		&i.Digest,
 		&i.Signature,
-		&i.SigningCertificate,
+		&i.SigningCertificateChain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -84,7 +84,7 @@ func (q *Queries) FindBundleByID(ctx context.Context, id string) (Bundle, error)
 }
 
 const findBundleByTrustDomainID = `-- name: FindBundleByTrustDomainID :one
-SELECT id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
+SELECT id, trust_domain_id, data, digest, signature, signing_certificate_chain, created_at, updated_at
 FROM bundles
 WHERE trust_domain_id = ?
 LIMIT 1
@@ -99,7 +99,7 @@ func (q *Queries) FindBundleByTrustDomainID(ctx context.Context, trustDomainID s
 		&i.Data,
 		&i.Digest,
 		&i.Signature,
-		&i.SigningCertificate,
+		&i.SigningCertificateChain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -107,7 +107,7 @@ func (q *Queries) FindBundleByTrustDomainID(ctx context.Context, trustDomainID s
 }
 
 const listBundles = `-- name: ListBundles :many
-SELECT id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
+SELECT id, trust_domain_id, data, digest, signature, signing_certificate_chain, created_at, updated_at
 FROM bundles
 ORDER BY created_at DESC
 `
@@ -127,7 +127,7 @@ func (q *Queries) ListBundles(ctx context.Context) ([]Bundle, error) {
 			&i.Data,
 			&i.Digest,
 			&i.Signature,
-			&i.SigningCertificate,
+			&i.SigningCertificateChain,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -149,18 +149,18 @@ UPDATE bundles
 SET data                = ?,
     digest              = ?,
     signature           = ?,
-    signing_certificate = ?,
+    signing_certificate_chain = ?,
     updated_at          = datetime('now')
 WHERE id = ?
-RETURNING id, trust_domain_id, data, digest, signature, signing_certificate, created_at, updated_at
+RETURNING id, trust_domain_id, data, digest, signature, signing_certificate_chain, created_at, updated_at
 `
 
 type UpdateBundleParams struct {
-	Data               []byte
-	Digest             []byte
-	Signature          []byte
-	SigningCertificate []byte
-	ID                 string
+	Data                    []byte
+	Digest                  []byte
+	Signature               []byte
+	SigningCertificateChain []byte
+	ID                      string
 }
 
 func (q *Queries) UpdateBundle(ctx context.Context, arg UpdateBundleParams) (Bundle, error) {
@@ -168,7 +168,7 @@ func (q *Queries) UpdateBundle(ctx context.Context, arg UpdateBundleParams) (Bun
 		arg.Data,
 		arg.Digest,
 		arg.Signature,
-		arg.SigningCertificate,
+		arg.SigningCertificateChain,
 		arg.ID,
 	)
 	var i Bundle
@@ -178,7 +178,7 @@ func (q *Queries) UpdateBundle(ctx context.Context, arg UpdateBundleParams) (Bun
 		&i.Data,
 		&i.Digest,
 		&i.Signature,
-		&i.SigningCertificate,
+		&i.SigningCertificateChain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

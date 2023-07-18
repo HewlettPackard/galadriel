@@ -128,20 +128,19 @@ func (s *SpireBundleSynchronizer) prepareBundleForUpload(spireBundle *spiffebund
 		return nil, fmt.Errorf("failed to sign the bundle: %w", err)
 	}
 
-	// Check if the signer returned a signing certificate to include in the bundle
-	var cert []byte
-	if len(certChain) > 0 {
-		cert = certChain[0].Raw
+	var chainBytes []byte
+	for _, cert := range certChain {
+		chainBytes = append(chainBytes, cert.Raw...)
 	}
 
 	digest := cryptoutil.CalculateDigest(bundleBytes)
 
 	bundle := &entity.Bundle{
-		Data:               bundleBytes,
-		Digest:             digest[:],
-		Signature:          bundleSignatureBytes,
-		SigningCertificate: cert,
-		TrustDomainName:    spireBundle.TrustDomain(),
+		Data:                    bundleBytes,
+		Digest:                  digest[:],
+		Signature:               bundleSignatureBytes,
+		SigningCertificateChain: chainBytes,
+		TrustDomainName:         spireBundle.TrustDomain(),
 	}
 
 	return bundle, nil
