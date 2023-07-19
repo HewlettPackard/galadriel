@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/jmhodges/clock"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,6 +23,7 @@ providers {
 	X509CA "disk" {
 		key_file_path = "%s"
 		cert_file_path = "%s"
+        bundle_file_path = "%s"
 	}
     KeyManager "memory" {}
 }
@@ -54,7 +56,7 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	tempDir, cleanup := setupTest(t)
 	defer cleanup()
 
-	hclConfig := fmt.Sprintf(hclConfigTemplate, ":memory:", tempDir+"/root-ca.key", tempDir+"/root-ca.crt")
+	hclConfig := fmt.Sprintf(hclConfigTemplate, ":memory:", tempDir+"/intermediate-ca.key", tempDir+"/intermediate-ca.crt", tempDir+"/root-ca.crt")
 
 	hclBody, diagErr := hclsyntax.ParseConfig([]byte(hclConfig), "", hcl.Pos{Line: 1, Column: 1})
 	require.False(t, diagErr.HasErrors())
@@ -67,7 +69,8 @@ func TestLoadFromProvidersConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pc)
 
-	cat := New()
+	cat := New(logrus.New())
+	cat.clock = clk
 	err = cat.LoadFromProvidersConfig(pc)
 	require.NoError(t, err)
 	require.NotNil(t, cat.GetDatastore())

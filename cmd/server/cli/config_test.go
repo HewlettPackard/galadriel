@@ -27,8 +27,9 @@ providers {
     }
 
 	X509CA "disk" {
-		key_file_path = "./root_ca.key"
-		cert_file_path = "./root_ca.crt"
+		key_file_path = "./intermediate-ca.key"
+		cert_file_path = "./intermediate-ca.crt"
+		bundle_file_path = "./bundle.crt"
 	}
 
     KeyManager "memory" {}

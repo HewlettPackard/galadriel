@@ -246,8 +246,8 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
         signature:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
-        signing_certificate:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+        signing_certificate_chain:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/CertificateChain'
         digest:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
     PostBundleSyncRequest:
@@ -277,7 +277,7 @@ components:
         trust_domain_1: {
           signature: "NLHJupZn8KxFoJmSiJDCP+UuoSJOlhMK1HYIjc6YP75ve15PcMJ7zq1JLRXFzXtM0zf0ScLbZ1nYYGvQmgW+GJAx5PsmSq3m1kjrx0fFJD0EDqVZhazoYIos84Pa8qG/cWe05s1rHoYY53wO231ZGktkH56KnydHD2wwefyQCpA=",
           trust_bundle: "",
-          signing_certificate: "-----BEGIN CERTIFICATE-----
+          signing_certificate_chain: "-----BEGIN CERTIFICATE-----
             MIIDuzCCAqMCFH+T4VhUJm/YDc927qIA591wFjQ/MA0GCSqGSIb3DQEBCwUAMIGZ
             MQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxEDAOBgNVBAcMB0hvdXN0b24x
             KzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBFbnRlcnByaXNlIENvbXBhbnkxHjAc
@@ -342,7 +342,7 @@ components:
         - trust_bundle
         - digest
         - signature
-        - signing_certificate
+        - signing_certificate_chain
       properties:
         trust_bundle:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustBundle'
@@ -350,8 +350,8 @@ components:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/BundleDigest'
         signature:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/Signature'
-        signing_certificate:
-          $ref: '../../../common/api/schemas.yaml#/components/schemas/Certificate'
+        signing_certificate_chain:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/CertificateChain'
   securitySchemes:
     harvester_auth:
       $ref: '../../../common/api/schemas.yaml#/components/securitySchemes/harvester_auth'

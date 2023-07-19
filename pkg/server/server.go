@@ -46,7 +46,7 @@ func New(config *Config) *Server {
 func (s *Server) Run(ctx context.Context) error {
 	s.config.Logger.Info("Starting Galadriel Server")
 
-	cat := catalog.New()
+	cat := catalog.New(s.config.Logger)
 	err := cat.LoadFromProvidersConfig(s.config.ProvidersConfig)
 	if err != nil {
 		return fmt.Errorf("failed to load catalogs from providers config: %w", err)

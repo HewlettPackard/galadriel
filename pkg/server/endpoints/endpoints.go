@@ -2,8 +2,10 @@ package endpoints
 
 import (
 	"context"
+	"crypto"
 	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
@@ -268,30 +270,43 @@ func (e *Endpoints) startTLSCertificateRotation(ctx context.Context, errChan cha
 func (e *Endpoints) getTLSCertificate(ctx context.Context) (*tls.Certificate, error) {
 	privateKey, err := cryptoutil.GenerateSigner(cryptoutil.DefaultKeyType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create private key: %w", err)
+		return nil, err
 	}
 
-	params := &x509ca.X509CertificateParams{
-		Subject: pkix.Name{
-			CommonName: constants.GaladrielServerName,
-		},
-		TTL:       serverCertificateTTL,
-		PublicKey: privateKey.Public(),
-		DNSNames:  []string{constants.GaladrielServerName},
-	}
-	cert, err := e.x509CA.IssueX509Certificate(ctx, params)
+	publicKey := privateKey.Public()
+	certChain, err := e.issueCertificate(ctx, publicKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to issue TLS certificate: %w", err)
+		return nil, err
 	}
 
-	certPEM := cryptoutil.EncodeCertificate(cert[0])
+	certPEM, err := cryptoutil.EncodeCertificates(certChain)
+	if err != nil {
+		return nil, err
+	}
+
 	keyPEM := cryptoutil.EncodeRSAPrivateKey(privateKey.(*rsa.PrivateKey))
 
+	return buildTLSCertificate(certPEM, keyPEM)
+}
+
+func buildTLSCertificate(certPEM []byte, keyPEM []byte) (*tls.Certificate, error) {
 	certificate, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
 		return nil, err
 	}
 	return &certificate, nil
+}
+
+func (e *Endpoints) issueCertificate(ctx context.Context, publicKey crypto.PublicKey) ([]*x509.Certificate, error) {
+	params := &x509ca.X509CertificateParams{
+		Subject: pkix.Name{
+			CommonName: constants.GaladrielServerName,
+		},
+		TTL:       serverCertificateTTL,
+		PublicKey: publicKey,
+		DNSNames:  []string{constants.GaladrielServerName},
+	}
+	return e.x509CA.IssueX509Certificate(ctx, params)
 }
 
 func (e *Endpoints) triggerListeningHook() {

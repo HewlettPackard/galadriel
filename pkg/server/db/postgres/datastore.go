@@ -14,8 +14,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
+
+const driverName = "postgresql"
 
 // Datastore is a SQL database accessor that provides convenient methods
 // to perform CRUD operations for Galadriel entities.
@@ -28,7 +31,7 @@ type Datastore struct {
 // NewDatastore creates a new instance of a Datastore object that connects to a Postgres database
 // parsing the connString.
 // The connString can be a URL, e.g, "postgresql://host...", or a DSN, e.g., "host= user= password= dbname= port=".
-func NewDatastore(connString string) (*Datastore, error) {
+func NewDatastore(connString string, log logrus.FieldLogger) (*Datastore, error) {
 	c, err := pgx.ParseConfig(connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Postgres Connection URL: %w", err)
@@ -37,7 +40,7 @@ func NewDatastore(connString string) (*Datastore, error) {
 	openDB := stdlib.OpenDB(*c)
 
 	// validates if the schema in the DB matches the schema supported by the app, and runs the migrations if needed
-	if err = validateAndMigrateSchema(openDB); err != nil {
+	if err = applyMigrations(openDB, log); err != nil {
 		return nil, fmt.Errorf("failed to validate or migrate schema: %w", err)
 	}
 
@@ -520,12 +523,12 @@ func (d *Datastore) createBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := CreateBundleParams{
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
-		TrustDomainID:      pgTrustDomainID,
-		CreatedAt:          req.CreatedAt,
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
+		TrustDomainID:           pgTrustDomainID,
+		CreatedAt:               req.CreatedAt,
 	}
 
 	bundle, err := d.querier.CreateBundle(ctx, params)
@@ -542,11 +545,11 @@ func (d *Datastore) updateBundle(ctx context.Context, req *entity.Bundle) (*Bund
 		return nil, err
 	}
 	params := UpdateBundleParams{
-		ID:                 pgID,
-		Data:               req.Data,
-		Digest:             req.Digest,
-		Signature:          req.Signature,
-		SigningCertificate: req.SigningCertificate,
+		ID:                      pgID,
+		Data:                    req.Data,
+		Digest:                  req.Digest,
+		Signature:               req.Signature,
+		SigningCertificateChain: req.SigningCertificateChain,
 	}
 
 	bundle, err := d.querier.UpdateBundle(ctx, params)

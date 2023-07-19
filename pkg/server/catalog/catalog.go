@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
@@ -11,6 +12,8 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/db/sqlite"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/jmhodges/clock"
+	"github.com/sirupsen/logrus"
 )
 
 // Catalog is a collection of provider interfaces.
@@ -25,6 +28,9 @@ type ProvidersRepository struct {
 	datastore  db.Datastore
 	x509ca     x509ca.X509CA
 	keyManager keymanager.KeyManager
+
+	log   logrus.FieldLogger
+	clock clock.Clock
 }
 
 // ProvidersConfig holds the HCL configuration for the providers.
@@ -50,8 +56,8 @@ type diskKeyManagerConfig struct {
 
 // New creates a new ProvidersRepository.
 // It is the responsibility of the caller to load the catalog with providers using LoadFromProvidersConfig.
-func New() *ProvidersRepository {
-	return &ProvidersRepository{}
+func New(log logrus.FieldLogger) *ProvidersRepository {
+	return &ProvidersRepository{log: log}
 }
 
 // ProvidersConfigsFromHCLBody parses the HCL body and returns the providers configuration.
@@ -81,7 +87,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 	}
 
 	var err error
-	c.x509ca, err = loadX509CA(config.X509CA)
+	c.x509ca, err = c.loadX509CA(config.X509CA)
 	if err != nil {
 		return fmt.Errorf("error loading X509CA: %w", err)
 	}
@@ -90,7 +96,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 	if err != nil {
 		return fmt.Errorf("error loading KeyManager: %w", err)
 	}
-	c.datastore, err = loadDatastore(config.Datastore)
+	c.datastore, err = loadDatastore(config.Datastore, c.log.WithField(telemetry.SubsystemName, telemetry.Datastore))
 	if err != nil {
 		return fmt.Errorf("error loading datastore: %w", err)
 	}
@@ -110,10 +116,10 @@ func (c *ProvidersRepository) GetKeyManager() keymanager.KeyManager {
 	return c.keyManager
 }
 
-func loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
+func (r *ProvidersRepository) loadX509CA(c *providerConfig) (x509ca.X509CA, error) {
 	switch c.Name {
 	case "disk":
-		x509CA, err := makeDiskX509CA(c)
+		x509CA, err := makeDiskX509CA(c, r.clock)
 		if err != nil {
 			return nil, fmt.Errorf("error creating disk X509CA: %w", err)
 		}
@@ -143,20 +149,20 @@ func loadKeyManager(c *providerConfig) (keymanager.KeyManager, error) {
 	return nil, fmt.Errorf("unknown KeyManager provider: %s", c.Name)
 }
 
-func loadDatastore(config *providerConfig) (db.Datastore, error) {
+func loadDatastore(config *providerConfig, log logrus.FieldLogger) (db.Datastore, error) {
 	c, err := decodeDatastoreConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding datastore config: %w", err)
 	}
 	switch config.Name {
 	case "postgres":
-		ds, err := postgres.NewDatastore(c.ConnectionString)
+		ds, err := postgres.NewDatastore(c.ConnectionString, log)
 		if err != nil {
 			return nil, fmt.Errorf("error creating postgres datastore: %w", err)
 		}
 		return ds, nil
 	case "sqlite3":
-		ds, err := sqlite.NewDatastore(c.ConnectionString)
+		ds, err := sqlite.NewDatastore(c.ConnectionString, log)
 		if err != nil {
 			return nil, fmt.Errorf("error creating sqlite datastore: %w", err)
 		}
@@ -184,7 +190,7 @@ func decodeDiskKeyManagerConfig(config *providerConfig) (*diskKeyManagerConfig, 
 	return &dsConfig, nil
 }
 
-func makeDiskX509CA(config *providerConfig) (*disk.X509CA, error) {
+func makeDiskX509CA(config *providerConfig, clk clock.Clock) (*disk.X509CA, error) {
 	var diskX509CAConfig disk.Config
 	if err := gohcl.DecodeBody(config.Options, nil, &diskX509CAConfig); err != nil {
 		return nil, err
@@ -194,6 +200,8 @@ func makeDiskX509CA(config *providerConfig) (*disk.X509CA, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	diskX509CAConfig.Clock = clk
 	if err := ca.Configure(&diskX509CAConfig); err != nil {
 		return nil, err
 	}

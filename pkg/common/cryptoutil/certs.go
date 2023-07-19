@@ -1,6 +1,7 @@
 package cryptoutil
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -29,6 +30,53 @@ var (
 	maxBigInt64 = getMaxBigInt64()
 	one         = big.NewInt(1)
 )
+
+// IsSelfSigned checks if the given certificate is self-signed.
+// In the context of a certificate hierarchy, a self-signed certificate is typically a root CA.
+func IsSelfSigned(cert *x509.Certificate) bool {
+	if err := cert.CheckSignatureFrom(cert); err != nil {
+		return false
+	}
+	return true
+}
+
+// CertificatesMatch compares two certificates to determine if they are identical.
+// The comparison is made by looking at the raw, DER-encoded form of the certificates.
+// If the raw forms of the certificates are identical, the function returns true;
+// otherwise, it returns false.
+func CertificatesMatch(cert1, cert2 *x509.Certificate) bool {
+	return bytes.Equal(cert1.Raw, cert2.Raw)
+}
+
+// VerifyCertificateChain checks whether the provided certificate chain can be verified against the given intermediates and root CAs.
+// The function will return an error if the verification fails.
+func VerifyCertificateChain(certChain, intermediates, roots []*x509.Certificate, currentTime time.Time) error {
+	intermediatePool := x509.NewCertPool()
+	rootPool := x509.NewCertPool()
+
+	for _, cert := range certChain[1:] {
+		intermediatePool.AddCert(cert)
+	}
+	for _, intermediate := range intermediates {
+		intermediatePool.AddCert(intermediate)
+	}
+	for _, root := range roots {
+		rootPool.AddCert(root)
+	}
+
+	opts := x509.VerifyOptions{
+		Roots:         rootPool,
+		Intermediates: intermediatePool,
+		CurrentTime:   currentTime,
+	}
+
+	leaf := certChain[0]
+	if _, err := leaf.Verify(opts); err != nil {
+		return fmt.Errorf("unable to chain the certificate to a trusted CA: %w", err)
+	}
+
+	return nil
+}
 
 // LoadCertificate loads a x509.Certificate from the given path.
 func LoadCertificate(path string) (*x509.Certificate, error) {
@@ -105,6 +153,16 @@ func ParseCertificates(pemBytes []byte) ([]*x509.Certificate, error) {
 // EncodeCertificate encodes the given x509.Certificate into PEM format.
 func EncodeCertificate(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: certType, Bytes: cert.Raw})
+}
+
+// EncodeCertificates encodes the given chain of x509.Certificate into PEM format.
+func EncodeCertificates(certChain []*x509.Certificate) ([]byte, error) {
+	var certPEM []byte
+	for _, cert := range certChain {
+		certPEM = append(certPEM, EncodeCertificate(cert)...)
+		certPEM = append(certPEM, '\n')
+	}
+	return certPEM, nil
 }
 
 // CreateX509Template creates a new x509.Certificate template for a leaf certificate.

@@ -70,9 +70,12 @@ providers {
 
 The X509CA section provides configuration details for X.509 CA providers:
 
-| Option | Description                                                                                                                                                                                                                                 |
-|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `disk` | Uses a ROOT CA and private key loaded from disk to issue X.509 certificates. The `key_file_path` is the path to the root CA private key file in PEM format. The `cert_file_path` is the path to the root CA certificate file in PEM format. |
+| Option             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `disk`             | Uses a CA (either ROOT or INTERMEDIATE) and private key loaded from disk to issue X.509 certificates.                                                                                                                                                                                                                                                                                                                                                            |
+| `key_file_path`    | Path to the CA private key file in PEM format. This path can be relative or absolute.                                                                                                                                                                                                                                                                                                                                                                            |
+| `cert_file_path`   | Path to the CA certificate file in PEM format. If Galadriel is using a self-signed CA, cert_file_path should specify the path to a single PEM encoded certificate representing the CA certificate. If not self-signed, cert_file_path should specify the path to a file that must contain one or more certificates necessary to establish a valid certificate chain up the root certificates defined in bundle_file_path. This path can be relative or absolute. |
+| `bundle_file_path` | Required when the cert_file_path does not contain a self-signed CA certificate. This is the path to the file containing one or more root CAs. This path can be relative or absolute.                                                                                                                                                                                                                                                                             |
 
 #### Example:
 
@@ -81,9 +84,13 @@ providers {
   X509CA "disk" {
     key_file_path = "./conf/server/dummy_root_ca.key"
     cert_file_path = "./conf/server/dummy_root_ca.crt"
+    bundle_file_path = "./conf/server/root_ca.crt"
   }
 }
 ```
+
+In the example above, the bundle_file_path is set, indicating that the certificate used in cert_file_path isn't
+self-signed and requires a chain of trust to a root CA.
 
 #### KeyManager Configuration
 

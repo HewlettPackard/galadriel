@@ -11,6 +11,7 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/server/db/sqlite"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +26,7 @@ func setupSQLiteDatastore(t *testing.T) db.Datastore {
 	// Use an in-memory database
 	dsn := ":memory:"
 
-	datastore, err := sqlite.NewDatastore(dsn)
+	datastore, err := sqlite.NewDatastore(dsn, logrus.New())
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
@@ -39,7 +40,7 @@ func setupSQLiteDatastore(t *testing.T) db.Datastore {
 
 func setupPostgresDatastore(t *testing.T) db.Datastore {
 	conn := startPostgresDB(t)
-	datastore, err := postgres.NewDatastore(conn)
+	datastore, err := postgres.NewDatastore(conn, logrus.New())
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
