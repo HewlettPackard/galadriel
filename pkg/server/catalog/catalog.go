@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/HewlettPackard/galadriel/pkg/common/keymanager"
+	"github.com/HewlettPackard/galadriel/pkg/common/telemetry"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca"
 	"github.com/HewlettPackard/galadriel/pkg/common/x509ca/disk"
 	"github.com/HewlettPackard/galadriel/pkg/server/db"
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/jmhodges/clock"
+	"github.com/sirupsen/logrus"
 )
 
 // Catalog is a collection of provider interfaces.
@@ -27,6 +29,7 @@ type ProvidersRepository struct {
 	x509ca     x509ca.X509CA
 	keyManager keymanager.KeyManager
 
+	log   logrus.FieldLogger
 	clock clock.Clock
 }
 
@@ -53,8 +56,8 @@ type diskKeyManagerConfig struct {
 
 // New creates a new ProvidersRepository.
 // It is the responsibility of the caller to load the catalog with providers using LoadFromProvidersConfig.
-func New() *ProvidersRepository {
-	return &ProvidersRepository{}
+func New(log logrus.FieldLogger) *ProvidersRepository {
+	return &ProvidersRepository{log: log}
 }
 
 // ProvidersConfigsFromHCLBody parses the HCL body and returns the providers configuration.
@@ -93,7 +96,7 @@ func (c *ProvidersRepository) LoadFromProvidersConfig(config *ProvidersConfig) e
 	if err != nil {
 		return fmt.Errorf("error loading KeyManager: %w", err)
 	}
-	c.datastore, err = loadDatastore(config.Datastore)
+	c.datastore, err = loadDatastore(config.Datastore, c.log.WithField(telemetry.SubsystemName, telemetry.Datastore))
 	if err != nil {
 		return fmt.Errorf("error loading datastore: %w", err)
 	}
@@ -146,20 +149,20 @@ func loadKeyManager(c *providerConfig) (keymanager.KeyManager, error) {
 	return nil, fmt.Errorf("unknown KeyManager provider: %s", c.Name)
 }
 
-func loadDatastore(config *providerConfig) (db.Datastore, error) {
+func loadDatastore(config *providerConfig, log logrus.FieldLogger) (db.Datastore, error) {
 	c, err := decodeDatastoreConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding datastore config: %w", err)
 	}
 	switch config.Name {
 	case "postgres":
-		ds, err := postgres.NewDatastore(c.ConnectionString)
+		ds, err := postgres.NewDatastore(c.ConnectionString, log)
 		if err != nil {
 			return nil, fmt.Errorf("error creating postgres datastore: %w", err)
 		}
 		return ds, nil
 	case "sqlite3":
-		ds, err := sqlite.NewDatastore(c.ConnectionString)
+		ds, err := sqlite.NewDatastore(c.ConnectionString, log)
 		if err != nil {
 			return nil, fmt.Errorf("error creating sqlite datastore: %w", err)
 		}

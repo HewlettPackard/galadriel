@@ -31,6 +31,8 @@ const (
 	// BundleOpStatus represents a bundle operation status.
 	BundleOpStatus = "bundle_op_status"
 
+	Datastore = "datastore"
+
 	// DiskX509CA represents a disk-based X509 CA.
 	DiskX509CA = "disk_x509_ca"
 
