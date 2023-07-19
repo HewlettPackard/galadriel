@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0] - 2023-07-20
+
+### Changed
+
+- Enhanced the Relationships CLI by introducing Update, Delete, and List operations (#224).
+- Expanded the Trust Domain CLI with the inclusion of Update, Delete, and List capabilities (#221).
+- Optimized the X509CA disk implementation with several improvements and fixes, now enabling the use of intermediate CAs and trust bundle (#232, #233).
+- Refactored and improved DiskSigner and DiskVerifier, now supporting the use of signing certificate chains (#235).
+- Refined the API for increased consistency (#227).
+
 ## [0.2.1] - 2023-06-07
 
 ### Added
