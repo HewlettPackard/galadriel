@@ -11,7 +11,6 @@ import (
 	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
 	"github.com/HewlettPackard/galadriel/pkg/server/api/admin"
-	"github.com/google/uuid"
 )
 
 const (
@@ -29,8 +28,9 @@ type GaladrielAPIClient interface {
 	DeleteTrustDomainByName(context.Context, api.TrustDomainName) error
 	UpdateTrustDomainByName(context.Context, api.TrustDomainName, string) (*entity.TrustDomain, error)
 	CreateRelationship(context.Context, *entity.Relationship) (*entity.Relationship, error)
-	GetRelationshipByID(context.Context, uuid.UUID) (*entity.Relationship, error)
-	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) (*entity.Relationship, error)
+	GetRelationships(context.Context, api.ConsentStatus, api.TrustDomainName) ([]*entity.Relationship, error)
+	PatchRelationshipByID(context.Context, api.UUID, api.ConsentStatus, api.ConsentStatus) (*entity.Relationship, error)
+	DeleteRelationshipByID(ctx context.Context, relID api.UUID) error
 	GetJoinToken(context.Context, api.TrustDomainName, int32) (*entity.JoinToken, error)
 }
 
@@ -123,6 +123,7 @@ func (g *galadrielAdminClient) DeleteTrustDomainByName(ctx context.Context, trus
 
 func (g *galadrielAdminClient) UpdateTrustDomainByName(ctx context.Context, trustDomainName api.TrustDomainName, description string) (*entity.TrustDomain, error) {
 	payload := api.TrustDomain{Name: trustDomainName, Description: &description}
+
 	res, err := g.client.PutTrustDomainByName(ctx, trustDomainName, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
@@ -185,10 +186,10 @@ func (g *galadrielAdminClient) CreateRelationship(ctx context.Context, rel *enti
 	return relationship, nil
 }
 
-func (g *galadrielAdminClient) GetRelationships(ctx context.Context, consentStatus api.ConsentStatus, trustDomainName api.TrustDomainName) (*entity.Relationship, error) {
-	payload := &admin.GetRelationshipsParams{ConsentStatus: &consentStatus, TrustDomainName: &trustDomainName}
+func (g *galadrielAdminClient) PatchRelationshipByID(ctx context.Context, relID api.UUID, statusA api.ConsentStatus, statusB api.ConsentStatus) (*entity.Relationship, error) {
+	payload := admin.PatchRelationshipByIDRequest{ConsentStatusA: statusA, ConsentStatusB: statusB}
 
-	res, err := g.client.GetRelationships(ctx, payload)
+	res, err := g.client.PatchRelationshipByID(ctx, relID, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
@@ -207,8 +208,25 @@ func (g *galadrielAdminClient) GetRelationships(ctx context.Context, consentStat
 	return relationship, nil
 }
 
-func (g *galadrielAdminClient) GetRelationshipByID(ctx context.Context, relID uuid.UUID) (*entity.Relationship, error) {
-	res, err := g.client.GetRelationshipByID(ctx, relID)
+func (g *galadrielAdminClient) DeleteRelationshipByID(ctx context.Context, relID api.UUID) error {
+	res, err := g.client.DeleteRelationshipByID(ctx, relID)
+	if err != nil {
+		return fmt.Errorf(errorRequestFailed, err)
+	}
+	defer res.Body.Close()
+
+	_, err = httputil.ReadResponse(res)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *galadrielAdminClient) GetRelationships(ctx context.Context, status api.ConsentStatus, trustDomainName api.TrustDomainName) ([]*entity.Relationship, error) {
+	payload := &admin.GetRelationshipsParams{ConsentStatus: &status, TrustDomainName: &trustDomainName}
+
+	res, err := g.client.GetRelationships(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf(errorRequestFailed, err)
 	}
@@ -219,12 +237,21 @@ func (g *galadrielAdminClient) GetRelationshipByID(ctx context.Context, relID uu
 		return nil, err
 	}
 
-	relationship, err := unmarshalJSONToRelationship(body)
-	if err != nil {
-		return nil, err
+	var relationships []*api.Relationship
+	if err := json.Unmarshal(body, &relationships); err != nil {
+		return nil, fmt.Errorf(errUnmarshalRelationships, err)
 	}
 
-	return relationship, nil
+	rels := make([]*entity.Relationship, 0, len(relationships))
+	for i, r := range relationships {
+		rel, err := r.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert relationship %d: %v", i, err)
+		}
+		rels = append(rels, rel)
+	}
+
+	return rels, nil
 }
 
 func (g *galadrielAdminClient) GetJoinToken(ctx context.Context, trustDomainName api.TrustDomainName, ttl int32) (*entity.JoinToken, error) {

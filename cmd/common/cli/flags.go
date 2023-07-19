@@ -8,6 +8,8 @@ const (
 	TrustDomainBFlagName           = "trustDomainB"
 	TrustDomainDescriptionFlagName = "trustDomainDescription"
 	ConsentStatusFlagName          = "status"
+	ConsentStatusAFlagName         = "statusA"
+	ConsentStatusBFlagName         = "statusB"
 	TTLFlagName                    = "ttl"
 	RelationshipIDFlagName         = "relationshipID"
 	JoinTokenFlagName              = "joinToken"

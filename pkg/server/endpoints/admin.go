@@ -115,14 +115,14 @@ func (h *AdminAPIHandlers) PutRelationship(echoCtx echo.Context) error {
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Created relationship between trust domains %s and %s", dbTd1.Name.String(), dbTd2.Name.String())
-
 	response := api.RelationshipFromEntity(rel)
 	err = chttp.WriteResponse(echoCtx, http.StatusCreated, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Created relationship between trust domains %s and %s", dbTd1.Name.String(), dbTd2.Name.String()))
 
 	return nil
 }
@@ -240,11 +240,15 @@ func (h *AdminAPIHandlers) DeleteTrustDomainByName(echoCtx echo.Context, trustDo
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = chttp.WriteResponse(echoCtx, http.StatusOK, fmt.Sprintf("Trust domain %q deleted", trustDomainName))
+	message := fmt.Sprintf("Trust Domain %q deleted", trustDomain.Name.String())
+	response := api.DeleteResponse{Code: http.StatusOK, Message: message}
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("trust domain entity - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Trust Domain %q deleted", trustDomain.Name.String()))
 
 	return nil
 }
@@ -311,14 +315,103 @@ func (h *AdminAPIHandlers) PutTrustDomainByName(echoCtx echo.Context, trustDomai
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.Logger.Printf("Trust Bundle %v updated", td.Name)
-
 	response := api.TrustDomainFromEntity(td)
 	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
 	if err != nil {
 		err = fmt.Errorf("relationships - %v", err.Error())
 		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
 	}
+
+	h.Logger.WithField(telemetry.TrustDomain, fmt.Sprintf("Trust Domain %q updated", td.Name.String()))
+
+	return nil
+}
+
+// PatchRelationshipByID updates a specific relationship based on its id - (PATCH /relationships/{relationshipID})
+func (h *AdminAPIHandlers) PatchRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
+
+	reqBody := &admin.PatchRelationshipByIDJSONRequestBody{}
+	err := chttp.ParseRequestBodyToStruct(echoCtx, reqBody)
+	if err != nil {
+		err := fmt.Errorf("failed to parse relationship patch body: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	}
+
+	rel, err := reqBody.ToEntity()
+	if err != nil {
+		err := fmt.Errorf("failed to read relationship patch body: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusBadRequest)
+	}
+
+	relDB, err := h.findRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		return err
+	}
+
+	if relDB == nil {
+		err = fmt.Errorf("relationship does not exist")
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
+	// Set the ID to perform an Update instead of a Creation of a new Relationship.
+	rel.ID = relDB.ID
+
+	// Check if the user its performing an update in a single consent status, and replace the other one with the existing consent in the databse.
+	if rel.TrustDomainAConsent == "" {
+		rel.TrustDomainAConsent = relDB.TrustDomainAConsent
+	}
+	if rel.TrustDomainBConsent == "" {
+		rel.TrustDomainBConsent = relDB.TrustDomainBConsent
+	}
+
+	relationship, err := h.Datastore.CreateOrUpdateRelationship(ctx, rel)
+	if err != nil {
+		err = fmt.Errorf("failed updating relationship: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	response := api.RelationshipFromEntity(relationship)
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
+	if err != nil {
+		err = fmt.Errorf("relationship entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	h.Logger.WithField(telemetry.Relationship, fmt.Sprintf("Relationship %q updated.", rel.ID.UUID.String()))
+
+	return nil
+}
+
+// DeleteRelationshipByID deletes a specific relationship based on its id - (DELETE /relationships/{relationshipID})
+func (h *AdminAPIHandlers) DeleteRelationshipByID(echoCtx echo.Context, relationshipID api.UUID) error {
+	ctx := echoCtx.Request().Context()
+
+	//Check if the relationship exist in the database
+	relationship, err := h.findRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		return err
+	}
+
+	if relationship == nil {
+		err = fmt.Errorf("relationship does not exist")
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusNotFound)
+	}
+
+	err = h.Datastore.DeleteRelationship(ctx, relationship.ID.UUID)
+	if err != nil {
+		err = fmt.Errorf("failed getting relationships: %v", err)
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	response := api.DeleteResponse{Code: http.StatusOK, Message: "Relationship deleted"}
+	err = chttp.WriteResponse(echoCtx, http.StatusOK, response)
+	if err != nil {
+		err = fmt.Errorf("relationship entity - %v", err.Error())
+		return chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	h.Logger.WithField(telemetry.Relationship, fmt.Sprintf("Relationship %q deleted.", relationship.ID.UUID.String()))
 
 	return nil
 }
@@ -407,4 +500,14 @@ func (h *AdminAPIHandlers) lookupTrustDomain(ctx context.Context, trustDomainNam
 	}
 
 	return td, nil
+}
+
+func (h *AdminAPIHandlers) findRelationshipByID(ctx context.Context, relationshipID api.UUID) (*entity.Relationship, error) {
+	relationship, err := h.Datastore.FindRelationshipByID(ctx, relationshipID)
+	if err != nil {
+		err = fmt.Errorf("failed getting relationship: %v", err)
+		return nil, chttp.LogAndRespondWithError(h.Logger, err, err.Error(), http.StatusInternalServerError)
+	}
+
+	return relationship, nil
 }

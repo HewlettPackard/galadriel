@@ -3,10 +3,13 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/HewlettPackard/galadriel/cmd/common/cli"
 	"github.com/HewlettPackard/galadriel/cmd/server/util"
+	"github.com/HewlettPackard/galadriel/pkg/common/api"
 	"github.com/HewlettPackard/galadriel/pkg/common/entity"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
@@ -52,10 +55,6 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 			return fmt.Errorf("cannot get trust domain A flag: %v", err)
 		}
 
-		if tdA == "" {
-			return fmt.Errorf("trust domain A flag is required")
-		}
-
 		trustDomain1, err := spiffeid.TrustDomainFromString(tdA)
 		if err != nil {
 			return err
@@ -64,10 +63,6 @@ Importantly, the initiation of a federation relationship is a two-party agreemen
 		tdB, err := cmd.Flags().GetString(cli.TrustDomainBFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get trust domain B flag: %v", err)
-		}
-
-		if tdB == "" {
-			return fmt.Errorf("trust domain B flag is required")
 		}
 
 		trustDomain2, err := spiffeid.TrustDomainFromString(tdB)
@@ -98,6 +93,47 @@ var listRelationshipCmd = &cobra.Command{
 	Long:  `The 'list' command allows you to retrieve a list of registered relationships.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status flag: %v", err)
+		}
+
+		trustDomainName, err := cmd.Flags().GetString(cli.TrustDomainFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get trust domain flag: %v", err)
+		}
+
+		consentStatus := api.ConsentStatus(status)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		relationships, err := client.GetRelationships(ctx, consentStatus, trustDomainName)
+		if err != nil {
+			return err
+		}
+
+		if len(relationships) == 0 {
+			fmt.Println("No relationships found")
+			return nil
+		}
+
+		fmt.Println()
+		for _, r := range relationships {
+			fmt.Printf("%s\n", r.ConsoleString())
+		}
+		fmt.Println()
+
 		return nil
 	},
 }
@@ -116,6 +152,31 @@ Before deleting a relationship, carefully consider the implications it may have 
 Exercise caution when using this command, as it permanently removes the relationship configuration and may affect the ability of workloads in different trust domains to securely communicate with each other.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		relID, err := getRelationshipIDAndParse(cmd)
+		if err != nil {
+			return err
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		err = client.DeleteRelationshipByID(ctx, relID)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Relationship deleted.\n")
+
 		return nil
 	},
 }
@@ -128,6 +189,44 @@ var updateRelationshipCmd = &cobra.Command{
 in the Galadriel Server.`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		socketPath, err := cmd.Flags().GetString(cli.SocketPathFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get socket path flag: %v", err)
+		}
+
+		relID, err := getRelationshipIDAndParse(cmd)
+		if err != nil {
+			return err
+		}
+
+		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status for trust domain A flag: %v", err)
+		}
+
+		statusB, err := cmd.Flags().GetString(cli.ConsentStatusBFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status for trust domain B flag: %v", err)
+		}
+
+		consentStatusA := api.ConsentStatus(statusA)
+		consentStatusB := api.ConsentStatus(statusB)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		client, err := util.NewGaladrielUDSClient(socketPath, nil)
+		if err != nil {
+			return err
+		}
+
+		rel, err := client.PatchRelationshipByID(ctx, relID, consentStatusA, consentStatusB)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Relationship %q updated.\n", rel.ID.UUID.String())
+
 		return nil
 	},
 }
@@ -140,5 +239,90 @@ func init() {
 	relationshipCmd.AddCommand(updateRelationshipCmd)
 
 	createRelationshipCmd.Flags().StringP(cli.TrustDomainAFlagName, "a", "", "The name of a SPIFFE trust domain to participate in the relationship.")
+	err := createRelationshipCmd.MarkFlagRequired(cli.TrustDomainAFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainAFlagName, err)
+	}
 	createRelationshipCmd.Flags().StringP(cli.TrustDomainBFlagName, "b", "", "The name of a SPIFFE trust domain to participate in the relationship.")
+	err = createRelationshipCmd.MarkFlagRequired(cli.TrustDomainBFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainBFlagName, err)
+	}
+
+	listRelationshipCmd.Flags().StringP(cli.TrustDomainFlagName, "t", "", "The name of a trust domain to filter relationships by.")
+	err = listRelationshipCmd.MarkFlagRequired(cli.TrustDomainFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.TrustDomainFlagName, err)
+	}
+	listRelationshipCmd.Flags().StringP(cli.ConsentStatusFlagName, "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = listRelationshipCmd.MarkFlagRequired(cli.ConsentStatusFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusFlagName, err)
+	}
+	listRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get status flag: %v", err)
+		}
+
+		if status != "" {
+			return cli.ValidateConsentStatusValue(status)
+		}
+		return nil
+	}
+
+	updateRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "The ID of the relationship to be updated.")
+	err = updateRelationshipCmd.MarkFlagRequired(cli.RelationshipIDFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.RelationshipIDFlagName, err)
+	}
+	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusAFlagName, "a", "", fmt.Sprintf("Trust domain A consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = updateRelationshipCmd.MarkFlagRequired(cli.ConsentStatusAFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusAFlagName, err)
+	}
+	updateRelationshipCmd.Flags().StringP(cli.ConsentStatusBFlagName, "b", "", fmt.Sprintf("Trust domain B consent status to update. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
+	err = updateRelationshipCmd.MarkFlagRequired(cli.ConsentStatusBFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.ConsentStatusBFlagName, err)
+	}
+	updateRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		statusA, err := cmd.Flags().GetString(cli.ConsentStatusAFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status A flag: %v", err)
+		}
+		if statusA != "" {
+			return cli.ValidateConsentStatusValue(statusA)
+		}
+
+		statusB, err := cmd.Flags().GetString(cli.ConsentStatusBFlagName)
+		if err != nil {
+			return fmt.Errorf("cannot get consent status B flag: %v", err)
+		}
+		if statusB != "" {
+			return cli.ValidateConsentStatusValue(statusB)
+		}
+
+		return nil
+	}
+
+	deleteRelationshipCmd.Flags().StringP(cli.RelationshipIDFlagName, "r", "", "The ID of the relationship to be deleted.")
+	err = deleteRelationshipCmd.MarkFlagRequired(cli.RelationshipIDFlagName)
+	if err != nil {
+		fmt.Printf(errMarkFlagAsRequired, cli.RelationshipIDFlagName, err)
+	}
+}
+
+func getRelationshipIDAndParse(cmd *cobra.Command) (uuid.UUID, error) {
+	idStr, err := cmd.Flags().GetString(cli.RelationshipIDFlagName)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("cannot get relationship ID flag: %v", err)
+	}
+
+	relID, err := uuid.Parse(idStr)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("cannot parse relationship ID: %v", err)
+	}
+
+	return relID, nil
 }

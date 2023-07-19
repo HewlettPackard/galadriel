@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var validConsentStatusValues = []string{"approved", "denied", "pending"}
-
 var relationshipCmd = &cobra.Command{
 	Use:   "relationship",
 	Args:  cobra.ExactArgs(0),
@@ -187,24 +185,15 @@ func init() {
 		fmt.Printf("cannot mark relationshipID flag as required: %v", err)
 	}
 
-	listRelationshipCmd.Flags().StringP(cli.ConsentStatusFlagName, "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(validConsentStatusValues, ", ")))
+	listRelationshipCmd.Flags().StringP(cli.ConsentStatusFlagName, "s", "", fmt.Sprintf("Consent status to filter relationships by. Valid values: %s", strings.Join(cli.ValidConsentStatusValues, ", ")))
 	listRelationshipCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		status, err := cmd.Flags().GetString(cli.ConsentStatusFlagName)
 		if err != nil {
 			return fmt.Errorf("cannot get status flag: %v", err)
 		}
 		if status != "" {
-			return validateConsentStatusValue(status)
+			return cli.ValidateConsentStatusValue(status)
 		}
 		return nil
 	}
-}
-
-func validateConsentStatusValue(status string) error {
-	for _, validValue := range validConsentStatusValues {
-		if status == validValue {
-			return nil
-		}
-	}
-	return fmt.Errorf("invalid value for status. Valid values: %s", strings.Join(validConsentStatusValues, ", "))
 }

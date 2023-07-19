@@ -128,29 +128,30 @@ paths:
       operationId: GetRelationships
       tags:
         - Relationships
-      summary: Get relationships
+      summary: Get the relationships based on the trust domain name and/or consent statuses.
       parameters:
         - name: consentStatus
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
-          description: relationship status from a Trust Domain perspective,
+          description: relationship status from a Trust Domain perspective.
         - name: trustDomainName
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
-          description: TrustDomain
+          description:  Trust Domain name that participates in a relationship.
         - name: pageSize
           required: false
           in: query
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/PageSize'
-          description: TrustDomain
+          description: Number of items in each page.
         - name: pageNumber
           in: query
           required: false
           schema:
             $ref: '../../../common/api/schemas.yaml#/components/schemas/PageNumber'
+          description: Number of pages.
       responses:
         '200':
           description: Successful operation
@@ -205,6 +206,48 @@ paths:
                 $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
         default:
           $ref: '#/components/responses/Default'
+    delete:
+      operationId: DeleteRelationshipByID
+      tags:
+        - Relationships
+      summary: Deletes a specific relationship
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the Relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          $ref: '#/components/responses/Default'
+    patch:
+      operationId: PatchRelationshipByID
+      tags:
+        - Relationships
+      summary: Update a specific relationship
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRelationshipByIDRequest'
+      parameters:
+        - name: relationshipID
+          in: path
+          description: ID of the Relationship
+          required: true
+          schema:
+            $ref: '../../../common/api/schemas.yaml#/components/schemas/UUID'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '../../../common/api/schemas.yaml#/components/schemas/Relationship'
+
 
   /trust-domain/{trustDomainName}/join-token:
     get:
@@ -272,6 +315,17 @@ components:
           example: "Trust domain that represent the entity X"
         name:
           $ref: '../../../common/api/schemas.yaml#/components/schemas/TrustDomainName'
+    PatchRelationshipByIDRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - consent_status_a
+        - consent_status_b
+      properties:
+        consent_status_a:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
+        consent_status_b:
+          $ref: '../../../common/api/schemas.yaml#/components/schemas/ConsentStatus'
     JoinTokenResponse:
       type: object
       additionalProperties: false
@@ -280,3 +334,9 @@ components:
       properties:
         token:
           $ref: ../../../common/api/schemas.yaml#/components/schemas/JoinToken
+    DeleteResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        schema:
+          $ref: ../../../common/api/schemas.yaml#/components/schemas/DeleteResponse          
