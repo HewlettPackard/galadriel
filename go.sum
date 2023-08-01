@@ -54,8 +54,8 @@ github.com/cyphar/filepath-securejoin v0.2.3/go.mod h1:aPGpWjXOXUn2NCNjFvBE6aRxG
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/deepmap/oapi-codegen v1.13.1 h1:EiExn5qPf+6EKUKNWN6ZDbFPc0L/jwD2Ne4fjtE4kcE=
-github.com/deepmap/oapi-codegen v1.13.1/go.mod h1:xRtMDf7WdqJVyfzDzrYuv6Kz7pVEB7yi0vQD/tGN9+o=
+github.com/deepmap/oapi-codegen v1.13.2 h1:I/REY+90rmcheXdR5rCg9j+7wAI134UwBk44AYt5QAY=
+github.com/deepmap/oapi-codegen v1.13.2/go.mod h1:eXAuxgJu9XC+dZECAw9cF4qtmL0qwGy0ZAvV6A2j1oA=
 github.com/dhui/dktest v0.3.16 h1:i6gq2YQEtcrjKbeJpBkWjE8MmLZPYllcjOFbTZuPDnw=
 github.com/docker/cli v20.10.17+incompatible h1:eO2KS7ZFeov5UJeaDmIs1NFEDRf32PaqRpvoEkKBy5M=
 github.com/docker/cli v20.10.17+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
