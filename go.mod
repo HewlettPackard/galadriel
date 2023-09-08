@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/deepmap/oapi-codegen v1.14.0
-	github.com/getkin/kin-openapi v0.119.0
+	github.com/getkin/kin-openapi v0.120.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.3.1
