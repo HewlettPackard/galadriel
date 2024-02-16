@@ -18,6 +18,6 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: kentaro-m/auto-assign-action@3e986bf9c274729de0d85191da42484917883328 # v1.2.5
+      - uses: kentaro-m/auto-assign-action@f4648c0a9fdb753479e9e75fc251f507ce17bb7e # v2.0.0
         with:
           configuration-path: '.github/auto-assign.yml'
