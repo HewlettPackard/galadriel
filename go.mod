@@ -1,6 +1,6 @@
 module github.com/HewlettPackard/galadriel
 
-go 1.20
+go 1.22.2
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
