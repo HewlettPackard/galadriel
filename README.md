@@ -25,6 +25,15 @@ functions as a central hub for the management and auditing of these Federation r
   existing SPIRE capabilities.
 - **A SPIRE plugin**: Galadriel is deployed as a standalone component, not as a SPIRE plugin.
 
+### Disclaimer
+
+**Current Stage: Proof of Concept**
+
+Please note that Project Galadriel is currently at the Proof of Concept (PoC) stage and is **not ready for production
+use**. This project is under development, and while it is open to contributions and feedback, it may undergo
+significant changes. Users are advised to use this project for experimental and development purposes only and to proceed
+with caution in production environments.
+
 ---
 
 ## Quick start
