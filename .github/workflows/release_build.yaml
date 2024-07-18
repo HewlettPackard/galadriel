@@ -52,7 +52,7 @@ jobs:
           name: release-artifacts
 
       - name: Release
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564  # v2.0.4
+        uses: softprops/action-gh-release@fb2d03176f42a1f0dd433ca263f314051d3edd44  # v2.0.7
         with:
           files: |
             galadriel-*-linux-*-glibc.tar.gz
